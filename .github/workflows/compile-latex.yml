@@ -19,7 +19,8 @@ jobs:
         with:
           root_file: main.tex
           latexmk_use_xelatex: true
-          args: -pdf -file-line-error -halt-on-error -interaction=nonstopmode
+          args: -pdf -file-line-error -interaction=nonstopmode
+          latexmk_shell_escape: true
       
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
