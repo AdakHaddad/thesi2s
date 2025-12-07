@@ -1,46 +1,7 @@
-Intisari ditulis menggunakan bahasa Indonesia dengan jarak antar baris 1 spasi dan maksimal 1 halaman. Intisari sekurang-kurangnya berisi tentang latar belakang dan tujuan penelitian, metodologi yang digunakan, hasil penelitian, kesimpulan dan implikasi, dan Kata kunci yang berhubungan dengan penelitian.
+\hspace{1cm}Penelitian ini berfokus pada perancangan modul peripheral komunikasi I2C dan I2S menggunakan bahasa Verilog HDL yang diintegrasikan ke dalam System-on-Chip (SoC) berbasis core processor MicroBlaze V pada FPGA. Kedua modul peripheral ini memiliki fungsi yang berbeda namun saling melengkapi: modul peripheral I2C dirancang untuk melakukan interfacing dengan sensor seperti sensor suhu, jarak, atau cahaya, sedangkan modul peripheral I2S menangani transmisi data audio digital. Peripheral pendukung tambahan seperti UART (untuk debugging) dan Timer diintegrasikan untuk membentuk sistem embedded yang lengkap, namun fokus utama penelitian adalah pada desain RTL berbasis Verilog untuk modul peripheral I2C dan I2S dengan antarmuka AXI4-Lite slave. Program uji ditulis dalam bahasa C, dikompilasi menggunakan Xilinx Vitis, dan dijalankan di atas SoC berbasis MicroBlaze V untuk mendemonstrasikan fungsi dari kedua peripheral I2C dan I2S.
 
-Kata Kunci ditulis maksimal 5 kata yang paling berhubungan dengan isi skripsi. Silakan mengacu pada ACM / IEEE \textit{Computing classification} jika Anda adalah mahasiswa Sarjana TI \textcolor{blue}{http://www.acm.org/about/class/} atau mengacu kepada IEEE keywords \textcolor{blue}{http://www.ieee.org/documents/taxonomy\_v101.pdf} jika Anda berasal dari Prodi Sarjana TE.
+\hspace{1cm}Metodologi penelitian mencakup: (1) desain RTL Verilog untuk kontroler I2C master yang mendukung standard mode (100 kbps) dan fast mode (400 kbps) dengan implementasi state machine protokol yang lengkap, (2) desain RTL Verilog untuk modul transmitter I2S yang mendukung sample rate dan bit depth yang dapat dikonfigurasi untuk aplikasi audio, (3) implementasi antarmuka AXI4-Lite slave dengan register yang di-memory-mapped untuk konfigurasi kedua peripheral dan transfer data, (4) integrasi SoC MicroBlaze V menggunakan Vivado block design yang mencakup processor, memory controller, AXI interconnect, dan kedua custom peripheral (I2C dan I2S), (5) pemrograman C untuk aplikasi uji yang mendemonstrasikan pembacaan sensor I2C dan streaming audio I2S, menunjukkan operasi konkuren dari kedua peripheral, dan (6) verifikasi komprehensif melalui simulasi RTL dengan Vivado Simulator dan validasi hardware pada development board FPGA Xilinx.
 
-\noindent{Kata kunci} : Kata kunci 1, Kata kunci 2, Kata kunci 3, Kata kunci 4, Kata kunci 5
+\hspace{1cm}Hasil penelitian menunjukkan keberhasilan implementasi Verilog untuk kedua modul peripheral I2C dan I2S yang berfungsi dengan baik ketika diintegrasikan dengan SoC MicroBlaze V. Kontroler I2C mencapai komunikasi yang handal dengan sensor di dunia nyata pada kecepatan 100 kbps maupun 400 kbps, sementara modul I2S berhasil menangani streaming data audio dengan format yang dapat dikonfigurasi. Aplikasi demo praktis mendemonstrasikan penggunaan bersamaan: membaca data sensor melalui I2C sambil secara simultan melakukan streaming audio melalui I2S, membuktikan kemampuan untuk menggunakan kedua peripheral secara bersamaan. Utilisasi resource menunjukkan desain yang efisien dengan konsumsi resource FPGA yang minimal. Program uji berbasis C mendemonstrasikan integrasi yang mulus antara layer software dan hardware melalui antarmuka AXI4-Lite. Kesimpulan menyatakan bahwa modul peripheral Verilog yang dirancang (I2C dan I2S) memenuhi persyaratan untuk membangun sistem embedded fungsional pada platform MicroBlaze V, menyediakan fondasi yang dapat digunakan kembali untuk aplikasi IoT dan multimedia.
 
-\vspace{1cm}
-
-%HAPUS YANG TIDAK PERLU
-%-------------------------------------------------
-\noindent\fbox{%
-	\parbox{\textwidth}{%
-\textbf{Contoh Abstrak Teknik Elektro:} \\
-
-\hspace{1cm} "Penelitian ini bertujuan untuk mengembangkan sistem pengendalian suhu ruangan dengan menggunakan microcontroller. Metodologi yang digunakan adalah desain sirkuit, implementasi sistem pengendalian, dan pengujian performa. Hasil penelitian menunjukkan 
-bahwa sistem pengendalian suhu ruangan yang dikembangkan mampu mengendalikan suhu ruangan dengan akurasi sebesar ±0,5°C. Kesimpulan dari penelitian ini adalah sistem pengendalian suhu ruangan yang dikembangkan efektif dan efisien. \\
-
-Kata kunci: microcontroller, sistem pengendalian suhu, akurasi."
-\vspace{5mm}
-
-\textbf{Contoh Abstrak Teknik Biomedis:} \\
-
-\hspace{1cm} "Penelitian ini bertujuan untuk mengevaluasi keefektifan prototipe alat pemantau denyut jantung berbasis elektrokardiogram (ECG) untuk pasien jantung. Metodologi yang digunakan meliputi desain dan pembuatan prototipe, pengujian dengan pasien, dan analisis data. Hasil penelitian menunjukkan bahwa prototipe alat pemantau denyut jantung berbasis ECG memiliki 
-akurasi yang baik dan mampu memantau denyut jantung pasien secara efektif. Kesimpulan dari penelitian ini adalah prototipe alat pemantau denyut jantung berbasis ECG merupakan solusi 
-yang efektif dan efisien untuk memantau pasien jantung. \\
-
-Kata kunci: elektrokardiogram, alat pemantau denyut jantung, akurasi."
-\vspace{5mm}
-
-	}%
-}
-
-%-------------------------------------------------
-
-\noindent\fbox{%
-	\parbox{\textwidth}{%
-		\textbf{Contoh Abstrak Teknologi Informasi:} \\
-		
-\hspace{1cm} "Penelitian ini bertujuan untuk mengevaluasi keamanan dan privasi pengguna aplikasi media sosial terpopuler. Metodologi yang digunakan meliputi analisis kebijakan privasi dan pengaturan keamanan, pengujian penetrasi, dan survei pengguna. Hasil penelitian 
-menunjukkan bahwa beberapa aplikasi media sosial memiliki kebijakan privasi yang kurang jelas dan rendahnya tingkat keamanan. Kesimpulan dari penelitian ini adalah pentingnya meningkatkan kebijakan privasi dan tingkat keamanan pada aplikasi media sosial untuk melindungi privasi dan data pengguna. \\
-		
-Kata kunci: media sosial, keamanan, privasi, pengguna."
-\vspace{5mm}
-		
-	}%
-}
+\noindent{Kata kunci} : MicroBlaze V, I2C, I2S, Verilog, AXI4-Lite, FPGA, SoC, Pemrograman C Embedded

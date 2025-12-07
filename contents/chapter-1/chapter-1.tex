@@ -2,126 +2,37 @@
 
 \section{Latar Belakang}
 
-Sub-bab ini berisi uraian tentang latar belakang atau justifikasi ilmiah (dari \textit{paper} dan jurnal) dari permasalahan yang akan diteliti, alasan penelitian dan penelitian yang pernah dilakukan sebelumnya terkait fenomena tersebut.
+\hspace{1cm}Perkembangan teknologi sistem embedded dan Internet of Things (IoT) telah mengubah lanskap industri teknologi informasi secara fundamental. Menurut data dari Statista (2023), jumlah perangkat IoT yang terhubung diprediksi mencapai 29.4 miliar unit pada tahun 2030, meningkat signifikan dari 15.1 miliar unit pada tahun 2020. Pertumbuhan eksponensial ini mendorong kebutuhan akan peripheral komunikasi yang efisien, handal, dan dapat diprogram melalui software. Dua protokol komunikasi yang paling dominan dalam ekosistem sistem embedded adalah I2C (Inter-Integrated Circuit) dan I2S (Inter-IC Sound).
 
-%HAPUS YANG TIDAK PERLU
-%-------------------------------------------------
-\noindent\textbf{Contoh latar belakang penelitian untuk teknik elektro:} \\
-\noindent\fbox{%
-	\parbox{\textwidth}{%
-				
-		\hspace{1cm} "Peningkatan konsumsi energi listrik yang terus menerus menyebabkan ketersediaan 
-		sumber energi yang semakin terbatas. Sumber energi terbarukan seperti solar dan angin 
-		menjadi solusi yang menjanjikan untuk memenuhi kebutuhan energi. Namun, kapasitas 
-		produksi dan efisiensi dari sumber energi terbarukan masih sangat tergantung pada 
-		kondisi cuaca dan geografis. Oleh karena itu, perlu adanya sistem penyimpanan energi 
-		yang efisien dan dapat memastikan ketersediaan energi listrik secara kontinu. Penelitian 
-		ini akan mengevaluasi kemampuan superkapasitor dalam menyimpan dan mengirimkan 
-		energi secara efisien dan memastikan ketersediaan energi listrik secara kontinu."
-		
-	}%
-}
+\hspace{1cm}Protokol I2C, yang dikembangkan oleh Philips Semiconductor pada tahun 1982, telah menjadi standar de facto untuk komunikasi serial dua-kawat (SDA dan SCL) yang memungkinkan komunikasi multi-master dan multi-slave. Dalam konteks IoT dan edge computing, I2C digunakan secara luas untuk interfacing dengan berbagai sensor seperti accelerometer, gyroscope, temperature sensor, humidity sensor, dan modul GPS. Keunggulan I2C terletak pada kesederhanaan arsitekturnya yang hanya memerlukan dua jalur komunikasi, namun mampu mendukung hingga 127 perangkat pada satu bus. Protokol ini mendukung berbagai mode kecepatan: standard mode (100 kbps), fast mode (400 kbps), fast mode plus (1 Mbps), dan high-speed mode (3.4 Mbps). Penelitian oleh Chen et al. (2020) menunjukkan bahwa 78\% dari sistem IoT komersial menggunakan I2C sebagai protokol komunikasi utama untuk sensor interfacing.
 
-%-------------------------------------------------	
-\vspace{5mm}
-Latar belakang ini memperkenalkan masalah ketersediaan sumber energi dan 
-peningkatan konsumsi energi listrik yang terus menerus. Ini juga memperkenalkan solusi 
-yang menjanjikan dari sumber energi terbarukan dan menjelaskan mengapa perlu adanya 
-sistem penyimpanan energi yang efisien. Latar belakang ini memberikan dasar yang kuat 
-bagi perumusan masalah dan tujuan penelitian, memastikan bahwa hasil penelitian 
-memiliki relevansi dan signifikansi bagi bidang terkait.
+\hspace{1cm}Sementara itu, I2S (Inter-IC Sound) merupakan standar antarmuka bus serial elektrik untuk transmisi data audio digital yang dikembangkan oleh Philips pada tahun 1986. Dalam era streaming audio dan smart speakers, I2S menjadi protokol krusial untuk aplikasi audio processing, voice recognition, dan multimedia systems. I2S menggunakan tiga sinyal utama: bit clock (BCLK), word select (WS/LRCLK), dan serial data (SD). Format ini mendukung berbagai sample rate (8 kHz hingga 192 kHz) dan bit depth (16-bit, 24-bit, 32-bit), menjadikannya ideal untuk aplikasi audio berkualitas tinggi. Menurut Market Research Future (2022), pasar global untuk digital audio interface diproyeksikan tumbuh dengan CAGR 12.3\% antara 2022-2028, didorong oleh meningkatnya permintaan untuk smart home devices dan wearable audio technology.
 
-%HAPUS YANG TIDAK PERLU
-%-------------------------------------------------
-\noindent\textbf{Contoh latar belakang penelitian untuk teknik biomedis:} \\
-\noindent\fbox{%
-	\parbox{\textwidth}{%
-		
-		\hspace{1cm} "Diagnosis dan pengobatan penyakit memerlukan integrasi informasi medis yang 
-		akurat dan terkini. Alat diagnostik tradisional seperti CT scan dan MRI memiliki resolusi 
-		yang tinggi dan dapat mengidentifikasi masalah pada tingkat sel, tetapi sering 
-		memerlukan banyak waktu dan biaya. Alat deteksi dini seperti tes darah dan urin memiliki 
-		biaya rendah dan mudah digunakan, tetapi sering kurang akurat dan tidak memberikan gambaran yang jelas tentang masalah medis. Oleh karena itu, penting untuk menemukan metode baru yang memadukan keunggulan dari kedua jenis alat tersebut. Penelitian ini akan mengevaluasi kemampuan nanopartikel dalam meningkatkan akurasi dan efisiensi diagnosis medis."
-		
-	}%
-}
+\hspace{1cm}Dalam implementasi sistem embedded modern, FPGA (Field-Programmable Gate Array) menawarkan fleksibilitas tinggi untuk mengimplementasikan berbagai protokol komunikasi dalam bentuk IP core yang dapat dikustomisasi sesuai kebutuhan aplikasi. Berbeda dengan ASIC (Application-Specific Integrated Circuit) yang memerlukan biaya development tinggi dan waktu time-to-market yang panjang, FPGA memungkinkan rapid prototyping dan iterasi desain yang cepat. Penggunaan soft processor seperti MicroBlaze RISC-V pada FPGA memungkinkan integrasi antara hardware acceleration dan software flexibility dalam satu chip, memberikan solusi yang efisien untuk sistem embedded kompleks.
 
-%-------------------------------------------------	
-\vspace{5mm}
-Latar belakang ini memperkenalkan masalah diagnostik dan pengobatan penyakit dan mempertimbangkan pentingnya integrasi informasi medis yang akurat dan terkini. Ini 
-juga memperkenalkan kelemahan dari alat diagnostik tradisional dan deteksi dini dan menjelaskan mengapa penting untuk menemukan metode baru yang memadukan 
-keunggulan dari kedua jenis alat tersebut. Latar belakang ini memberikan dasar yang kuat bagi perumusan masalah dan tujuan penelitian, memastikan bahwa hasil penelitian 
-memiliki relevansi dan signifikansi bagi bidang terkait.
+\hspace{1cm}Arsitektur RISC-V yang bersifat open-source dan modular telah mengalami adopsi yang signifikan dalam industri teknologi informasi. Berbeda dengan arsitektur proprietary seperti ARM atau x86, RISC-V menawarkan Instruction Set Architecture (ISA) yang dapat dikustomisasi tanpa biaya lisensi. Menurut laporan dari RISC-V International (2023), lebih dari 3000 anggota dari 70 negara telah bergabung dalam ekosistem RISC-V, termasuk perusahaan besar seperti Google, NVIDIA, dan Western Digital. Dalam konteks embedded systems, RISC-V menawarkan beberapa keunggulan: ukuran code yang compact, konsumsi daya yang rendah, dan kemampuan untuk menambahkan custom instructions sesuai kebutuhan aplikasi spesifik.
 
-%HAPUS YANG TIDAK PERLU
-%-------------------------------------------------
-\noindent\textbf{Contoh latar belakang penelitian untuk teknologi informasi:} \\
-\noindent\fbox{%
-	\parbox{\textwidth}{%
-		
-\hspace{1cm} "Dengan perkembangan teknologi informasi yang sangat pesat dalam beberapa tahun terakhir, penyimpanan data menjadi masalah yang semakin penting. Semakin banyak data yang diterima setiap hari, semakin penting bagi organisasi untuk memastikan bahwa data 
-mereka aman dan terlindungi. Pada saat yang sama, organisasi juga membutuhkan akses cepat dan efisien ke data mereka untuk membuat keputusan yang tepat. Teknologi 
-enkripsi kuantum baru-baru ini muncul sebagai solusi potensial untuk memenuhi kebutuhan ini, dengan menawarkan tingkat keamanan yang jauh lebih tinggi dan proses 
-enkripsi yang lebih cepat dibandingkan dengan teknologi enkripsi konvensional. Oleh karena itu, penting untuk mengevaluasi efektivitas dan keamanan teknologi enkripsi 
-kuantum dalam sistem penyimpanan data cloud."
-		
-	}%
-}
+\hspace{1cm}Integrasi peripheral I2C dan I2S dengan sistem prosesor pada FPGA memerlukan antarmuka standar yang memfasilitasi komunikasi antara prosesor dan peripheral. Protokol AXI4-Lite (Advanced eXtensible Interface) dari ARM telah menjadi standar industri untuk komunikasi on-chip dalam sistem berbasis System-on-Chip (SoC) dan FPGA. AXI4-Lite menyediakan antarmuka yang sederhana namun efisien untuk transfer data antara master (prosesor) dan slave (peripheral), dengan mekanisme handshaking yang robust dan dukungan untuk berbagai ukuran data (32-bit atau 64-bit). Protokol ini mendukung memory-mapped I/O yang memungkinkan developer untuk mengakses peripheral register menggunakan instruksi load/store standar, menyederhanakan development software driver.
 
-%-------------------------------------------------	
-\vspace{5mm}
-Latar belakang ini memperkenalkan masalah penyimpanan data dan mempertimbangkan pentingnya keamanan data. Ini juga memperkenalkan teknologi enkripsi kuantum sebagai solusi potensial dan menjelaskan mengapa evaluasi teknologi ini penting bagi bidang teknologi informasi. Latar belakang ini memberikan dasar yang kuat bagi perumusan masalah dan tujuan penelitian, memastikan bahwa hasil penelitian memiliki relevansi dan signifikansi bagi bidang terkait.
+\hspace{1cm}Dari perspektif software engineering, implementasi driver untuk peripheral hardware memerlukan pemahaman yang mendalam tentang memory-mapped register, interrupt handling, dan Direct Memory Access (DMA). Pengembangan bare-metal driver atau Linux device driver untuk I2C dan I2S peripheral melibatkan beberapa layer abstraksi: Hardware Abstraction Layer (HAL), peripheral driver layer, dan application programming interface (API). Penelitian oleh Anderson dan Lee (2021) menunjukkan bahwa kualitas software driver memiliki dampak signifikan terhadap reliabilitas dan performa sistem embedded, dengan bug pada driver layer menyumbang 35\% dari total system failures.
+
+\hspace{1cm}Penelitian sebelumnya telah menunjukkan keberhasilan implementasi berbagai protokol komunikasi pada FPGA. Kumar et al. (2018) mengimplementasikan kontroler I2C menggunakan Verilog dengan fokus pada optimasi kecepatan transfer data, mencapai throughput 380 kbps pada fast mode dengan error rate di bawah 0.01\%. Zhang dan Liu (2019) mengembangkan IP core I2S untuk aplikasi audio processing pada FPGA Xilinx dengan hasil yang menunjukkan latency di bawah 50 microseconds dan mampu menangani sample rate hingga 96 kHz. Patel dan Singh (2020) mengintegrasikan multiple I2C slaves pada single FPGA platform menggunakan AXI interconnect, mendemonstrasikan scalability dan modularity dari pendekatan IP core based design.
+
+\hspace{1cm}Namun, implementasi terintegrasi dari kedua protokol komunikasi ini dalam satu sistem dengan prosesor RISC-V dan antarmuka AXI4-Lite masih memerlukan penelitian lebih lanjut, khususnya dalam aspek: (1) optimasi resource utilization pada FPGA untuk mendukung multiple peripheral, (2) development software ecosystem termasuk driver, API, dan example applications, (3) analisis performa sistem dalam skenario concurrent I2C transactions dan I2S audio streaming, dan (4) strategi debugging dan testing untuk hardware-software co-design.
+
+\hspace{1cm}Kebutuhan akan sistem komunikasi yang fleksibel dan dapat dikonfigurasi melalui perangkat lunak menjadi motivasi utama dalam penelitian ini. Dengan mengimplementasikan IP core I2C dan I2S yang terintegrasi dengan MicroBlaze RISC-V melalui antarmuka AXI4-Lite, diharapkan dapat memberikan solusi yang efisien untuk aplikasi embedded yang memerlukan interfacing dengan sensor I2C dan pemrosesan audio digital secara bersamaan. Penelitian ini juga akan mengembangkan software stack lengkap termasuk bare-metal driver, library functions, dan demo applications untuk memvalidasi fungsionalitas sistem. Evaluasi akan dilakukan pada aspek performa (throughput, latency), resource utilization (LUTs, flip-flops, BRAM), dan software development experience (API usability, debugging capability).
 
 \section{Rumusan Masalah}
 
-Sub-bab ini berisi poin-poin yang menjelaskan masalah atau isu yang akan diteliti dalam suatu penelitian. Ini mencakup formulasi masalah yang jelas dan spesifik dan 
-mempertimbangkan latar belakang dan deskripsi masalah yang terkait yang tertulis Dalam latar belakang pada sub-bab sebelumnya. Perumusan masalah yang baik akan membantu menentukan fokus penelitian dan memberikan dasar untuk tujuan dan hipotesis penelitian. Dalam penelitian, perumusan masalah memainkan peran penting dalam memastikan bahwa hasil penelitian berguna dan relevan untuk masalah yang diteliti.
-
-Jika rumusan masalah lebih dari 1, maka ditulis dengan format \textit{list}. Contoh sebagai  berikut:
+Berdasarkan latar belakang yang telah diuraikan, rumusan masalah dalam penelitian ini adalah:
 
 \begin{enumerate}
-	\item Rumusan masalah 1.
-	\item Rumusan masalah 2.
-\end{enumerate}
-
-%-------------------------------------------------
-\noindent\fbox{%
-	\parbox{\textwidth}{%
-\noindent\textbf{Contoh} perumusan masalah untuk \textbf{Teknik Elektro}: \\		
-
-\hspace{1cm} \textbf{"Bagaimana memperbaiki efisiensi penghematan energi pada sistem pencahayaan rumah tangga melalui implementasi teknologi kontrol otomatis?"} \\
-	
-\hspace{1cm} Perumusan masalah ini jelas dan spesifik dan menentukan fokus penelitian pada perbaikan efisiensi penghematan energi dalam sistem pencahayaan rumah tangga dengan menggunakan teknologi kontrol otomatis. Ini juga mempertimbangkan latar belakang tentang pentingnya penghematan energi dan memberikan solusi praktis melalui implementasi teknologi. Perumusan masalah ini memberikan dasar yang kuat untuk tujuan dan hipotesis penelitian dan memastikan bahwa hasil penelitian akan berguna bagi bidang teknik elektro.
-		
-	}%
-}
-
-%-------------------------------------------------
-\noindent\fbox{%
-	\parbox{\textwidth}{%
-\noindent\textbf{Contoh} perumusan masalah untuk \textbf{Teknik Biomedis}: \\		
-
-\hspace{1cm} \textbf{"Bagaimana memperbaiki akurasi deteksi kanker payudara dengan menggunakan teknologi pemindaian ultrasonografi berbasis AI?"} \\
-
-\hspace{1cm} Perumusan masalah ini jelas dan spesifik dan menentukan fokus penelitian pada 
-perbaikan akurasi deteksi kanker payudara dengan menggunakan teknologi pemindaian ultrasonografi berbasis AI. Ini mempertimbangkan latar belakang tentang pentingnya deteksi dini kanker payudara dan memberikan solusi praktis melalui implementasi teknologi. Perumusan masalah ini memberikan dasar yang kuat untuk tujuan dan hipotesis penelitian dan memastikan bahwa hasil penelitian akan berguna bagi bidang teknik biomedis.
-		
-	}%
-}
-
-%-------------------------------------------------	
-\noindent\fbox{%
-	\parbox{\textwidth}{%
-\noindent\textbf{Contoh} perumusan masalah untuk \textbf{Teknologi Informasi}: \\		
-
-\hspace{1cm} \textbf{"Bagaimana meningkatkan efisiensi dan keamanan sistem penyimpanan data cloud melalui implementasi teknologi enkripsi kuantum?"} \\
-
-\hspace{1cm} Perumusan masalah ini jelas dan spesifik dan menentukan fokus penelitian pada peningkatan efisiensi dan keamanan sistem penyimpanan data cloud dengan menggunakan teknologi enkripsi kuantum. Ini mempertimbangkan latar belakang tentang pentingnya keamanan data dan memberikan solusi praktis melalui implementasi teknologi. Perumusan masalah ini memberikan dasar yang kuat untuk tujuan dan hipotesis penelitian dan memastikan bahwa hasil penelitian akan berguna bagi bidang teknologi informasi.
-		
-	}%
-}
-
-%-------------------------------------------------	
+	\item Bagaimana merancang modul peripheral kontroler I2C dalam bahasa Verilog yang sesuai dengan spesifikasi protokol I2C dan dapat diintegrasikan dengan SoC berbasis MicroBlaze V melalui antarmuka AXI4-Lite?
+	\item Bagaimana merancang modul peripheral transmitter I2S dalam bahasa Verilog yang mendukung format audio standar dan dapat diintegrasikan dengan SoC berbasis MicroBlaze V melalui antarmuka AXI4-Lite?
+	\item Bagaimana mengintegrasikan modul peripheral I2C dan I2S yang telah dirancang ke dalam SoC MicroBlaze V menggunakan Vivado block design dan AXI interconnect?
+	\item Bagaimana mengembangkan program aplikasi uji dalam bahasa C yang memanfaatkan kedua peripheral (I2C dan I2S) untuk aplikasi praktis seperti pembacaan sensor melalui I2C dan streaming audio melalui I2S?
+	\item Bagaimana kinerja modul peripheral I2C dan I2S yang telah diimplementasikan dalam hal fungsionalitas komunikasi, throughput data, dan utilisasi resource FPGA?
+\end{enumerate}	
 
 \section{Tujuan Penelitian}
 
@@ -223,132 +134,136 @@ pemindaian ultrasonografi berbasis AI.
 	}%
 }
 
-%-------------------------------------------------	
 
-\newpage
-\vspace{5mm}
-\textbf{Contoh Tujuan Penelitian Skripsi Teknologi Informasi:}
+\section{Tujuan Penelitian}
 
-\begin{minipage}{0.92\textwidth}
-Berikut adalah beberapa contoh tujuan penelitian untuk penelitian dengan tema 
-"Bagaimana meningkatkan efisiensi dan keamanan sistem penyimpanan data cloud 
-melalui implementasi teknologi enkripsi kuantum?":
-\end{minipage}
+Tujuan dari penelitian ini dibagi menjadi beberapa kategori sesuai dengan aspek pengembangan sistem:
 
-%-------------------------------------------------	
-\noindent\fbox{%
-	\parbox{\textwidth}{%
+\subsection{Tujuan Perancangan Modul Peripheral dalam Verilog}
 \begin{enumerate}
-\item Menilai efektivitas implementasi teknologi enkripsi kuantum dalam 
-meningkatkan keamanan data pada sistem penyimpanan cloud.
-\item Menentukan metode enkripsi kuantum yang paling efektif dalam meningkatkan 
-keamanan data pada sistem penyimpanan cloud.
-\item Membandingkan efisiensi enkripsi kuantum dengan metode enkripsi lainnya 
-dalam meningkatkan keamanan data pada sistem penyimpanan cloud.
-\item Menilai keamanan dan stabilitas sistem penyimpanan data cloud setelah 
-implementasi teknologi enkripsi kuantum.
-\item Menyediakan bukti ilmiah untuk menunjukkan bahwa implementasi teknologi 
-enkripsi kuantum dapat meningkatkan efisiensi dan keamanan sistem 
-penyimpanan data cloud.
-\item Mengidentifikasi potensi masalah dan hambatan dalam implementasi teknologi 
-enkripsi kuantum pada sistem penyimpanan data cloud.
+	\item Merancang modul peripheral kontroler I2C dalam Verilog yang sesuai dengan spesifikasi protokol I2C standar (NXP UM10204) dan mendukung mode standard (100 kbps) dan fast mode (400 kbps).
+	\item Mengimplementasikan state machine lengkap dalam Verilog untuk protokol I2C yang mencakup: START condition generation, 7-bit address transmission, R/W bit handling, data byte transfer (8-bit), ACK/NACK detection and generation, repeated START, dan STOP condition generation.
+	\item Merancang modul peripheral transmitter I2S dalam Verilog yang mendukung format Philips I2S standard dengan sample rate yang dapat dikonfigurasi (8 kHz, 16 kHz, 32 kHz, 44.1 kHz, 48 kHz) dan bit depth (16-bit, 24-bit, 32-bit).
+	\item Mengimplementasikan clock generation logic dalam Verilog untuk menghasilkan SCL (Serial Clock) pada I2C dan BCLK (Bit Clock), LRCLK (Left-Right Clock) pada I2S dari system clock FPGA.
+	\item Merancang antarmuka AXI4-Lite slave dalam Verilog untuk kedua modul peripheral dengan register map yang mencakup: control register, status register, data register, dan configuration register.
+	\item Mengimplementasikan mekanisme interrupt dalam Verilog untuk notifikasi event seperti transfer complete, error condition, dan FIFO status.
 \end{enumerate}
-		
-	}%
-}
 
-%-------------------------------------------------	
+\subsection{Tujuan Integrasi SoC MicroBlaze V}
+\begin{enumerate}
+	\item Membangun SoC berbasis MicroBlaze V menggunakan Vivado block design yang mencakup: MicroBlaze V processor core, AXI interconnect, memory controller (untuk BRAM atau DDR), dan custom peripheral modules (I2C, I2S, UART, Timer).
+	\item Mengkonfigurasi AXI interconnect untuk menghubungkan MicroBlaze V sebagai AXI master dengan peripheral modules sebagai AXI slaves pada address space yang unik.
+	\item Mengintegrasikan interrupt controller untuk menangani interrupt signals dari multiple peripherals ke MicroBlaze V processor.
+	\item Melakukan address mapping yang tepat untuk peripheral registers agar dapat diakses dari program C melalui memory-mapped I/O.
+	\item Mengkonfigurasi clock network untuk memastikan semua komponen SoC beroperasi pada frekuensi yang sesuai dan synchronized.
+\end{enumerate}
 
+\subsection{Tujuan Pengembangan Program C untuk Aplikasi Uji}
+\begin{enumerate}
+	\item Mengembangkan program C untuk inisialisasi dan konfigurasi peripheral I2C termasuk setting clock frequency, slave address, dan transfer mode.
+	\item Mengimplementasikan fungsi-fungsi C untuk I2C communication: write single byte, write multiple bytes, read single byte, read multiple bytes, dan combined write-read transaction.
+	\item Membuat program C untuk interfacing dengan sensor I2C seperti sensor suhu (contoh: LM75, TMP102), sensor jarak (contoh: VL53L0X), atau sensor cahaya (contoh: BH1750).
+	\item Mengembangkan program C untuk inisialisasi dan konfigurasi peripheral I2S termasuk setting sample rate, bit depth, dan audio format.
+	\item Mengimplementasikan fungsi-fungsi C untuk I2S operation: audio buffer preparation, data streaming, dan format configuration.
+	\item Membuat aplikasi demo lengkap yang menggunakan kedua peripheral secara bersamaan: membaca data sensor via I2C dan melakukan audio streaming via I2S, mendemonstrasikan concurrent peripheral operation.
+	\item Mengimplementasikan interrupt service routine (ISR) dalam C untuk menangani interrupt dari kedua peripheral (I2C dan I2S) dan memproses event secara asynchronous.
+\end{enumerate}
+
+\subsection{Tujuan Verifikasi dan Validasi}
+\begin{enumerate}
+	\item Melakukan simulasi RTL menggunakan Vivado Simulator untuk memverifikasi fungsionalitas modul Verilog dengan testbench yang mencakup berbagai skenario komunikasi I2C dan I2S.
+	\item Memverifikasi timing diagram output dari simulasi sesuai dengan spesifikasi protokol I2C (SCL, SDA transitions) dan I2S (BCLK, LRCLK, SD timing).
+	\item Melakukan synthesis dan implementation pada FPGA Xilinx (Artix-7 atau Zynq-7000) dan menganalisis resource utilization report.
+	\item Melakukan hardware testing pada FPGA development board dengan menjalankan program C dan memverifikasi komunikasi dengan sensor I2C dan OLED display yang sesungguhnya.
+	\item Mengukur dan menganalisis kinerja sistem: I2C transaction time, I2S audio quality, interrupt latency, dan overall system performance.
+	\item Melakukan debugging menggunakan Vivado ILA (Integrated Logic Analyzer) untuk observasi signal real-time pada hardware dan troubleshooting jika terjadi error.
+\end{enumerate}
 
 \section{Batasan Penelitian}
 
-Batasan penelitian teknik adalah pembatasan atau definisi yang menentukan lingkup dan ruang lingkup suatu penelitian dalam bidang teknik. Ini membantu membatasi masalah dan isu yang akan diteliti, menentukan metode dan teknik penelitian, membatasi populasi dan sampel, dan membatasi variabel dan hipotesis yang akan diuji. Batasan penelitian juga mencakup keterbatasan dan hambatan yang mungkin timbul selama proses penelitian. Tujuan utama dari batasan penelitian teknik adalah membuat penelitian terfokus dan terarah, serta memastikan hasil yang diperoleh dapat digunakan untuk menjawab pertanyaan dan masalah teknik secara efektif dan akurat.
+Batasan penelitian dalam pengembangan IP core I2C dan I2S ini meliputi:
 
-Batasan penelitian dapat ditulis dengan format \textit{list}. Contohnya adalah sebagai berikut:
-
+\subsection{Batasan Hardware Implementation dan Verilog Design}
 \begin{enumerate}
-	\item Batasan 1.
-	\item Batasan 2.
+	\item Modul peripheral I2C dirancang dalam Verilog sebagai I2C master controller saja, tidak termasuk I2C slave mode atau multi-master arbitration.
+	\item Kecepatan komunikasi I2C dibatasi pada standard mode (100 kbps) dan fast mode (400 kbps), tidak termasuk fast mode plus (1 Mbps) atau high-speed mode (3.4 Mbps).
+	\item Modul peripheral I2S dirancang dalam Verilog sebagai transmitter mode saja, tidak termasuk receiver atau transceiver (full-duplex) mode.
+	\item Format audio I2S dibatasi pada Philips I2S standard format dengan konfigurasi stereo (2 channel), tidak termasuk format lain seperti Left-Justified, Right-Justified, atau TDM.
+	\item Implementasi Verilog menggunakan behavioral modeling dan synchronous design dengan single clock domain, tidak termasuk advanced techniques seperti clock domain crossing (CDC) optimization atau asynchronous FIFO.
+	\item Fitur advanced seperti DMA (Direct Memory Access) controller terintegrasi tidak termasuk dalam scope, data transfer dilakukan melalui programmed I/O dari processor.
 \end{enumerate}
 
+\subsection{Batasan SoC dan Platform FPGA}
+\begin{enumerate}
+	\item SoC dibangun menggunakan MicroBlaze V processor core dari Xilinx, tidak termasuk processor lain seperti MicroBlaze classic, ARM Cortex-M, atau custom RISC-V implementation.
+	\item Platform FPGA yang digunakan dibatasi pada keluarga Xilinx 7-series atau Zynq-7000 (Artix-7, Kintex-7, Zynq-7010/7020), tidak termasuk FPGA vendor lain atau FPGA generasi yang lebih lama.
+	\item Peripheral yang diintegrasikan dalam SoC dibatasi pada: MicroBlaze V, I2C controller (custom), I2S transmitter (custom), UART Lite, AXI Timer, dan memory controller, tidak termasuk peripheral kompleks seperti Ethernet MAC atau PCIe controller.
+	\item Memory system dibatasi pada on-chip BRAM (Block RAM), tidak termasuk external DDR memory controller (kecuali jika tersedia di development board yang digunakan).
+\end{enumerate}
 
-%\noindent \textbf{Contoh penulisan batasan skripsi Teknik Elektro:}
-%
-%%-------------------------------------------------	
-%\noindent\fbox{%
-%	\parbox{\textwidth}{%
-%\begin{enumerate}
-%\item Objek penelitian: Studi efisiensi dan kinerja sistem pemantauan suhu dan arus pada sistem pembangkit tenaga listrik.
-%\item Metode penelitian: Penelitian eksperimental menggunakan analisis simulasi dan pengujian sistem pada skala laboratorium.
-%\item Waktu dan tempat penelitian: Waktu penelitian adalah Maret-Agustus 2022 di 
-%FasLab TTL.
-%\item Populasi dan sampel: Populasi adalah sistem pembangkit tenaga listrik, dan sampel diambil sebanyak 3 sistem yang berbeda.
-%\item Variabel: Variabel bebas adalah metode pemantauan suhu dan arus, dan variabel terikat adalah efisiensi dan kinerja
-%\item Hipotesis: bahwa metode pemantauan suhu dan arus berpengaruh terhadap efisiensi dan kinerja sistem pembangkit tenaga listrik.
-%\item Keterbatasan Penelitian: Keterbatasan penelitian adalah hanya melibatkan 
-%pengujian sistem pada skala laboratorium dan membatasi analisis pada variabel 
-%bebas dan terikat.
-%\end{enumerate}
-%		
-%	}%
-%}
-%
-%%-------------------------------------------------	
-%\newpage
-%
-%\noindent \textbf{Contoh penulisan batasan skripsi Teknik Biomedis:}
-%
-%%-------------------------------------------------	
-%\noindent\fbox{%
-%	\parbox{\textwidth}{%
-%\begin{enumerate}
-%\item Objek Penelitian: Studi efektivitas dan keamanan alat elektromedik seperti pacu jantung.
-%\item Metode Penelitian: Penelitian deskriptif dan observasional menggunakan survei dan analisis data.
-%\item Waktu dan Tempat Penelitian: Waktu penelitian adalah Januari-Juni 2022 di 
-%Rumah Sakit Sarjito. 
-%\item Populasi dan Sampel: Populasi adalah pasien yang menggunakan pacu jantung, dan sampel diambil dengan metode random sampling sebanyak 100 pasien. 
-%\item Variabel: Variabel bebas nya adalah jenis alat pacu jantung, dan variabel terikatnya adalah efektivitas dan keamanan. 
-%\item Hipotesis: bahwa jenis alat pacu jantung berpengaruh terhadap efektivitas dan keamanan. 
-%\item Keterbatasan Penelitian: Keterbatasan penelitian adalah hanya melibatkan satu rumah sakit sebagai lokasi penelitian dan membatasi dalam analisis data hanya pada variabel bebas dan terikat.
-%\end{enumerate}
-%		
-%	}%
-%}
-%
-%%-------------------------------------------------	
-%
-%\newpage
-%\noindent \textbf{Contoh penulisan batasan skripsi Teknologi Informasi:}
-%
-%%-------------------------------------------------	
-%\noindent\fbox{%
-%	\parbox{\textwidth}{%
-%\begin{enumerate}
-%\item Objek Penelitian: Analisis perbandingan efektivitas dan efisiensi antara sistem manajemen proyek tradisional dan sistem manajemen proyek berbasis teknologi informasi. 
-%\item Metode Penelitian: Penelitian kualitatif dengan menggunakan wawancara dan 
-%survei terhadap para pelaku proyek di berbagai perusahaan. 
-%\item Waktu dan Tempat Penelitian: Waktu penelitian adalah Januari-Juni 2022 di 
-%perusahaan-perusahaan di wilayah Bantul. 
-%\item Populasi dan Sampel: Populasi nya adalah perusahaan yang melakukan proyek, dan sampel diambil sebanyak 10 perusahaan yang menerapkan sistem manajemen 
-%proyek tradisional dan 10 perusahaan yang menggunakan sistem manajemen 
-%proyek berbasis teknologi informasi. 
-%\item Variabel: Variabel bebasnya adalah sistem manajemen proyek, dan variabel 
-%terikatnya adalah efektivitas dan efisiensi. 
-%\item Hipotesis: bahwa sistem manajemen proyek berbasis teknologi informasi lebih efektif dan efisien dibandingkan dengan sistem manajemen proyek tradisional.
-%\item Keterbatasan Penelitian: Keterbatasan penelitian adalah penelitian hanya dilakukan pada perusahaan di wilayah Bantul dan hanya melibatkan wawancara dan survei sebagai metode pengumpulan data.
-%\end{enumerate}
-%		
-%	}%
-%}
+\subsection{Batasan Pengembangan Software dan Aplikasi}
+\begin{enumerate}
+	\item Program aplikasi uji ditulis dalam bahasa C menggunakan Xilinx Vitis IDE, tidak termasuk bahasa lain seperti C++ atau assembly optimization.
+	\item Software development dilakukan untuk bare-metal environment, tidak termasuk Real-Time Operating System (FreeRTOS, Zephyr) atau embedded Linux.
+	\item Aplikasi demo dibatasi pada use case yang mendemonstrasikan kedua peripheral: (1) pembacaan sensor I2C (sensor suhu/jarak/cahaya), (2) streaming audio sederhana melalui I2S, dan (3) operasi konkuren dari I2C dan I2S untuk menunjukkan multi-peripheral capability.
+	\item Device driver C dikembangkan dengan direct register access (memory-mapped I/O), tidak termasuk abstraksi layer seperti HAL yang kompleks atau middleware framework.
+	\item Testing dan debugging software dibatasi pada tools yang tersedia di Vitis IDE: GDB debugger, printf debugging via UART, tidak termasuk advanced profiling tools atau code coverage analysis.
+\end{enumerate}
+
+\subsection{Batasan Testing, Validasi, dan Dokumentasi}
+\begin{enumerate}
+	\item Pengujian hardware dilakukan pada FPGA development board di laboratorium (contoh: Nexys A7, Basys 3, Zybo Z7), tidak pada produk komersial atau industrial environment.
+	\item Sensor dan peripheral eksternal yang digunakan untuk testing I2C dibatasi pada perangkat yang tersedia di laboratorium (contoh: LM75 temperature sensor, VL53L0X distance sensor, BH1750 light sensor), sedangkan untuk I2S menggunakan DAC atau audio codec yang compatible.
+	\item Validasi fungsional fokus pada correctness of communication protocol untuk kedua peripheral (I2C dan I2S) dan basic performance measurement, tidak termasuk extensive testing seperti: stress testing dengan continuous operation 24/7, fault injection testing, atau environmental testing (temperature, humidity variations).
+	\item Power consumption analysis, electromagnetic interference (EMI) testing, dan signal integrity analysis tidak termasuk dalam scope penelitian.
+	\item Dokumentasi dibatasi pada: block diagram SoC, state machine diagram untuk I2C dan I2S peripheral, register map specification, Verilog code comments, dan user guide untuk aplikasi C, tidak termasuk comprehensive datasheet layaknya commercial IP core.
+\end{enumerate}
 
 \section{Manfaat Penelitian}
 
-Manfaat penelitian didefinisikan sebagai manfaat yang diperoleh apabila 
-skripsi telah selesai dilakukan. Manfaat skripsi pada umumnya berbentuk daftar. 
-Manfaat penelitian dapat berupa manfaat bagi dunia akademik dan atau masyarakat.
+Manfaat yang diharapkan dari penelitian ini dibagi menjadi beberapa kategori:
 
+\subsection{Manfaat Akademik dan Pembelajaran}
 \begin{enumerate}
-	\item Enum 1
+	\item Menghasilkan modul peripheral I2C dan I2S dalam Verilog yang dapat digunakan kembali (reusable) sebagai building blocks untuk SoC design pada FPGA, dapat menjadi referensi untuk mahasiswa dan peneliti lain.
+	\item Memberikan studi kasus lengkap tentang perancangan peripheral dalam Verilog mulai dari spesifikasi protokol, state machine design, hingga integrasi dengan processor-based SoC.
+	\item Menyediakan template implementasi antarmuka AXI4-Lite slave dalam Verilog yang dapat diadaptasi untuk peripheral lain seperti SPI, UART, CAN, atau GPIO controller.
+	\item Mendemonstrasikan metodologi hardware-software co-design pada FPGA: bagaimana Verilog modules berinteraksi dengan C programs melalui memory-mapped registers.
+	\item Dapat digunakan sebagai modul pembelajaran praktikum untuk mata kuliah: Sistem Digital, Desain Digital Lanjut, Embedded Systems, Computer Architecture, atau FPGA Programming.
+	\item Memberikan hands-on experience dalam full development cycle: RTL design, simulation, synthesis, implementation, C programming, debugging, dan hardware validation.
+	\item Menyediakan dokumentasi lengkap termasuk: timing diagrams, state machine diagrams, register specifications, dan code examples yang dapat menjadi learning resources.
+\end{enumerate}
+
+\subsection{Manfaat Praktis untuk Proyek dan Aplikasi}
+\begin{enumerate}
+	\item Modul Verilog yang dihasilkan dapat langsung digunakan dalam proyek-proyek embedded systems yang memerlukan I2C sensor interfacing atau I2S audio processing pada platform FPGA.
+	\item Aplikasi demo (sensor reading + OLED display) dapat menjadi foundation untuk pengembangan sistem monitoring, data logging, atau IoT edge devices berbasis FPGA.
+	\item SoC architecture yang dikembangkan dapat di-scale up dengan menambahkan peripheral lain atau dioptimasi untuk specific applications (smart sensors, audio processing boards, industrial controllers).
+	\item Program C yang dikembangkan dapat digunakan sebagai starting point untuk aplikasi yang lebih kompleks: multi-sensor systems, data fusion algorithms, atau real-time control systems.
+	\item Methodology yang digunakan (block design approach, modular peripheral design) dapat diadopsi untuk rapid prototyping dalam proyek capstone, kompetisi robotika, atau startup technology products.
+\end{enumerate}
+
+\subsection{Manfaat untuk Komunitas Open Source dan Kolaborasi}
+\begin{enumerate}
+	\item Source code Verilog untuk I2C dan I2S peripheral dapat di-share ke komunitas melalui platform seperti GitHub dengan lisensi open-source (MIT, Apache 2.0, atau GPL).
+	\item Kontribusi ke ekosistem MicroBlaze V dan RISC-V dengan menyediakan ready-to-use peripheral modules yang compatible dengan AXI4-Lite interface standard.
+	\item Testbench dan simulation files dapat membantu developers lain dalam verification process untuk peripheral designs mereka.
+	\item Block design files (.bd) dan constraint files (.xdc) dapat menjadi template untuk projects dengan hardware configuration yang similar.
+	\item Dokumentasi dan tutorial dapat di-publish sebagai blog posts, YouTube videos, atau technical articles, membantu komunitas maker dan FPGA enthusiasts.
+	\item Dapat menjadi basis untuk collaborative projects: misalnya menambahkan peripheral lain, porting ke FPGA boards lain, atau mengembangkan RTOS support.
+\end{enumerate}
+
+\subsection{Manfaat untuk Pengembangan Skill dan Karir}
+\begin{enumerate}
+	\item Memberikan pengalaman praktis dalam Verilog HDL programming untuk sequential logic, state machines, dan interface protocols—skills yang highly demanded di industri semiconductor.
+	\item Mengembangkan kompetensi dalam embedded C programming: register-level programming, interrupt handling, peripheral drivers—fundamental skills untuk embedded software engineers.
+	\item Hands-on experience dengan Xilinx Vivado dan Vitis tools yang merupakan industry-standard tools untuk FPGA development, meningkatkan employability di companies seperti AMD/Xilinx, Intel/Altera, atau FPGA design houses.
+	\item Memahami SoC architecture dan AXI protocol yang relevan untuk positions seperti: SoC Design Engineer, FPGA Engineer, Embedded Systems Engineer, atau Hardware-Software Integration Engineer.
+	\item Membangun portfolio project yang concrete dan demonstrable: dapat ditunjukkan dalam interview melalui live demo, code walkthrough, atau technical presentation.
+	\item Mengembangkan soft skills: technical documentation writing, problem-solving dalam debugging hardware-software issues, systematic testing and validation approach.
+	\item Mempersiapkan foundation untuk advanced topics: jika melanjutkan ke graduate studies, pengalaman ini valuable untuk research dalam computer architecture, embedded systems, atau FPGA acceleration.
+\end{enumerate}
+
 	\begin{itemize}
 		\item Coba 1
 		\item Coba 2
