@@ -14,6 +14,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
+      - name: Clean LaTeX auxiliary files
+        run: |
+          rm -f *.aux *.log *.out *.toc *.lof *.lot *.bbl *.blg *.xdv *.fls *.fdb_latexmk
+          find . -name "*.aux" -type f -delete
+      
       - name: Compile LaTeX document
         uses: xu-cheng/latex-action@v3
         with:
