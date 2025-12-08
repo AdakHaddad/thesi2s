@@ -7,6 +7,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build_latex:
     runs-on: ubuntu-latest
@@ -24,7 +27,7 @@ jobs:
         with:
           root_file: main.tex
           latexmk_use_xelatex: true
-          args: -pdf -file-line-error -interaction=nonstopmode
+          args: -pdf -f -file-line-error -interaction=nonstopmode
           latexmk_shell_escape: true
       
       - name: Upload PDF artifact
@@ -32,20 +35,15 @@ jobs:
         with:
           name: thesis-pdf
           path: main.pdf
-          retention-days: 30
+          retention-days: 90
       
-      - name: Create Release
+      - name: Upload to Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v1
+        uses: svenstaro/upload-release-action@v2
         with:
-          tag_name: latest-build
-          name: Latest Build
-          body: |
-            Automatically generated PDF from latest commit
-            Commit: ${{ github.sha }}
-            Date: ${{ github.event.head_commit.timestamp }}
-          files: main.pdf
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: main.pdf
+          asset_name: thesis.pdf
+          tag: latest
+          overwrite: true
+          body: "Latest compiled thesis PDF"
