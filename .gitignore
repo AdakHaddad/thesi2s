@@ -78,3 +78,81 @@ patch_existing_bd_i2s_audio_clock.tcl
 # OS and editor files
 .DS_Store
 .vscode/
+
+# =============================================================================
+# Vivado Project - Generated/Temporary Files
+# =============================================================================
+
+# Cache and intermediate files
+*.cache/
+*.gen/
+*.hw/
+*.ip_user_files/
+*.hbs/
+.Xil/
+
+# Run outputs (synthesis, implementation results)
+*.runs/
+
+# Simulation files
+*.sim/
+
+# Logs and journals
+*.jou
+*.log
+*.str
+*.pb
+*.wdf
+
+# Checkpoints (can be large, regeneratable)
+*.dcp
+
+# Hardware handoff (regeneratable from build)
+*.xsa
+
+# =============================================================================
+# Vitis / SDK Workspace
+# =============================================================================
+
+# Entire workspace (regeneratable from XSA + source code)
+ws/
+
+# Eclipse metadata
+.metadata/
+RemoteSystemsTempFiles/
+
+# Platform generated files
+**/export/
+**/platform/hw/
+**/.settings/
+
+# Build outputs
+**/Debug/
+**/Release/
+
+# Binary artifacts
+*.elf
+*.o
+*.d
+*.a
+
+# Vitis project files (regeneratable)
+*.launch
+.cproject
+.project
+.sdkproject
+
+# =============================================================================
+# Keep These Files (DO NOT add to gitignore)
+# =============================================================================
+# micblaze.xpr                    - Vivado project file
+# micblaze.srcs/                  - Source files (HDL, BD, XDC, XCI)
+# rebuild_project.tcl             - Script to rebuild project
+
+# =============================================================================
+# OS and Editor
+# =============================================================================
+Thumbs.db
+.DS_Store
+*.swp
+*~
