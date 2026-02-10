@@ -1,7 +1,7 @@
 {
   "design": {
     "design_info": {
-      "boundary_crc": "0x91577990FBDDEBC3",
+      "boundary_crc": "0x974BCC4214AF7FD4",
       "device": "xc7a35tcpg236-1",
       "gen_directory": "../../../../micblaze.gen/sources_1/bd/design_soc",
       "name": "design_soc",
@@ -23,7 +23,8 @@
       "mdm_1": "",
       "rst_clk_wiz_0_100M": "",
       "axi_uartlite_0": "",
-      "axi_smc": ""
+      "axi_smc": "",
+      "axi_gpio_0": ""
     },
     "interface_ports": {
       "usb_uart": {
@@ -44,6 +45,44 @@
           "TxD": {
             "physical_name": "usb_uart_txd",
             "direction": "O"
+          }
+        }
+      },
+      "dip_switches_16bits": {
+        "mode": "Master",
+        "vlnv_bus_definition": "xilinx.com:interface:gpio:1.0",
+        "vlnv": "xilinx.com:interface:gpio_rtl:1.0",
+        "hdl_attributes": {
+          "LOCKED": {
+            "value": "FALSE",
+            "value_src": "default"
+          }
+        },
+        "port_maps": {
+          "TRI_I": {
+            "physical_name": "dip_switches_16bits_tri_i",
+            "direction": "I",
+            "left": "15",
+            "right": "0"
+          }
+        }
+      },
+      "led_16bits": {
+        "mode": "Master",
+        "vlnv_bus_definition": "xilinx.com:interface:gpio:1.0",
+        "vlnv": "xilinx.com:interface:gpio_rtl:1.0",
+        "hdl_attributes": {
+          "LOCKED": {
+            "value": "FALSE",
+            "value_src": "default"
+          }
+        },
+        "port_maps": {
+          "TRI_O": {
+            "physical_name": "led_16bits_tri_o",
+            "direction": "O",
+            "left": "15",
+            "right": "0"
           }
         }
       }
@@ -435,18 +474,18 @@
             "ports": [
               "SYS_Rst",
               "dlmb_v10/SYS_Rst",
-              "dlmb_bram_if_cntlr/LMB_Rst",
               "ilmb_v10/SYS_Rst",
-              "ilmb_bram_if_cntlr/LMB_Rst"
+              "ilmb_bram_if_cntlr/LMB_Rst",
+              "dlmb_bram_if_cntlr/LMB_Rst"
             ]
           },
           "microblaze_riscv_0_Clk": {
             "ports": [
               "LMB_Clk",
               "dlmb_v10/LMB_Clk",
-              "dlmb_bram_if_cntlr/LMB_Clk",
               "ilmb_v10/LMB_Clk",
-              "ilmb_bram_if_cntlr/LMB_Clk"
+              "ilmb_bram_if_cntlr/LMB_Clk",
+              "dlmb_bram_if_cntlr/LMB_Clk"
             ]
           }
         }
@@ -531,9 +570,6 @@
             "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
             "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
             "parameters": {
-              "MAX_BURST_LENGTH": {
-                "value": "1"
-              },
               "NUM_READ_OUTSTANDING": {
                 "value": "1"
               },
@@ -547,9 +583,6 @@
                 "value": "1"
               },
               "RUSER_BITS_PER_BYTE": {
-                "value": "0"
-              },
-              "SUPPORTS_NARROW_BURST": {
                 "value": "0"
               },
               "WUSER_BITS_PER_BYTE": {
@@ -568,9 +601,6 @@
             "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
             "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
             "parameters": {
-              "MAX_BURST_LENGTH": {
-                "value": "1"
-              },
               "NUM_READ_OUTSTANDING": {
                 "value": "1"
               },
@@ -586,9 +616,6 @@
               "RUSER_BITS_PER_BYTE": {
                 "value": "0"
               },
-              "SUPPORTS_NARROW_BURST": {
-                "value": "0"
-              },
               "WUSER_BITS_PER_BYTE": {
                 "value": "0"
               }
@@ -601,13 +628,50 @@
             }
           }
         }
+      },
+      "axi_gpio_0": {
+        "vlnv": "xilinx.com:ip:axi_gpio:2.0",
+        "ip_revision": "37",
+        "xci_name": "design_soc_axi_gpio_0_1",
+        "xci_path": "ip\\design_soc_axi_gpio_0_1_1\\design_soc_axi_gpio_0_1.xci",
+        "inst_hier_path": "axi_gpio_0",
+        "has_run_ip_tcl": "true",
+        "parameters": {
+          "GPIO2_BOARD_INTERFACE": {
+            "value": "led_16bits"
+          },
+          "GPIO_BOARD_INTERFACE": {
+            "value": "dip_switches_16bits"
+          },
+          "USE_BOARD_FLOW": {
+            "value": "true"
+          }
+        }
       }
     },
     "interface_nets": {
+      "axi_gpio_0_GPIO": {
+        "interface_ports": [
+          "dip_switches_16bits",
+          "axi_gpio_0/GPIO"
+        ]
+      },
+      "axi_gpio_0_GPIO2": {
+        "interface_ports": [
+          "led_16bits",
+          "axi_gpio_0/GPIO2"
+        ]
+      },
       "axi_smc_M00_AXI": {
         "interface_ports": [
           "axi_smc/M00_AXI",
           "axi_uartlite_0/S_AXI"
+        ]
+      },
+      "axi_smc_M01_AXI": {
+        "interface_ports": [
+          "axi_smc/M01_AXI",
+          "axi_gpio_0/S_AXI"
         ]
       },
       "axi_uartlite_0_UART": {
@@ -646,10 +710,11 @@
         "ports": [
           "clk_wiz_0/clk_out1",
           "axi_uartlite_0/s_axi_aclk",
-          "axi_smc/aclk",
           "microblaze_riscv_0/Clk",
           "microblaze_riscv_0_local_memory/LMB_Clk",
-          "rst_clk_wiz_0_100M/slowest_sync_clk"
+          "rst_clk_wiz_0_100M/slowest_sync_clk",
+          "axi_smc/aclk",
+          "axi_gpio_0/s_axi_aclk"
         ]
       },
       "clk_wiz_0_locked": {
@@ -687,7 +752,8 @@
         "ports": [
           "rst_clk_wiz_0_100M/peripheral_aresetn",
           "axi_uartlite_0/s_axi_aresetn",
-          "axi_smc/aresetn"
+          "axi_smc/aresetn",
+          "axi_gpio_0/s_axi_aresetn"
         ]
       },
       "sys_clock_1": {
@@ -702,6 +768,11 @@
         "address_spaces": {
           "Data": {
             "segments": {
+              "SEG_axi_gpio_0_Reg": {
+                "address_block": "/axi_gpio_0/S_AXI/Reg",
+                "offset": "0x40000000",
+                "range": "64K"
+              },
               "SEG_axi_uartlite_0_Reg": {
                 "address_block": "/axi_uartlite_0/S_AXI/Reg",
                 "offset": "0x40600000",

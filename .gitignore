@@ -108,7 +108,7 @@ patch_existing_bd_i2s_audio_clock.tcl
 *.dcp
 
 # Hardware handoff (regeneratable from build)
-*.xsa
+
 
 # =============================================================================
 # Vitis / SDK Workspace
