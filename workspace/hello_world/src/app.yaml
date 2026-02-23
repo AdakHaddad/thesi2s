@@ -1,0 +1,4 @@
+domain_path: D:\Vivado-projects\Basys3\sbml\microblazev_tutorial\workspace\platform_mysoc\export\platform_mysoc\sw\standalone_microblaze_riscv_0
+app_src_dir: D:\Vivado\2025.2\Vitis\data\embeddedsw\lib\sw_apps\hello_world
+template: hello_world
+lang: c
