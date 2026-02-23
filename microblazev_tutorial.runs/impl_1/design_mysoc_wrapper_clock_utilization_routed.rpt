@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
-| Date         : Tue Feb 24 00:56:49 2026
+| Date         : Tue Feb 24 01:43:32 2026
 | Host         : DESKTOP-HTVV1N1 running 64-bit major release  (build 9200)
 | Command      : report_clock_utilization -file design_mysoc_wrapper_clock_utilization_routed.rpt
 | Design       : design_mysoc_wrapper
@@ -52,12 +52,12 @@ Table of Contents
 +-----------+-----------+-----------------+------------+---------------+--------------+-------------------+-------------+-----------------+--------------+-----------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------+
 | Global Id | Source Id | Driver Type/Pin | Constraint | Site          | Clock Region | Load Clock Region | Clock Loads | Non-Clock Loads | Clock Period | Clock                                                                                               | Driver Pin                                                                                          | Net                                                                                                 |
 +-----------+-----------+-----------------+------------+---------------+--------------+-------------------+-------------+-----------------+--------------+-----------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------+
-| g0        | src0      | BUFG/O          | None       | BUFGCTRL_X0Y2 | n/a          |                 4 |        1937 |               0 |       10.000 | clk_out1_design_mysoc_clk_wiz_0_0                                                                   | design_mysoc_i/clk_wiz_0/inst/clkout1_buf/O                                                         | design_mysoc_i/clk_wiz_0/inst/clk_out1                                                              |
+| g0        | src0      | BUFG/O          | None       | BUFGCTRL_X0Y2 | n/a          |                 4 |        2215 |               0 |       10.000 | clk_out1_design_mysoc_clk_wiz_0_0                                                                   | design_mysoc_i/clk_wiz_0/inst/clkout1_buf/O                                                         | design_mysoc_i/clk_wiz_0/inst/clk_out1                                                              |
 | g1        | src1      | BUFGCTRL/O      | None       | BUFGCTRL_X0Y0 | n/a          |                 2 |         203 |               0 |       33.333 | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/Use_E2.BSCANE2_I/TCK                                         | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_DRCK/Using_FPGA.Native/O   | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_DRCK/Using_FPGA.Native_0   |
 | g1        | src2      | BUFGCTRL/O      | None       | BUFGCTRL_X0Y0 | n/a          |                 2 |         203 |               0 |       33.333 | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/Use_E2.BSCANE2_I/TCK                                         | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_DRCK/Using_FPGA.Native/O   | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_DRCK/Using_FPGA.Native_0   |
-| g2        | src3      | BUFG/O          | None       | BUFGCTRL_X0Y3 | n/a          |                 1 |         133 |               0 |       66.666 | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native/O | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native/O | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native_0 |
-| g3        | src1      | BUFG/O          | None       | BUFGCTRL_X0Y4 | n/a          |                 1 |          51 |               0 |       33.333 | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/Use_E2.BSCANE2_I/TCK                                         | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck_BUFG_inst/O                                              | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck_BUFG                                                     |
-| g4        | src1      | BUFGCTRL/O      | None       | BUFGCTRL_X0Y1 | n/a          |                 3 |          32 |               0 |       33.333 | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/Use_E2.BSCANE2_I/TCK                                         | design_mysoc_i/mdm_1/U0/Use_JTAG_BSCAN.BUFG_JTAG_TCK/Using_FPGA.Native/O                            | design_mysoc_i/mdm_1/U0/Use_JTAG_BSCAN.BUFG_JTAG_TCK/Use_JTAG_BSCAN.tck_int                         |
+| g2        | src3      | BUFG/O          | None       | BUFGCTRL_X0Y3 | n/a          |                 2 |         133 |               0 |       66.666 | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native/O | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native/O | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native_0 |
+| g3        | src1      | BUFG/O          | None       | BUFGCTRL_X0Y4 | n/a          |                 2 |          51 |               0 |       33.333 | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/Use_E2.BSCANE2_I/TCK                                         | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck_BUFG_inst/O                                              | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck_BUFG                                                     |
+| g4        | src1      | BUFGCTRL/O      | None       | BUFGCTRL_X0Y1 | n/a          |                 2 |          32 |               0 |       33.333 | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/Use_E2.BSCANE2_I/TCK                                         | design_mysoc_i/mdm_1/U0/Use_JTAG_BSCAN.BUFG_JTAG_TCK/Using_FPGA.Native/O                            | design_mysoc_i/mdm_1/U0/Use_JTAG_BSCAN.BUFG_JTAG_TCK/Use_JTAG_BSCAN.tck_int                         |
 | g5        | src4      | BUFG/O          | None       | BUFGCTRL_X0Y5 | n/a          |                 1 |           1 |               0 |       10.000 | clkfbout_design_mysoc_clk_wiz_0_0                                                                   | design_mysoc_i/clk_wiz_0/inst/clkf_buf/O                                                            | design_mysoc_i/clk_wiz_0/inst/clkfbout_buf_design_mysoc_clk_wiz_0_0                                 |
 +-----------+-----------+-----------------+------------+---------------+--------------+-------------------+-------------+-----------------+--------------+-----------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------+
 * Clock Loads column represents cell count of net connects that connect to a clock pin. Internal cell leaf pins are not considered
@@ -75,7 +75,7 @@ Table of Contents
 | src1      | g3        | BSCANE2/TCK         | None       | BSCAN_X0Y1      | X0Y0         |           2 |               0 |              33.333 | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/Use_E2.BSCANE2_I/TCK | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/Use_E2.BSCANE2_I/TCK                            | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck                                          |
 | src1      | g4        | BSCANE2/TCK         | None       | BSCAN_X0Y1      | X0Y0         |           2 |               0 |              33.333 | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/Use_E2.BSCANE2_I/TCK | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/Use_E2.BSCANE2_I/TCK                            | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck                                          |
 | src2      | g1        | VCC/P               | None       |                 | n/a          |           0 |               0 |                     |                                                             | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_DRCK/VCC/P    | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_DRCK/VCC_1 |
-| src3      | g2        | FDRE/Q              | None       | SLICE_X35Y46    | X0Y0         |           1 |               0 |                     |                                                             | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.update_unbuf_reg/Q | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.update_unbuf    |
+| src3      | g2        | FDRE/Q              | None       | SLICE_X33Y46    | X0Y0         |           1 |               0 |                     |                                                             | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.update_unbuf_reg/Q | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.update_unbuf    |
 | src4      | g5        | MMCME2_ADV/CLKFBOUT | None       | MMCME2_ADV_X1Y0 | X1Y0         |           1 |               0 |              10.000 | clkfbout_design_mysoc_clk_wiz_0_0                           | design_mysoc_i/clk_wiz_0/inst/mmcm_adv_inst/CLKFBOUT                                   | design_mysoc_i/clk_wiz_0/inst/clkfbout_design_mysoc_clk_wiz_0_0                     |
 +-----------+-----------+---------------------+------------+-----------------+--------------+-------------+-----------------+---------------------+-------------------------------------------------------------+----------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------+
 * Clock Loads column represents cell count of net connects that connect to a clock pin. Internal cell leaf pins are not considered
@@ -90,10 +90,10 @@ Table of Contents
 +-------------------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+
 | Clock Region Name | Used | Avail | Used | Avail | Used | Avail | Used | Avail | Used | Avail | Used | Avail | Used | Avail | Used | Avail | Used | Avail | Used | Avail | Used | Avail | Used | Avail | Used | Avail | Used | Avail | Used | Avail |
 +-------------------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+
-| X0Y0              |    4 |    12 |    0 |     4 |    0 |     2 |    0 |     4 |    0 |     1 |    0 |     1 |    0 |     0 |    0 |     0 |    0 |    50 |    0 |    50 |  569 |  1200 |  145 |   400 |    0 |    20 |    9 |    10 |    0 |    20 |
-| X1Y0              |    5 |    12 |    0 |     4 |    0 |     2 |    0 |     4 |    1 |     1 |    0 |     1 |    0 |     0 |    0 |     0 |    0 |    50 |    0 |    50 | 1663 |  1500 |  498 |   450 |    0 |    40 |   19 |    20 |    0 |    20 |
-| X0Y1              |    1 |    12 |    0 |     4 |    0 |     2 |    0 |     4 |    0 |     1 |    0 |     1 |    0 |     0 |    0 |     0 |    0 |    50 |    0 |    50 |    0 |  1200 |    0 |   400 |    0 |    20 |    1 |    10 |    0 |    20 |
-| X1Y1              |    1 |    12 |    0 |     4 |    0 |     2 |    0 |     4 |    0 |     1 |    0 |     1 |    0 |     0 |    0 |     0 |    0 |    50 |    0 |    50 |    0 |  1500 |    0 |   450 |    0 |    40 |    3 |    20 |    0 |    20 |
+| X0Y0              |    5 |    12 |    0 |     4 |    0 |     2 |    0 |     4 |    0 |     1 |    0 |     1 |    0 |     0 |    0 |     0 |    0 |    50 |    0 |    50 |  580 |  1200 |  175 |   400 |    0 |    20 |    9 |    10 |    0 |    20 |
+| X1Y0              |    4 |    12 |    0 |     4 |    0 |     2 |    0 |     4 |    1 |     1 |    0 |     1 |    0 |     0 |    0 |     0 |    0 |    50 |    0 |    50 | 1924 |  1500 |  611 |   450 |    0 |    40 |   17 |    20 |    0 |    20 |
+| X0Y1              |    2 |    12 |    0 |     4 |    0 |     2 |    0 |     4 |    0 |     1 |    0 |     1 |    0 |     0 |    0 |     0 |    0 |    50 |    0 |    50 |    6 |  1200 |    0 |   400 |    0 |    20 |    2 |    10 |    0 |    20 |
+| X1Y1              |    1 |    12 |    0 |     4 |    0 |     2 |    0 |     4 |    0 |     1 |    0 |     1 |    0 |     0 |    0 |     0 |    0 |    50 |    0 |    50 |    0 |  1500 |    0 |   450 |    0 |    40 |    4 |    20 |    0 |    20 |
 | X0Y2              |    0 |    12 |    0 |     4 |    0 |     2 |    0 |     4 |    0 |     1 |    0 |     1 |    0 |     0 |    0 |     0 |    0 |    50 |    0 |    50 |    0 |  1800 |    0 |   400 |    0 |    20 |    0 |    10 |    0 |    20 |
 | X1Y2              |    0 |    12 |    0 |     0 |    0 |     0 |    0 |     0 |    0 |     0 |    0 |     0 |    0 |     4 |    0 |     1 |    0 |     0 |    0 |     0 |    0 |   950 |    0 |   300 |    0 |    10 |    0 |     5 |    0 |    20 |
 +-------------------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+------+-------+
@@ -119,7 +119,7 @@ All Modules
 +-----------+-----------------+-------------------+-----------------------------------+-------------+---------------+-------------+----------+----------------+----------+----------------------------------------+
 | Global Id | Driver Type/Pin | Driver Region (D) | Clock                             | Period (ns) | Waveform (ns) | Slice Loads | IO Loads | Clocking Loads | GT Loads | Net                                    |
 +-----------+-----------------+-------------------+-----------------------------------+-------------+---------------+-------------+----------+----------------+----------+----------------------------------------+
-| g0        | BUFG/O          | n/a               | clk_out1_design_mysoc_clk_wiz_0_0 |      10.000 | {0.000 5.000} |        1921 |        0 |              0 |        0 | design_mysoc_i/clk_wiz_0/inst/clk_out1 |
+| g0        | BUFG/O          | n/a               | clk_out1_design_mysoc_clk_wiz_0_0 |      10.000 | {0.000 5.000} |        2199 |        0 |              0 |        0 | design_mysoc_i/clk_wiz_0/inst/clk_out1 |
 +-----------+-----------------+-------------------+-----------------------------------+-------------+---------------+-------------+----------+----------------+----------+----------------------------------------+
 * Slice Loads column represents load cell count of all cell types other than IO, GT and clock resources
 ** IO Loads column represents load cell count of IO types
@@ -131,8 +131,8 @@ All Modules
 |    | X0   | X1    | HORIZONTAL PROG DELAY |
 +----+------+-------+-----------------------+
 | Y2 |    0 |     0 |                     - |
-| Y1 |    1 |     3 |                     0 |
-| Y0 |  512 |  1405 |                     0 |
+| Y1 |    2 |     4 |                     0 |
+| Y0 |  242 |  1951 |                     0 |
 +----+------+-------+-----------------------+
 
 
@@ -150,13 +150,13 @@ All Modules
 **** GT Loads column represents load cell count of GT types
 
 
-+----+-----+------+-----------------------+
-|    | X0  | X1   | HORIZONTAL PROG DELAY |
-+----+-----+------+-----------------------+
-| Y2 |   0 |    0 |                     - |
-| Y1 |   0 |    0 |                     - |
-| Y0 |  10 |  193 |                     0 |
-+----+-----+------+-----------------------+
++----+------+-----+-----------------------+
+|    | X0   | X1  | HORIZONTAL PROG DELAY |
++----+------+-----+-----------------------+
+| Y2 |    0 |   0 |                     - |
+| Y1 |    0 |   0 |                     - |
+| Y0 |  190 |  13 |                     0 |
++----+------+-----+-----------------------+
 
 
 8. Device Cell Placement Summary for Global Clock g2
@@ -173,13 +173,13 @@ All Modules
 **** GT Loads column represents load cell count of GT types
 
 
-+----+----+------+-----------------------+
-|    | X0 | X1   | HORIZONTAL PROG DELAY |
-+----+----+------+-----------------------+
-| Y2 |  0 |    0 |                     - |
-| Y1 |  0 |    0 |                     - |
-| Y0 |  0 |  133 |                     0 |
-+----+----+------+-----------------------+
++----+------+-----+-----------------------+
+|    | X0   | X1  | HORIZONTAL PROG DELAY |
++----+------+-----+-----------------------+
+| Y2 |    0 |   0 |                     - |
+| Y1 |    0 |   0 |                     - |
+| Y0 |  103 |  30 |                     0 |
++----+------+-----+-----------------------+
 
 
 9. Device Cell Placement Summary for Global Clock g3
@@ -200,8 +200,8 @@ All Modules
 |    | X0  | X1 | HORIZONTAL PROG DELAY |
 +----+-----+----+-----------------------+
 | Y2 |   0 |  0 |                     - |
-| Y1 |   0 |  0 |                     - |
-| Y0 |  51 |  0 |                     0 |
+| Y1 |   6 |  0 |                     0 |
+| Y0 |  45 |  0 |                     0 |
 +----+-----+----+-----------------------+
 
 
@@ -224,7 +224,7 @@ All Modules
 +----+-----+----+-----------------------+
 | Y2 |   0 |  0 |                     - |
 | Y1 |   0 |  0 |                     - |
-| Y0 |  28 |  3 |                     0 |
+| Y0 |  31 |  0 |                     0 |
 +----+-----+----+-----------------------+
 
 
@@ -254,14 +254,15 @@ All Modules
 12. Clock Region Cell Placement per Global Clock: Region X0Y0
 -------------------------------------------------------------
 
-+-----------+-------+-----------------+------------+-------------+-----------------+-----+-------------+------+-----+----+------+-----+---------+---------------------------------------------------------------------------------------------------+
-| Global Id | Track | Driver Type/Pin | Constraint | Clock Loads | Non-Clock Loads | FF  | Memory LUTs | RAMB | DSP | GT | MMCM | PLL | Hard IP | Net                                                                                               |
-+-----------+-------+-----------------+------------+-------------+-----------------+-----+-------------+------+-----+----+------+-----+---------+---------------------------------------------------------------------------------------------------+
-| g0        | n/a   | BUFG/O          | None       |         512 |               0 | 483 |          20 |    9 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/clk_wiz_0/inst/clk_out1                                                            |
-| g1        | n/a   | BUFGCTRL/O      | None       |          10 |               0 |  10 |           0 |    0 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_DRCK/Using_FPGA.Native_0 |
-| g3        | n/a   | BUFG/O          | None       |          51 |               0 |  48 |           3 |    0 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck_BUFG                                                   |
-| g4        | n/a   | BUFGCTRL/O      | None       |          28 |               0 |  28 |           0 |    0 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/mdm_1/U0/Use_JTAG_BSCAN.BUFG_JTAG_TCK/Use_JTAG_BSCAN.tck_int                       |
-+-----------+-------+-----------------+------------+-------------+-----------------+-----+-------------+------+-----+----+------+-----+---------+---------------------------------------------------------------------------------------------------+
++-----------+-------+-----------------+------------+-------------+-----------------+-----+-------------+------+-----+----+------+-----+---------+-----------------------------------------------------------------------------------------------------+
+| Global Id | Track | Driver Type/Pin | Constraint | Clock Loads | Non-Clock Loads | FF  | Memory LUTs | RAMB | DSP | GT | MMCM | PLL | Hard IP | Net                                                                                                 |
++-----------+-------+-----------------+------------+-------------+-----------------+-----+-------------+------+-----+----+------+-----+---------+-----------------------------------------------------------------------------------------------------+
+| g0        | n/a   | BUFG/O          | None       |         242 |               0 | 216 |          17 |    9 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/clk_wiz_0/inst/clk_out1                                                              |
+| g1        | n/a   | BUFGCTRL/O      | None       |         190 |               0 | 188 |           2 |    0 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_DRCK/Using_FPGA.Native_0   |
+| g2        | n/a   | BUFG/O          | None       |         103 |               0 | 103 |           0 |    0 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native_0 |
+| g3        | n/a   | BUFG/O          | None       |          45 |               0 |  42 |           3 |    0 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck_BUFG                                                     |
+| g4        | n/a   | BUFGCTRL/O      | None       |          31 |               0 |  31 |           0 |    0 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/mdm_1/U0/Use_JTAG_BSCAN.BUFG_JTAG_TCK/Use_JTAG_BSCAN.tck_int                         |
++-----------+-------+-----------------+------------+-------------+-----------------+-----+-------------+------+-----+----+------+-----+---------+-----------------------------------------------------------------------------------------------------+
 * Clock Loads column represents cell count of net connects that connect to a clock pin. Internal cell leaf pins are not considered
 ** Non-Clock Loads column represents cell count of non-clock pin loads
 *** Columns FF, LUTRAM, RAMB through 'Hard IP' represents load cell counts
@@ -273,10 +274,9 @@ All Modules
 +-----------+-------+-----------------+------------+-------------+-----------------+------+-------------+------+-----+----+------+-----+---------+-----------------------------------------------------------------------------------------------------+
 | Global Id | Track | Driver Type/Pin | Constraint | Clock Loads | Non-Clock Loads | FF   | Memory LUTs | RAMB | DSP | GT | MMCM | PLL | Hard IP | Net                                                                                                 |
 +-----------+-------+-----------------+------------+-------------+-----------------+------+-------------+------+-----+----+------+-----+---------+-----------------------------------------------------------------------------------------------------+
-| g0        | n/a   | BUFG/O          | None       |        1405 |               0 | 1336 |          50 |   19 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/clk_wiz_0/inst/clk_out1                                                              |
-| g1        | n/a   | BUFGCTRL/O      | None       |         193 |               0 |  191 |           2 |    0 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_DRCK/Using_FPGA.Native_0   |
-| g2        | n/a   | BUFG/O          | None       |         133 |               0 |  133 |           0 |    0 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native_0 |
-| g4        | n/a   | BUFGCTRL/O      | None       |           3 |               0 |    3 |           0 |    0 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/mdm_1/U0/Use_JTAG_BSCAN.BUFG_JTAG_TCK/Use_JTAG_BSCAN.tck_int                         |
+| g0        | n/a   | BUFG/O          | None       |        1951 |               0 | 1881 |          53 |   17 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/clk_wiz_0/inst/clk_out1                                                              |
+| g1        | n/a   | BUFGCTRL/O      | None       |          13 |               0 |   13 |           0 |    0 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_DRCK/Using_FPGA.Native_0   |
+| g2        | n/a   | BUFG/O          | None       |          30 |               0 |   30 |           0 |    0 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native_0 |
 | g5        | n/a   | BUFG/O          | None       |           1 |               0 |    0 |           0 |    0 |   0 |  0 |    1 |   0 |       0 | design_mysoc_i/clk_wiz_0/inst/clkfbout_buf_design_mysoc_clk_wiz_0_0                                 |
 +-----------+-------+-----------------+------------+-------------+-----------------+------+-------------+------+-----+----+------+-----+---------+-----------------------------------------------------------------------------------------------------+
 * Clock Loads column represents cell count of net connects that connect to a clock pin. Internal cell leaf pins are not considered
@@ -287,11 +287,12 @@ All Modules
 14. Clock Region Cell Placement per Global Clock: Region X0Y1
 -------------------------------------------------------------
 
-+-----------+-------+-----------------+------------+-------------+-----------------+----+-------------+------+-----+----+------+-----+---------+----------------------------------------+
-| Global Id | Track | Driver Type/Pin | Constraint | Clock Loads | Non-Clock Loads | FF | Memory LUTs | RAMB | DSP | GT | MMCM | PLL | Hard IP | Net                                    |
-+-----------+-------+-----------------+------------+-------------+-----------------+----+-------------+------+-----+----+------+-----+---------+----------------------------------------+
-| g0        | n/a   | BUFG/O          | None       |           1 |               0 |  0 |           0 |    1 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/clk_wiz_0/inst/clk_out1 |
-+-----------+-------+-----------------+------------+-------------+-----------------+----+-------------+------+-----+----+------+-----+---------+----------------------------------------+
++-----------+-------+-----------------+------------+-------------+-----------------+----+-------------+------+-----+----+------+-----+---------+-------------------------------------------------+
+| Global Id | Track | Driver Type/Pin | Constraint | Clock Loads | Non-Clock Loads | FF | Memory LUTs | RAMB | DSP | GT | MMCM | PLL | Hard IP | Net                                             |
++-----------+-------+-----------------+------------+-------------+-----------------+----+-------------+------+-----+----+------+-----+---------+-------------------------------------------------+
+| g0        | n/a   | BUFG/O          | None       |           2 |               0 |  0 |           0 |    2 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/clk_wiz_0/inst/clk_out1          |
+| g3        | n/a   | BUFG/O          | None       |           6 |               0 |  6 |           0 |    0 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck_BUFG |
++-----------+-------+-----------------+------------+-------------+-----------------+----+-------------+------+-----+----+------+-----+---------+-------------------------------------------------+
 * Clock Loads column represents cell count of net connects that connect to a clock pin. Internal cell leaf pins are not considered
 ** Non-Clock Loads column represents cell count of non-clock pin loads
 *** Columns FF, LUTRAM, RAMB through 'Hard IP' represents load cell counts
@@ -303,7 +304,7 @@ All Modules
 +-----------+-------+-----------------+------------+-------------+-----------------+----+-------------+------+-----+----+------+-----+---------+----------------------------------------+
 | Global Id | Track | Driver Type/Pin | Constraint | Clock Loads | Non-Clock Loads | FF | Memory LUTs | RAMB | DSP | GT | MMCM | PLL | Hard IP | Net                                    |
 +-----------+-------+-----------------+------------+-------------+-----------------+----+-------------+------+-----+----+------+-----+---------+----------------------------------------+
-| g0        | n/a   | BUFG/O          | None       |           3 |               0 |  0 |           0 |    3 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/clk_wiz_0/inst/clk_out1 |
+| g0        | n/a   | BUFG/O          | None       |           4 |               0 |  0 |           0 |    4 |   0 |  0 |    0 |   0 |       0 | design_mysoc_i/clk_wiz_0/inst/clk_out1 |
 +-----------+-------+-----------------+------------+-------------+-----------------+----+-------------+------+-----+----+------+-----+---------+----------------------------------------+
 * Clock Loads column represents cell count of net connects that connect to a clock pin. Internal cell leaf pins are not considered
 ** Non-Clock Loads column represents cell count of non-clock pin loads
@@ -328,21 +329,21 @@ set_property LOC IOB_X1Y26 [get_ports sys_clock]
 #startgroup
 create_pblock {CLKAG_design_mysoc_i/mdm_1/U0/Use_JTAG_BSCAN.BUFG_JTAG_TCK/Use_JTAG_BSCAN.tck_int}
 add_cells_to_pblock [get_pblocks  {CLKAG_design_mysoc_i/mdm_1/U0/Use_JTAG_BSCAN.BUFG_JTAG_TCK/Use_JTAG_BSCAN.tck_int}] [get_cells -filter { PRIMITIVE_GROUP != I/O && IS_PRIMITIVE==1 && PRIMITIVE_LEVEL !=INTERNAL && NAME!=design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_DRCK/Using_FPGA.Native} -of_object [get_pins -filter {DIRECTION==IN} -of_objects [get_nets -hierarchical -filter {PARENT=="design_mysoc_i/mdm_1/U0/Use_JTAG_BSCAN.BUFG_JTAG_TCK/Use_JTAG_BSCAN.tck_int"}]]]
-resize_pblock [get_pblocks {CLKAG_design_mysoc_i/mdm_1/U0/Use_JTAG_BSCAN.BUFG_JTAG_TCK/Use_JTAG_BSCAN.tck_int}] -add {CLOCKREGION_X0Y0:CLOCKREGION_X0Y0 CLOCKREGION_X1Y0:CLOCKREGION_X1Y0}
+resize_pblock [get_pblocks {CLKAG_design_mysoc_i/mdm_1/U0/Use_JTAG_BSCAN.BUFG_JTAG_TCK/Use_JTAG_BSCAN.tck_int}] -add {CLOCKREGION_X0Y0:CLOCKREGION_X0Y0}
 #endgroup
 
 # Clock net "design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck_BUFG" driven by instance "design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck_BUFG_inst" located at site "BUFGCTRL_X0Y4"
 #startgroup
 create_pblock {CLKAG_design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck_BUFG}
 add_cells_to_pblock [get_pblocks  {CLKAG_design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck_BUFG}] [get_cells -filter { PRIMITIVE_GROUP != I/O && IS_PRIMITIVE==1 && PRIMITIVE_LEVEL !=INTERNAL } -of_object [get_pins -filter {DIRECTION==IN} -of_objects [get_nets -hierarchical -filter {PARENT=="design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck_BUFG"}]]]
-resize_pblock [get_pblocks {CLKAG_design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck_BUFG}] -add {CLOCKREGION_X0Y0:CLOCKREGION_X0Y0}
+resize_pblock [get_pblocks {CLKAG_design_mysoc_i/mdm_1/U0/Use_E2.BSCAN_I/tck_BUFG}] -add {CLOCKREGION_X0Y0:CLOCKREGION_X0Y0 CLOCKREGION_X0Y1:CLOCKREGION_X0Y1}
 #endgroup
 
 # Clock net "design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native_0" driven by instance "design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native" located at site "BUFGCTRL_X0Y3"
 #startgroup
 create_pblock {CLKAG_design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native_0}
 add_cells_to_pblock [get_pblocks  {CLKAG_design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native_0}] [get_cells -filter { PRIMITIVE_GROUP != I/O && IS_PRIMITIVE==1 && PRIMITIVE_LEVEL !=INTERNAL } -of_object [get_pins -filter {DIRECTION==IN} -of_objects [get_nets -hierarchical -filter {PARENT=="design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native_0"}]]]
-resize_pblock [get_pblocks {CLKAG_design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native_0}] -add {CLOCKREGION_X1Y0:CLOCKREGION_X1Y0}
+resize_pblock [get_pblocks {CLKAG_design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_UPDATE/Using_FPGA.Native_0}] -add {CLOCKREGION_X0Y0:CLOCKREGION_X0Y0 CLOCKREGION_X1Y0:CLOCKREGION_X1Y0}
 #endgroup
 
 # Clock net "design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_DRCK/Using_FPGA.Native_0" driven by instance "design_mysoc_i/mdm_1/U0/MDM_Core_I1/JTAG_CONTROL_I/Test_Access_Port.BUFG_DRCK/Using_FPGA.Native" located at site "BUFGCTRL_X0Y0"

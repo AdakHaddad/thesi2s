@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
-| Date         : Tue Feb 24 00:56:41 2026
+| Date         : Tue Feb 24 01:43:24 2026
 | Host         : DESKTOP-HTVV1N1 running 64-bit major release  (build 9200)
 | Command      : report_methodology -file design_mysoc_wrapper_methodology_drc_routed.rpt -pb design_mysoc_wrapper_methodology_drc_routed.pb -rpx design_mysoc_wrapper_methodology_drc_routed.rpx
 | Design       : design_mysoc_wrapper
@@ -23,13 +23,13 @@ Table of Contents
           Floorplan: design_1
       Design limits: <entire design considered>
              Max checks: <unlimited>
-             Checks found: 37
+             Checks found: 49
 +-----------+----------+-------------------------------+--------+
 | Rule      | Severity | Description                   | Checks |
 +-----------+----------+-------------------------------+--------+
 | LUTAR-1   | Warning  | LUT drives async reset alert  | 1      |
 | TIMING-9  | Warning  | Unknown CDC Logic             | 1      |
-| TIMING-18 | Warning  | Missing input or output delay | 35     |
+| TIMING-18 | Warning  | Missing input or output delay | 47     |
 +-----------+----------+-------------------------------+--------+
 
 2. REPORT DETAILS
@@ -215,6 +215,66 @@ An output delay is missing on led_16bits_tri_o[9] relative to the rising and/or 
 Related violations: <none>
 
 TIMING-18#35 Warning
+Missing input or output delay  
+An output delay is missing on seven_seg_led_an_tri_o[0] relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#36 Warning
+Missing input or output delay  
+An output delay is missing on seven_seg_led_an_tri_o[1] relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#37 Warning
+Missing input or output delay  
+An output delay is missing on seven_seg_led_an_tri_o[2] relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#38 Warning
+Missing input or output delay  
+An output delay is missing on seven_seg_led_an_tri_o[3] relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#39 Warning
+Missing input or output delay  
+An output delay is missing on seven_seg_led_disp_tri_o[0] relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#40 Warning
+Missing input or output delay  
+An output delay is missing on seven_seg_led_disp_tri_o[1] relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#41 Warning
+Missing input or output delay  
+An output delay is missing on seven_seg_led_disp_tri_o[2] relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#42 Warning
+Missing input or output delay  
+An output delay is missing on seven_seg_led_disp_tri_o[3] relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#43 Warning
+Missing input or output delay  
+An output delay is missing on seven_seg_led_disp_tri_o[4] relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#44 Warning
+Missing input or output delay  
+An output delay is missing on seven_seg_led_disp_tri_o[5] relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#45 Warning
+Missing input or output delay  
+An output delay is missing on seven_seg_led_disp_tri_o[6] relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#46 Warning
+Missing input or output delay  
+An output delay is missing on seven_seg_led_disp_tri_o[7] relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#47 Warning
 Missing input or output delay  
 An output delay is missing on usb_uart_txd relative to the rising and/or falling clock edge(s) of sys_clock.
 Related violations: <none>

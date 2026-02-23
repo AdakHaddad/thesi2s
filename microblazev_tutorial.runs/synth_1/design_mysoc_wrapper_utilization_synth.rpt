@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
-| Date         : Tue Feb 24 00:52:30 2026
+| Date         : Tue Feb 24 01:38:23 2026
 | Host         : DESKTOP-HTVV1N1 running 64-bit major release  (build 9200)
 | Command      : report_utilization -file design_mysoc_wrapper_utilization_synth.rpt -pb design_mysoc_wrapper_utilization_synth.pb
 | Design       : design_mysoc_wrapper
@@ -95,7 +95,7 @@ Warning! For any ECO changes, please run place_design if there are unplaced inst
 +-----------------------------+------+-------+------------+-----------+-------+
 |          Site Type          | Used | Fixed | Prohibited | Available | Util% |
 +-----------------------------+------+-------+------------+-----------+-------+
-| Bonded IOB                  |   35 |     0 |          0 |       106 | 33.02 |
+| Bonded IOB                  |   47 |     0 |          0 |       106 | 44.34 |
 | Bonded IPADs                |    0 |     0 |          0 |        10 |  0.00 |
 | Bonded OPADs                |    0 |     0 |          0 |         4 |  0.00 |
 | PHY_CONTROL                 |    0 |     0 |          0 |         5 |  0.00 |
@@ -154,8 +154,8 @@ Warning! For any ECO changes, please run place_design if there are unplaced inst
 +----------+------+---------------------+
 | Ref Name | Used | Functional Category |
 +----------+------+---------------------+
+| OBUF     |   29 |                  IO |
 | IBUF     |   18 |                  IO |
-| OBUF     |   17 |                  IO |
 +----------+------+---------------------+
 
 
@@ -176,6 +176,7 @@ Warning! For any ECO changes, please run place_design if there are unplaced inst
 | design_mysoc_clk_wiz_0_0          |    1 |
 | design_mysoc_axi_uartlite_0_0     |    1 |
 | design_mysoc_axi_smc_0            |    1 |
+| design_mysoc_axi_gpio_1_0         |    1 |
 | design_mysoc_axi_gpio_0_0         |    1 |
 +-----------------------------------+------+
 

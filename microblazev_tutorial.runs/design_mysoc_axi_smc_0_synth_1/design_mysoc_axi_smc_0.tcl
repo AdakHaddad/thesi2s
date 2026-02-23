@@ -112,6 +112,12 @@ set_property used_in_implementation false [get_files -all d:/Vivado-projects/Bas
 set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_smc_0/bd_0/ip/ip_36/bd_8e74_m01awn_0_ooc.xdc]
 set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_smc_0/bd_0/ip/ip_37/bd_8e74_m01wn_0_ooc.xdc]
 set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_smc_0/bd_0/ip/ip_38/bd_8e74_m01bn_0_ooc.xdc]
+set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_smc_0/bd_0/ip/ip_40/bd_8e74_m02s2a_0_ooc.xdc]
+set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_smc_0/bd_0/ip/ip_41/bd_8e74_m02arn_0_ooc.xdc]
+set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_smc_0/bd_0/ip/ip_42/bd_8e74_m02rn_0_ooc.xdc]
+set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_smc_0/bd_0/ip/ip_43/bd_8e74_m02awn_0_ooc.xdc]
+set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_smc_0/bd_0/ip/ip_44/bd_8e74_m02wn_0_ooc.xdc]
+set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_smc_0/bd_0/ip/ip_45/bd_8e74_m02bn_0_ooc.xdc]
 set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_smc_0/ooc.xdc]
 set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_smc_0/smartconnect.xdc]
 

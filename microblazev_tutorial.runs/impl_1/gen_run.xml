@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<GenRun Id="impl_1" LaunchPart="xc7a35tcpg236-1" LaunchTime="1771868703">
+<GenRun Id="impl_1" LaunchPart="xc7a35tcpg236-1" LaunchTime="1771871491">
   <File Type="PA-TCL" Name="design_mysoc_wrapper.tcl"/>
   <File Type="REPORTS-TCL" Name="design_mysoc_wrapper_reports.tcl"/>
   <File Type="INIT-TIMING" Name="design_mysoc_wrapper_timing_summary_init.rpt"/>
@@ -176,6 +176,7 @@
     <Step Id="write_bitstream"/>
   </Strategy>
   <BlockFileSet Type="BlockSrcs" Name="design_mysoc_dlmb_v10_0"/>
+  <BlockFileSet Type="BlockSrcs" Name="design_mysoc_axi_gpio_1_0"/>
   <BlockFileSet Type="BlockSrcs" Name="design_mysoc_dlmb_bram_if_cntlr_0"/>
   <BlockFileSet Type="BlockSrcs" Name="design_mysoc_ilmb_bram_if_cntlr_0"/>
   <BlockFileSet Type="BlockSrcs" Name="design_mysoc_ilmb_v10_0"/>
