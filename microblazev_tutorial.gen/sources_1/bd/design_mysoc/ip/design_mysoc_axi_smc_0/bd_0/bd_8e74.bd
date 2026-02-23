@@ -1,7 +1,7 @@
 {
   "design": {
     "design_info": {
-      "boundary_crc": "0x909B50D36998D75C",
+      "boundary_crc": "0x565595F49FDAE550",
       "design_src": "SBD",
       "device": "xc7a35tcpg236-1",
       "name": "bd_8e74",
@@ -309,7 +309,7 @@
           },
           "MAX_BURST_LENGTH": {
             "value": "1",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "NUM_READ_OUTSTANDING": {
             "value": "1"
@@ -441,7 +441,7 @@
           },
           "MAX_BURST_LENGTH": {
             "value": "1",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "NUM_READ_OUTSTANDING": {
             "value": "1"
@@ -500,7 +500,7 @@
         "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
         "parameters": {
           "ADDR_WIDTH": {
-            "value": "9",
+            "value": "4",
             "value_src": "ip_prop"
           },
           "ARUSER_WIDTH": {
@@ -545,7 +545,7 @@
           },
           "HAS_PROT": {
             "value": "1",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "HAS_QOS": {
             "value": "0",
@@ -573,7 +573,7 @@
           },
           "MAX_BURST_LENGTH": {
             "value": "1",
-            "value_src": "default_prop"
+            "value_src": "default"
           },
           "NUM_READ_OUTSTANDING": {
             "value": "1"
@@ -3075,7 +3075,7 @@
                 "value": "1"
               },
               "SEG001_BASE_ADDR": {
-                "value": "0x0000000040010000"
+                "value": "0x0000000040600000"
               },
               "SEG001_SECURE_READ": {
                 "value": "0"
@@ -3084,7 +3084,7 @@
                 "value": "0"
               },
               "SEG001_SEP_ROUTE": {
-                "value": "0b0000000000000000000000000000000000000000000000000000000000000010"
+                "value": "0b0000000000000000000000000000000000000000000000000000000000000000"
               },
               "SEG001_SIZE": {
                 "value": "16"
@@ -3096,7 +3096,7 @@
                 "value": "1"
               },
               "SEG002_BASE_ADDR": {
-                "value": "0x0000000040600000"
+                "value": "0x0000000044A00000"
               },
               "SEG002_SECURE_READ": {
                 "value": "0"
@@ -3105,7 +3105,7 @@
                 "value": "0"
               },
               "SEG002_SEP_ROUTE": {
-                "value": "0b0000000000000000000000000000000000000000000000000000000000000000"
+                "value": "0b0000000000000000000000000000000000000000000000000000000000000010"
               },
               "SEG002_SIZE": {
                 "value": "16"
@@ -7420,7 +7420,7 @@
         "has_run_ip_tcl": "true",
         "parameters": {
           "AXI_ADDR_WIDTH": {
-            "value": "9"
+            "value": "4"
           },
           "AXI_ID_WIDTH": {
             "value": "1"
@@ -8671,7 +8671,7 @@
             "has_run_ip_tcl": "true",
             "parameters": {
               "ADDR_WIDTH": {
-                "value": "9"
+                "value": "4"
               },
               "ENABLE_PIPELINING": {
                 "value": "0"

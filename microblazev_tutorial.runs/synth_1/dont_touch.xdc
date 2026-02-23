@@ -42,7 +42,7 @@ set_property KEEP_HIERARCHY SOFT [get_cells -hier -filter {REF_NAME==design_myso
 # IP: bd/design_mysoc/ip/design_mysoc_axi_gpio_0_0/design_mysoc_axi_gpio_0_0.xci
 set_property KEEP_HIERARCHY SOFT [get_cells -hier -filter {REF_NAME==design_mysoc_axi_gpio_0_0 || ORIG_REF_NAME==design_mysoc_axi_gpio_0_0} -quiet] -quiet
 
-# IP: bd/design_mysoc/ip/design_mysoc_axi_gpio_1_0/design_mysoc_axi_gpio_1_0.xci
-set_property KEEP_HIERARCHY SOFT [get_cells -hier -filter {REF_NAME==design_mysoc_axi_gpio_1_0 || ORIG_REF_NAME==design_mysoc_axi_gpio_1_0} -quiet] -quiet
+# IP: bd/design_mysoc/ip/design_mysoc_axi_7segment_0_0/design_mysoc_axi_7segment_0_0.xci
+set_property KEEP_HIERARCHY SOFT [get_cells -hier -filter {REF_NAME==design_mysoc_axi_7segment_0_0 || ORIG_REF_NAME==design_mysoc_axi_7segment_0_0} -quiet] -quiet
 
 # XDC: d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/design_mysoc_ooc.xdc

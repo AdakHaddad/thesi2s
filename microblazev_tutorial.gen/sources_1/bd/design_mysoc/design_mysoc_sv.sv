@@ -66,9 +66,11 @@ module design_mysoc_sv (
   (* X_INTERFACE_IGNORE = "true" *)
   output wire [15:0] led_16bits_tri_o,
   (* X_INTERFACE_IGNORE = "true" *)
-  output wire [7:0] seven_seg_led_disp_tri_o,
+  output wire [6:0] seg_0,
   (* X_INTERFACE_IGNORE = "true" *)
-  output wire [3:0] seven_seg_led_an_tri_o
+  output wire dp_0,
+  (* X_INTERFACE_IGNORE = "true" *)
+  output wire [3:0] an_0
 );
 
   design_mysoc inst (
@@ -78,8 +80,9 @@ module design_mysoc_sv (
     .usb_uart_txd(usb_uart_txd),
     .dip_switches_16bits_tri_i(dip_switches_16bits_tri_i),
     .led_16bits_tri_o(led_16bits_tri_o),
-    .seven_seg_led_disp_tri_o(seven_seg_led_disp_tri_o),
-    .seven_seg_led_an_tri_o(seven_seg_led_an_tri_o)
+    .seg_0(seg_0),
+    .dp_0(dp_0),
+    .an_0(an_0)
   );
 
 endmodule

@@ -125,11 +125,11 @@ module bd_8e74
   (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M01_AXI WREADY" *) input M01_AXI_wready;
   (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M01_AXI WSTRB" *) output [3:0]M01_AXI_wstrb;
   (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M01_AXI WVALID" *) output M01_AXI_wvalid;
-  (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M02_AXI ARADDR" *) (* X_INTERFACE_MODE = "Master" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME M02_AXI, ADDR_WIDTH 9, ARUSER_WIDTH 0, AWUSER_WIDTH 0, BUSER_WIDTH 0, CLK_DOMAIN /clk_wiz_0_clk_out1, DATA_WIDTH 32, FREQ_HZ 100000000, HAS_BRESP 1, HAS_BURST 0, HAS_CACHE 0, HAS_LOCK 0, HAS_PROT 1, HAS_QOS 0, HAS_REGION 0, HAS_RRESP 1, HAS_WSTRB 1, ID_WIDTH 0, INSERT_VIP 0, MAX_BURST_LENGTH 1, NUM_READ_OUTSTANDING 1, NUM_READ_THREADS 1, NUM_WRITE_OUTSTANDING 1, NUM_WRITE_THREADS 1, PHASE 0.0, PROTOCOL AXI4LITE, READ_WRITE_MODE READ_WRITE, RUSER_BITS_PER_BYTE 0, RUSER_WIDTH 0, SUPPORTS_NARROW_BURST 0, WUSER_BITS_PER_BYTE 0, WUSER_WIDTH 0" *) output [8:0]M02_AXI_araddr;
+  (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M02_AXI ARADDR" *) (* X_INTERFACE_MODE = "Master" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME M02_AXI, ADDR_WIDTH 4, ARUSER_WIDTH 0, AWUSER_WIDTH 0, BUSER_WIDTH 0, CLK_DOMAIN /clk_wiz_0_clk_out1, DATA_WIDTH 32, FREQ_HZ 100000000, HAS_BRESP 1, HAS_BURST 0, HAS_CACHE 0, HAS_LOCK 0, HAS_PROT 1, HAS_QOS 0, HAS_REGION 0, HAS_RRESP 1, HAS_WSTRB 1, ID_WIDTH 0, INSERT_VIP 0, MAX_BURST_LENGTH 1, NUM_READ_OUTSTANDING 1, NUM_READ_THREADS 1, NUM_WRITE_OUTSTANDING 1, NUM_WRITE_THREADS 1, PHASE 0.0, PROTOCOL AXI4LITE, READ_WRITE_MODE READ_WRITE, RUSER_BITS_PER_BYTE 0, RUSER_WIDTH 0, SUPPORTS_NARROW_BURST 0, WUSER_BITS_PER_BYTE 0, WUSER_WIDTH 0" *) output [3:0]M02_AXI_araddr;
   (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M02_AXI ARPROT" *) output [2:0]M02_AXI_arprot;
   (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M02_AXI ARREADY" *) input M02_AXI_arready;
   (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M02_AXI ARVALID" *) output M02_AXI_arvalid;
-  (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M02_AXI AWADDR" *) output [8:0]M02_AXI_awaddr;
+  (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M02_AXI AWADDR" *) output [3:0]M02_AXI_awaddr;
   (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M02_AXI AWPROT" *) output [2:0]M02_AXI_awprot;
   (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M02_AXI AWREADY" *) input M02_AXI_awready;
   (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M02_AXI AWVALID" *) output M02_AXI_awvalid;
@@ -204,11 +204,11 @@ module bd_8e74
   wire M01_AXI_wready;
   wire [3:0]M01_AXI_wstrb;
   wire M01_AXI_wvalid;
-  wire [8:0]M02_AXI_araddr;
+  wire [3:0]M02_AXI_araddr;
   wire [2:0]M02_AXI_arprot;
   wire M02_AXI_arready;
   wire M02_AXI_arvalid;
-  wire [8:0]M02_AXI_awaddr;
+  wire [3:0]M02_AXI_awaddr;
   wire [2:0]M02_AXI_awprot;
   wire M02_AXI_awready;
   wire M02_AXI_awvalid;
@@ -502,7 +502,7 @@ module bd_8e74
   wire m02_nodes_M_SC_W_RECV;
   wire [0:0]m02_nodes_M_SC_W_REQ;
   wire [0:0]m02_nodes_M_SC_W_SEND;
-  wire [8:0]m02_sc2axi_M_AXI_ARADDR;
+  wire [3:0]m02_sc2axi_M_AXI_ARADDR;
   wire [3:0]m02_sc2axi_M_AXI_ARCACHE;
   wire [0:0]m02_sc2axi_M_AXI_ARID;
   wire [7:0]m02_sc2axi_M_AXI_ARLEN;
@@ -512,7 +512,7 @@ module bd_8e74
   wire m02_sc2axi_M_AXI_ARREADY;
   wire [1023:0]m02_sc2axi_M_AXI_ARUSER;
   wire m02_sc2axi_M_AXI_ARVALID;
-  wire [8:0]m02_sc2axi_M_AXI_AWADDR;
+  wire [3:0]m02_sc2axi_M_AXI_AWADDR;
   wire [3:0]m02_sc2axi_M_AXI_AWCACHE;
   wire [0:0]m02_sc2axi_M_AXI_AWID;
   wire [7:0]m02_sc2axi_M_AXI_AWLEN;
@@ -2773,11 +2773,11 @@ module m02_exit_pipeline_imp_FE8ILH
     s_axi_wvalid);
   input aclk;
   input aresetn;
-  output [8:0]m_axi_araddr;
+  output [3:0]m_axi_araddr;
   output [2:0]m_axi_arprot;
   input m_axi_arready;
   output m_axi_arvalid;
-  output [8:0]m_axi_awaddr;
+  output [3:0]m_axi_awaddr;
   output [2:0]m_axi_awprot;
   input m_axi_awready;
   output m_axi_awvalid;
@@ -2792,7 +2792,7 @@ module m02_exit_pipeline_imp_FE8ILH
   input m_axi_wready;
   output [3:0]m_axi_wstrb;
   output m_axi_wvalid;
-  input [8:0]s_axi_araddr;
+  input [3:0]s_axi_araddr;
   input [3:0]s_axi_arcache;
   input [0:0]s_axi_arid;
   input [7:0]s_axi_arlen;
@@ -2802,7 +2802,7 @@ module m02_exit_pipeline_imp_FE8ILH
   output s_axi_arready;
   input [1023:0]s_axi_aruser;
   input s_axi_arvalid;
-  input [8:0]s_axi_awaddr;
+  input [3:0]s_axi_awaddr;
   input [3:0]s_axi_awcache;
   input [0:0]s_axi_awid;
   input [7:0]s_axi_awlen;
@@ -2833,11 +2833,11 @@ module m02_exit_pipeline_imp_FE8ILH
 
   wire aclk;
   wire aresetn;
-  wire [8:0]m_axi_araddr;
+  wire [3:0]m_axi_araddr;
   wire [2:0]m_axi_arprot;
   wire m_axi_arready;
   wire m_axi_arvalid;
-  wire [8:0]m_axi_awaddr;
+  wire [3:0]m_axi_awaddr;
   wire [2:0]m_axi_awprot;
   wire m_axi_awready;
   wire m_axi_awvalid;
@@ -2852,7 +2852,7 @@ module m02_exit_pipeline_imp_FE8ILH
   wire m_axi_wready;
   wire [3:0]m_axi_wstrb;
   wire m_axi_wvalid;
-  wire [8:0]s_axi_araddr;
+  wire [3:0]s_axi_araddr;
   wire [3:0]s_axi_arcache;
   wire [0:0]s_axi_arid;
   wire [7:0]s_axi_arlen;
@@ -2862,7 +2862,7 @@ module m02_exit_pipeline_imp_FE8ILH
   wire s_axi_arready;
   wire [1023:0]s_axi_aruser;
   wire s_axi_arvalid;
-  wire [8:0]s_axi_awaddr;
+  wire [3:0]s_axi_awaddr;
   wire [3:0]s_axi_awcache;
   wire [0:0]s_axi_awid;
   wire [7:0]s_axi_awlen;

@@ -58,6 +58,7 @@ if {$::dispatch::connected} {
 OPTRACE "design_mysoc_axi_smc_0_synth_1" START { ROLLUP_AUTO }
 set_param general.usePosixSpawnForFork 1
 set_param chipscope.maxJobs 1
+set_msg_config -id {HDL-1065} -limit 10000
 set_param project.vivado.isBlockSynthRun true
 set_msg_config -msgmgr_mode ooc_run
 OPTRACE "Creating in-memory project" START { }
@@ -73,6 +74,8 @@ set_property XPM_LIBRARIES {XPM_CDC XPM_FIFO XPM_MEMORY} [current_project]
 set_property default_lib xil_defaultlib [current_project]
 set_property target_language Verilog [current_project]
 set_property board_part digilentinc.com:basys3:part0:1.2 [current_project]
+set_property ip_repo_paths d:/Vivado-projects/Basys3/sbml/ip_repo/axi_7segment_1_0 [current_project]
+update_ip_catalog
 set_property ip_output_repo d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.cache/ip [current_project]
 set_property ip_cache_permissions {read write} [current_project]
 OPTRACE "Creating in-memory project" END { }

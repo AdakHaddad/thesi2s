@@ -47,6 +47,7 @@
     <Option Name="ActiveSimSet" Val="sim_1"/>
     <Option Name="DefaultLib" Val="xil_defaultlib"/>
     <Option Name="ProjectType" Val="Default"/>
+    <Option Name="IPRepoPath" Val="$PPRDIR/../ip_repo/axi_7segment_1_0"/>
     <Option Name="IPOutputRepo" Val="$PCACHEDIR/ip"/>
     <Option Name="IPDefaultOutputPath" Val="$PGENDIR/sources_1"/>
     <Option Name="IPCachePermission" Val="read"/>
@@ -96,11 +97,11 @@
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
+        <CompFileExtendedInfo CompFileName="design_mysoc.bd" FileRelPathName="ip\design_mysoc_axi_7segment_0_0\design_mysoc_axi_7segment_0_0.xci">
+          <Proxy FileSetName="design_mysoc_axi_7segment_0_0"/>
+        </CompFileExtendedInfo>
         <CompFileExtendedInfo CompFileName="design_mysoc.bd" FileRelPathName="ip\design_mysoc_axi_gpio_0_0\design_mysoc_axi_gpio_0_0.xci">
           <Proxy FileSetName="design_mysoc_axi_gpio_0_0"/>
-        </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="design_mysoc.bd" FileRelPathName="ip\design_mysoc_axi_gpio_1_0\design_mysoc_axi_gpio_1_0.xci">
-          <Proxy FileSetName="design_mysoc_axi_gpio_1_0"/>
         </CompFileExtendedInfo>
         <CompFileExtendedInfo CompFileName="design_mysoc.bd" FileRelPathName="ip\design_mysoc_axi_smc_0\design_mysoc_axi_smc_0.xci">
           <Proxy FileSetName="design_mysoc_axi_smc_0"/>
@@ -275,9 +276,9 @@
         <Option Name="UseBlackboxStub" Val="1"/>
       </Config>
     </FileSet>
-    <FileSet Name="design_mysoc_axi_gpio_1_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/design_mysoc_axi_gpio_1_0" RelGenDir="$PGENDIR/design_mysoc_axi_gpio_1_0">
+    <FileSet Name="design_mysoc_axi_7segment_0_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/design_mysoc_axi_7segment_0_0" RelGenDir="$PGENDIR/design_mysoc_axi_7segment_0_0">
       <Config>
-        <Option Name="TopModule" Val="design_mysoc_axi_gpio_1_0"/>
+        <Option Name="TopModule" Val="design_mysoc_axi_7segment_0_0"/>
         <Option Name="UseBlackboxStub" Val="1"/>
       </Config>
     </FileSet>
@@ -457,7 +458,7 @@
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
     </Run>
-    <Run Id="design_mysoc_axi_gpio_1_0_synth_1" Type="Ft3:Synth" SrcSet="design_mysoc_axi_gpio_1_0" Part="xc7a35tcpg236-1" ConstrsSet="design_mysoc_axi_gpio_1_0" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/design_mysoc_axi_gpio_1_0_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/design_mysoc_axi_gpio_1_0_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/design_mysoc_axi_gpio_1_0_synth_1" ParallelReportGen="true">
+    <Run Id="design_mysoc_axi_7segment_0_0_synth_1" Type="Ft3:Synth" SrcSet="design_mysoc_axi_7segment_0_0" Part="xc7a35tcpg236-1" ConstrsSet="design_mysoc_axi_7segment_0_0" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/design_mysoc_axi_7segment_0_0_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/design_mysoc_axi_7segment_0_0_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/design_mysoc_axi_7segment_0_0_synth_1" ParallelReportGen="true">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2025">
           <Desc>Vivado Synthesis Defaults</Desc>
@@ -717,7 +718,7 @@
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
     </Run>
-    <Run Id="design_mysoc_axi_gpio_1_0_impl_1" Type="Ft2:EntireDesign" Part="xc7a35tcpg236-1" ConstrsSet="design_mysoc_axi_gpio_1_0" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="design_mysoc_axi_gpio_1_0_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/design_mysoc_axi_gpio_1_0_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/design_mysoc_axi_gpio_1_0_impl_1" ParallelReportGen="true">
+    <Run Id="design_mysoc_axi_7segment_0_0_impl_1" Type="Ft2:EntireDesign" Part="xc7a35tcpg236-1" ConstrsSet="design_mysoc_axi_7segment_0_0" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="design_mysoc_axi_7segment_0_0_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/design_mysoc_axi_7segment_0_0_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/design_mysoc_axi_7segment_0_0_impl_1" ParallelReportGen="true">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2025">
           <Desc>Default settings for Implementation.</Desc>

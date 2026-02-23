@@ -58,6 +58,7 @@ if {$::dispatch::connected} {
 OPTRACE "synth_1" START { ROLLUP_AUTO }
 set_param general.usePosixSpawnForFork 1
 set_param chipscope.maxJobs 1
+set_msg_config -id {HDL-1065} -limit 10000
 OPTRACE "Creating in-memory project" START { }
 create_project -in_memory -part xc7a35tcpg236-1
 
@@ -71,6 +72,8 @@ set_property XPM_LIBRARIES {XPM_CDC XPM_FIFO XPM_MEMORY} [current_project]
 set_property default_lib xil_defaultlib [current_project]
 set_property target_language Verilog [current_project]
 set_property board_part digilentinc.com:basys3:part0:1.2 [current_project]
+set_property ip_repo_paths d:/Vivado-projects/Basys3/sbml/ip_repo/axi_7segment_1_0 [current_project]
+update_ip_catalog
 set_property ip_output_repo d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.cache/ip [current_project]
 set_property ip_cache_permissions {read write} [current_project]
 OPTRACE "Creating in-memory project" END { }
@@ -138,8 +141,6 @@ set_property used_in_implementation false [get_files -all d:/Vivado-projects/Bas
 set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_smc_0/smartconnect.xdc]
 set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_gpio_0_0/design_mysoc_axi_gpio_0_0_board.xdc]
 set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_gpio_0_0/design_mysoc_axi_gpio_0_0_ooc.xdc]
-set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_gpio_1_0/design_mysoc_axi_gpio_1_0_board.xdc]
-set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_gpio_1_0/design_mysoc_axi_gpio_1_0_ooc.xdc]
 set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/design_mysoc_ooc.xdc]
 set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_microblaze_riscv_0_0/data/riscv_bootloop.elf]
 

@@ -16,3 +16,7 @@ platform = client.create_platform_component(name = "platform_mysoc_v3",hw_design
 
 comp = client.create_app_component(name="hello_world_display7segment",platform = "$COMPONENT_LOCATION/../platform_mysoc_v3/export/platform_mysoc_v3/platform_mysoc_v3.xpfm",domain = "standalone_microblaze_riscv_0",template = "hello_world")
 
+platform = client.create_platform_component(name = "platform_mysoc_v4",hw_design = "$COMPONENT_LOCATION/../../design_mysoc_wrapper_hw_v4.xsa",os = "standalone",cpu = "microblaze_riscv_0",domain_name = "standalone_microblaze_riscv_0",compiler = "gcc")
+
+comp = client.create_app_component(name="hello_world_custom7segment",platform = "$COMPONENT_LOCATION/../platform_mysoc_v4/export/platform_mysoc_v4/platform_mysoc_v4.xpfm",domain = "standalone_microblaze_riscv_0",template = "hello_world")
+

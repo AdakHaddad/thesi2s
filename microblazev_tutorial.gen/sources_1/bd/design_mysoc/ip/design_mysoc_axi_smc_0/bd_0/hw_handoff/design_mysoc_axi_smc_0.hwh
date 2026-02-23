@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Tue Feb 24 01:31:24 2026" VIVADOVERSION="2025.2">
+<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Tue Feb 24 02:25:45 2026" VIVADOVERSION="2025.2">
 
   <SYSTEMINFO ARCH="artix7" BOARD="digilentinc.com:basys3:part0:1.2" DEVICE="7a35t" NAME="bd_8e74" PACKAGE="cpg236" SPEEDGRADE="-1"/>
 
@@ -194,7 +194,7 @@
         <CONNECTION INSTANCE="m01_exit_pipeline_m01_exit" PORT="m_axi_wvalid"/>
       </CONNECTIONS>
     </PORT>
-    <PORT DIR="O" LEFT="8" NAME="M02_AXI_araddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_m_axi_araddr">
+    <PORT DIR="O" LEFT="3" NAME="M02_AXI_araddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_m_axi_araddr">
       <CONNECTIONS>
         <CONNECTION INSTANCE="m02_exit_pipeline_m02_exit" PORT="m_axi_araddr"/>
       </CONNECTIONS>
@@ -214,7 +214,7 @@
         <CONNECTION INSTANCE="m02_exit_pipeline_m02_exit" PORT="m_axi_arvalid"/>
       </CONNECTIONS>
     </PORT>
-    <PORT DIR="O" LEFT="8" NAME="M02_AXI_awaddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_m_axi_awaddr">
+    <PORT DIR="O" LEFT="3" NAME="M02_AXI_awaddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_m_axi_awaddr">
       <CONNECTIONS>
         <CONNECTION INSTANCE="m02_exit_pipeline_m02_exit" PORT="m_axi_awaddr"/>
       </CONNECTIONS>
@@ -632,7 +632,7 @@
       </PORTMAPS>
     </BUSINTERFACE>
     <BUSINTERFACE BUSNAME="m02_exit_pipeline_m02_exit_M_AXI" DATAWIDTH="32" NAME="M02_AXI" TYPE="MASTER">
-      <PARAMETER NAME="ADDR_WIDTH" VALUE="9"/>
+      <PARAMETER NAME="ADDR_WIDTH" VALUE="4"/>
       <PARAMETER NAME="ARUSER_WIDTH" VALUE="0"/>
       <PARAMETER NAME="AWUSER_WIDTH" VALUE="0"/>
       <PARAMETER NAME="BUSER_WIDTH" VALUE="0"/>
@@ -5328,7 +5328,7 @@
         <DOCUMENT SOURCE="http://www.xilinx.com/cgi-bin/docs/ipdoc?c=smartconnect;v=v1_0;d=pg247-smartconnect.pdf"/>
       </DOCUMENTS>
       <PARAMETERS>
-        <PARAMETER NAME="C_ADDR_WIDTH" VALUE="9"/>
+        <PARAMETER NAME="C_ADDR_WIDTH" VALUE="4"/>
         <PARAMETER NAME="C_ENABLE_PIPELINING" VALUE="0"/>
         <PARAMETER NAME="C_FAMILY" VALUE="artix7"/>
         <PARAMETER NAME="C_HAS_LOCK" VALUE="0"/>
@@ -5360,7 +5360,7 @@
         <PARAMETER NAME="C_S_ID_WIDTH" VALUE="1"/>
         <PARAMETER NAME="C_WDATA_WIDTH" VALUE="32"/>
         <PARAMETER NAME="C_WRITE_ACCEPTANCE" VALUE="32"/>
-        <PARAMETER NAME="ADDR_WIDTH" VALUE="9"/>
+        <PARAMETER NAME="ADDR_WIDTH" VALUE="4"/>
         <PARAMETER NAME="Component_Name" VALUE="bd_8e74_m02e_0"/>
         <PARAMETER NAME="ENABLE_PIPELINING" VALUE="0"/>
         <PARAMETER NAME="HAS_ACLKEN" VALUE="0"/>
@@ -5662,7 +5662,7 @@
             <CONNECTION INSTANCE="clk_map_psr_aclk" PORT="interconnect_aresetn"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" LEFT="8" NAME="m_axi_araddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_m_axi_araddr">
+        <PORT DIR="O" LEFT="3" NAME="m_axi_araddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_m_axi_araddr">
           <CONNECTIONS>
             <CONNECTION INSTANCE="bd_8e74_imp" PORT="M02_AXI_araddr"/>
           </CONNECTIONS>
@@ -5682,7 +5682,7 @@
             <CONNECTION INSTANCE="bd_8e74_imp" PORT="M02_AXI_arvalid"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" LEFT="8" NAME="m_axi_awaddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_m_axi_awaddr">
+        <PORT DIR="O" LEFT="3" NAME="m_axi_awaddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_m_axi_awaddr">
           <CONNECTIONS>
             <CONNECTION INSTANCE="bd_8e74_imp" PORT="M02_AXI_awaddr"/>
           </CONNECTIONS>
@@ -5757,7 +5757,7 @@
             <CONNECTION INSTANCE="bd_8e74_imp" PORT="M02_AXI_wvalid"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" LEFT="8" NAME="s_axi_araddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_s_axi_araddr">
+        <PORT DIR="I" LEFT="3" NAME="s_axi_araddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_s_axi_araddr">
           <CONNECTIONS>
             <CONNECTION INSTANCE="m02_sc2axi" PORT="m_axi_araddr"/>
           </CONNECTIONS>
@@ -5807,7 +5807,7 @@
             <CONNECTION INSTANCE="m02_sc2axi" PORT="m_axi_arvalid"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" LEFT="8" NAME="s_axi_awaddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_s_axi_awaddr">
+        <PORT DIR="I" LEFT="3" NAME="s_axi_awaddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_s_axi_awaddr">
           <CONNECTIONS>
             <CONNECTION INSTANCE="m02_sc2axi" PORT="m_axi_awaddr"/>
           </CONNECTIONS>
@@ -5950,7 +5950,7 @@
       </PORTS>
       <BUSINTERFACES>
         <BUSINTERFACE BUSNAME="m02_sc2axi_M_AXI" DATAWIDTH="32" NAME="S_AXI" TYPE="SLAVE" VLNV="xilinx.com:interface:aximm:1.0">
-          <PARAMETER NAME="ADDR_WIDTH" VALUE="9"/>
+          <PARAMETER NAME="ADDR_WIDTH" VALUE="4"/>
           <PARAMETER NAME="ARUSER_WIDTH" VALUE="1024"/>
           <PARAMETER NAME="AWUSER_WIDTH" VALUE="1024"/>
           <PARAMETER NAME="BUSER_WIDTH" VALUE="1024"/>
@@ -6023,7 +6023,7 @@
           </PORTMAPS>
         </BUSINTERFACE>
         <BUSINTERFACE BUSNAME="m02_exit_pipeline_m02_exit_M_AXI" DATAWIDTH="32" NAME="M_AXI" TYPE="MASTER" VLNV="xilinx.com:interface:aximm:1.0">
-          <PARAMETER NAME="ADDR_WIDTH" VALUE="9"/>
+          <PARAMETER NAME="ADDR_WIDTH" VALUE="4"/>
           <PARAMETER NAME="ARUSER_WIDTH" VALUE="0"/>
           <PARAMETER NAME="AWUSER_WIDTH" VALUE="0"/>
           <PARAMETER NAME="BUSER_WIDTH" VALUE="0"/>
@@ -7100,7 +7100,7 @@
       <PARAMETERS>
         <PARAMETER NAME="C_ARPAYLD_WIDTH" VALUE="142"/>
         <PARAMETER NAME="C_AWPAYLD_WIDTH" VALUE="142"/>
-        <PARAMETER NAME="C_AXI_ADDR_WIDTH" VALUE="9"/>
+        <PARAMETER NAME="C_AXI_ADDR_WIDTH" VALUE="4"/>
         <PARAMETER NAME="C_AXI_ID_WIDTH" VALUE="1"/>
         <PARAMETER NAME="C_AXI_RDATA_WIDTH" VALUE="32"/>
         <PARAMETER NAME="C_AXI_WDATA_WIDTH" VALUE="32"/>
@@ -7118,7 +7118,7 @@
         <PARAMETER NAME="C_SC_WUSER_BITS_PER_BYTE" VALUE="0"/>
         <PARAMETER NAME="C_SSC_ROUTE_WIDTH" VALUE="3"/>
         <PARAMETER NAME="C_WPAYLD_WIDTH" VALUE="56"/>
-        <PARAMETER NAME="AXI_ADDR_WIDTH" VALUE="9"/>
+        <PARAMETER NAME="AXI_ADDR_WIDTH" VALUE="4"/>
         <PARAMETER NAME="AXI_ID_WIDTH" VALUE="1"/>
         <PARAMETER NAME="AXI_RDATA_WIDTH" VALUE="32"/>
         <PARAMETER NAME="AXI_WDATA_WIDTH" VALUE="32"/>
@@ -7143,7 +7143,7 @@
             <CONNECTION INSTANCE="External_Ports" PORT="aclk"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" LEFT="8" NAME="m_axi_araddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_s_axi_araddr">
+        <PORT DIR="O" LEFT="3" NAME="m_axi_araddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_s_axi_araddr">
           <CONNECTIONS>
             <CONNECTION INSTANCE="m02_exit_pipeline_m02_exit" PORT="s_axi_araddr"/>
           </CONNECTIONS>
@@ -7193,7 +7193,7 @@
             <CONNECTION INSTANCE="m02_exit_pipeline_m02_exit" PORT="s_axi_arvalid"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" LEFT="8" NAME="m_axi_awaddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_s_axi_awaddr">
+        <PORT DIR="O" LEFT="3" NAME="m_axi_awaddr" RIGHT="0" SIGIS="undef" SIGNAME="m02_exit_pipeline_m02_exit_s_axi_awaddr">
           <CONNECTIONS>
             <CONNECTION INSTANCE="m02_exit_pipeline_m02_exit" PORT="s_axi_awaddr"/>
           </CONNECTIONS>
@@ -7506,7 +7506,7 @@
           </PORTMAPS>
         </BUSINTERFACE>
         <BUSINTERFACE BUSNAME="m02_sc2axi_M_AXI" DATAWIDTH="32" NAME="M_AXI" TYPE="MASTER" VLNV="xilinx.com:interface:aximm:1.0">
-          <PARAMETER NAME="ADDR_WIDTH" VALUE="9"/>
+          <PARAMETER NAME="ADDR_WIDTH" VALUE="4"/>
           <PARAMETER NAME="ARUSER_WIDTH" VALUE="1024"/>
           <PARAMETER NAME="AWUSER_WIDTH" VALUE="1024"/>
           <PARAMETER NAME="BUSER_WIDTH" VALUE="1024"/>
@@ -8085,10 +8085,10 @@
         <PARAMETER NAME="C_NUM_WRITE_OUTSTANDING" VALUE="1"/>
         <PARAMETER NAME="C_RDATA_WIDTH" VALUE="32"/>
         <PARAMETER NAME="C_READ_ACCEPTANCE" VALUE="32"/>
-        <PARAMETER NAME="C_SEG_BASE_ADDR_ARRAY" VALUE="0x000000004060000000000000400100000000000040000000"/>
+        <PARAMETER NAME="C_SEG_BASE_ADDR_ARRAY" VALUE="0x0000000044a0000000000000406000000000000040000000"/>
         <PARAMETER NAME="C_SEG_SECURE_READ_ARRAY" VALUE="0b000"/>
         <PARAMETER NAME="C_SEG_SECURE_WRITE_ARRAY" VALUE="0b000"/>
-        <PARAMETER NAME="C_SEG_SEP_ROUTE_ARRAY" VALUE="0x000000000000000000000000000000020000000000000001"/>
+        <PARAMETER NAME="C_SEG_SEP_ROUTE_ARRAY" VALUE="0x000000000000000200000000000000000000000000000001"/>
         <PARAMETER NAME="C_SEG_SIZE_ARRAY" VALUE="0x000000100000001000000010"/>
         <PARAMETER NAME="C_SEG_SUPPORTS_READ_ARRAY" VALUE="0b111"/>
         <PARAMETER NAME="C_SEG_SUPPORTS_WRITE_ARRAY" VALUE="0b111"/>
@@ -8382,17 +8382,17 @@
         <PARAMETER NAME="SEG000_SIZE" VALUE="16"/>
         <PARAMETER NAME="SEG000_SUPPORTS_READ" VALUE="1"/>
         <PARAMETER NAME="SEG000_SUPPORTS_WRITE" VALUE="1"/>
-        <PARAMETER NAME="SEG001_BASE_ADDR" VALUE="0x0000000040010000"/>
+        <PARAMETER NAME="SEG001_BASE_ADDR" VALUE="0x0000000040600000"/>
         <PARAMETER NAME="SEG001_SECURE_READ" VALUE="0"/>
         <PARAMETER NAME="SEG001_SECURE_WRITE" VALUE="0"/>
-        <PARAMETER NAME="SEG001_SEP_ROUTE" VALUE="0b0000000000000000000000000000000000000000000000000000000000000010"/>
+        <PARAMETER NAME="SEG001_SEP_ROUTE" VALUE="0b0000000000000000000000000000000000000000000000000000000000000000"/>
         <PARAMETER NAME="SEG001_SIZE" VALUE="16"/>
         <PARAMETER NAME="SEG001_SUPPORTS_READ" VALUE="1"/>
         <PARAMETER NAME="SEG001_SUPPORTS_WRITE" VALUE="1"/>
-        <PARAMETER NAME="SEG002_BASE_ADDR" VALUE="0x0000000040600000"/>
+        <PARAMETER NAME="SEG002_BASE_ADDR" VALUE="0x0000000044A00000"/>
         <PARAMETER NAME="SEG002_SECURE_READ" VALUE="0"/>
         <PARAMETER NAME="SEG002_SECURE_WRITE" VALUE="0"/>
-        <PARAMETER NAME="SEG002_SEP_ROUTE" VALUE="0b0000000000000000000000000000000000000000000000000000000000000000"/>
+        <PARAMETER NAME="SEG002_SEP_ROUTE" VALUE="0b0000000000000000000000000000000000000000000000000000000000000010"/>
         <PARAMETER NAME="SEG002_SIZE" VALUE="16"/>
         <PARAMETER NAME="SEG002_SUPPORTS_READ" VALUE="1"/>
         <PARAMETER NAME="SEG002_SUPPORTS_WRITE" VALUE="1"/>
