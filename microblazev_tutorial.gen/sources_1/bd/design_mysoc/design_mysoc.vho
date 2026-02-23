@@ -56,7 +56,9 @@ COMPONENT design_mysoc
     sys_clock : IN STD_LOGIC;
     reset : IN STD_LOGIC;
     usb_uart_rxd : IN STD_LOGIC;
-    usb_uart_txd : OUT STD_LOGIC
+    usb_uart_txd : OUT STD_LOGIC;
+    dip_switches_16bits_tri_i : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+    led_16bits_tri_o : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
   );
 END COMPONENT;
 -- COMP_TAG_END ------  End cut for COMPONENT Declaration  ------
@@ -70,7 +72,9 @@ your_instance_name : design_mysoc
     sys_clock => sys_clock,
     reset => reset,
     usb_uart_rxd => usb_uart_rxd,
-    usb_uart_txd => usb_uart_txd
+    usb_uart_txd => usb_uart_txd,
+    dip_switches_16bits_tri_i => dip_switches_16bits_tri_i,
+    led_16bits_tri_o => led_16bits_tri_o
   );
 -- INST_TAG_END ------  End cut for INSTANTIATION Template  ------
 

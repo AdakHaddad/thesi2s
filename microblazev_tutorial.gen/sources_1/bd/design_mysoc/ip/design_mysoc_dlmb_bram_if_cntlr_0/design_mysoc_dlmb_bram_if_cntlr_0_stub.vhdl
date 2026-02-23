@@ -2,7 +2,7 @@
 -- Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 -- --------------------------------------------------------------------------------
 -- Tool Version: Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
--- Date        : Mon Feb 23 23:50:05 2026
+-- Date        : Tue Feb 24 00:48:46 2026
 -- Host        : DESKTOP-HTVV1N1 running 64-bit major release  (build 9200)
 -- Command     : write_vhdl -force -mode synth_stub
 --               d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_dlmb_bram_if_cntlr_0/design_mysoc_dlmb_bram_if_cntlr_0_stub.vhdl
@@ -40,7 +40,7 @@ entity design_mysoc_dlmb_bram_if_cntlr_0 is
   attribute CHECK_LICENSE_TYPE : string;
   attribute CHECK_LICENSE_TYPE of design_mysoc_dlmb_bram_if_cntlr_0 : entity is "design_mysoc_dlmb_bram_if_cntlr_0,lmb_bram_if_cntlr,{}";
   attribute core_generation_info : string;
-  attribute core_generation_info of design_mysoc_dlmb_bram_if_cntlr_0 : entity is "design_mysoc_dlmb_bram_if_cntlr_0,lmb_bram_if_cntlr,{x_ipProduct=Vivado 2025.2,x_ipVendor=xilinx.com,x_ipLibrary=ip,x_ipName=lmb_bram_if_cntlr,x_ipVersion=4.0,x_ipCoreRevision=27,x_ipLanguage=VERILOG,x_ipSimLanguage=MIXED,C_FAMILY=artix7,C_HIGHADDR=0x000000000001FFFF,C_BASEADDR=0x0000000000000000,C_NUM_LMB=1,C_MASK=0x0000000000200000,C_MASK1=0x0000000000800000,C_MASK2=0x0000000000800000,C_MASK3=0x0000000000800000,C_MASK4=0x0000000000800000,C_MASK5=0x0000000000800000,C_MASK6=0x0000000000800000,C_MASK7=0x0000000000800000,C_PROT_CFG=0xFF,C_PROT_CFG1=0xFF,C_PROT_CFG2=0xFF,C_PROT_CFG3=0xFF,C_PROT_CFG4=0xFF,C_PROT_CFG5=0xFF,C_PROT_CFG6=0xFF,C_PROT_CFG7=0xFF,C_LMB_AWIDTH=32,C_LMB_DWIDTH=32,C_LMB_PROTOCOL=0,C_LMB_HAS_PROT=0,C_ARBITRATION=0,C_ECC=0,C_INTERCONNECT=0,C_FAULT_INJECT=0,C_CE_FAILING_REGISTERS=0,C_UE_FAILING_REGISTERS=0,C_ECC_STATUS_REGISTERS=0,C_ECC_ONOFF_REGISTER=0,C_ECC_ONOFF_RESET_VALUE=1,C_CE_COUNTER_WIDTH=0,C_WRITE_ACCESS=2,C_BRAM_AWIDTH=32,C_S_AXI_CTRL_ADDR_WIDTH=32,C_S_AXI_CTRL_DATA_WIDTH=32}";
+  attribute core_generation_info of design_mysoc_dlmb_bram_if_cntlr_0 : entity is "design_mysoc_dlmb_bram_if_cntlr_0,lmb_bram_if_cntlr,{x_ipProduct=Vivado 2025.2,x_ipVendor=xilinx.com,x_ipLibrary=ip,x_ipName=lmb_bram_if_cntlr,x_ipVersion=4.0,x_ipCoreRevision=27,x_ipLanguage=VERILOG,x_ipSimLanguage=MIXED,C_FAMILY=artix7,C_HIGHADDR=0x000000000001FFFF,C_BASEADDR=0x0000000000000000,C_NUM_LMB=1,C_MASK=0x0000000040000000,C_MASK1=0x0000000000800000,C_MASK2=0x0000000000800000,C_MASK3=0x0000000000800000,C_MASK4=0x0000000000800000,C_MASK5=0x0000000000800000,C_MASK6=0x0000000000800000,C_MASK7=0x0000000000800000,C_PROT_CFG=0xFF,C_PROT_CFG1=0xFF,C_PROT_CFG2=0xFF,C_PROT_CFG3=0xFF,C_PROT_CFG4=0xFF,C_PROT_CFG5=0xFF,C_PROT_CFG6=0xFF,C_PROT_CFG7=0xFF,C_LMB_AWIDTH=32,C_LMB_DWIDTH=32,C_LMB_PROTOCOL=0,C_LMB_HAS_PROT=0,C_ARBITRATION=0,C_ECC=0,C_INTERCONNECT=0,C_FAULT_INJECT=0,C_CE_FAILING_REGISTERS=0,C_UE_FAILING_REGISTERS=0,C_ECC_STATUS_REGISTERS=0,C_ECC_ONOFF_REGISTER=0,C_ECC_ONOFF_RESET_VALUE=1,C_CE_COUNTER_WIDTH=0,C_WRITE_ACCESS=2,C_BRAM_AWIDTH=32,C_S_AXI_CTRL_ADDR_WIDTH=32,C_S_AXI_CTRL_DATA_WIDTH=32}";
   attribute downgradeipidentifiedwarnings : string;
   attribute downgradeipidentifiedwarnings of design_mysoc_dlmb_bram_if_cntlr_0 : entity is "yes";
 end design_mysoc_dlmb_bram_if_cntlr_0;

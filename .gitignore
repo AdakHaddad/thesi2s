@@ -1,0 +1,37 @@
+# ========================================
+# Vivado Generated Directories & Logs
+# ========================================
+*.runs/
+*.cache/
+*.hw/
+*.sim/
+*.ip_user_files/
+*.gen/
+
+# Vivado Log and Journal Files
+*.jou
+*.log
+*.str
+*.pb
+*.wdf
+*.wpc
+*.dcp
+
+# ========================================
+# Vitis Workspace / IDE Generated Files
+# ========================================
+workspace/_ide/
+workspace/.rigel_lopper/
+workspace/**/.cache/
+workspace/**/.clangd/
+
+# The hardware platform and Board Support Package (BSP) are auto-generated
+workspace/platform_mysoc/
+
+# Compiled Binaries & Handoff files
+
+# ========================================
+# OS & Editor Files
+# ========================================
+.DS_Store
+.vscode/

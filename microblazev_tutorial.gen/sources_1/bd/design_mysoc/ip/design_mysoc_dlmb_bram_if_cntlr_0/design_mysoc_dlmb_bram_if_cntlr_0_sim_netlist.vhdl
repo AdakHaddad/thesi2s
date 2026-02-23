@@ -2,7 +2,7 @@
 -- Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 -- --------------------------------------------------------------------------------
 -- Tool Version: Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
--- Date        : Mon Feb 23 23:50:05 2026
+-- Date        : Tue Feb 24 00:48:46 2026
 -- Host        : DESKTOP-HTVV1N1 running 64-bit major release  (build 9200)
 -- Command     : write_vhdl -force -mode funcsim
 --               d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_dlmb_bram_if_cntlr_0/design_mysoc_dlmb_bram_if_cntlr_0_sim_netlist.vhdl
@@ -180,7 +180,7 @@ entity design_mysoc_dlmb_bram_if_cntlr_0_lmb_bram_if_cntlr is
   attribute C_LMB_PROTOCOL : integer;
   attribute C_LMB_PROTOCOL of design_mysoc_dlmb_bram_if_cntlr_0_lmb_bram_if_cntlr : entity is 0;
   attribute C_MASK : string;
-  attribute C_MASK of design_mysoc_dlmb_bram_if_cntlr_0_lmb_bram_if_cntlr : entity is "64'b0000000000000000000000000000000000000000001000000000000000000000";
+  attribute C_MASK of design_mysoc_dlmb_bram_if_cntlr_0_lmb_bram_if_cntlr : entity is "64'b0000000000000000000000000000000001000000000000000000000000000000";
   attribute C_MASK1 : string;
   attribute C_MASK1 of design_mysoc_dlmb_bram_if_cntlr_0_lmb_bram_if_cntlr : entity is "64'b0000000000000000000000000000000000000000100000000000000000000000";
   attribute C_MASK2 : string;
@@ -563,7 +563,7 @@ begin
       INIT => X"40"
     )
         port map (
-      I0 => \^lmb_abus\(10),
+      I0 => \^lmb_abus\(1),
       I1 => LMB_WriteStrobe,
       I2 => LMB_BE(0),
       O => BRAM_WEN_A(0)
@@ -573,7 +573,7 @@ begin
       INIT => X"40"
     )
         port map (
-      I0 => \^lmb_abus\(10),
+      I0 => \^lmb_abus\(1),
       I1 => LMB_WriteStrobe,
       I2 => LMB_BE(1),
       O => BRAM_WEN_A(1)
@@ -583,7 +583,7 @@ begin
       INIT => X"40"
     )
         port map (
-      I0 => \^lmb_abus\(10),
+      I0 => \^lmb_abus\(1),
       I1 => LMB_WriteStrobe,
       I2 => LMB_BE(2),
       O => BRAM_WEN_A(2)
@@ -593,7 +593,7 @@ begin
       INIT => X"40"
     )
         port map (
-      I0 => \^lmb_abus\(10),
+      I0 => \^lmb_abus\(1),
       I1 => LMB_WriteStrobe,
       I2 => LMB_BE(3),
       O => BRAM_WEN_A(3)
@@ -607,7 +607,7 @@ GND: unisim.vcomponents.GND
       INIT => X"1"
     )
         port map (
-      I0 => \^lmb_abus\(10),
+      I0 => \^lmb_abus\(1),
       I1 => LMB_Rst,
       O => \No_ECC.Sl_Rdy_i_1_n_0\
     );
@@ -770,7 +770,7 @@ architecture STRUCTURE of design_mysoc_dlmb_bram_if_cntlr_0 is
   attribute C_LMB_PROTOCOL : integer;
   attribute C_LMB_PROTOCOL of U0 : label is 0;
   attribute C_MASK : string;
-  attribute C_MASK of U0 : label is "64'b0000000000000000000000000000000000000000001000000000000000000000";
+  attribute C_MASK of U0 : label is "64'b0000000000000000000000000000000001000000000000000000000000000000";
   attribute C_MASK1 : string;
   attribute C_MASK1 of U0 : label is "64'b0000000000000000000000000000000000000000100000000000000000000000";
   attribute C_MASK2 : string;

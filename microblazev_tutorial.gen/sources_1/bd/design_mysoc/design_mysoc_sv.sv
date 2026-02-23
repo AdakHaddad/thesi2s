@@ -60,14 +60,20 @@ module design_mysoc_sv (
   (* X_INTERFACE_IGNORE = "true" *)
   input wire usb_uart_rxd,
   (* X_INTERFACE_IGNORE = "true" *)
-  output wire usb_uart_txd
+  output wire usb_uart_txd,
+  (* X_INTERFACE_IGNORE = "true" *)
+  input wire [15:0] dip_switches_16bits_tri_i,
+  (* X_INTERFACE_IGNORE = "true" *)
+  output wire [15:0] led_16bits_tri_o
 );
 
   design_mysoc inst (
     .sys_clock(sys_clock),
     .reset(reset),
     .usb_uart_rxd(usb_uart_rxd),
-    .usb_uart_txd(usb_uart_txd)
+    .usb_uart_txd(usb_uart_txd),
+    .dip_switches_16bits_tri_i(dip_switches_16bits_tri_i),
+    .led_16bits_tri_o(led_16bits_tri_o)
   );
 
 endmodule
