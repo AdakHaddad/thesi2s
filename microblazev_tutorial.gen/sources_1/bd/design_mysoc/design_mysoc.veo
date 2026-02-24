@@ -54,12 +54,12 @@
 
 // INST_TAG     ------ Begin cut for INSTANTIATION Template ------
 design_mysoc your_instance_name (
-  .sys_clock(sys_clock), // input wire sys_clock
-  .reset(reset), // input wire reset
   .usb_uart_rxd(usb_uart_rxd), // input wire usb_uart_rxd
   .usb_uart_txd(usb_uart_txd), // output wire usb_uart_txd
   .dip_switches_16bits_tri_i(dip_switches_16bits_tri_i), // input wire [15:0] dip_switches_16bits_tri_i
   .led_16bits_tri_o(led_16bits_tri_o), // output wire [15:0] led_16bits_tri_o
+  .sys_clock(sys_clock), // input wire sys_clock
+  .reset(reset), // input wire reset
   .seg_0(seg_0), // output wire [6:0] seg_0
   .dp_0(dp_0), // output wire dp_0
   .an_0(an_0) // output wire [3:0] an_0

@@ -4,7 +4,7 @@
     "xci_name": "design_mysoc_axi_7segment_0_0",
     "cell_name": "axi_7segment_0",
     "component_reference": "xilinx.com:user:axi_7segment:1.0",
-    "ip_revision": "2",
+    "ip_revision": "3",
     "gen_directory": "../../../../../../microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_7segment_0_0",
     "parameters": {
       "component_parameters": {
@@ -33,7 +33,7 @@
       },
       "runtime_parameters": {
         "IPCONTEXT": [ { "value": "IP_Integrator" } ],
-        "IPREVISION": [ { "value": "2" } ],
+        "IPREVISION": [ { "value": "3" } ],
         "MANAGED": [ { "value": "TRUE" } ],
         "OUTPUTDIR": [ { "value": "../../../../../../microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_axi_7segment_0_0" } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],
@@ -180,5 +180,5 @@
       }
     }
   },
-  "checksum": "19ebb7ef"
+  "checksum": "66d3145a"
 }

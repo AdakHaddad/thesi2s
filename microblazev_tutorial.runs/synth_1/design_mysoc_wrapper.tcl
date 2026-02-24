@@ -57,8 +57,7 @@ if {$::dispatch::connected} {
 
 OPTRACE "synth_1" START { ROLLUP_AUTO }
 set_param general.usePosixSpawnForFork 1
-set_param chipscope.maxJobs 1
-set_msg_config -id {HDL-1065} -limit 10000
+set_param bd.open.in_stealth_mode 1
 OPTRACE "Creating in-memory project" START { }
 create_project -in_memory -part xc7a35tcpg236-1
 
@@ -78,7 +77,7 @@ set_property ip_output_repo d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/
 set_property ip_cache_permissions {read write} [current_project]
 OPTRACE "Creating in-memory project" END { }
 OPTRACE "Adding files" START { }
-read_verilog -library xil_defaultlib d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/hdl/design_mysoc_wrapper.v
+read_verilog -library xil_defaultlib D:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/hdl/design_mysoc_wrapper.v
 add_files D:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.srcs/sources_1/bd/design_mysoc/design_mysoc.bd
 set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_clk_wiz_0_0/design_mysoc_clk_wiz_0_0_board.xdc]
 set_property used_in_implementation false [get_files -all d:/Vivado-projects/Basys3/sbml/microblazev_tutorial/microblazev_tutorial.gen/sources_1/bd/design_mysoc/ip/design_mysoc_clk_wiz_0_0/design_mysoc_clk_wiz_0_0.xdc]

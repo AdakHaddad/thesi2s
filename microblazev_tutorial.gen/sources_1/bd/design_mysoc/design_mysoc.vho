@@ -53,12 +53,12 @@
 -- COMP_TAG     ------ Begin cut for COMPONENT Declaration ------
 COMPONENT design_mysoc
   PORT (
-    sys_clock : IN STD_LOGIC;
-    reset : IN STD_LOGIC;
     usb_uart_rxd : IN STD_LOGIC;
     usb_uart_txd : OUT STD_LOGIC;
     dip_switches_16bits_tri_i : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
     led_16bits_tri_o : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+    sys_clock : IN STD_LOGIC;
+    reset : IN STD_LOGIC;
     seg_0 : OUT STD_LOGIC_VECTOR(6 DOWNTO 0);
     dp_0 : OUT STD_LOGIC;
     an_0 : OUT STD_LOGIC_VECTOR(3 DOWNTO 0)
@@ -72,12 +72,12 @@ END COMPONENT;
 -- INST_TAG     ------ Begin cut for INSTANTIATION Template ------
 your_instance_name : design_mysoc
   PORT MAP (
-    sys_clock => sys_clock,
-    reset => reset,
     usb_uart_rxd => usb_uart_rxd,
     usb_uart_txd => usb_uart_txd,
     dip_switches_16bits_tri_i => dip_switches_16bits_tri_i,
     led_16bits_tri_o => led_16bits_tri_o,
+    sys_clock => sys_clock,
+    reset => reset,
     seg_0 => seg_0,
     dp_0 => dp_0,
     an_0 => an_0

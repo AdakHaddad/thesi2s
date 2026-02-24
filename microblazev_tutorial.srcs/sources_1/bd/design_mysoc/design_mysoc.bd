@@ -696,7 +696,7 @@
       },
       "axi_7segment_0": {
         "vlnv": "xilinx.com:user:axi_7segment:1.0",
-        "ip_revision": "2",
+        "ip_revision": "3",
         "xci_name": "design_mysoc_axi_7segment_0_0",
         "xci_path": "ip\\design_mysoc_axi_7segment_0_0\\design_mysoc_axi_7segment_0_0.xci",
         "inst_hier_path": "axi_7segment_0",
