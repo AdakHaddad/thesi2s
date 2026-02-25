@@ -1,0 +1,44 @@
+name: Generate Mermaid diagrams from Vivado BD Tcl
+
+on:
+  push:
+    paths:
+      - "**/*.tcl"
+      - "tools/bd_tcl_to_mermaid.py"
+      - ".github/workflows/bd-tcl-to-mermaid.yml"
+      - "README.md"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Generate Mermaid + update README
+        run: |
+          python tools/bd_tcl_to_mermaid.py --repo-root . --out-dir docs/bd --readme README.md
+
+      - name: Commit changes (if any)
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md docs/bd
+          git commit -m "chore: auto-generate Mermaid BD diagrams"
+          git push
