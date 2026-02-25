@@ -1,0 +1,28 @@
+flowchart LR
+  %% Clock/reset view from design_mysoc.tcl
+
+  n__nameHier_["$nameHier]"]
+  n_axi_7segment_0["axi_7segment_0"]
+  n_axi_gpio_0["axi_gpio_0"]
+  n_axi_smc["axi_smc"]
+  n_axi_uartlite_0["axi_uartlite_0"]
+  n_clk_wiz_0["clk_wiz_0"]
+  n_dlmb_bram_if_cntlr["dlmb_bram_if_cntlr"]
+  n_dlmb_v10["dlmb_v10"]
+  n_ilmb_bram_if_cntlr["ilmb_bram_if_cntlr"]
+  n_ilmb_v10["ilmb_v10"]
+  n_lmb_bram["lmb_bram"]
+  n_mdm_1["mdm_1"]
+  n_microblaze_riscv_0["microblaze_riscv_0"]
+  n_rst_clk_wiz_0_100M["rst_clk_wiz_0_100M"]
+
+  n_clk_wiz_0 --> n_rst_clk_wiz_0_100M
+  n_clk_wiz_0 --> n_rst_clk_wiz_0_100M
+  n_microblaze_riscv_0 --> n_axi_gpio_0
+  n_microblaze_riscv_0 --> n_axi_smc
+  n_microblaze_riscv_0 --> n_axi_uartlite_0
+  n_microblaze_riscv_0 --> n_rst_clk_wiz_0_100M
+  n_rst_clk_wiz_0_100M --> n_axi_gpio_0
+  n_rst_clk_wiz_0_100M --> n_axi_smc
+  n_rst_clk_wiz_0_100M --> n_axi_uartlite_0
+  n_rst_clk_wiz_0_100M --> n_microblaze_riscv_0
