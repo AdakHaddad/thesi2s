@@ -3,59 +3,53 @@ from __future__ import annotations
 
 import argparse
 import re
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Tuple, List, Optional
+from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 
+# Heuristics to decide whether a .tcl looks like a Vivado Block Design export.
 BD_HINT_PATTERNS = [
     re.compile(r"\bcreate_bd_design\b"),
     re.compile(r"\bcreate_bd_cell\b"),
     re.compile(r"\bconnect_bd_intf_net\b"),
     re.compile(r"\bconnect_bd_net\b"),
+    re.compile(r"\bassign_bd_address\b"),
+    re.compile(r"\bcreate_bd_addr_seg\b"),
 ]
 
 CREATE_CELL_RE = re.compile(
     r"""create_bd_cell\s+
-        (?:-type\s+\S+\s+)?   # optional -type
-        (?:-vlnv\s+(\S+)\s+)? # optional -vlnv
-        (\S+)                 # instance name
+        (?:-type\s+\S+\s+)?          # optional -type
+        (?:-vlnv\s+(\S+)\s+)?        # optional -vlnv
+        (\S+)                        # instance name
     """,
     re.VERBOSE,
 )
 
-# Example:
-# connect_bd_intf_net [get_bd_intf_pins a/S_AXI] [get_bd_intf_pins b/M00_AXI]
-CONNECT_INTF_RE = re.compile(
-    r"""connect_bd_intf_net\b.*?
-        get_bd_intf_pins\s+(\S+)\]\s+\[
-        get_bd_intf_pins\s+(\S+)\]
-    """,
-    re.VERBOSE,
-)
+# Capture each endpoint inside [get_bd_intf_pins <endpoint>]
+GET_BD_INTF_PINS_RE = re.compile(r"get_bd_intf_pins\s+([^\]\s]+)")
+# Capture each endpoint inside [get_bd_pins <endpoint>]
+GET_BD_PINS_RE = re.compile(r"get_bd_pins\s+([^\]\s]+)")
 
-# Example:
-# connect_bd_net [get_bd_pins a/clk] [get_bd_pins b/clk]
-CONNECT_NET_RE = re.compile(
-    r"""connect_bd_net\b.*?
-        get_bd_pins\s+(\S+)\]\s+\[
-        get_bd_pins\s+(\S+)\]
-    """,
-    re.VERBOSE,
-)
+
+@dataclass(frozen=True)
+class Edge:
+    src_cell: str
+    dst_cell: str
+    kind: str  # "intf" or "net"
+    src_ep: str
+    dst_ep: str
 
 
 def looks_like_bd_tcl(text: str) -> bool:
     hits = sum(1 for pat in BD_HINT_PATTERNS if pat.search(text))
-    return (
-        hits >= 2
-        and ("create_bd_cell" in text)
-        and (("connect_bd_intf_net" in text) or ("connect_bd_net" in text))
-    )
+    # require strong signals that it is a BD export
+    return ("create_bd_cell" in text) and (("connect_bd_intf_net" in text) or ("connect_bd_net" in text)) and hits >= 2
 
 
 def sanitize_path_to_filename(p: Path) -> str:
-    # Keep stable, filesystem-friendly names; include folders to avoid collisions.
-    s = str(p.as_posix())
+    s = p.as_posix()
     s = re.sub(r"[^A-Za-z0-9._/-]+", "_", s)
     s = s.replace("/", "__")
     if not s.endswith(".mmd"):
@@ -63,64 +57,128 @@ def sanitize_path_to_filename(p: Path) -> str:
     return s
 
 
-def parse_cells_and_edges(text: str) -> Tuple[List[Tuple[str, Optional[str]]], List[Tuple[str, str, str]]]:
-    """
-    Returns:
-      cells: [(inst_name, vlnv)]
-      edges: [(a, b, kind)] where a/b are "cell/pin"
-    """
-    cells: List[Tuple[str, Optional[str]]] = []
-    edges: List[Tuple[str, str, str]] = []
-
-    for m in CREATE_CELL_RE.finditer(text):
-        vlnv = m.group(1)
-        inst = m.group(2)
-        cells.append((inst, vlnv))
-
-    for m in CONNECT_INTF_RE.finditer(text):
-        edges.append((m.group(1), m.group(2), "intf"))
-
-    for m in CONNECT_NET_RE.finditer(text):
-        edges.append((m.group(1), m.group(2), "net"))
-
-    return cells, edges
-
-
-def node_id_for_cell(cell: str) -> str:
-    # Mermaid node ids must be simple; map instance name to safe id.
-    return "n_" + re.sub(r"[^A-Za-z0-9_]", "_", cell)
-
-
 def cell_from_endpoint(ep: str) -> str:
-    # "cell/pin" -> "cell"
+    # "cell/port" -> "cell"
     return ep.split("/", 1)[0] if "/" in ep else ep
 
 
-def mermaid_for_design(tcl_path: Path, cells: List[Tuple[str, Optional[str]]], edges: List[Tuple[str, str, str]]) -> str:
+def node_id_for_cell(cell: str) -> str:
+    return "n_" + re.sub(r"[^A-Za-z0-9_]", "_", cell)
+
+
+def parse_cells(text: str) -> Dict[str, Optional[str]]:
+    cells: Dict[str, Optional[str]] = {}
+    for m in CREATE_CELL_RE.finditer(text):
+        vlnv = m.group(1)
+        inst = m.group(2)
+        cells[inst] = vlnv
+    return cells
+
+
+def _extract_command_blocks(text: str, cmd: str) -> List[str]:
+    """
+    Extracts blocks like:
+      connect_bd_intf_net ... <newline continuation> ...
+    by accumulating lines until a line does NOT end with '\' continuation.
+    """
+    lines = text.splitlines()
+    blocks: List[str] = []
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if not line.startswith(cmd):
+            i += 1
+            continue
+
+        buf = [line]
+        i += 1
+
+        # very common for Vivado Tcl: line continuation with '\'
+        while buf[-1].endswith("\\") and i < len(lines):
+            buf[-1] = buf[-1][:-1].rstrip()
+            buf.append(lines[i].strip())
+            i += 1
+
+        blocks.append(" ".join(buf))
+    return blocks
+
+
+def parse_edges(text: str) -> List[Edge]:
+    edges: Set[Edge] = set()
+
+    # Interfaces (AXI, etc.)
+    for blk in _extract_command_blocks(text, "connect_bd_intf_net"):
+        eps = GET_BD_INTF_PINS_RE.findall(blk)
+        # Usually it’s 2 endpoints, but sometimes more. Connect all pairs in order.
+        for a, b in _pairwise(eps):
+            ea = a
+            eb = b
+            ca = cell_from_endpoint(ea)
+            cb = cell_from_endpoint(eb)
+            if ca != cb:
+                edges.add(Edge(ca, cb, "intf", ea, eb))
+
+    # Nets (clk/reset/etc.)
+    for blk in _extract_command_blocks(text, "connect_bd_net"):
+        eps = GET_BD_PINS_RE.findall(blk)
+        for a, b in _pairwise(eps):
+            ea = a
+            eb = b
+            ca = cell_from_endpoint(ea)
+            cb = cell_from_endpoint(eb)
+            if ca != cb:
+                edges.add(Edge(ca, cb, "net", ea, eb))
+
+    return sorted(edges, key=lambda e: (e.kind, e.src_cell, e.dst_cell, e.src_ep, e.dst_ep))
+
+
+def _pairwise(items: Sequence[str]) -> Iterable[Tuple[str, str]]:
+    """
+    Turn [A, B, C] into (A,B), (A,C) to better represent bus/net fanout.
+    For typical 2-item connects: yields (A,B).
+    """
+    if len(items) < 2:
+        return []
+    first = items[0]
+    return [(first, it) for it in items[1:]]
+
+
+def mermaid_for_design(
+    tcl_path: Path,
+    cells: Dict[str, Optional[str]],
+    edges: List[Edge],
+) -> str:
     lines: List[str] = []
     lines.append("flowchart LR")
     lines.append(f"  %% Auto-generated from: {tcl_path.as_posix()}")
+    lines.append("")
 
-    # declare nodes
-    seen_cells = {inst for inst, _ in cells}
-    # also include cells seen in edges
-    for a, b, _ in edges:
-        seen_cells.add(cell_from_endpoint(a))
-        seen_cells.add(cell_from_endpoint(b))
+    # Collect cells that appear in edges even if not in create_bd_cell matches
+    seen_cells: Set[str] = set(cells.keys())
+    for e in edges:
+        seen_cells.add(e.src_cell)
+        seen_cells.add(e.dst_cell)
 
-    # stable output ordering
+    # Declare nodes with optional VLNV in the label (helps interpret blocks)
     for inst in sorted(seen_cells):
         nid = node_id_for_cell(inst)
-        lines.append(f'  {nid}["{inst}"]')
+        vlnv = cells.get(inst)
+        if vlnv:
+            lines.append(f'  {nid}["{inst}\\n{vlnv}"]')
+        else:
+            lines.append(f'  {nid}["{inst}"]')
 
-    # edges
-    for a, b, kind in edges:
-        ca = cell_from_endpoint(a)
-        cb = cell_from_endpoint(b)
-        na = node_id_for_cell(ca)
-        nb = node_id_for_cell(cb)
-        label = "AXI/intf" if kind == "intf" else "net"
-        lines.append(f"  {na} -->|{label}| {nb}")
+    lines.append("")
+
+    # Draw edges; include endpoint labels for accuracy.
+    for e in edges:
+        na = node_id_for_cell(e.src_cell)
+        nb = node_id_for_cell(e.dst_cell)
+        kind_label = "AXI/intf" if e.kind == "intf" else "net"
+        ep_label = f"{e.src_ep} -> {e.dst_ep}"
+        # Mermaid label: keep it readable; escape quotes.
+        ep_label = ep_label.replace('"', "'")
+        lines.append(f'  {na} -->|{kind_label}: {ep_label}| {nb}')
 
     lines.append("")
     return "\n".join(lines)
@@ -131,7 +189,10 @@ def update_readme_index(readme_path: Path, generated_files_abs: List[Path], repo
     end = "<!-- BD_MERMAID_INDEX_END -->"
 
     if not readme_path.exists():
-        raise SystemExit(f"README not found at {readme_path}")
+        raise SystemExit(
+            f"README not found at {readme_path}.\n"
+            "Either create README.md with the markers or run with --readme pointing to an existing file."
+        )
 
     content = readme_path.read_text(encoding="utf-8")
 
@@ -142,7 +203,6 @@ def update_readme_index(readme_path: Path, generated_files_abs: List[Path], repo
             f"{start}\n{end}\n"
         )
 
-    # Use repo-relative paths in README (NOT /home/runner/...).
     rels = [p.relative_to(repo_root).as_posix() for p in sorted(generated_files_abs)]
 
     block_lines: List[str] = []
@@ -163,13 +223,11 @@ def update_readme_index(readme_path: Path, generated_files_abs: List[Path], repo
         first_rel = rels[0]
         first_abs = repo_root / first_rel
         block_lines.append("```mermaid")
-        # Preserve newlines; avoid turning it into one long line.
         block_lines.append(first_abs.read_text(encoding="utf-8").rstrip())
         block_lines.append("```")
     block_lines.append("")
     block_lines.append(end)
 
-    # Replace marker region
     pattern = re.compile(re.escape(start) + r".*?" + re.escape(end), re.DOTALL)
     new_content = pattern.sub("\n".join(block_lines), content)
     readme_path.write_text(new_content, encoding="utf-8")
@@ -202,7 +260,9 @@ def main() -> None:
         if not looks_like_bd_tcl(text):
             continue
 
-        cells, edges = parse_cells_and_edges(text)
+        cells = parse_cells(text)
+        edges = parse_edges(text)
+
         mmd = mermaid_for_design(tcl.relative_to(repo_root), cells, edges)
 
         out_name = sanitize_path_to_filename(tcl.relative_to(repo_root))
