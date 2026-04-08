@@ -322,6 +322,10 @@ proc create_root_design { parentCell } {
     CONFIG.CLK_IN1_BOARD_INTERFACE {sys_clock} \
     CONFIG.RESET_BOARD_INTERFACE {reset} \
     CONFIG.USE_BOARD_FLOW {true} \
+      CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {100.000} \
+      CONFIG.CLKOUT1_USED {true} \
+      CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {24.576} \
+      CONFIG.CLKOUT2_USED {true} \
   ] $clk_wiz_0
 
 
@@ -343,6 +347,9 @@ proc create_root_design { parentCell } {
 
   # Create instance: rst_clk_wiz_0_100M, and set properties
   set rst_clk_wiz_0_100M [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rst_clk_wiz_0_100M ]
+
+   # Create instance: rst_clk_wiz_0_audio, and set properties
+   set rst_clk_wiz_0_audio [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rst_clk_wiz_0_audio ]
 
   # Create instance: axi_uartlite_0, and set properties
   set axi_uartlite_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_uartlite:2.0 axi_uartlite_0 ]
@@ -393,9 +400,11 @@ proc create_root_design { parentCell } {
   [get_bd_ports seg_0]
   connect_bd_net -net clk_wiz_0_locked  [get_bd_pins clk_wiz_0/locked] \
   [get_bd_pins rst_clk_wiz_0_100M/dcm_locked]
+   connect_bd_net -net clk_wiz_0_locked_audio  [get_bd_pins clk_wiz_0/locked] \
+   [get_bd_pins rst_clk_wiz_0_audio/dcm_locked]
   connect_bd_net -net mdm_1_debug_sys_rst  [get_bd_pins mdm_1/Debug_SYS_Rst] \
   [get_bd_pins rst_clk_wiz_0_100M/mb_debug_sys_rst]
-  connect_bd_net -net microblaze_riscv_0_Clk  [get_bd_pins clk_wiz_0/clk_out1] \
+   connect_bd_net -net microblaze_riscv_0_Clk  [get_bd_pins clk_wiz_0/clk_out1] \
   [get_bd_pins microblaze_riscv_0/Clk] \
   [get_bd_pins microblaze_riscv_0_local_memory/LMB_Clk] \
   [get_bd_pins rst_clk_wiz_0_100M/slowest_sync_clk] \
@@ -415,8 +424,17 @@ proc create_root_design { parentCell } {
   [get_bd_pins axi_smc/aresetn] \
   [get_bd_pins axi_gpio_0/s_axi_aresetn] \
   [get_bd_pins axi_7segment_0/s00_axi_aresetn]
-  connect_bd_net -net sys_clock_1  [get_bd_ports sys_clock] \
-  [get_bd_pins clk_wiz_0/clk_in1]
+   connect_bd_net -net rst_clk_wiz_0_audio_ext_reset_in  [get_bd_ports reset] \
+   [get_bd_pins rst_clk_wiz_0_audio/ext_reset_in]
+   connect_bd_net -net rst_clk_wiz_0_audio_slowest_sync_clk  [get_bd_pins clk_wiz_0/clk_out2] \
+   [get_bd_pins rst_clk_wiz_0_audio/slowest_sync_clk]
+   connect_bd_net -net rst_clk_wiz_0_audio_peripheral_reset  [get_bd_pins rst_clk_wiz_0_audio/peripheral_reset] \
+   [get_bd_pins i2s_0/audio_rst]
+   connect_bd_net -net sys_clock_1  [get_bd_ports sys_clock] \
+   [get_bd_pins clk_wiz_0/clk_in1]
+
+   connect_bd_net -net i2s_audio_clk  [get_bd_pins clk_wiz_0/clk_out2] \
+   [get_bd_pins i2s_0/audio_clk]
 
   # Create address segments
   assign_bd_address -offset 0x44A00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces microblaze_riscv_0/Data] [get_bd_addr_segs axi_7segment_0/S00_AXI/S00_AXI_reg] -force

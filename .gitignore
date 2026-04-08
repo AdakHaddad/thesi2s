@@ -24,9 +24,23 @@ workspace/_ide/
 workspace/.rigel_lopper/
 workspace/**/.cache/
 workspace/**/.clangd/
+workspace/**/build/
+workspace/**/export/
+workspace/**/logs/
+workspace/**/.Xil/
+workspace/**/.wsdata/
+workspace/**/.metadata/
 
-# The hardware platform and Board Support Package (BSP) are auto-generated
-workspace/platform_mysoc/
+# Keep only hello_world source app in workspace
+workspace/*
+!workspace/.gitignore
+!workspace/hello_world/
+
+workspace/hello_world/*
+!workspace/hello_world/.gitignore
+!workspace/hello_world/vitis-comp.json
+!workspace/hello_world/src/
+!workspace/hello_world/src/**
 
 # Compiled Binaries & Handoff files
 
