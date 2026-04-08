@@ -42,6 +42,16 @@ workspace/hello_world/*
 !workspace/hello_world/src/
 !workspace/hello_world/src/**
 
+# Ignore local editor/compiler artifacts inside hello_world source tree
+workspace/hello_world/src/.cache/
+workspace/hello_world/src/compile_commands.json
+
+# Local handoff/debug files not needed in git
+*.xsa
+*.wcfg
+dfx_runtime.txt
+patch_existing_bd_i2s_audio_clock.tcl
+
 # Compiled Binaries & Handoff files
 
 # ========================================

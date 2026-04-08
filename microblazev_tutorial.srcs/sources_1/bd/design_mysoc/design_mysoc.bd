@@ -1,12 +1,12 @@
 {
   "design": {
     "design_info": {
-      "boundary_crc": "0x65CA5F1F2B6E6794",
+      "boundary_crc": "0x9B036E13C1E0314",
       "device": "xc7a35tcpg236-1",
       "gen_directory": "../../../../microblazev_tutorial.gen/sources_1/bd/design_mysoc",
       "name": "design_mysoc",
       "rev_ctrl_bd_flag": "RevCtrlBdOff",
-      "synth_flow_mode": "Hierarchical",
+      "synth_flow_mode": "None",
       "tool_version": "2025.2",
       "validated": "true"
     },
@@ -25,7 +25,9 @@
       "axi_uartlite_0": "",
       "axi_smc": "",
       "axi_gpio_0": "",
-      "axi_7segment_0": ""
+      "axi_7segment_0": "",
+      "i2s_0": "",
+      "rst_clk_wiz_0_audio": ""
     },
     "interface_ports": {
       "usb_uart": {
@@ -138,6 +140,18 @@
         "direction": "O",
         "left": "3",
         "right": "0"
+      },
+      "i2s_ws_0": {
+        "direction": "O"
+      },
+      "i2s_bclk_0": {
+        "direction": "O"
+      },
+      "i2s_mclk_0": {
+        "direction": "O"
+      },
+      "i2s_data_0": {
+        "direction": "O"
       }
     },
     "components": {
@@ -149,8 +163,44 @@
         "inst_hier_path": "clk_wiz_0",
         "has_run_ip_tcl": "true",
         "parameters": {
+          "CLKOUT1_JITTER": {
+            "value": "147.839"
+          },
+          "CLKOUT1_PHASE_ERROR": {
+            "value": "120.953"
+          },
+          "CLKOUT1_REQUESTED_OUT_FREQ": {
+            "value": "100.000"
+          },
+          "CLKOUT1_USED": {
+            "value": "true"
+          },
+          "CLKOUT2_JITTER": {
+            "value": "196.585"
+          },
+          "CLKOUT2_PHASE_ERROR": {
+            "value": "120.953"
+          },
+          "CLKOUT2_REQUESTED_OUT_FREQ": {
+            "value": "24.576"
+          },
+          "CLKOUT2_USED": {
+            "value": "true"
+          },
           "CLK_IN1_BOARD_INTERFACE": {
             "value": "sys_clock"
+          },
+          "MMCM_CLKFBOUT_MULT_F": {
+            "value": "7.125"
+          },
+          "MMCM_CLKOUT0_DIVIDE_F": {
+            "value": "7.125"
+          },
+          "MMCM_CLKOUT1_DIVIDE": {
+            "value": "29"
+          },
+          "NUM_OUT_CLKS": {
+            "value": "2"
           },
           "RESET_BOARD_INTERFACE": {
             "value": "reset"
@@ -545,7 +595,7 @@
         "has_run_ip_tcl": "true",
         "parameters": {
           "NUM_MI": {
-            "value": "3"
+            "value": "4"
           },
           "NUM_SI": {
             "value": "1"
@@ -567,11 +617,12 @@
             "bridges": [
               "M00_AXI",
               "M01_AXI",
-              "M02_AXI"
+              "M02_AXI",
+              "M03_AXI"
             ],
             "bd_attributes": {
               "BRIDGES": {
-                "value": "M00_AXI:M01_AXI:M02_AXI",
+                "value": "M00_AXI:M01_AXI:M02_AXI:M03_AXI",
                 "value_src": "auto"
               },
               "TYPE": {
@@ -672,6 +723,37 @@
                 "value_src": "default"
               }
             }
+          },
+          "M03_AXI": {
+            "mode": "Master",
+            "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
+            "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+            "parameters": {
+              "NUM_READ_OUTSTANDING": {
+                "value": "1"
+              },
+              "NUM_READ_THREADS": {
+                "value": "1"
+              },
+              "NUM_WRITE_OUTSTANDING": {
+                "value": "1"
+              },
+              "NUM_WRITE_THREADS": {
+                "value": "1"
+              },
+              "RUSER_BITS_PER_BYTE": {
+                "value": "0"
+              },
+              "WUSER_BITS_PER_BYTE": {
+                "value": "0"
+              }
+            },
+            "bd_attributes": {
+              "TYPE": {
+                "value": "interior",
+                "value_src": "default"
+              }
+            }
           }
         }
       },
@@ -701,6 +783,30 @@
         "xci_path": "ip\\design_mysoc_axi_7segment_0_0\\design_mysoc_axi_7segment_0_0.xci",
         "inst_hier_path": "axi_7segment_0",
         "has_run_ip_tcl": "true"
+      },
+      "i2s_0": {
+        "vlnv": "xilinx.com:user:i2s:1.0",
+        "ip_revision": "4",
+        "xci_name": "design_mysoc_i2s_0_0",
+        "xci_path": "ip\\design_mysoc_i2s_0_0\\design_mysoc_i2s_0_0.xci",
+        "inst_hier_path": "i2s_0",
+        "has_run_ip_tcl": "true"
+      },
+      "rst_clk_wiz_0_audio": {
+        "vlnv": "xilinx.com:ip:proc_sys_reset:5.0",
+        "ip_revision": "17",
+        "xci_name": "design_mysoc_rst_clk_wiz_0_audio_0",
+        "xci_path": "ip\\design_mysoc_rst_clk_wiz_0_audio_0\\design_mysoc_rst_clk_wiz_0_audio_0.xci",
+        "inst_hier_path": "rst_clk_wiz_0_audio",
+        "has_run_ip_tcl": "true",
+        "parameters": {
+          "RESET_BOARD_INTERFACE": {
+            "value": "reset"
+          },
+          "USE_BOARD_FLOW": {
+            "value": "true"
+          }
+        }
       }
     },
     "interface_nets": {
@@ -732,6 +838,12 @@
         "interface_ports": [
           "axi_smc/M02_AXI",
           "axi_7segment_0/S00_AXI"
+        ]
+      },
+      "axi_smc_M03_AXI": {
+        "interface_ports": [
+          "axi_smc/M03_AXI",
+          "i2s_0/S00_AXI"
         ]
       },
       "axi_uartlite_0_UART": {
@@ -784,10 +896,42 @@
           "seg_0"
         ]
       },
+      "clk_wiz_0_clk_out2": {
+        "ports": [
+          "clk_wiz_0/clk_out2",
+          "i2s_0/audio_clk",
+          "rst_clk_wiz_0_audio/slowest_sync_clk"
+        ]
+      },
       "clk_wiz_0_locked": {
         "ports": [
           "clk_wiz_0/locked",
-          "rst_clk_wiz_0_100M/dcm_locked"
+          "rst_clk_wiz_0_100M/dcm_locked",
+          "rst_clk_wiz_0_audio/dcm_locked"
+        ]
+      },
+      "i2s_0_i2s_bclk": {
+        "ports": [
+          "i2s_0/i2s_bclk",
+          "i2s_bclk_0"
+        ]
+      },
+      "i2s_0_i2s_data": {
+        "ports": [
+          "i2s_0/i2s_data",
+          "i2s_data_0"
+        ]
+      },
+      "i2s_0_i2s_mclk": {
+        "ports": [
+          "i2s_0/i2s_mclk",
+          "i2s_mclk_0"
+        ]
+      },
+      "i2s_0_i2s_ws": {
+        "ports": [
+          "i2s_0/i2s_ws",
+          "i2s_ws_0"
         ]
       },
       "mdm_1_debug_sys_rst": {
@@ -805,14 +949,16 @@
           "axi_smc/aclk",
           "axi_uartlite_0/s_axi_aclk",
           "axi_gpio_0/s_axi_aclk",
-          "axi_7segment_0/s00_axi_aclk"
+          "axi_7segment_0/s00_axi_aclk",
+          "i2s_0/s00_axi_aclk"
         ]
       },
       "reset_1": {
         "ports": [
           "reset",
           "clk_wiz_0/reset",
-          "rst_clk_wiz_0_100M/ext_reset_in"
+          "rst_clk_wiz_0_100M/ext_reset_in",
+          "rst_clk_wiz_0_audio/ext_reset_in"
         ]
       },
       "rst_clk_wiz_0_100M_bus_struct_reset": {
@@ -833,7 +979,19 @@
           "axi_uartlite_0/s_axi_aresetn",
           "axi_smc/aresetn",
           "axi_gpio_0/s_axi_aresetn",
-          "axi_7segment_0/s00_axi_aresetn"
+          "axi_7segment_0/s00_axi_aresetn",
+          "i2s_0/s00_axi_aresetn"
+        ]
+      },
+      "rst_clk_wiz_0_100M_peripheral_reset": {
+        "ports": [
+          "rst_clk_wiz_0_100M/peripheral_reset"
+        ]
+      },
+      "rst_clk_wiz_0_audio_peripheral_reset": {
+        "ports": [
+          "rst_clk_wiz_0_audio/peripheral_reset",
+          "i2s_0/audio_rst"
         ]
       },
       "sys_clock_1": {
@@ -870,6 +1028,13 @@
                 "offset": "0x00000000",
                 "range": "128K",
                 "offset_high_param": "C_HIGHADDR"
+              },
+              "SEG_i2s_0_S00_AXI_reg": {
+                "address_block": "/i2s_0/S00_AXI/S00_AXI_reg",
+                "offset": "0x44A10000",
+                "range": "64K",
+                "offset_base_param": "C_S00_AXI_BASEADDR",
+                "offset_high_param": "C_S00_AXI_HIGHADDR"
               }
             }
           },

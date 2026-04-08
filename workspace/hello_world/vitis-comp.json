@@ -1,7 +1,7 @@
 {
   "name": "hello_world",
   "type": "HOST",
-  "platform": "platform_mysoc",
+  "platform": "platformi2s_gui",
   "domain": "standalone_microblaze_riscv_0",
   "cpuInstance": "microblaze_riscv_0",
   "cpuType": "microblaze_riscv",
