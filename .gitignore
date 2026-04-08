@@ -1,14 +1,11 @@
-# ========================================
-# Vivado Generated Directories & Logs
-# ========================================
-*.runs/
-*.cache/
-*.hw/
-*.sim/
-*.ip_user_files/
-*.gen/
+# ==================================================
+# SBML repo: keep I2S IP sources, Vivado design source,
+# and Vitis hello_world source only.
+# ==================================================
 
-# Vivado Log and Journal Files
+# -----------------------------
+# Global generated files
+# -----------------------------
 *.jou
 *.log
 *.str
@@ -16,35 +13,61 @@
 *.wdf
 *.wpc
 *.dcp
+*.tmp
+*.bak
 
-# ========================================
-# Vitis Workspace / IDE Generated Files
-# ========================================
-workspace/_ide/
-workspace/.rigel_lopper/
-workspace/**/.cache/
-workspace/**/.clangd/
-workspace/**/build/
-workspace/**/export/
-workspace/**/logs/
-workspace/**/.Xil/
-workspace/**/.wsdata/
-workspace/**/.metadata/
+# -----------------------------
+# Vivado generated directories
+# -----------------------------
+**/*.cache/
+**/*.runs/
+**/*.hw/
+**/*.sim/
+**/*.gen/
+**/*.ip_user_files/
+**/*.Xil/
 
-# Keep only hello_world source app in workspace
-workspace/*
-!workspace/.gitignore
-!workspace/hello_world/
+# -----------------------------
+# Keep only I2S IP package source
+# -----------------------------
+ip_repo/*
+!ip_repo/i2s_1_0/
+!ip_repo/i2s_1_0/**
 
-workspace/hello_world/*
-!workspace/hello_world/.gitignore
-!workspace/hello_world/vitis-comp.json
-!workspace/hello_world/src/
-!workspace/hello_world/src/**
+# Ignore editable-packager/generated Vivado project artifacts in ip_repo
+ip_repo/edit_i2s_v1_0.cache/
+ip_repo/edit_i2s_v1_0.hw/
+ip_repo/edit_i2s_v1_0.ip_user_files/
+ip_repo/edit_i2s_v1_0.sim/
+ip_repo/edit_i2s_v1_0.xpr
 
-# Ignore local editor/compiler artifacts inside hello_world source tree
-workspace/hello_world/src/.cache/
-workspace/hello_world/src/compile_commands.json
+# -----------------------------
+# microblazev_tutorial: ignore heavy outputs
+# -----------------------------
+microblazev_tutorial/microblazev_tutorial.cache/
+microblazev_tutorial/microblazev_tutorial.gen/
+microblazev_tutorial/microblazev_tutorial.hw/
+microblazev_tutorial/microblazev_tutorial.ip_user_files/
+microblazev_tutorial/microblazev_tutorial.runs/
+microblazev_tutorial/microblazev_tutorial.sim/
+microblazev_tutorial/microblazev_tutorial.tmp/
+
+# -----------------------------
+# Vitis workspace: keep hello_world source only
+# -----------------------------
+microblazev_tutorial/workspace/*
+!microblazev_tutorial/workspace/.gitignore
+!microblazev_tutorial/workspace/hello_world/
+
+microblazev_tutorial/workspace/hello_world/*
+!microblazev_tutorial/workspace/hello_world/.gitignore
+!microblazev_tutorial/workspace/hello_world/vitis-comp.json
+!microblazev_tutorial/workspace/hello_world/src/
+!microblazev_tutorial/workspace/hello_world/src/**
+
+# Keep local helper scripts
+!microblazev_tutorial/tools/
+!microblazev_tutorial/tools/**
 
 # Local handoff/debug files not needed in git
 *.xsa
@@ -52,10 +75,6 @@ workspace/hello_world/src/compile_commands.json
 dfx_runtime.txt
 patch_existing_bd_i2s_audio_clock.tcl
 
-# Compiled Binaries & Handoff files
-
-# ========================================
-# OS & Editor Files
-# ========================================
+# OS and editor files
 .DS_Store
 .vscode/
