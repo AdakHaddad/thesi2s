@@ -61,6 +61,14 @@ It is arranged in such a way to make it easier in writing.
 |-- packages/ (Additional sty files for helping beginner users)
 |-- references.bib (Bibtex file)
 ```
+
+### Peripheral I2S specification
+```
+|-- docs/
+    |-- spec-outline.md  (Outline spesifikasi peripheral I2S-only AXI4-Lite — bahasa Indonesia)
+```
+
+Dokumen `docs/spec-outline.md` memuat ruang lingkup, peta register, parameter clocking, perilaku FIFO/interrupt, model interaksi software (Vitis ISR), dan checklist verifikasi untuk peripheral I2S yang diimplementasikan pada Basys3 (audio_clk = 24.56897 MHz, stereo, 24-bit dalam 32-bit slot, ~48 kHz / ~96 kHz).
 ### Sample directory
 Only used for template sample.
 ```
