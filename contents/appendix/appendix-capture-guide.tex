@@ -1,0 +1,109 @@
+% appendix-capture-guide.tex
+% Panduan pengambilan gambar dan bukti pengujian — I2S TX Peripheral
+% Tambahkan ke main.tex: \chapterappendixadd{contents/appendix/appendix-capture-guide}
+
+\section{Panduan Pengambilan Gambar dan Bukti Pengujian}
+
+Lampiran ini berisi panduan langkah demi langkah untuk memperoleh
+gambar-gambar yang digunakan sebagai bukti pengujian dalam Bab~IV.
+
+% ------------------------------------------------------------------
+\subsection{Capture Clocking Wizard: Requested vs.\ Actual Frequency}
+% ------------------------------------------------------------------
+
+\begin{enumerate}
+  \item Buka proyek Vivado dan double-click IP \textit{Clocking Wizard} pada Block Design.
+  \item Masuk ke tab \textit{Output Clocks}.
+  \item Pastikan kolom \textbf{Requested} dan \textbf{Actual} terlihat dengan jelas pada baris \texttt{clk\_out1} (\texttt{audio\_clk}).
+  \item Ambil screenshot seluruh jendela (Windows: Win+Shift+S; Linux: \texttt{scrot}).
+  \item Simpan dengan nama: \texttt{contents/chapter-4/fig-clk-wiz-actual.png}.
+  \item Pastikan angka \texttt{Actual = 24.56897~MHz} terbaca jelas.
+\end{enumerate}
+
+% ------------------------------------------------------------------
+\subsection{Capture Vivado Block Design}
+% ------------------------------------------------------------------
+
+\begin{enumerate}
+  \item Di Vivado, buka file \texttt{*.bd} (Block Design).
+  \item Atur zoom agar semua blok terlihat (MicroBlaze, AXI Interconnect, I2S TX IP, Clocking Wizard).
+  \item Gunakan \textit{File} $\rightarrow$ \textit{Export} $\rightarrow$ \textit{Export Block Diagram} jika tersedia,
+        atau ambil screenshot.
+  \item Simpan sebagai: \texttt{contents/chapter-4/fig-vivado-bd.png}.
+\end{enumerate}
+
+% ------------------------------------------------------------------
+\subsection{Capture Waveform Simulasi RTL}
+% ------------------------------------------------------------------
+
+\begin{enumerate}
+  \item Jalankan simulasi testbench di Vivado Simulator (atau ModelSim).
+  \item Tambahkan sinyal \texttt{i2s\_bclk}, \texttt{i2s\_ws}, \texttt{i2s\_data}, \texttt{fifo\_level}, \texttt{irq\_out}
+        ke jendela waveform.
+  \item Zoom pada 2--3 frame I2S lengkap (minimal 128 siklus BCLK).
+  \item Verifikasi: WS berganti setiap 32 BCLK; DATA muncul dengan 1-bit delay setelah tepi WS.
+  \item Ambil screenshot dan simpan sebagai: \texttt{contents/chapter-4/fig-sim-waveform.png}.
+\end{enumerate}
+
+% ------------------------------------------------------------------
+\subsection{Capture ILA Waveform (Hardware-in-Loop)}
+% ------------------------------------------------------------------
+
+\begin{enumerate}
+  \item Tambahkan IP \textit{Integrated Logic Analyzer} (ILA) ke Block Design.
+  \item Hubungkan probe ke sinyal:
+    \begin{itemize}
+      \item \texttt{Probe~0}: \texttt{i2s\_bclk} (1-bit)
+      \item \texttt{Probe~1}: \texttt{i2s\_ws} (1-bit)
+      \item \texttt{Probe~2}: \texttt{i2s\_data} (1-bit)
+      \item \texttt{Probe~3}: \texttt{fifo\_level[5:0]} (6-bit)
+      \item \texttt{Probe~4}: \texttt{underrun} (1-bit)
+      \item \texttt{Probe~5}: \texttt{irq\_out} (1-bit)
+    \end{itemize}
+  \item Generate bitstream ulang, program FPGA.
+  \item Di \textit{Hardware Manager}: buka ILA core, set trigger pada tepi turun \texttt{WS}.
+  \item Jalankan program Vitis, tekan \textit{Run trigger}.
+  \item Setelah waveform stabil:
+    \begin{itemize}
+      \item Screenshot mode 48~kHz $\rightarrow$ \texttt{contents/chapter-4/fig-ila-48k.png}.
+      \item Ubah \texttt{CONTROL[5]} (FS\_MODE) ke 1 melalui program Vitis, screenshot ulang
+            $\rightarrow$ \texttt{contents/chapter-4/fig-ila-96k.png}.
+    \end{itemize}
+  \item Catat periode BCLK dan WS dari kursor ILA untuk mengisi Tabel~\ref{tab:meas} pada Bab~IV.
+\end{enumerate}
+
+% ------------------------------------------------------------------
+\subsection{Capture Bukti Output Audio (PCM5102A)}
+% ------------------------------------------------------------------
+
+\begin{enumerate}
+  \item Hubungkan output analog PCM5102A (\texttt{OUTL}/\texttt{OUTR}) ke osiloskop atau kartu suara PC.
+  \item Jalankan program Vitis dengan frekuensi uji $\approx$1~kHz
+        (\texttt{phase\_step = 11} untuk mode 48~kHz, lihat Tabel frekuensi di Bab~IV).
+  \item \textbf{Opsi A — Osiloskop}:
+    \begin{itemize}
+      \item Atur trigger pada sinyal analog.
+      \item Tampilkan 2--5 periode gelombang sinus.
+      \item Ambil foto layar osiloskop atau gunakan fitur \textit{screen capture} osiloskop.
+      \item Simpan sebagai: \texttt{contents/chapter-4/fig-scope-sine.png}.
+    \end{itemize}
+  \item \textbf{Opsi B — Audacity} (jika menggunakan line-in PC):
+    \begin{itemize}
+      \item Rekam beberapa detik audio masuk.
+      \item Gunakan \textit{Analyze} $\rightarrow$ \textit{Plot Spectrum} untuk tampilkan FFT.
+      \item Screenshot tampilan FFT (puncak harus muncul di sekitar 1~kHz).
+      \item Simpan sebagai: \texttt{contents/chapter-4/fig-audacity-fft.png}.
+    \end{itemize}
+\end{enumerate}
+
+% ------------------------------------------------------------------
+\subsection{Catatan Format dan Kualitas Gambar}
+% ------------------------------------------------------------------
+
+\begin{itemize}
+  \item Gunakan format \texttt{PNG} untuk screenshot UI, waveform, dan foto.
+  \item Gunakan format \texttt{PDF} untuk diagram vektor (\textit{block diagram}, \textit{flowchart}).
+  \item Resolusi minimal: lebar 1200 piksel untuk screenshot.
+  \item Nama file harus konsisten dengan yang dipanggil di perintah \verb|\includegraphics{}| pada file \texttt{.tex}.
+  \item Jangan ubah nama file setelah referensi sudah ada di \texttt{.tex}; jika perlu ubah, cari-ganti semua referensi terkait.
+\end{itemize}
