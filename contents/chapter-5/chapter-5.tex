@@ -1,5 +1,89 @@
-\chapter{Tambahan (Opsional)}
+% ===========================================================================
+%  BAB V  –  KESIMPULAN DAN SARAN
+% ===========================================================================
+\chapter{Kesimpulan dan Saran}
 
-Anda boleh menambahkan Bab jika diperlukan. Jumlah Bab tidak harus sesuai dengan \textit{template}. 
+\section{Kesimpulan}
 
-Bab tambahan ini diperlukan jika hasil penelitian untuk menjawab tujuan cukup panjang atau terdiri dari banyak sub bab. Mahasiswa boleh menjawab 1 tujuan penelitian dengan 1 bab.
+Penelitian ini telah berhasil merancang dan mengimplementasikan peripheral I2S TX
+berbasis Verilog dengan antarmuka AXI4-Lite pada FPGA Basys3. Berdasarkan hasil
+implementasi dan pengujian yang telah dilakukan, dapat disimpulkan:
+
+\begin{enumerate}
+    \item Peripheral I2S TX berhasil dirancang dalam Verilog HDL dengan dukungan
+          format audio 24-bit stereo (slot 32-bit, format Philips I2S standar).
+          Desain mencakup modul AXI4-Lite slave, FIFO TX (256 \textit{frame}),
+          serializer I2S, dan pembangkit clock.
+
+    \item Antarmuka AXI4-Lite dengan \textit{register map} terstruktur (9 register
+          pada offset 0x00--0x20) berhasil diintegrasikan dengan MicroBlaze~V pada
+          Basys3, memungkinkan akses perangkat lunak yang intuitif melalui
+          instruksi \textit{load/store} standar.
+
+    \item Dua mode \textit{sample rate} berhasil diimplementasikan:
+          mode~0 ($\approx$\,47,99~kHz) dan mode~1 ($\approx$\,95,97~kHz),
+          keduanya berasal dari $audio\_clk = 24{,}56897$~MHz yang dihasilkan
+          MMCM Basys3. Deviasi terhadap nilai ideal ($< 0{,}03\%$) tidak
+          berdampak pada kualitas audio yang dapat didengar.
+
+    \item Mekanisme FIFO TX 256 \textit{frame} dengan IRQ \textit{watermark}
+          berhasil mencegah \textit{underrun} meskipun CPU melakukan perhitungan
+          pembangkitan \textit{sine wave} secara bersamaan. Nilai \textit{watermark}
+          optimal yang ditemukan adalah \textit{[isi dari hasil pengujian]}
+          \textit{frame}.
+
+    \item Pengujian audio nyata pada DAC PCM5102A membuktikan fungsionalitas
+          sistem secara \textit{end-to-end}: sinyal \textit{sine} 1~kHz terputar
+          secara kontinu tanpa \textit{glitch} yang terdengar melalui output
+          audio PCM5102A.
+
+    \item Resource utilization menunjukkan desain yang efisien: peripheral I2S TX
+          mengonsumsi \textit{[isi]} LUT dan \textit{[isi]} FF dari total sumber
+          daya Artix-7 XC7A35T, menyisakan ruang yang cukup untuk komponen
+          MicroBlaze~V dan peripheral pendukung.
+\end{enumerate}
+
+\section{Saran}
+
+Berdasarkan pengalaman dan batasan penelitian ini, beberapa saran untuk
+pengembangan lanjutan adalah:
+
+\begin{enumerate}
+    \item \textbf{Penambahan mode RX (\textit{Receiver})}: Peripheral yang ada
+          hanya mendukung TX. Penambahan modul RX memungkinkan pengambilan audio
+          dari mikrofon digital (misalnya SPH0645 atau ICS43434) untuk aplikasi
+          \textit{voice recognition} atau efek audio real-time.
+
+    \item \textbf{Integrasi DMA}: Mengganti mekanisme pengisian CPU+IRQ dengan
+          AXI DMA (\textit{Direct Memory Access}) dan antarmuka AXI-Stream
+          akan meningkatkan \textit{throughput} dan mengurangi beban CPU secara
+          signifikan, memungkinkan pemutaran audio dari buffer memori besar
+          (WAV atau stream audio).
+
+    \item \textbf{Peningkatan presisi clock}: Penggunaan osilator audio eksternal
+          24,576~MHz sebagai sumber $audio\_clk$ (bukan MMCM) akan menghilangkan
+          deviasi frekuensi dan menghasilkan $F_s$ yang tepat sesuai standar,
+          penting untuk aplikasi audio profesional yang ketat.
+
+    \item \textbf{Integrasi Linux ASoC}: Setelah modul DMA berfungsi, langkah
+          selanjutnya adalah pengembangan \textit{driver} Linux ASoC
+          (\textit{Audio System-on-Chip}) dengan \textit{device tree binding},
+          yang memungkinkan peripheral ini digunakan dalam distribusi Linux
+          tertanam standar (misalnya Yocto atau Buildroot pada platform yang
+          lebih besar).
+
+    \item \textbf{Dukungan sample rate tambahan}: Dengan menambahkan opsi
+          pembagi clock yang lebih beragam (misalnya ÷6 untuk
+          $\approx$\,64~kHz atau implementasi \textit{fractional divider}),
+          peripheral dapat mendukung \textit{sample rate} yang lebih banyak
+          seperti 44,1~kHz.
+
+    \item \textbf{Validasi kualitas audio terukur}: Pengukuran SNR dan THD+N
+          menggunakan \textit{audio analyzer} (misalnya QuantAsylum QA403)
+          akan memberikan data kuantitatif kualitas audio yang lebih kuat
+          untuk mendukung kesimpulan penelitian.
+\end{enumerate}
+
+\noindent\textit{Catatan sinkronisasi: Pastikan setiap kesimpulan (butir 1--6) secara
+langsung menjawab salah satu dari empat rumusan masalah yang ditetapkan pada Bab~I.
+Setiap butir kesimpulan harus didukung oleh data pengukuran dari Bab~IV.}

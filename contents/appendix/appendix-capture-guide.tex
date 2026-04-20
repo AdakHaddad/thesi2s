@@ -1,0 +1,248 @@
+% ===========================================================================
+%  LAMPIRAN: PANDUAN PENGAMBILAN GAMBAR DAN SCREENSHOT
+%  (Untuk mengganti placeholder figure di tiap bab)
+% ===========================================================================
+\chapter*{Panduan Pengambilan Gambar}
+\addcontentsline{toc}{chapter}{Panduan Pengambilan Gambar}
+\label{app:captureguide}
+
+Lampiran ini memandu Anda dalam mengambil gambar/screenshot untuk mengganti
+setiap \textbf{[PLACEHOLDER]} yang ada di bab-bab skripsi. Setelah gambar
+diperoleh, simpan sebagai file \texttt{.png} atau \texttt{.jpg} di dalam
+folder \texttt{contents/chapter-X/} yang sesuai, lalu ganti blok
+\texttt{\textbackslash{}fbox\{\ldots\}} dengan perintah standar LaTeX berikut:
+
+\begin{verbatim}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{contents/chapter-X/nama-file.png}
+    \caption{Keterangan gambar.}
+    \label{fig:label}
+\end{figure}
+\end{verbatim}
+
+\section*{Daftar Gambar yang Perlu Diambil}
+
+\subsection*{BAB II -- Tinjauan Pustaka dan Dasar Teori}
+
+\begin{enumerate}
+    \item \textbf{Gambar 2.1 -- Rantai audio digital} (\texttt{fig:audio-chain})\\
+          \textit{Cara membuat:} Gambar blok diagram sederhana menggunakan
+          draw.io, Visio, atau LibreOffice Draw. Komponen: ADC (atau buffer
+          memori) $\to$ FPGA/MicroBlaze V $\to$ I2S TX $\to$ PCM5102A $\to$ Speaker.
+
+    \item \textbf{Gambar 2.2 -- Timing diagram I2S} (\texttt{fig:i2s-timing})\\
+          \textit{Cara membuat:}
+          \begin{itemize}
+              \item Gunakan \textbf{Wavedrom} (wavedrom.com) untuk menggambar
+                    sinyal digital. Contoh kode WaveDrom:
+\begin{verbatim}
+{signal: [
+  {name: 'BCLK', wave: 'p......................'},
+  {name: 'WS',   wave: '0...1...0...1...0...1.'},
+  {name: 'DATA', wave: 'x.23456789012345...x...',
+   data:['D0','D1','D2','D3','D4']}
+]}
+\end{verbatim}
+              \item Atau: \textit{screenshot} dari ILA Vivado saat
+                    \texttt{bclk}, \texttt{ws}, \texttt{i2s\_data} diprobing.
+          \end{itemize}
+
+    \item \textbf{Gambar 2.3 -- Foto modul PCM5102A} (\texttt{fig:pcm5102a})\\
+          \textit{Cara membuat:} Foto modul PCM5102A dan sambungan kabel ke
+          Pmod Basys3. Pastikan kabel BCLK (hijau), WS (kuning), DATA (biru),
+          GND (hitam), 3V3 (merah) terlihat jelas. Foto dengan resolusi minimal
+          1280$\times$720 piksel.
+
+    \item \textbf{Gambar 2.4 -- Diagram konsep FIFO} (\texttt{fig:fifo-concept})\\
+          \textit{Cara membuat:} Diagram blok dengan draw.io:
+          \begin{itemize}
+              \item Blok "CPU (Vitis)" $\xrightarrow{\text{push}}$ kotak FIFO
+                    256 frame $\xrightarrow{\text{pop per frame}}$ blok
+                    "Serializer I2S".
+              \item Tambahkan panah IRQ dari FIFO kembali ke CPU.
+              \item Tandai posisi \textit{watermark} pada representasi FIFO.
+          \end{itemize}
+\end{enumerate}
+
+\subsection*{BAB III -- Perancangan Sistem}
+
+\begin{enumerate}
+    \setcounter{enumi}{4}
+    \item \textbf{Gambar 3.1 -- Arsitektur sistem} (\texttt{fig:arch})\\
+          \textit{Cara membuat:}
+          \begin{itemize}
+              \item \textit{Option A}: Buka Vivado Block Design, susun IP core
+                    (MicroBlaze V, AXI Interconnect, Clocking Wizard, I2S TX IP),
+                    kemudian pilih \textbf{File $\to$ Export $\to$ Export Block
+                    Design Image}.
+              \item \textit{Option B}: Gambar manual di draw.io dengan kotak
+                    berlabel: MicroBlaze~V $\leftrightarrow$ AXI Interconnect
+                    $\leftrightarrow$ I2S TX (AXI Slave + FIFO + Serializer)
+                    $\to$ PCM5102A; panah IRQ menuju MicroBlaze~V.
+          \end{itemize}
+
+    \item \textbf{Gambar 3.2 -- Pembagi clock} (\texttt{fig:clkdiv})\\
+          \textit{Cara membuat:} Diagram alur sinyal clock dengan draw.io:
+          $audio\_clk$ (24,568 MHz) $\to$ counter mod-2 (mode 96k) atau
+          mod-4 (mode 48k) $\to$ BCLK $\to$ counter mod-32 $\to$ WS.
+
+    \item \textbf{Gambar 3.3 -- Ring buffer FIFO} (\texttt{fig:fifo-ring})\\
+          \textit{Cara membuat:} Gambar array melingkar 256 slot dengan
+          \texttt{wr\_ptr} dan \texttt{rd\_ptr}, tunjukkan arah penulisan dan
+          pembacaan. Gunakan draw.io atau Visio.
+
+    \item \textbf{Gambar 3.4 -- Flowchart software Vitis} (\texttt{fig:sw-flow})\\
+          \textit{Cara membuat:} Buat dua diagram alur:
+          \begin{itemize}
+              \item \textit{Main}: START $\to$ Init periph $\to$ Reset FIFO $\to$
+                    Set mode/WM $\to$ Prefill 200 frame $\to$ Enable IRQ $\to$
+                    Enable TX $\to$ idle loop.
+              \item \textit{ISR}: Entry $\to$ refill FIFO hingga 200 frame $\to$
+                    Clear IRQ\_STATUS $\to$ Return.
+          \end{itemize}
+\end{enumerate}
+
+\subsection*{BAB IV -- Implementasi dan Pengujian}
+
+\begin{enumerate}
+    \setcounter{enumi}{8}
+    \item \textbf{Gambar 4.1 -- Hierarki modul RTL} (\texttt{fig:rtl-hier})\\
+          \textit{Cara membuat:}
+          \begin{itemize}
+              \item Setelah Elaboration di Vivado: \textbf{Open Elaborated Design
+                    $\to$ Schematic} atau \textbf{Sources $\to$ Hierarchy} panel.
+              \item \textit{Screenshot} tampilan hierarki yang menampilkan
+                    \texttt{i2s\_top}, \texttt{i2s\_axi\_slave},
+                    \texttt{i2s\_fifo}, \texttt{i2s\_serializer},
+                    \texttt{i2s\_clkdiv}.
+          \end{itemize}
+
+    \item \textbf{Gambar 4.2 -- Clocking Wizard Vivado} (\texttt{fig:clkwiz})\\
+          \textit{Cara mengambil screenshot:}
+          \begin{enumerate}
+              \item Buka Vivado $\to$ IP Catalog $\to$ Clocking Wizard.
+              \item Konfigurasi: Input 100 MHz, Output \textit{clk\_out1} = 24,576 MHz.
+              \item Perhatikan kolom \textbf{"Achieved"} yang menampilkan
+                    24,56897 MHz (bukan persis 24,576 MHz).
+              \item \textit{Screenshot} tab "Output Clocks" yang menampilkan
+                    kolom "Requested Frequency" dan "Achieved Frequency".
+          \end{enumerate}
+
+    \item \textbf{Gambar 4.3 -- Waveform simulasi} (\texttt{fig:sim-wave})\\
+          \textit{Cara mengambil screenshot:}
+          \begin{enumerate}
+              \item Jalankan simulasi RTL di Vivado Simulator:
+                    \textbf{Flow $\to$ Run Simulation $\to$ Run Behavioral Simulation}.
+              \item Tambahkan sinyal: \texttt{bclk}, \texttt{ws},
+                    \texttt{i2s\_data}, \texttt{fifo\_level}.
+              \item Zoom ke beberapa \textit{frame} awal; verifikasi 1-bit delay.
+              \item \textit{Screenshot} waveform yang menunjukkan WS, BCLK, dan
+                    data serial yang benar.
+          \end{enumerate}
+
+    \item \textbf{Gambar 4.4 -- ILA hardware capture} (\texttt{fig:ila-capture})\\
+          \textit{Cara mengambil screenshot:}
+          \begin{enumerate}
+              \item Pastikan ILA core dikonfigurasi pada probing sinyal yang
+                    diinginkan dalam desain Anda (lihat Bab IV, Subbab 4.4.1).
+              \item Download bitstream ke Basys3.
+              \item Buka \textbf{Vivado Hardware Manager}: klik "Open Target
+                    $\to$ Auto Connect".
+              \item Jalankan program Vitis di Basys3.
+              \item Di ILA dashboard, klik \textbf{Run Trigger}, tunggu capture.
+              \item Zoom untuk melihat 1--2 \textit{frame} I2S; ukur frekuensi
+                    BCLK dan WS menggunakan penggaris ILA.
+              \item \textit{Screenshot} ILA dashboard.
+          \end{enumerate}
+
+    \item \textbf{Gambar 4.5 -- Foto setup pengujian} (\texttt{fig:hw-setup})\\
+          \textit{Cara mengambil foto:}
+          \begin{itemize}
+              \item Atur setup perangkat keras: Basys3, modul PCM5102A,
+                    kabel jumper, speaker/headphone.
+              \item Gunakan kamera smartphone; pencahayaan yang baik.
+              \item Pastikan semua komponen dan koneksi terlihat.
+              \item Resolusi minimal 1280$\times$720 piksel.
+          \end{itemize}
+
+    \item \textbf{Gambar 4.6 -- Output audio osiloskop} (\texttt{fig:audio-output})\\
+          \textit{Cara mengambil screenshot:}
+          \begin{itemize}
+              \item \textit{Option A (Osiloskop fisik)}: Hubungkan probe ke output
+                    analog PCM5102A; putar \textit{sine} 1~kHz; foto layar
+                    osiloskop yang menampilkan gelombang sinus.
+              \item \textit{Option B (Software)}: Hubungkan output PCM5102A ke
+                    \textit{line-in} komputer; gunakan \textbf{Audacity} (gratis)
+                    atau \textbf{REW} untuk merekam dan menampilkan spektrum.
+                    \textit{Screenshot} dari Audacity (tampilan waveform atau FFT).
+          \end{itemize}
+
+    \item \textbf{Gambar 4.7 -- Utilization Report Vivado} (\texttt{fig:util-report})\\
+          \textit{Cara mengambil screenshot:}
+          \begin{enumerate}
+              \item Setelah Implementation selesai: \textbf{Reports $\to$
+                    Report Utilization}.
+              \item Pilih \textbf{"Slice Logic"} atau \textbf{"Summary"}.
+              \item \textit{Screenshot} bagian tabel yang menampilkan LUT,
+                    Register, BRAM, DSP untuk desain Anda.
+          \end{enumerate}
+\end{enumerate}
+
+\section*{Cara Import Gambar ke LaTeX}
+
+Setelah gambar tersedia:
+
+\begin{enumerate}
+    \item Simpan file gambar (format \texttt{.png}, \texttt{.jpg}, atau \texttt{.pdf})
+          di folder yang sesuai, misalnya:\\
+          \texttt{contents/chapter-3/fig-arch.png}
+
+    \item Cari blok placeholder di file \texttt{.tex} yang bersangkutan:
+\begin{verbatim}
+\fbox{\parbox[c][...][c]{...}{\centering
+    \textbf{[PLACEHOLDER -- Gambar X.Y]}
+    ...
+}}
+\end{verbatim}
+
+    \item Ganti blok \texttt{\textbackslash{}fbox\{\ldots\}} tersebut dengan:
+\begin{verbatim}
+\includegraphics[width=0.85\textwidth]
+    {contents/chapter-X/nama-file.png}
+\end{verbatim}
+
+    \item Simpan file \texttt{.tex} dan kompilasi ulang dokumen. Perintah
+          kompilasi yang direkomendasikan (lihat README untuk detail lengkap):
+\begin{verbatim}
+latexmk -pdf -bibtex main.tex
+\end{verbatim}
+\end{enumerate}
+
+\section*{Konvensi Penamaan File Gambar}
+
+Gunakan konvensi penamaan yang konsisten agar mudah ditelusuri:
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Gambar} & \textbf{Nama file yang disarankan} \\
+\hline
+Gambar 2.1 & \texttt{contents/chapter-2/fig-audio-chain.png} \\
+Gambar 2.2 & \texttt{contents/chapter-2/fig-i2s-timing.png} \\
+Gambar 2.3 & \texttt{contents/chapter-2/fig-pcm5102a.jpg} \\
+Gambar 2.4 & \texttt{contents/chapter-2/fig-fifo-concept.png} \\
+Gambar 3.1 & \texttt{contents/chapter-3/fig-arch.png} \\
+Gambar 3.2 & \texttt{contents/chapter-3/fig-clkdiv.png} \\
+Gambar 3.3 & \texttt{contents/chapter-3/fig-fifo-ring.png} \\
+Gambar 3.4 & \texttt{contents/chapter-3/fig-sw-flow.png} \\
+Gambar 4.1 & \texttt{contents/chapter-4/fig-rtl-hier.png} \\
+Gambar 4.2 & \texttt{contents/chapter-4/fig-clkwiz.png} \\
+Gambar 4.3 & \texttt{contents/chapter-4/fig-sim-wave.png} \\
+Gambar 4.4 & \texttt{contents/chapter-4/fig-ila-capture.png} \\
+Gambar 4.5 & \texttt{contents/chapter-4/fig-hw-setup.jpg} \\
+Gambar 4.6 & \texttt{contents/chapter-4/fig-audio-output.png} \\
+Gambar 4.7 & \texttt{contents/chapter-4/fig-util-report.png} \\
+\hline
+\end{tabular}
+\end{center}

@@ -1,30 +1,316 @@
-\chapter{Hasil dan Pembahasan}
+% ===========================================================================
+%  BAB IV  –  IMPLEMENTASI DAN PENGUJIAN
+% ===========================================================================
+\chapter{Implementasi dan Pengujian}
 
-Berikut ini adalah yang perlu diperhatikan untuk mengisi bab hasil dan pembahasan:
+\section{Implementasi RTL (Verilog)}
 
+\subsection{Struktur Modul}
+
+Implementasi RTL terdiri dari modul-modul berikut:
+
+\begin{itemize}
+    \item \texttt{i2s\_top.v}: Modul tingkat atas yang menghubungkan antarmuka
+          AXI4-Lite, logika register, FIFO TX, serializer I2S, pembangkit clock,
+          dan logika IRQ.
+    \item \texttt{i2s\_axi\_slave.v}: Slave AXI4-Lite; menangani \textit{handshake}
+          AWVALID/AWREADY, WVALID/WREADY, BVALID/BREADY, ARVALID/ARREADY,
+          RVALID/RREADY, dan mendekode alamat ke register internal.
+    \item \texttt{i2s\_fifo.v}: Ring buffer 256 entri $\times$ 48-bit; antarmuka
+          \textit{push}/\textit{pop} satu siklus.
+    \item \texttt{i2s\_serializer.v}: Mesin \textit{state} pembangkit BCLK/WS/DATA
+          berdasarkan $audio\_clk$.
+    \item \texttt{i2s\_clkdiv.v}: Pembagi clock untuk BCLK (mode 96k: ÷4;
+          mode 48k: ÷8) dengan \textit{duty cycle} 50\%.
+\end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \fbox{\parbox[c][5cm][c]{12cm}{\centering%
+        \textbf{[PLACEHOLDER -- Gambar 4.1]}\\[0.5em]
+        \textit{Hierarki modul RTL: i2s\_top~$\to$~\{i2s\_axi\_slave, i2s\_fifo,
+        i2s\_serializer, i2s\_clkdiv\}; tampilkan sebagai pohon atau diagram blok}\\
+        \small \textit{Screenshot} dari Vivado Hierarchy panel atau gambar manual
+        (lihat Lampiran~\ref{app:captureguide}).}}
+    \caption{Hierarki modul RTL implementasi peripheral I2S TX.}
+    \label{fig:rtl-hier}
+\end{figure}
+
+\subsection{Parameter AXI4-Lite}
+
+Pada modul \texttt{i2s\_top.v}, parameter AXI4-Lite disesuaikan dari
+\textit{template} Vivado sebagai berikut:
+
+\begin{itemize}
+    \item \texttt{C\_S00\_AXI\_ADDR\_WIDTH = 8}: Ruang alamat 256 byte (cukup
+          untuk 9 register $\times$ 4 byte).
+    \item \texttt{OPT\_MEM\_ADDR\_BITS = 3}: Mendukung dekode 16 register
+          (\textit{word index} 4-bit, offset 2 bit).
+    \item \texttt{C\_S00\_AXI\_DATA\_WIDTH = 32}: Data 32-bit.
+\end{itemize}
+
+\subsection{Implementasi Pembagi Clock}
+
+Pembagi clock diimplementasikan dengan pencacah mod-$D/2$ yang men-\textit{toggle}
+sinyal BCLK setiap $D/2$ siklus $audio\_clk$:
+
+\begin{verbatim}
+// i2s_clkdiv.v (ringkasan)
+always @(posedge audio_clk or posedge rst) begin
+    if (rst) begin
+        cnt    <= 0;
+        bclk_r <= 0;
+    end else if (cnt == half_div - 1) begin
+        cnt    <= 0;
+        bclk_r <= ~bclk_r;  // toggle: duty 50%
+    end else begin
+        cnt <= cnt + 1;
+    end
+end
+// half_div = 2 (mode 96k, total div 4)
+// half_div = 4 (mode 48k, total div 8)
+\end{verbatim}
+
+\subsection{Implementasi FIFO TX}
+
+\begin{verbatim}
+// i2s_fifo.v (ringkasan)
+reg [47:0] mem [0:255];
+reg [7:0]  wr_ptr, rd_ptr;
+
+assign full  = (wr_ptr + 1) == rd_ptr;
+assign empty = (wr_ptr == rd_ptr);
+assign level = wr_ptr - rd_ptr;   // modulo 256
+
+always @(posedge clk) begin
+    if (push && !full)
+        mem[wr_ptr] <= {left_in, right_in};
+    if (push && !full) wr_ptr <= wr_ptr + 1;
+end
+
+always @(posedge clk) begin
+    if (pop && !empty) begin
+        {left_out, right_out} <= mem[rd_ptr];
+        rd_ptr <= rd_ptr + 1;
+    end
+end
+\end{verbatim}
+
+\section{Implementasi Clocking Wizard dan Constraints}
+
+Clocking Wizard Vivado dikonfigurasi dengan:
+\begin{itemize}
+    \item Sumber: \textit{System Clock} 100~MHz (\textit{on-board} Basys3).
+    \item Output \textit{clk\_out1}: frekuensi diminta 24,576~MHz.
+    \item Frekuensi aktual yang dilaporkan Vivado: \textbf{24,56897~MHz}
+          (MMCM tidak dapat menghasilkan 24,576 persis dari 100~MHz; ini
+          adalah nilai terdekat).
+\end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \fbox{\parbox[c][4cm][c]{12cm}{\centering%
+        \textbf{[PLACEHOLDER -- Gambar 4.2]}\\[0.5em]
+        \textit{Screenshot Clocking Wizard Vivado: tabel "Output Clock" menampilkan
+        "Requested" 24.576 MHz dan "Achieved" 24.56897 MHz}\\
+        \small \textit{Screenshot} dari Vivado IP Configurator
+        (lihat Lampiran~\ref{app:captureguide}).}}
+    \caption{Konfigurasi Clocking Wizard Vivado: frekuensi diminta vs.\ aktual.}
+    \label{fig:clkwiz}
+\end{figure}
+
+\section{Pengujian Fungsional (Simulasi RTL)}
+
+\subsection{Testbench}
+
+\textit{Testbench} \texttt{tb\_i2s\_top.v} mensimulasikan:
 \begin{enumerate}
-	\item Setiap rumusan masalah boleh memiliki lebih dari 1 tujuan.
-	\item Setiap subbab harus spesifik menjawab setiap tujuan yang dituliskan.
-	\item Setiap rumusan masalah boleh dijawab dengan 1 subbab atau lebih.
+    \item Transaksi AXI4-Lite untuk menulis register CONTROL, WATERMARK,
+          TX\_LEFT, dan TX\_RIGHT.
+    \item Pengisian FIFO hingga 10 \textit{frame} dengan pola data
+          \textit{ramp} (0x000001, 0x000002, \ldots).
+    \item Aktivasi ENABLE dan pemantauan sinyal BCLK, WS, DATA selama
+          beberapa \textit{frame}.
+    \item Pemantauan IRQ saat level FIFO mencapai \textit{watermark}.
 \end{enumerate}
 
-Berikut ini adalah contoh sub bab untuk menjelaskan tujuan penelitian.
+\begin{figure}[htbp]
+    \centering
+    \fbox{\parbox[c][5cm][c]{12cm}{\centering%
+        \textbf{[PLACEHOLDER -- Gambar 4.3]}\\[0.5em]
+        \textit{Waveform simulasi Vivado: tampilkan BCLK, WS, DATA, fifo\_level,
+        irq; verifikasi alignment 1-bit delay dan MSB-first}\\
+        \small \textit{Screenshot} dari Vivado Simulator (lihat Lampiran~\ref{app:captureguide}).}}
+    \caption{Waveform simulasi RTL: sinyal I2S TX dan level FIFO.}
+    \label{fig:sim-wave}
+\end{figure}
 
-\section{Pembahasan Tujuan 1 dengan Hasil Penelitian 1 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
+\subsection{Hasil Verifikasi Simulasi}
 
-Sub bab pertama adalah membahas tujuan penelitian pertama dengan hasil penelitian ke-1. 
-Dapat ditambahkan beberapa sub bab jika diperlukan.
+Dari simulasi, hal-hal berikut diverifikasi:
+\begin{itemize}
+    \item WS \textit{toggle} setiap 32~BCLK; tidak ada \textit{glitch}.
+    \item DATA MSB-first, dimulai satu BCLK setelah \textit{edge} WS
+          (1-bit \textit{delay} format Philips I2S terpenuhi).
+    \item FIFO \textit{level} berkurang 1 setiap \textit{frame}; IRQ muncul
+          saat level = WATERMARK.
+    \item Kondisi \textit{underrun}: ketika FIFO kosong, DATA = 0 dan
+          bit UNDERRUN pada STATUS diset.
+\end{itemize}
 
-\section{Pembahasan Tujuan 1 dengan Hasil Penelitian 2 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
+\section{Pengujian Perangkat Keras (Basys3 + ILA)}
 
-Sub bab kedua adalah membahas tujuan penelitian pertama dengan hasil penelitian ke-2. Sub bab ini merupakan contoh tambahan sub bab pertama.
+\subsection{Konfigurasi ILA}
 
-\section{Pembahasan Tujuan 2 dengan Hasil Penelitian 3 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
+ILA (\textit{Integrated Logic Analyzer}) Vivado dikonfigurasi dengan:
+\begin{itemize}
+    \item Sinyal yang diprobing: \texttt{bclk}, \texttt{ws}, \texttt{i2s\_data},
+          \texttt{fifo\_level[7:0]}, \texttt{underrun}, \texttt{irq}.
+    \item Kedalaman capture: 1024 sampel.
+    \item Trigger: \textit{rising edge} \texttt{ws}.
+\end{itemize}
 
-Sub bab ketiga adalah membahas tujuan penelitian kedua. Dapat ditambahkan beberapa sub bab jika diperlukan.
+\begin{figure}[htbp]
+    \centering
+    \fbox{\parbox[c][6cm][c]{12cm}{\centering%
+        \textbf{[PLACEHOLDER -- Gambar 4.4]}\\[0.5em]
+        \textit{Screenshot ILA Vivado: waveform BCLK, WS, DATA dari hardware Basys3.
+        Ukur frekuensi BCLK ($\approx 6{,}14$~MHz mode 96k) dan WS ($\approx 95{,}97$~kHz)}\\
+        \small \textit{Screenshot} dari Vivado Hardware Manager -- ILA dashboard
+        (lihat Lampiran~\ref{app:captureguide}).}}
+    \caption{Capture ILA perangkat keras: sinyal BCLK, WS, dan DATA pada Basys3.}
+    \label{fig:ila-capture}
+\end{figure}
 
-\section{Perbandingan Hasil Penelitian dengan Hasil Terdahulu}
+\subsection{Hasil Pengukuran}
 
-Pembahasan penutup dapat menjelaskan mengenai kelebihan hasil pengembangan / 
-penelitian dan kekurangan dibandingkan dengan skripsi atau penelitian terdahulu atau
-perbandingan terhadap produk lain yang ada di pasaran. Penulis dapat menggunakan tabel untuk membandingkan secara gamblang dan menjelaskannya.
+\begin{table}[htbp]
+    \centering
+    \caption{Hasil pengukuran frekuensi pada perangkat keras.}
+    \label{tab:hw-meas}
+    \begin{tabular}{|l|l|l|l|}
+        \hline
+        \textbf{Parameter} & \textbf{Teori} & \textbf{Terukur} & \textbf{Error} \\
+        \hline
+        BCLK mode 96k & 6,14224~MHz & \textit{[isi dari ILA]} & \textit{[hitung]} \\
+        \hline
+        WS mode 96k   & 95,9725~kHz & \textit{[isi dari ILA]} & \textit{[hitung]} \\
+        \hline
+        BCLK mode 48k & 3,07112~MHz & \textit{[isi dari ILA]} & \textit{[hitung]} \\
+        \hline
+        WS mode 48k   & 47,9863~kHz & \textit{[isi dari ILA]} & \textit{[hitung]} \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\textit{Catatan: Isi kolom "Terukur" dan "Error" dari hasil capture ILA Anda.
+Gunakan fitur pengukuran frekuensi pada ILA Vivado.}
+
+\section{Pengujian Audio dengan DAC PCM5102A}
+
+\subsection{Setup Pengujian}
+
+\begin{itemize}
+    \item PCM5102A dihubungkan ke Pmod header Basys3: BCLK, WS, DATA, GND, 3V3.
+    \item Output audio PCM5102A dihubungkan ke \textit{headphone} atau
+          \textit{speaker aktif} + osiloskop.
+    \item Program Vitis menghasilkan \textit{sine wave} 1~kHz 24-bit pada kedua kanal.
+\end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \fbox{\parbox[c][5cm][c]{12cm}{\centering%
+        \textbf{[PLACEHOLDER -- Gambar 4.5]}\\[0.5em]
+        \textit{Foto setup pengujian: Basys3 terhubung ke modul PCM5102A;
+        kabel Pmod, speaker/headphone, dan osiloskop (opsional)}\\
+        \small Foto setup perangkat keras Anda
+        (lihat Lampiran~\ref{app:captureguide}).}}
+    \caption{Setup pengujian audio: Basys3 + PCM5102A.}
+    \label{fig:hw-setup}
+\end{figure}
+
+\subsection{Hasil Pengujian Audio}
+
+\begin{figure}[htbp]
+    \centering
+    \fbox{\parbox[c][5cm][c]{12cm}{\centering%
+        \textbf{[PLACEHOLDER -- Gambar 4.6]}\\[0.5em]
+        \textit{Screenshot osiloskop atau spektrum audio: sinyal \textit{sine} 1~kHz
+        pada output PCM5102A; verifikasi tidak ada distorsi yang jelas}\\
+        \small \textit{Screenshot} osiloskop atau aplikasi audio analyzer
+        (lihat Lampiran~\ref{app:captureguide}).}}
+    \caption{Sinyal output audio 1~kHz dari PCM5102A pada mode $\approx$96k.}
+    \label{fig:audio-output}
+\end{figure}
+
+Pengujian audio memverifikasi:
+\begin{itemize}
+    \item \textit{Tone} 1~kHz terdengar jelas tanpa \textit{clicking} atau
+          \textit{popping} yang disebabkan \textit{underrun}.
+    \item Mekanisme ISR FIFO \textit{refill} beroperasi tanpa \textit{underrun}
+          saat CPU menjalankan logika pembangkitan \textit{sine wave}.
+    \item Pergantian mode $F_s$ (48k $\to$ 96k dan sebaliknya) tidak menyebabkan
+          \textit{glitch} audio saat urutan reset yang benar diikuti.
+\end{itemize}
+
+\section{Evaluasi Kinerja}
+
+\subsection{Resource Utilization}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Resource utilization peripheral I2S TX pada Basys3 (Artix-7 XC7A35T).}
+    \label{tab:util}
+    \begin{tabular}{|l|r|r|r|}
+        \hline
+        \textbf{Resource} & \textbf{Digunakan} & \textbf{Tersedia} & \textbf{Utilisasi (\%)} \\
+        \hline
+        Slice LUTs        & \textit{[isi]}    & 20.800            & \textit{[isi]} \\
+        \hline
+        Slice Registers   & \textit{[isi]}    & 41.600            & \textit{[isi]} \\
+        \hline
+        Block RAM Tile    & \textit{[isi]}    & 50                & \textit{[isi]} \\
+        \hline
+        DSP48E1           & \textit{[isi]}    & 90                & \textit{[isi]} \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\textit{Catatan: Isi tabel dari laporan Vivado Implementation (Utilization Report).
+Buka: Reports $\to$ Report Utilization setelah proses Implementation selesai.}
+
+\begin{figure}[htbp]
+    \centering
+    \fbox{\parbox[c][4cm][c]{12cm}{\centering%
+        \textbf{[PLACEHOLDER -- Gambar 4.7]}\\[0.5em]
+        \textit{Screenshot Vivado Utilization Report: tabel LUT, Register, BRAM
+        untuk peripheral I2S TX}\\
+        \small \textit{Screenshot} dari Vivado Implementation Summary
+        (lihat Lampiran~\ref{app:captureguide}).}}
+    \caption{Laporan resource utilization Vivado untuk peripheral I2S TX.}
+    \label{fig:util-report}
+\end{figure}
+
+\subsection{Analisis \textit{Underrun} vs.\ Konfigurasi FIFO}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Jumlah \textit{underrun} pada berbagai nilai \textit{watermark}.}
+    \label{tab:underrun}
+    \begin{tabular}{|r|r|r|}
+        \hline
+        \textbf{Watermark (\textit{frame})} & \textbf{\textit{Underrun} / 10 detik} & \textbf{Keterangan} \\
+        \hline
+        16  & \textit{[isi]} & Terlalu kecil, berisiko \\
+        \hline
+        32  & \textit{[isi]} & Perlu diuji \\
+        \hline
+        64  & \textit{[isi]} & Nilai rekomendasi \\
+        \hline
+        128 & \textit{[isi]} & Aman, overhead CPU lebih tinggi \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\textit{Catatan: Uji setiap konfigurasi dengan menjalankan program Vitis selama 10 detik
+dan membaca register UNDERRUN (bit 2 STATUS) atau menambahkan counter di firmware.}
