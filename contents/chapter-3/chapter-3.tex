@@ -1,5 +1,67 @@
 \chapter{Metode Penelitian}
 
+\section{Spesifikasi dan arsitektur IP I2S TX}
+
+Bagian ini merangkum \textbf{perancangan fungsional} IP yang menjadi inti skripsi. Detail RTL dan register final mengacu pada dokumentasi proyek FPGA (repositori implementasi).
+
+\subsection{Daftar fitur IP}
+\begin{itemize}
+	\item Antarmuka \textbf{AXI4-Lite} (32 bit) untuk kontrol dan pengisian data audio.
+	\item Mode \textbf{TX-only}; stereo; format \textbf{Philips I2S}; \textbf{24 bit} per saluran dalam \textbf{slot 32 bit}.
+	\item Dua mode frekuensi sampling (nilai nominal \textbf{sekitar} 48 kHz dan 96 kHz) melalui pembagi \texttt{audio\_clk}.
+	\item \textbf{FIFO TX} dengan status level, \textit{underrun}, dan \textbf{interupsi watermark} (serta enable/clear pada register).
+	\item Keluaran ke modul \textbf{PCM5102A}: BCLK, LRCK/WS, DATA (dan MCLK bila diperlukan sesuai modul).
+\end{itemize}
+
+\subsection{Blok diagram perancangan IP}
+\begin{figure}[htbp]
+	\centering
+	\IfFileExists{contents/figures/block-diagram-ip-i2s-tx-intern.pdf}{%
+		\includegraphics[width=0.92\textwidth]{contents/figures/block-diagram-ip-i2s-tx-intern.pdf}%
+	}{%
+		\setlength{\fboxsep}{14pt}%
+		\fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/block-diagram-ip-i2s-tx-intern.pdf} (AXI regs, FIFO, clkgen, serializer, irq).}}}%
+	}
+	\caption{Blok diagram internal IP I2S TX (konsep).}
+	\label{fig:ch3-block-ip-intern}
+\end{figure}
+
+\subsection{Register map (target implementasi)}
+Tabel \ref{tab:ch3-regmap} merangkum offset register word-aligned. Akses \textbf{W1C} = tulis-1-untuk-\textit{clear}; \textbf{W1P} = pulsa tulis satu siklus (sesuai implementasi).
+
+\begin{table}[htbp]
+	\centering
+	\caption{Ringkasan register IP I2S TX (target).}
+	\label{tab:ch3-regmap}
+	\begin{tabular}{|l|l|p{6.5cm}|}
+		\hline
+		\textbf{Offset} & \textbf{Akses} & \textbf{Keterangan} \\
+		\hline
+		\texttt{0x00} & RO & \texttt{ID} / versi \\
+		\texttt{0x04} & RW & \texttt{CONTROL}: enable, mute, \texttt{FS\_MODE}, reset FIFO, dsb. \\
+		\texttt{0x08} & RO & \texttt{STATUS}: level FIFO, empty/full, underrun \\
+		\texttt{0x0C} & RW & \texttt{WATERMARK} \\
+		\texttt{0x10} & RW & \texttt{IRQ\_EN} \\
+		\texttt{0x14} & RW1C & \texttt{IRQ\_STATUS} \\
+		\texttt{0x1C} & WO & \texttt{TX\_LEFT} (24-bit) \\
+		\texttt{0x20} & WO & \texttt{TX\_RIGHT}: tulis meng-\textit{push} satu frame stereo \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\subsection{Integrasi Vivado Block Design}
+\begin{figure}[htbp]
+	\centering
+	\IfFileExists{contents/figures/block-design-vivado-i2s-screenshot.png}{%
+		\includegraphics[width=0.95\textwidth]{contents/figures/block-design-vivado-i2s-screenshot.png}%
+	}{%
+		\setlength{\fboxsep}{14pt}%
+		\fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/block-design-vivado-i2s-screenshot.png} (screenshot BD Vivado).}}}%
+	}
+	\caption{Integrasi IP pada Block Design (MicroBlaze, interconnect, clock, I2S).}
+	\label{fig:ch3-bd-vivado}
+\end{figure}
+
 \section{Alat dan Bahan}
 
 Penelitian ini menggunakan berbagai alat dan bahan yang terbagi dalam kategori hardware dan software untuk mendukung perancangan, implementasi, dan pengujian sistem SoC dengan peripheral I2C dan I2S.

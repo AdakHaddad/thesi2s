@@ -2,14 +2,22 @@
 
 \section{Kesimpulan}
 
-Kesimpulan dapat diawali dengan apa yang dilakukan dengan tugas akhir ini lalu 
-dilanjutkan dengan poin-poin yang menjawab tujuan penelitian, apakah tujuan sudah tercapai atau belum, tentunya berdasarkan data ataupun hasil dari Bab pembahasan sebelumnya. Dalam beberapa hal, kesimpulan dapat juga berisi tentang temuan/\textit{findings} yang Anda dapatkan setelah melakukan pengamatan dan atau analisis terhadap hasil penelitian. 
+Penelitian ini merancang dan mengimplementasikan \textbf{IP core transmitter I2S} dengan antarmuka \textbf{AXI4-Lite} pada SoC \textbf{MicroBlaze V}, board \textbf{Basys3}, dan keluaran menuju \textbf{PCM5102A}. Berdasarkan hasil pada Bab IV, dapat disimpulkan:
 
-Kesimpulan menjawab seberapa jauh rumusan masalah tercapai berdasarkan hasil penelitian. Semua rumusan masalah harus disimpulkan berdasarkan data penelitian.
+\begin{enumerate}
+	\item IP memungkinkan kontrol audio melalui register memory-mapped sesuai register map yang ditargetkan, termasuk jalur \textbf{FIFO TX} dan \textbf{interupsi watermark} untuk mengurangi underrun.
+	\item Dua mode frekuensi sampling (\textbf{sekitar} 48 kHz dan 96 kHz) diperoleh dari pembagi \texttt{audio\_clk}; nilai terukur mengikuti frekuensi \textit{actual} Clocking Wizard dan harus dilaporkan secara eksplisit.
+	\item Verifikasi dengan \textbf{ILA} dan bukti audio menunjukkan serializer \textbf{Philips I2S} 24-bit dalam slot 32-bit bekerja pada perangkat keras yang diuji.
+\end{enumerate}
 
 \section{Saran}
 
-Saran berisi hal-hal yang bisa dilanjutkan dari penelitian atau skripsi ini, yang belum dilakukan karena batasan permasalahan. Saran bukan berisi saran kepada sistem atau pengguna, tetapi saran diberikan kepada aspek penelitian yang dapat dikembangkan dan ditambahkan di penelitian atau skripsi selanjutnya.
+\begin{enumerate}
+	\item Menambahkan \textbf{DMA} untuk mengurangi beban CPU saat streaming panjang.
+	\item Mendukung \textbf{RX} atau format \textbf{TDM}/multi-channel untuk aplikasi mikrofon array.
+	\item Menyusun \textbf{device tree} dan driver (mis.\ ASoC Linux) bila IP akan dipakai pada platform ber-OS.
+	\item Menyempurnakan \textbf{CDC} antara domain AXI dan audio jika FIFO dan serializer berada pada domain clock berbeda dengan metode resynchronisasi formal.
+	\item Menguji pada \textbf{osilator referensi} eksternal atau nilai MMCM yang lebih mendekati 24,576 MHz untuk mendekati \(F_s\) nominal persis.
+\end{enumerate}
 
-
-\noindent \textcolor{red}{Catatan: Mahasiswa perlu melihat sinkronisasi antara rumusan masalah, tujuan, metode, hasil penelitian, dan kesimpulan.}
+\noindent\textit{Penulis disarankan menyesuaikan poin kesimpulan dengan data terukur final dan arahan pembimbing.}

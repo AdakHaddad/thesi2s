@@ -127,6 +127,120 @@ Philips I2S standard format memiliki karakteristik:
 	\item 32-bit: 192 dB dynamic range (often 24-bit data + 8-bit padding)
 \end{itemize}
 
+\subsubsection{Integrasi FPGA--DAC, Format Data, Frekuensi Sampling, dan Relasi dengan UART}
+
+Bagian ini mengisi ``lubang'' konsep yang sering muncul saat merancang \texttt{i2s.v} dan menghubungkannya ke modul DAC (khususnya keluarga PCM51xx seperti PCM5102A), serta membedakan bus \textbf{audio serial (I2S)} dengan \textbf{UART}.
+
+\paragraph{Frekuensi sampling umum (8 kHz, 44{,}1 kHz, 48 kHz, 96 kHz, hingga 192/384 kHz).}
+Frekuensi sampling $F_s$ adalah laju \textit{frame} stereo per detik (satu frame = satu sampel kiri + satu sampel kanan). Standar industri meliputi 8 kHz (teleponi), 44{,}1 kHz (CD), 48 kHz (pro audio/video), 96 kHz/192 kHz (hi-res). Batas atas yang ``realistis'' pada satu DAC bergantung pada \textbf{datasheet} dan \textbf{clock jitter}; angka hingga 384 kHz sering muncul pada \textit{family} DAC/codec kelas pro, tetapi \textbf{tidak otomatis} didukung oleh semua modul breakout atau semua mode clock pada PCM5102A---harus diverifikasi pada lembar data dan skema modul.
+
+\paragraph{``Baud rate disesuaikan dengan DAC''---presisi istilah.}
+\textbf{Baud} mengacu pada kecepatan simbol pada UART (bit per detik pada jalur serial asinkron). \textbf{DAC tidak memiliki ``baud rate''} untuk jalur I2S. Yang relevan adalah \textbf{BCLK} (bit clock), \textbf{LRCK/WS} (word select, frekuensinya = $F_s$), dan jika dipakai \textbf{MCLK} (master clock) sesuai kebutuhan DAC/PLL internal. Konfigurasi UART (9600, 115200, \ldots) hanya untuk \textbf{debug/telemetri} antara FPGA/MCU dengan PC, \textbf{bukan} penentu $F_s$ pada I2S.
+
+\paragraph{Mengapa \texttt{i2s.v} harus ``menyesuaikan'' modul DAC.}
+Modul DAC berperilaku sebagai \textbf{slave} pada jalur I2S: ia mengikuti \textbf{BCLK dan LRCK} yang dihasilkan FPGA (atau master lain). Oleh karena itu ``penyesuaian'' dilakukan dengan:
+\begin{enumerate}
+	\item Menghasilkan rasio clock yang benar sehingga $f_{\mathrm{LRCK}} \approx F_s$ yang diinginkan (perhatikan frekuensi aktual MMCM/PLL, sering sedikit menyimpang dari nilai nominal).
+	\item Memilih \textbf{format bit} (16/24/32 bit per saluran dalam slot I2S) yang \textbf{didukung} DAC dan sesuai \textit{hardware mode} modul (jumper/SMD strap jika ada).
+	\item Memastikan \textbf{tegangan, polaritas LRCK, dan urutan sinyal} sesuai datasheet modul (PCM5102A memakai antarmuka audio standar; rincian pin mengikuti PCB pembuat modul).
+\end{enumerate}
+
+\paragraph{Representasi sampel: integer (fixed-point) vs \textit{floating-point} di berkas WAV.}
+Jalur I2S membawa sampel dalam bentuk \textbf{biner bertanda (\textit{two's complement}) dengan lebar bit tetap} (mis.\ 16 atau 24 bit per saluran). Berkas WAV bisa menyimpan data \textbf{integer PCM} atau \textbf{floating-point} (mis.\ format IEEE float). Jika berkas float dikirim ``apa adanya'' ke register integer I2S, bit pattern akan \textbf{diinterpretasikan salah} sehingga keluaran berupa noise/distorsi. Solusi yang benar: \textbf{konversi float $\rightarrow$ integer} di PC atau di firmware (dengan normalisasi, \textit{clipping}, dan kuantisasi ke $N$ bit) \textbf{sebelum} memasuki antrean/FFO atau register sampel menuju serializer I2S.
+
+\paragraph{Cara mengatur frekuensi sampling pada I2S (konsep).}
+Pada arsitektur \textit{master} seperti umum di FPGA, $F_s$ ditentukan oleh rasio:
+\begin{equation}
+	F_s = \frac{f_{\mathrm{BCLK}}}{N_{\mathrm{bits\,per\,frame}}}
+\end{equation}
+dengan $N_{\mathrm{bits\,per\,frame}}$ bergantung pada format slot (mis.\ mode Philips 32 bit per saluran stereo $\Rightarrow$ sering 64 tick BCLK per frame). Secara praktis di implementasi RTL, $F_s$ diatur lewat \textbf{pembagi clock} dari sumber frekuensi stabil (Clocking Wizard/MMCM) dan logika serializer yang menghitung 64 edge BCLK per frame.
+
+\paragraph{Apakah ``clock sampling'' pada DAC bisa diatur?}
+Pada banyak DAC I2S \textbf{bukan} diatur lewat register seperti SPI/I2C untuk memilih $F_s$. Yang diatur adalah \textbf{master clock digital} (FPGA) yang membangkitkan LRCK/BCLK. DAC mengunci data masuk pada relasi timing tersebut. Beberapa chip memiliki \textbf{PLL internal} (PCM5102A memiliki arsitektur clock yang fleksibel sesuai datasheet TI) sehingga toleransi terhadap variasi MCLK/BCLK tertentu lebih longgar, tetapi \textbf{$F_s$ efektif tetap mengikuti LRCK} yang Anda berikan.
+
+\paragraph{PCM5102A---``programmable'' seperti apa?}
+PCM5102A umumnya \textbf{bukan} codec dengan map register panjang untuk memilih $F_s$ lewat bus kontrol. Pemilihan mode audio lebih banyak ditentukan oleh \textbf{format serial} dan \textbf{clock yang Anda suplai}. Untuk rincian fitur (filter, de-emphasis, dll.) merujuk pada \textbf{Texas Instruments PCM5102A datasheet}. Pada skripsi ini, peran \texttt{i2s.v} adalah memastikan \textbf{timing dan lebar bit} yang konsisten dengan modul yang digunakan.
+
+\paragraph{Apakah DAC ``mengikuti sampling dari \texttt{i2s.v}''?}
+Ya dalam arti: \textbf{LRCK menentukan laju frame}; DAC memakai LRCK/BCLK untuk mengambil bit serial. Jika FPGA mengirim LRCK $\approx$ 48 kHz, rantai audio bekerja pada $F_s \approx$ 48 kHz (dengan caveat frekuensi aktual osilator).
+
+\paragraph{``Supaya clock I2S dan 9600 sama dengan data dari laptop''---klarifikasi.}
+UART 9600 bps dan bus I2S \textbf{berada pada domain yang berbeda}. Mereka tidak perlu ``sama'' untuk audio benar. Sinkronisasi makna data (mis.\ perintah \textit{start/stop} dari laptop vs aliran sampel audio) dilakukan di \textbf{lapisan aplikasi/protokol}, bukan dengan menyamakan frekuensi clock UART dengan LRCK. Pola umum: PC mengirim \textbf{batch} sampel (file, paket) melalui UART/USB; firmware men-\textit{buffer}-kan lalu mem-\textit{play} pada I2S pada $F_s$ yang ditetapkan FPGA.
+
+\paragraph{UART 115200 untuk 8 bit---mengapa 16 bit bukan ``115200/2''?}
+\textbf{Salah arah.} Baud UART menyatakan laju \textbf{bit line} (sering dikutip sebagai bit per detik), namun tiap \textbf{karakter} 8-bit biasanya membutuhkan \textbf{lebih dari 8 bit waktu saluran} (start bit, opsional parity, stop bit). Untuk 8N1, tiap byte $\approx$ 10 bit saluran $\Rightarrow$ throughput data mentah $\approx 115200/10 = 11520$ byte/s. Jika lebar sampel naik dari 8 ke 16 bit, \textbf{byte yang harus dikirim per sampel (per saluran) bertambah}, sehingga \textbf{kebutuhan throughput naik}---bukan diturunkan dengan membagi baud. Untuk stereo 16-bit PCM pada $F_s = 44{,}1$ kHz, kebutuhan kira-kira $44100 \times 4 \approx 176{,}4$ kbyte/s, jauh di atas UART 115200; karena itu audio \textbf{tidak} di-stream penuh lewat UART pada skenario itu, melainkan lewat media yang lebih cepat (USB, DMA, SD, Ethernet) atau dengan kompresi/\textit{downsampling}.
+
+\paragraph{Ringkasan aliran data (dari sampel hingga DAC).}
+Rantai tipikal: \textbf{sumber file/generator} $\rightarrow$ \textbf{decode/normalisasi} (float ke int jika perlu) $\rightarrow$ \textbf{buffer/FIFO} di memori $\rightarrow$ \textbf{register AXI / DMA} $\rightarrow$ \textbf{serializer I2S} (domain \texttt{audio\_clk}) $\rightarrow$ \textbf{pins BCLK, LRCK, SD} $\rightarrow$ \textbf{DAC analog}. Untuk bukti visual, letakkan gambar hasil tangkapan layar osiloskop atau ILA pada berkas PDF/PNG berikut (placeholder kompilasi aman):
+
+\begin{figure}[htbp]
+	\centering
+	\IfFileExists{contents/figures/diagram-aliran-audio-datapath.pdf}{%
+		\includegraphics[width=0.92\textwidth]{contents/figures/diagram-aliran-audio-datapath.pdf}%
+	}{%
+		\setlength{\fboxsep}{14pt}%
+		\fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/diagram-aliran-audio-datapath.pdf} (diagram aliran: file $\rightarrow$ buffer $\rightarrow$ AXI $\rightarrow$ I2S $\rightarrow$ DAC).}}}%
+	}
+	\caption{Aliran data audio dari sumber (file/generator) menuju DAC melalui buffer dan serializer I2S.}
+	\label{fig:placeholder-aliran-audio}
+\end{figure}
+
+\begin{figure}[htbp]
+	\centering
+	\IfFileExists{contents/figures/diagram-clock-bclk-lrck-fs.pdf}{%
+		\includegraphics[width=0.88\textwidth]{contents/figures/diagram-clock-bclk-lrck-fs.pdf}%
+	}{%
+		\setlength{\fboxsep}{14pt}%
+		\fbox{\parbox{0.82\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/diagram-clock-bclk-lrck-fs.pdf} (relasi $f_{\mathrm{BCLK}}$, $f_{\mathrm{LRCK}}=F_s$, dan 64 bit per frame).}}}%
+	}
+	\caption{Relasi konseptual antara \textit{bit clock}, \textit{word select}, dan frekuensi sampling.}
+	\label{fig:placeholder-clock-i2s}
+\end{figure}
+
+\begin{figure}[htbp]
+	\centering
+	\IfFileExists{contents/figures/diagram-uart-vs-i2s-throughput.pdf}{%
+		\includegraphics[width=0.88\textwidth]{contents/figures/diagram-uart-vs-i2s-throughput.pdf}%
+	}{%
+		\setlength{\fboxsep}{14pt}%
+		\fbox{\parbox{0.82\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/diagram-uart-vs-i2s-throughput.pdf} (perbandingan throughput UART vs kebutuhan PCM).}}}%
+	}
+	\caption{Ilustrasi perbandingan throughput UART dengan kebutuhan aliran PCM stereo.}
+	\label{fig:placeholder-uart-vs-i2s}
+\end{figure}
+
+\subsubsection{FIFO audio dan interupsi \textit{watermark}}
+
+Untuk playback stabil, sampel audio dikirim ke serializer dari \textbf{FIFO} yang diisi CPU (atau DMA pada sistem lain). Bila FIFO kosong saat frame berikutnya dibutuhkan, terjadi \textbf{underrun} (klik, jeda, atau noise). Interupsi pada \textbf{watermark} (misalnya saat level FIFO di bawah ambang) memicu ISR untuk mengisi ulang FIFO secara berkelompok sehingga frekuensi interupsi lebih rendah daripada satu interupsi per sampel.
+
+\begin{figure}[htbp]
+	\centering
+	\IfFileExists{contents/figures/flowchart-fifo-refill-isr.pdf}{%
+		\includegraphics[width=0.88\textwidth]{contents/figures/flowchart-fifo-refill-isr.pdf}%
+	}{%
+		\setlength{\fboxsep}{14pt}%
+		\fbox{\parbox{0.82\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/flowchart-fifo-refill-isr.pdf} (alur prefill, watermark IRQ, ISR refill).}}}%
+	}
+	\caption{Konsep alur FIFO TX dan isi ulang melalui ISR saat level di bawah \textit{watermark}.}
+	\label{fig:placeholder-fifo-isr}
+\end{figure}
+
+\subsubsection{Clocking MMCM dan frekuensi \textit{actual}}
+
+Clocking Wizard menghasilkan frekuensi \texttt{audio\_clk} mendekati target (mis.\ 24,576 MHz); nilai \textit{actual} sedikit menyimpang sehingga \(F_s\) terukur bersifat \textbf{sekitar} nilai nominal. Bab IV melaporkan angka hasil pengukuran.
+
+\begin{figure}[htbp]
+	\centering
+	\IfFileExists{contents/figures/clocking-wizard-requested-vs-actual.png}{%
+		\includegraphics[width=0.88\textwidth]{contents/figures/clocking-wizard-requested-vs-actual.png}%
+	}{%
+		\setlength{\fboxsep}{14pt}%
+		\fbox{\parbox{0.82\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/clocking-wizard-requested-vs-actual.png} (screenshot requested vs actual).}}}%
+	}
+	\caption{Ilustrasi konfigurasi Clocking Wizard: frekuensi diminta vs frekuensi aktual.}
+	\label{fig:placeholder-clocking-wizard}
+\end{figure}
+
 \subsection{MicroBlaze V Processor}
 
 MicroBlaze V adalah 32-bit RISC processor core dari Xilinx yang mengimplementasikan RISC-V instruction set architecture (ISA). MicroBlaze V merupakan evolution dari MicroBlaze classic dengan adopsi open-source RISC-V ISA.

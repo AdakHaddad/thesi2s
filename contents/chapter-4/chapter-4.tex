@@ -1,30 +1,115 @@
 \chapter{Hasil dan Pembahasan}
 
-Berikut ini adalah yang perlu diperhatikan untuk mengisi bab hasil dan pembahasan:
+Bab ini menyajikan \textbf{implementasi} IP I2S TX AXI4-Lite, integrasi pada Basys3, serta \textbf{hasil pengujian} (ILA, pengukuran, audio). Isi per subbab disesuaikan dengan data yang diperoleh saat eksperimen; gambar berikut memakai makro \texttt{IfFileExists} pada preamble agar kompilasi tetap berjalan sebelum berkas impor tersedia.
+
+\section{Implementasi RTL dan integrasi Vivado}
+
+RTL direalisasikan dalam bahasa Verilog dengan slave AXI4-Lite, FIFO, unit interupsi, pembagi clock untuk dua mode \(F_s\), dan serializer Philips I2S 24-bit pada slot 32-bit. Integrasi dilakukan melalui IP Integrator; pin I2S dan opsional \texttt{irq} dipetakan pada file \texttt{.xdc}.
+
+\begin{figure}[htbp]
+	\centering
+	\IfFileExists{contents/figures/diagram-sinyal-i2s-philips.pdf}{%
+		\includegraphics[width=0.92\textwidth]{contents/figures/diagram-sinyal-i2s-philips.pdf}%
+	}{%
+		\setlength{\fboxsep}{14pt}%
+		\fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/diagram-sinyal-i2s-philips.pdf} (gelombang BCLK/WS/DATA satu frame).}}}%
+	}
+	\caption{Ilustrasi timing I2S Philips (satu frame stereo, 64 BCLK).}
+	\label{fig:ch4-wave-i2s}
+\end{figure}
+
+\section{Konfigurasi Clocking Wizard}
+
+Lampirkan nilai \textit{requested} dan \textit{actual} untuk \texttt{audio\_clk} serta clock sistem prosesor.
+
+\begin{figure}[htbp]
+	\centering
+	\IfFileExists{contents/figures/clocking-wizard-requested-vs-actual.png}{%
+		\includegraphics[width=0.88\textwidth]{contents/figures/clocking-wizard-requested-vs-actual.png}%
+	}{%
+		\setlength{\fboxsep}{14pt}%
+		\fbox{\parbox{0.82\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/clocking-wizard-requested-vs-actual.png}.}}}%
+	}
+	\caption{Screenshot Clocking Wizard (requested vs actual).}
+	\label{fig:ch4-clk-wizard}
+\end{figure}
+
+\section{Simulasi RTL (opsional)}
+
+Jika testbench disimulasikan, lampirkan cuplikan gelombang verifikasi serializer dan FIFO (push/pop).
+
+\section{Pengujian dengan ILA}
+
+Probe minimal: \texttt{i2s\_bclk}, \texttt{i2s\_ws}, \texttt{i2s\_data}, level FIFO, \texttt{underrun}, \texttt{irq}. Trigger pada tepi WS memudahkan verifikasi 64 BCLK per frame.
+
+\begin{figure}[htbp]
+	\centering
+	\IfFileExists{contents/figures/ila-bclk-ws-data.png}{%
+		\includegraphics[width=0.95\textwidth]{contents/figures/ila-bclk-ws-data.png}%
+	}{%
+		\setlength{\fboxsep}{14pt}%
+		\fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/ila-bclk-ws-data.png} (tangkapan ILA).}}}%
+	}
+	\caption{Tangkapan ILA: BCLK, WS, DATA, dan sinyal pendukung.}
+	\label{fig:ch4-ila}
+\end{figure}
+
+\section{Pengujian audio pada PCM5102A}
+
+Sambungkan modul sesuai pinout pabrik/modul (BCLK, LRCK, DIN, daya, ground). Uji dengan sinyal sine 1 kHz atau pola ramp dari Vitis.
+
+\begin{figure}[htbp]
+	\centering
+	\IfFileExists{contents/figures/wiring-pcm5102a-basys3.jpg}{%
+		\includegraphics[width=0.75\textwidth]{contents/figures/wiring-pcm5102a-basys3.jpg}%
+	}{%
+		\setlength{\fboxsep}{14pt}%
+		\fbox{\parbox{0.78\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/wiring-pcm5102a-basys3.jpg} (foto kabel).}}}%
+	}
+	\caption{Wiring Basys3 ke modul PCM5102A.}
+	\label{fig:ch4-wiring}
+\end{figure}
+
+\begin{figure}[htbp]
+	\centering
+	\IfFileExists{contents/figures/audio-proof-scope-or-audacity.png}{%
+		\includegraphics[width=0.88\textwidth]{contents/figures/audio-proof-scope-or-audacity.png}%
+	}{%
+		\setlength{\fboxsep}{14pt}%
+		\fbox{\parbox{0.82\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/audio-proof-scope-or-audacity.png} (osiloskop atau spektrum).}}}%
+	}
+	\caption{Bukti keluaran audio (ukur atau rekam).}
+	\label{fig:ch4-audio-proof}
+\end{figure}
+
+\section{Evaluasi kinerja}
+
+Isi Tabel \ref{tab:ch4-ukur} dengan hasil pengukuran (osiloskop / ILA / frekuensi dilaporkan tool). Sertakan mode pembagi (\(F_s\) rendah vs tinggi).
+
+\begin{table}[htbp]
+	\centering
+	\caption{Hasil pengukuran frekuensi (contoh---ganti dengan data riil).}
+	\label{tab:ch4-ukur}
+	\begin{tabular}{|l|c|c|}
+		\hline
+		\textbf{Besaran} & \textbf{Target nominal} & \textbf{Terukur / actual} \\
+		\hline
+		\texttt{audio\_clk} & 24,576 MHz & (isi) \\
+		\(F_s\) mode rendah & $\approx$48 kHz & (isi) \\
+		\(F_s\) mode tinggi & $\approx$96 kHz & (isi) \\
+		\(f_{\mathrm{BCLK}}\) (mode tinggi) & $\approx$6,144 MHz & (isi) \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\section{Kendala dan solusi}
+
+Dokumentasikan \textit{pain points}: misalnya CDC register--FIFO, prioritas ISR, kesalahan constraint pin, atau deviasi MMCM; serta solusi yang diterapkan.
+
+\section{Pembahasan terhadap tujuan penelitian}
 
 \begin{enumerate}
-	\item Setiap rumusan masalah boleh memiliki lebih dari 1 tujuan.
-	\item Setiap subbab harus spesifik menjawab setiap tujuan yang dituliskan.
-	\item Setiap rumusan masalah boleh dijawab dengan 1 subbab atau lebih.
+	\item Tujuan perancangan IP: (\textit{jelaskan apakah register map, FIFO, irq, dan serializer telah terbukti pada hardware}).
+	\item Tujuan integrasi SoC dan Vitis: (\textit{jelaskan alur prefill + ISR}).
+	\item Tujuan verifikasi: (\textit{acu Gambar \ref{fig:ch4-ila} dan bukti audio}).
 \end{enumerate}
-
-Berikut ini adalah contoh sub bab untuk menjelaskan tujuan penelitian.
-
-\section{Pembahasan Tujuan 1 dengan Hasil Penelitian 1 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
-
-Sub bab pertama adalah membahas tujuan penelitian pertama dengan hasil penelitian ke-1. 
-Dapat ditambahkan beberapa sub bab jika diperlukan.
-
-\section{Pembahasan Tujuan 1 dengan Hasil Penelitian 2 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
-
-Sub bab kedua adalah membahas tujuan penelitian pertama dengan hasil penelitian ke-2. Sub bab ini merupakan contoh tambahan sub bab pertama.
-
-\section{Pembahasan Tujuan 2 dengan Hasil Penelitian 3 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
-
-Sub bab ketiga adalah membahas tujuan penelitian kedua. Dapat ditambahkan beberapa sub bab jika diperlukan.
-
-\section{Perbandingan Hasil Penelitian dengan Hasil Terdahulu}
-
-Pembahasan penutup dapat menjelaskan mengenai kelebihan hasil pengembangan / 
-penelitian dan kekurangan dibandingkan dengan skripsi atau penelitian terdahulu atau
-perbandingan terhadap produk lain yang ada di pasaran. Penulis dapat menggunakan tabel untuk membandingkan secara gamblang dan menjelaskannya.
