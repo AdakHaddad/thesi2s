@@ -1,15 +1,47 @@
-\chapter{Kesimpulan dan Saran}
+\chapter{Pengembangan Lanjutan}
 
-\section{Kesimpulan}
+Bab ini membahas arah pengembangan lebih lanjut dari peripheral I2S TX yang telah dirancang pada penelitian ini. Topik-topik berikut berada di luar cakupan (\textit{scope}) penelitian ini, namun dapat menjadi dasar penelitian atau tugas akhir berikutnya.
 
-Kesimpulan dapat diawali dengan apa yang dilakukan dengan tugas akhir ini lalu 
-dilanjutkan dengan poin-poin yang menjawab tujuan penelitian, apakah tujuan sudah tercapai atau belum, tentunya berdasarkan data ataupun hasil dari Bab pembahasan sebelumnya. Dalam beberapa hal, kesimpulan dapat juga berisi tentang temuan/\textit{findings} yang Anda dapatkan setelah melakukan pengamatan dan atau analisis terhadap hasil penelitian. 
+\section{Integrasi DMA untuk Streaming Audio}
 
-Kesimpulan menjawab seberapa jauh rumusan masalah tercapai berdasarkan hasil penelitian. Semua rumusan masalah harus disimpulkan berdasarkan data penelitian.
+Mekanisme pengisian FIFO berbasis interrupt yang digunakan pada penelitian ini masih melibatkan CPU dalam setiap siklus pengisian buffer. Keterlibatan CPU ini dapat menjadi bottleneck pada sistem dengan banyak peripheral aktif. Pengembangan selanjutnya dapat mengintegrasikan AXI DMA (\textit{Direct Memory Access}) atau AXI-Stream FIFO untuk mentransfer data audio langsung dari memori ke peripheral tanpa intervensi CPU, sehingga:
+\begin{itemize}
+    \item Beban CPU berkurang secara signifikan.
+    \item Kemungkinan \textit{underrun} akibat variasi waktu eksekusi ISR berkurang.
+    \item Memungkinkan pemutaran audio dengan \textit{sample rate} lebih tinggi atau jumlah kanal lebih banyak.
+\end{itemize}
 
-\section{Saran}
+\section{Integrasi Driver Linux (UIO/ASoC)}
 
-Saran berisi hal-hal yang bisa dilanjutkan dari penelitian atau skripsi ini, yang belum dilakukan karena batasan permasalahan. Saran bukan berisi saran kepada sistem atau pengguna, tetapi saran diberikan kepada aspek penelitian yang dapat dikembangkan dan ditambahkan di penelitian atau skripsi selanjutnya.
+Penelitian ini menggunakan \textit{bare-metal} Vitis sebagai lapisan perangkat lunak. Untuk platform yang menjalankan Linux pada FPGA (misalnya Zynq dengan Processing System), pengembangan driver Linux diperlukan. Dua pendekatan yang dapat dipertimbangkan:
+\begin{itemize}
+    \item \textbf{UIO (\textit{Userspace I/O})}: Pendekatan sederhana yang memungkinkan akses langsung ke register peripheral dari ruang pengguna Linux, cocok untuk prototyping cepat.
+    \item \textbf{ASoC (\textit{ALSA System on Chip})}: Framework ALSA Linux yang dirancang khusus untuk peripheral audio pada SoC, memberikan integrasi penuh dengan ekosistem audio Linux (PulseAudio, JACK, GStreamer).
+\end{itemize}
 
+\section{Penambahan I2S Receiver (RX)}
 
-\noindent \textcolor{red}{Catatan: Mahasiswa perlu melihat sinkronisasi antara rumusan masalah, tujuan, metode, hasil penelitian, dan kesimpulan.}
+Penelitian ini hanya mencakup mode transmitter (TX). Penambahan fitur I2S \textit{receiver} akan memungkinkan:
+\begin{itemize}
+    \item Perekaman audio dari mikrofon digital I2S (misalnya INMP441, ICS-43434).
+    \item Implementasi loop-back test untuk verifikasi self-test.
+    \item Pemrosesan audio dua arah (\textit{full-duplex}) untuk aplikasi seperti \textit{voice recognition} atau \textit{active noise cancellation}.
+\end{itemize}
+
+\section{Dukungan Sample Rate Tambahan dan Presisi Lebih Tinggi}
+
+Keterbatasan MMCM dalam menghasilkan frekuensi audio yang tepat dapat diatasi dengan:
+\begin{itemize}
+    \item Penggunaan osilator audio eksternal 24,576 MHz (untuk keluarga 48 kHz) atau 22,5792 MHz (untuk keluarga 44,1 kHz), yang disambungkan ke FPGA melalui pin clock khusus.
+    \item Penambahan dukungan sample rate 44,1 kHz, 88,2 kHz, atau 192 kHz dengan pemilihan pembagi clock yang sesuai.
+    \item Implementasi ASRC (\textit{Asynchronous Sample Rate Converter}) untuk konversi \textit{sample rate} secara fleksibel.
+\end{itemize}
+
+\section{Kemasan sebagai IP Core Vivado yang Dapat Diunduh Ulang}
+
+Untuk memudahkan penggunaan kembali (\textit{reuse}) oleh pengguna lain, peripheral dapat dikemas sebagai IP core Vivado (format \texttt{*.zip} atau repositori IP Vivado) lengkap dengan:
+\begin{itemize}
+    \item Antarmuka IP Packager dengan konfigurasi parameter yang dapat disesuaikan (kedalaman FIFO, lebar data, dan sebagainya).
+    \item Template driver C (\texttt{xil\_io.h} style) atau BSP stub untuk Vitis.
+    \item Testbench otomatis untuk verifikasi cepat setelah instansiasi.
+\end{itemize}

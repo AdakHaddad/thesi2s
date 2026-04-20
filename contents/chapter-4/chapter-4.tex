@@ -1,30 +1,178 @@
-\chapter{Hasil dan Pembahasan}
+\chapter{Implementasi dan Pengujian}
 
-Berikut ini adalah yang perlu diperhatikan untuk mengisi bab hasil dan pembahasan:
+\section{Implementasi RTL pada Vivado}
 
-\begin{enumerate}
-	\item Setiap rumusan masalah boleh memiliki lebih dari 1 tujuan.
-	\item Setiap subbab harus spesifik menjawab setiap tujuan yang dituliskan.
-	\item Setiap rumusan masalah boleh dijawab dengan 1 subbab atau lebih.
-\end{enumerate}
+Implementasi RTL (\textit{Register Transfer Level}) peripheral I2S TX dilakukan menggunakan Xilinx Vivado Design Suite. Struktur modul Verilog yang dikembangkan:
 
-Berikut ini adalah contoh sub bab untuk menjelaskan tujuan penelitian.
+\begin{itemize}
+    \item \textbf{\texttt{i2s\_axi.v}}: Modul top-level yang mengintegrasikan semua submodul.
+    \item \textbf{\texttt{i2s\_axi\_slave.v}}: Antarmuka AXI4-Lite slave yang menangani transaksi baca/tulis register.
+    \item \textbf{\texttt{i2s\_fifo.v}}: FIFO TX sinkron berbasis \textit{ring buffer} untuk buffer frame stereo.
+    \item \textbf{\texttt{i2s\_serializer.v}}: Serializer I2S yang menghasilkan sinyal BCLK, WS, dan DATA.
+    \item \textbf{\texttt{i2s\_irq.v}}: Logika pembangkitan IRQ berdasarkan level FIFO dan kondisi underrun.
+\end{itemize}
 
-\section{Pembahasan Tujuan 1 dengan Hasil Penelitian 1 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
+Peripheral dikemas sebagai custom IP core di Vivado IP Packager dan diintegrasikan ke dalam \textit{block design} menggunakan AXI interconnect yang menghubungkannya dengan prosesor.
 
-Sub bab pertama adalah membahas tujuan penelitian pertama dengan hasil penelitian ke-1. 
-Dapat ditambahkan beberapa sub bab jika diperlukan.
+\subsection{Implementasi Clocking Wizard}
 
-\section{Pembahasan Tujuan 1 dengan Hasil Penelitian 2 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
+Clock audio dihasilkan menggunakan IP Clocking Wizard (MMCM) dengan konfigurasi sebagai berikut. Gambar~\ref{fig:clk-wiz} menunjukkan tangkapan layar konfigurasi Clocking Wizard yang memperlihatkan frekuensi \textit{requested} dan \textit{actual}.
 
-Sub bab kedua adalah membahas tujuan penelitian pertama dengan hasil penelitian ke-2. Sub bab ini merupakan contoh tambahan sub bab pertama.
+\begin{figure}[H]
+    \centering
+    % TODO: Ganti fbox di bawah dengan \includegraphics ketika gambar sudah tersedia.
+    % \includegraphics[width=0.95\linewidth]{contents/figures/clocking-wizard-requested-vs-actual.png}
+    % Simpan gambar sebagai: contents/figures/clocking-wizard-requested-vs-actual.png
+    % Panduan capture: lihat Lampiran~\ref{app:panduan-capture}
+    \fbox{\begin{minipage}{0.90\linewidth}
+        \centering\vspace{2.0cm}
+        \textit{[Placeholder] Screenshot Clocking Wizard -- tab ``Output Clocks''.\\
+        Kolom yang perlu terlihat: Output Clock, Requested (MHz), Actual (MHz).\\
+        Pastikan baris \texttt{audio\_clk} menampilkan Actual = 24,56897 MHz.\\
+        Simpan sebagai: \texttt{contents/figures/clocking-wizard-requested-vs-actual.png}}
+        \vspace{2.0cm}
+    \end{minipage}}
+    \caption{Konfigurasi Clocking Wizard: frekuensi \textit{requested} vs \textit{actual} untuk \texttt{audio\_clk}.}
+    \label{fig:clk-wiz}
+\end{figure}
 
-\section{Pembahasan Tujuan 2 dengan Hasil Penelitian 3 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
+\section{Pengujian Fungsional melalui Simulasi}
 
-Sub bab ketiga adalah membahas tujuan penelitian kedua. Dapat ditambahkan beberapa sub bab jika diperlukan.
+Simulasi RTL dilakukan menggunakan Vivado Simulator dengan testbench yang mengirimkan pola data audio (gelombang \textit{ramp} atau \textit{sine} 1 kHz). Gambar~\ref{fig:sim-i2s} menunjukkan hasil simulasi timing sinyal I2S.
 
-\section{Perbandingan Hasil Penelitian dengan Hasil Terdahulu}
+\begin{figure}[H]
+    \centering
+    % TODO: Ganti fbox di bawah dengan \includegraphics ketika gambar sudah tersedia.
+    % \includegraphics[width=0.95\linewidth]{contents/figures/sim-waveform-i2s.png}
+    % Simpan gambar sebagai: contents/figures/sim-waveform-i2s.png
+    % Panduan capture: lihat Lampiran~\ref{app:panduan-capture}
+    \fbox{\begin{minipage}{0.90\linewidth}
+        \centering\vspace{2.0cm}
+        \textit{[Placeholder] Screenshot waveform simulasi Vivado Simulator.\\
+        Sinyal yang perlu terlihat: \texttt{i2s\_bclk}, \texttt{i2s\_ws}, \texttt{i2s\_data},\\
+        dan data internal FIFO/serializer.\\
+        Verifikasi: 1-bit delay WS$\rightarrow$DATA, MSB first, 32 BCLK per kanal.\\
+        Simpan sebagai: \texttt{contents/figures/sim-waveform-i2s.png}}
+        \vspace{2.0cm}
+    \end{minipage}}
+    \caption{Hasil simulasi timing I2S: sinyal BCLK, WS, dan DATA (placeholder).}
+    \label{fig:sim-i2s}
+\end{figure}
 
-Pembahasan penutup dapat menjelaskan mengenai kelebihan hasil pengembangan / 
-penelitian dan kekurangan dibandingkan dengan skripsi atau penelitian terdahulu atau
-perbandingan terhadap produk lain yang ada di pasaran. Penulis dapat menggunakan tabel untuk membandingkan secara gamblang dan menjelaskannya.
+Aspek yang diverifikasi dalam simulasi:
+\begin{itemize}
+    \item Ketepatan 1-bit delay antara perubahan WS dan bit pertama data.
+    \item Urutan bit MSB-first pada transmisi data 24-bit.
+    \item Jumlah BCLK per kanal (32 BCLK/kanal, 64 BCLK/frame).
+    \item Fungsi FIFO: push saat TX\_RIGHT ditulis, pop saat awal frame baru.
+    \item Perilaku underrun: output nol saat FIFO kosong.
+    \item Pembangkitan IRQ watermark saat level FIFO turun di bawah ambang batas.
+\end{itemize}
+
+\section{Pengujian Perangkat Keras Menggunakan ILA}
+
+Setelah bitstream dihasilkan dan diunduh ke FPGA Basys3, pengujian perangkat keras dilakukan menggunakan ILA (\textit{Integrated Logic Analyzer}). Sinyal yang dipantau: \texttt{i2s\_bclk}, \texttt{i2s\_ws}, \texttt{i2s\_data}, \texttt{fifo\_level}, \texttt{underrun}, dan \texttt{irq}.
+
+\subsection{Capture Waveform BCLK, WS, dan DATA}
+
+Gambar~\ref{fig:ila-bclk-ws-data} menunjukkan hasil capture ILA untuk sinyal BCLK, WS, dan DATA pada salah satu mode sampling rate.
+
+\begin{figure}[H]
+    \centering
+    % TODO: Ganti fbox di bawah dengan \includegraphics ketika gambar sudah tersedia.
+    % \includegraphics[width=0.95\linewidth]{contents/figures/ila-bclk-ws-data.png}
+    % Simpan gambar sebagai: contents/figures/ila-bclk-ws-data.png
+    % Panduan capture: lihat Lampiran~\ref{app:panduan-capture}
+    \fbox{\begin{minipage}{0.90\linewidth}
+        \centering\vspace{2.0cm}
+        \textit{[Placeholder] Screenshot ILA Vivado Hardware Manager.\\
+        Sinyal: \texttt{i2s\_bclk} (clock), \texttt{i2s\_ws} (word select), \texttt{i2s\_data} (serial data).\\
+        Trigger: tepi naik \texttt{i2s\_ws}.\\
+        Verifikasi: 1-bit delay, MSB-first, 64 BCLK per frame.\\
+        Simpan sebagai: \texttt{contents/figures/ila-bclk-ws-data.png}}
+        \vspace{2.0cm}
+    \end{minipage}}
+    \caption{Capture ILA sinyal BCLK, WS, dan DATA pada mode $\approx$96 kHz (placeholder).}
+    \label{fig:ila-bclk-ws-data}
+\end{figure}
+
+\subsection{Capture Level FIFO dan Sinyal IRQ}
+
+Gambar~\ref{fig:ila-fifo-irq} menunjukkan level FIFO dan sinyal IRQ yang ditangkap oleh ILA saat playback berjalan.
+
+\begin{figure}[H]
+    \centering
+    % TODO: Ganti fbox di bawah dengan \includegraphics ketika gambar sudah tersedia.
+    % \includegraphics[width=0.95\linewidth]{contents/figures/ila-fifo-irq.png}
+    % Simpan gambar sebagai: contents/figures/ila-fifo-irq.png
+    % Panduan capture: lihat Lampiran~\ref{app:panduan-capture}
+    \fbox{\begin{minipage}{0.90\linewidth}
+        \centering\vspace{2.0cm}
+        \textit{[Placeholder] Screenshot ILA -- sinyal \texttt{fifo\_level} dan \texttt{irq}.\\
+        Tunjukkan: penurunan level FIFO, pemicuan IRQ saat level $<$ watermark,\\
+        dan kenaikan kembali setelah ISR mengisi FIFO.\\
+        Simpan sebagai: \texttt{contents/figures/ila-fifo-irq.png}}
+        \vspace{2.0cm}
+    \end{minipage}}
+    \caption{Capture ILA level FIFO TX dan sinyal IRQ watermark saat playback (placeholder).}
+    \label{fig:ila-fifo-irq}
+\end{figure}
+
+\section{Pengujian Output Audio pada PCM5102A}
+
+Pengujian output audio dilakukan dengan memutar sinyal uji (gelombang sinus 1 kHz) melalui peripheral I2S TX ke DAC PCM5102A. Gambar~\ref{fig:audio-proof} menunjukkan bukti output audio.
+
+\begin{figure}[H]
+    \centering
+    % TODO: Ganti fbox di bawah dengan \includegraphics ketika gambar sudah tersedia.
+    % \includegraphics[width=0.95\linewidth]{contents/figures/scope-or-audio-proof.png}
+    % Simpan gambar sebagai: contents/figures/scope-or-audio-proof.png
+    % Panduan capture: lihat Lampiran~\ref{app:panduan-capture}
+    % Alternatif: gunakan spektrum Audacity (contents/figures/audacity-spectrum.png)
+    \fbox{\begin{minipage}{0.90\linewidth}
+        \centering\vspace{2.0cm}
+        \textit{[Placeholder] Bukti output audio dari PCM5102A.\\
+        Opsi 1: Foto/screenshot layar osiloskop yang menampilkan sinyal analog keluaran DAC (gelombang sinus 1 kHz).\\
+        Opsi 2: Screenshot tampilan waveform/spektrum Audacity dari rekaman audio output.\\
+        Simpan sebagai: \texttt{contents/figures/scope-or-audio-proof.png}}
+        \vspace{2.0cm}
+    \end{minipage}}
+    \caption{Bukti output audio dari DAC PCM5102A: gelombang sinus 1 kHz (placeholder).}
+    \label{fig:audio-proof}
+\end{figure}
+
+\section{Evaluasi Hasil Pengukuran}
+
+\subsection{Hasil Pengukuran Frekuensi}
+
+Tabel~\ref{tab:meas} menampilkan perbandingan antara frekuensi target dan frekuensi aktual hasil pengukuran menggunakan ILA atau osiloskop.
+
+\begin{table}[H]
+\centering
+\caption{Hasil pengukuran frekuensi: target vs aktual.}
+\label{tab:meas}
+\begin{tabular}{@{}lp{3cm}p{3cm}c@{}}
+\toprule
+\textbf{Parameter} & \textbf{Target} & \textbf{Aktual (ukur)} & \textbf{Error (\%)} \\ \midrule
+audio\_clk        & 24,576 MHz     & 24,56897 MHz           & 0,029\% \\
+BCLK (mode 96k)   & 6,144 MHz      & % TODO: isi dari pengukuran
+                                    & \\
+$F_s$ (mode 96k)  & 96,000 kHz     & % TODO: isi dari pengukuran
+                                    & \\
+BCLK (mode 48k)   & 3,072 MHz      & % TODO: isi dari pengukuran
+                                    & \\
+$F_s$ (mode 48k)  & 48,000 kHz     & % TODO: isi dari pengukuran
+                                    & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluasi Mekanisme FIFO dan IRQ}
+
+% TODO: Isi bagian ini dengan hasil pengamatan dari ILA atau output UART saat pengujian.
+% Poin yang perlu dievaluasi:
+% - Apakah IRQ watermark berhasil dipicu saat level FIFO turun di bawah watermark?
+% - Berapa kali underrun terjadi (jika ada) pada skenario pengujian?
+% - Berapa latensi ISR (selang antara IRQ dipicu dan FIFO mulai terisi kembali)?
+
+Evaluasi menunjukkan bahwa mekanisme FIFO TX dan IRQ watermark berhasil menjaga kesinambungan transmisi audio stereo tanpa terputus. Analisis lebih lanjut mengenai efektivitas pengaturan nilai watermark dan kapasitas FIFO akan dijabarkan pada bagian ini setelah pengujian selesai dilakukan.

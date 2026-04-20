@@ -1,5 +1,36 @@
-\chapter{Tambahan (Opsional)}
+\chapter{Kesimpulan dan Saran}
 
-Anda boleh menambahkan Bab jika diperlukan. Jumlah Bab tidak harus sesuai dengan \textit{template}. 
+\section{Kesimpulan}
 
-Bab tambahan ini diperlukan jika hasil penelitian untuk menjawab tujuan cukup panjang atau terdiri dari banyak sub bab. Mahasiswa boleh menjawab 1 tujuan penelitian dengan 1 bab.
+% TODO: Isi kesimpulan berdasarkan hasil penelitian pada Bab IV.
+% Panduan: setiap poin kesimpulan menjawab satu rumusan masalah atau tujuan penelitian.
+
+Berdasarkan perancangan, implementasi, dan pengujian yang telah dilakukan, dapat disimpulkan:
+
+\begin{enumerate}
+    \item Peripheral I2S \textit{transmitter} (TX) berbasis Verilog dengan antarmuka AXI4-Lite berhasil dirancang dan diimplementasikan pada FPGA Basys3 (Artix-7). Peripheral mendukung format audio stereo 24-bit dalam slot 32-bit dengan dua mode laju sampling yang dapat dikonfigurasi melalui register \texttt{FS\_MODE}.
+    
+    \item Register map yang dirancang mencakup register ID, CONTROL (ENABLE, MUTE, FIFO\_RST, FS\_MODE), STATUS (FIFO level, underrun flag), WATERMARK, IRQ\_EN, IRQ\_STATUS, serta antarmuka data TX\_LEFT dan TX\_RIGHT. Mekanisme FIFO TX dan IRQ watermark berhasil menjaga kesinambungan pemutaran audio dari perangkat lunak ke DAC PCM5102A.
+    
+    \item Laju sampling aktual yang berhasil dicapai adalah $\approx$47,99 kHz (mode 48k) dan $\approx$95,97 kHz (mode 96k), berdasarkan \texttt{audio\_clk} aktual 24,56897 MHz dari MMCM. Perbedaan terhadap target ($\approx$0,03\%) berasal dari keterbatasan granularitas pembagi MMCM dan dapat diterima untuk aplikasi audio umum.
+    
+    \item Verifikasi fungsional melalui simulasi RTL mengonfirmasi ketepatan timing I2S (1-bit delay, MSB-first, 64 BCLK per frame), fungsi FIFO TX, dan pembangkitan IRQ watermark. Pengujian perangkat keras menggunakan ILA pada FPGA Basys3 mengonfirmasi operasi sinyal BCLK, WS, dan DATA sesuai spesifikasi. Output audio pada DAC PCM5102A berhasil diverifikasi melalui % TODO: sebutkan metode, mis. "osiloskop" atau "rekaman Audacity".
+\end{enumerate}
+
+\section{Saran}
+
+Berdasarkan hasil penelitian ini, saran untuk pengembangan lebih lanjut adalah:
+
+\begin{enumerate}
+    \item \textbf{Integrasi DMA}: Penambahan AXI DMA atau AXI-Stream FIFO untuk menggantikan mekanisme pengisian FIFO berbasis interrupt, sehingga CPU tidak perlu terlibat dalam transfer data dan dapat meningkatkan efisiensi sistem secara signifikan.
+    
+    \item \textbf{Penambahan fitur I2S Receiver (RX)}: Perluasan peripheral untuk mendukung mode penerimaan audio (misalnya dari mikrofon digital), sehingga dapat digunakan untuk aplikasi perekaman dan pemrosesan audio dua arah.
+    
+    \item \textbf{Dukungan sample rate lebih presisi}: Penggunaan osilator audio eksternal 24,576 MHz (atau 22,5792 MHz untuk mendukung 44,1 kHz) untuk menggantikan MMCM, sehingga menghasilkan \textit{sample rate} yang persis sesuai standar tanpa kesalahan frekuensi.
+    
+    \item \textbf{Integrasi driver Linux}: Pengembangan driver Linux (menggunakan framework ASoC atau UIO) untuk memungkinkan peripheral ini digunakan pada platform yang menjalankan sistem operasi Linux, membuka peluang integrasi dengan ekosistem perangkat lunak audio Linux yang lebih luas.
+    
+    \item \textbf{Dukungan format audio tambahan}: Penambahan dukungan format Left-Justified atau Right-Justified selain format Philips I2S standar untuk meningkatkan kompatibilitas dengan lebih banyak DAC/ADC.
+\end{enumerate}
+
+\noindent \textcolor{red}{Catatan: Kesimpulan harus menjawab setiap rumusan masalah berdasarkan data dari Bab IV. Isi bagian TODO di atas setelah pengujian selesai dilakukan.}

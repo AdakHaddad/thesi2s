@@ -17,6 +17,36 @@
 Read the detailed information in **main.tex**.
 In case some **sty files** are not available in your TeX installation, just copy the required one from **packages/** directory into the same directory as **main.tex**. Hopefully this will help beginner users.
 
+## Build Instructions
+
+### Requirements
+- TeX distribution: [TeX Live](https://www.tug.org/texlive/) (Linux/macOS) or [MiKTeX](https://miktex.org/) (Windows)
+- Required packages: `babel`, `graphicx`, `booktabs`, `longtable`, `float`, `hyperref`, `caption`, `setspace`, `geometry`, `titlesec`, `tocloft`, `nomencl`, `listings`, `xcolor`
+  - All packages are bundled in TeX Live full or can be copied from the `packages/` directory.
+
+### Compile (manual)
+Run the following commands from the repository root (same directory as `main.tex`):
+
+```bash
+pdflatex main.tex
+bibtex main
+pdflatex main.tex
+pdflatex main.tex
+```
+
+The final PDF will be generated as `main.pdf`.
+
+### Adding figures (placeholder replacement)
+Figure placeholders are present in `contents/chapter-3/` and `contents/chapter-4/`.
+To replace a placeholder with an actual figure:
+1. Save the figure to `contents/figures/<filename>` (see `contents/figures/README.md`).
+2. In the relevant `.tex` file, remove the `\fbox{...}` placeholder block.
+3. Uncomment the `\includegraphics[...]{contents/figures/<filename>}` line above it.
+4. Recompile with the sequence above.
+
+See `contents/appendix/appendix-panduan-capture.tex` for step-by-step capture instructions
+for each required figure (Clocking Wizard, ILA waveform, simulation waveform, audio proof).
+
 ## Content:
 ### Main files
 ```

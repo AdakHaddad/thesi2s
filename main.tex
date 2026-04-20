@@ -58,6 +58,10 @@
 %\hyphenpenalty=10000
 %\hbadness=10000
 
+% Additional packages for thesis content
+\usepackage{booktabs} % \toprule, \midrule, \bottomrule for tables
+\usepackage{float}    % [H] figure/table placement specifier
+
 \begin{document}
 %======================================
 % Create cover etc
@@ -185,7 +189,8 @@
 \appendixfigures
 
 \cleardoublepage \phantomsection
-\chapterappendix{contents/appendix/appendix-isi-lampiran}
+\chapterappendix{contents/appendix/appendix-panduan-capture}
+\chapterappendixadd{contents/appendix/appendix-isi-lampiran}
 \chapterappendixadd{contents/appendix/appendix-latex}
 \chapterappendixadd{contents/appendix/appendix-penulisan-referensi}
 \chapterappendixadd{contents/appendix/appendix-code}

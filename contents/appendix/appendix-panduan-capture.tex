@@ -1,0 +1,133 @@
+\chapter*{LAMPIRAN}
+\section{Panduan Pengambilan Gambar dan Bukti Pengujian}
+\label{app:panduan-capture}
+
+Lampiran ini berisi panduan langkah demi langkah untuk mengambil gambar (\textit{screenshot} dan foto) yang digunakan sebagai figur dalam skripsi ini. Semua file gambar harus disimpan ke dalam direktori \texttt{contents/figures/} agar referensi \LaTeX{} dapat diselesaikan dengan benar.
+
+\subsection{Panduan Capture: Clocking Wizard (Requested vs Actual Frequency)}
+
+\textbf{Tujuan}: Menunjukkan bahwa \texttt{audio\_clk} aktual adalah 24,56897 MHz (bukan 24,576 MHz yang diminta).
+
+\textbf{Langkah-langkah}:
+\begin{enumerate}
+    \item Buka proyek Vivado dan pastikan IP Clocking Wizard sudah dikonfigurasi.
+    \item Pada panel \textit{Sources} atau \textit{Block Design}, klik dua kali pada IP Clocking Wizard untuk membuka jendela konfigurasi.
+    \item Navigasikan ke tab \textbf{Output Clocks}.
+    \item Pastikan tabel menampilkan kolom \textit{Output Clock}, \textit{Requested} (MHz), dan \textit{Actual} (MHz).
+    \item Pastikan baris yang bersesuaian dengan \texttt{audio\_clk} menampilkan nilai \textit{Actual} = 24,56897 MHz.
+    \item Ambil \textit{screenshot} menggunakan Snipping Tool (Windows: \texttt{Win+Shift+S}) atau \texttt{PrintScreen}.
+    \item Potong (\textit{crop}) gambar agar hanya menampilkan tabel frekuensi yang relevan.
+    \item Simpan dengan nama: \texttt{contents/figures/clocking-wizard-requested-vs-actual.png}.
+    \item Resolusi minimum: 1200 piksel lebar; format: PNG.
+\end{enumerate}
+
+\textbf{Catatan}: Jika Clocking Wizard diakses melalui \textit{Block Design}, tutup jendela konfigurasi tanpa mengklik OK/Apply setelah mengambil screenshot agar tidak mengubah konfigurasi yang ada.
+
+\subsection{Panduan Capture: Diagram Blok Sistem (Block Diagram)}
+
+\textbf{Tujuan}: Menunjukkan arsitektur keseluruhan sistem peripheral I2S TX dengan AXI4-Lite.
+
+\textbf{Opsi A -- Vivado IP Integrator Block Design}:
+\begin{enumerate}
+    \item Buka \textit{Block Design} (.bd) di Vivado.
+    \item Atur zoom agar seluruh komponen terlihat (I2S IP core, AXI interconnect, MicroBlaze/prosesor, Clocking Wizard, Proc System Reset).
+    \item Klik \textbf{File} $\rightarrow$ \textbf{Export} $\rightarrow$ \textbf{Export Block Design} jika tersedia, atau gunakan \textit{screenshot}.
+    \item Simpan sebagai: \texttt{contents/figures/block-diagram-i2s-axi.pdf} (pilih PDF untuk kualitas vektor) atau \texttt{.png} jika hanya tersedia PNG.
+\end{enumerate}
+
+\textbf{Opsi B -- Diagram buatan sendiri}:
+\begin{enumerate}
+    \item Buat diagram menggunakan draw.io (\url{https://app.diagrams.net/}), Microsoft Visio, atau PowerPoint.
+    \item Komponen yang harus ada dalam diagram: AXI Slave Interface, Register Bank, FIFO TX, I2S Serializer, IRQ Logic, dan pin output (BCLK, WS, DATA).
+    \item Export sebagai PDF atau PNG dengan resolusi tinggi.
+    \item Simpan sebagai: \texttt{contents/figures/block-diagram-i2s-axi.pdf}.
+\end{enumerate}
+
+\subsection{Panduan Capture: Waveform Simulasi (Vivado Simulator)}
+
+\textbf{Tujuan}: Membuktikan ketepatan timing I2S secara fungsional melalui simulasi.
+
+\textbf{Langkah-langkah}:
+\begin{enumerate}
+    \item Pastikan testbench (\texttt{tb\_i2s\_axi.v} atau serupa) sudah disiapkan dan mengirimkan beberapa frame stereo ke peripheral.
+    \item Di Vivado, jalankan simulasi: \textbf{Flow Navigator} $\rightarrow$ \textbf{Simulation} $\rightarrow$ \textbf{Run Simulation} $\rightarrow$ \textbf{Run Behavioral Simulation}.
+    \item Pada jendela \textit{Waveform}, tambahkan sinyal berikut: \texttt{i2s\_bclk}, \texttt{i2s\_ws}, \texttt{i2s\_data}.
+    \item Zoom ke bagian awal transmisi untuk menampilkan setidaknya 2 frame penuh (128 BCLK).
+    \item Verifikasi secara manual: 1-bit delay WS$\rightarrow$DATA, MSB-first, 32 BCLK per kanal.
+    \item Ambil \textit{screenshot} jendela waveform (pastikan kursor waktu tidak menghalangi sinyal penting).
+    \item Simpan sebagai: \texttt{contents/figures/sim-waveform-i2s.png}.
+\end{enumerate}
+
+\subsection{Panduan Capture: ILA Waveform (Perangkat Keras FPGA)}
+
+\textbf{Tujuan}: Membuktikan bahwa sinyal I2S pada FPGA fisik sesuai spesifikasi.
+
+\textbf{Prasyarat}: IP ILA sudah ditambahkan ke desain dan dihubungkan ke sinyal \texttt{i2s\_bclk}, \texttt{i2s\_ws}, \texttt{i2s\_data}, \texttt{fifo\_level[7:0]}, dan \texttt{irq}.
+
+\textbf{Capture BCLK, WS, DATA}:
+\begin{enumerate}
+    \item Generate bitstream dari Vivado (pastikan ILA sudah terintegrasi).
+    \item Program FPGA Basys3 melalui \textbf{Hardware Manager} $\rightarrow$ \textbf{Open Target} $\rightarrow$ \textbf{Auto Connect} $\rightarrow$ \textbf{Program Device}.
+    \item Di Hardware Manager, buka ILA core (\texttt{hw\_ila\_1} atau serupa).
+    \item Atur trigger: tipe \textit{Edge}, sumber \texttt{i2s\_ws}, kondisi \textit{Rising Edge}.
+    \item Jalankan program Vitis di PC (atau tekan tombol pada board jika ada) untuk memulai playback audio.
+    \item Klik \textbf{Run Trigger} pada Vivado Hardware Manager.
+    \item Tunggu trigger terpenuhi dan waveform tertangkap.
+    \item Zoom agar minimal 2 frame penuh terlihat.
+    \item Ambil \textit{screenshot} jendela ILA waveform.
+    \item Simpan sebagai: \texttt{contents/figures/ila-bclk-ws-data.png}.
+    \item Ulangi untuk mode 48k (simpan sebagai \texttt{ila-bclk-ws-data-48k.png} jika diperlukan perbandingan).
+\end{enumerate}
+
+\textbf{Capture FIFO Level dan IRQ}:
+\begin{enumerate}
+    \item Atur trigger: pada sinyal \texttt{irq}, kondisi \textit{Rising Edge}.
+    \item Jalankan playback, klik \textbf{Run Trigger}.
+    \item Setelah tertangkap, tampilkan sinyal \texttt{fifo\_level} sebagai \textit{analog/bus waveform} dan \texttt{irq} sebagai sinyal digital.
+    \item Pastikan terlihat: penurunan \texttt{fifo\_level}, kenaikan \texttt{irq}, dan kenaikan kembali \texttt{fifo\_level} setelah ISR.
+    \item Simpan sebagai: \texttt{contents/figures/ila-fifo-irq.png}.
+\end{enumerate}
+
+\subsection{Panduan Capture: Bukti Output Audio (Osiloskop atau Audacity)}
+
+\textbf{Tujuan}: Membuktikan bahwa sinyal analog dari PCM5102A berhasil dihasilkan.
+
+\textbf{Opsi A -- Osiloskop}:
+\begin{enumerate}
+    \item Hubungkan probe osiloskop ke output analog PCM5102A (pin LOUT/ROUT atau output jack audio jika ada amplifier).
+    \item Putar sinyal uji (gelombang sinus 1 kHz) dari program Vitis.
+    \item Atur time base osiloskop: $\approx$0,2 ms/div untuk menampilkan 2--3 siklus gelombang sinus 1 kHz.
+    \item Ambil foto layar osiloskop (hindari pantulan cahaya; gunakan mode foto dari osiloskop jika tersedia).
+    \item Simpan sebagai: \texttt{contents/figures/scope-or-audio-proof.png}.
+\end{enumerate}
+
+\textbf{Opsi B -- Audacity}:
+\begin{enumerate}
+    \item Hubungkan output audio PCM5102A ke \textit{line-in} laptop/PC atau rekam menggunakan ponsel.
+    \item Buka Audacity, mulai perekaman saat playback berjalan.
+    \item Hentikan perekaman setelah 2--3 detik.
+    \item Pilih menu \textbf{Analyze} $\rightarrow$ \textbf{Plot Spectrum} untuk melihat spektrum frekuensi (pastikan puncak di 1 kHz terlihat jelas).
+    \item Ambil \textit{screenshot} tampilan waveform atau spektrum.
+    \item Simpan sebagai: \texttt{contents/figures/audacity-spectrum.png}.
+\end{enumerate}
+
+\subsection{Catatan Format dan Kualitas Gambar}
+
+\begin{itemize}
+    \item Gunakan format \textbf{PNG} untuk semua screenshot UI, waveform ILA, dan simulasi.
+    \item Gunakan format \textbf{PDF} untuk diagram blok vektor (draw.io export).
+    \item Resolusi minimum: \textbf{1200 piksel lebar} untuk screenshot; \textbf{300 DPI} untuk gambar cetak.
+    \item Hindari gambar yang terlalu gelap, terlalu terang, atau terpotong.
+    \item Gunakan penamaan file yang \textbf{persis sama} dengan yang direferensikan di file \texttt{.tex} untuk memastikan LaTeX dapat menemukan gambar.
+    \item Setelah gambar ditempatkan di \texttt{contents/figures/}, hapus blok \texttt{\textbackslash{}fbox\{...\}} di file chapter yang bersangkutan dan aktifkan perintah \texttt{\textbackslash{}includegraphics} yang telah dikomentari.
+\end{itemize}
+
+\subsection{Tata Cara Verifikasi Kompilasi \LaTeX{}}
+
+Setelah menempatkan gambar dan mengaktifkan \texttt{\textbackslash{}includegraphics}:
+\begin{enumerate}
+    \item Kompilasi \texttt{main.tex} dengan urutan: \texttt{pdflatex} $\rightarrow$ \texttt{bibtex} $\rightarrow$ \texttt{pdflatex} $\rightarrow$ \texttt{pdflatex}.
+    \item Periksa log untuk pesan \texttt{LaTeX Warning: File `...' not found} -- ini menunjukkan gambar belum ditemukan.
+    \item Pastikan tidak ada error \texttt{! LaTeX Error: File `...' not found} yang akan menghentikan kompilasi.
+    \item Periksa PDF yang dihasilkan untuk memastikan gambar tampil dengan benar dan ukurannya proporsional.
+\end{enumerate}
