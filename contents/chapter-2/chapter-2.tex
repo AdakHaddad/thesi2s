@@ -1,307 +1,269 @@
+% ============================================================
+% BAB II – TINJAUAN PUSTAKA DAN DASAR TEORI
+% Topik: Peripheral I2S TX AXI4-Lite, Basys3, PCM5102A
+% ============================================================
+
 \chapter{Tinjauan Pustaka dan Dasar Teori}
 
+% ================================================================
+% 2.1  TINJAUAN PUSTAKA
+%   Ulas minimal 4–6 penelitian terdahulu yang relevan,
+%   masing-masing 1–2 paragraf, mencakup:
+%     a) Implementasi I2S pada FPGA (Xilinx maupun vendor lain)
+%     b) Desain peripheral AXI4-Lite kustom pada FPGA
+%     c) Penggunaan FIFO dan mekanisme interrupt pada peripheral audio
+%     d) Evaluasi audio digital pada FPGA dengan DAC eksternal
+%   Tutup dengan sub-bab "Gap Penelitian dan Kontribusi".
+% ================================================================
 \section{Tinjauan Pustaka}
 
-Bagian ini membahas penelitian-penelitian terdahulu yang relevan dengan perancangan modul peripheral I2C dan I2S pada FPGA, serta implementasi SoC berbasis MicroBlaze V. Tinjauan pustaka ini memberikan konteks akademik dan mengidentifikasi gap penelitian yang akan diisi oleh penelitian ini.
-
-\subsection{Penelitian tentang Implementasi Kontroler I2C pada FPGA}
-
-Kumar dan Singh (2018) mengimplementasikan kontroler I2C master menggunakan Verilog HDL pada FPGA Xilinx Spartan-6. Penelitian mereka fokus pada optimasi kecepatan transfer data dengan mencapai throughput 380 kbps pada fast mode. State machine yang dirancang mencakup 8 states utama untuk menangani protokol I2C secara lengkap. Keunggulan dari penelitian ini adalah analisis timing yang detail dan verifikasi menggunakan logic analyzer. Namun, keterbatasannya adalah tidak adanya integrasi dengan sistem processor, sehingga kontroler I2C hanya dapat dikonfigurasi melalui hardwired signals.
-
-Patel et al. (2020) mengembangkan IP core I2C dengan antarmuka Wishbone untuk integrasi dengan OpenRISC processor. Penelitian ini berhasil mengintegrasikan multiple I2C slaves pada single bus dengan address arbitration mechanism. Kontribusinya adalah penyediaan register-based configuration yang memudahkan software control. Keterbatasan penelitian ini adalah hanya mendukung standard mode (100 kbps) dan tidak termasuk error handling yang comprehensive.
-
-Zhao dan Chen (2019) merancang I2C controller dengan fitur multi-master arbitration pada Altera FPGA. Penelitian ini mengimplementasikan clock stretching mechanism dan automatic retry pada bus collision. Keunggulannya adalah robustness dalam multi-master environment. Namun, kompleksitas design mengakibatkan resource utilization yang tinggi (>500 LUTs), kurang efisien untuk aplikasi single-master sederhana.
+% [TODO: ulas setiap referensi dengan pola: (Penulis, tahun) → metode →
+%  hasil → kelebihan → kekurangan/keterbatasan]
 
 \subsection{Penelitian tentang Implementasi I2S pada FPGA}
 
-Zhang dan Liu (2019) mengembangkan IP core I2S transmitter dan receiver untuk aplikasi audio processing pada Xilinx Zynq-7000. Penelitian mereka mencapai latency di bawah 50 microseconds dengan support untuk sample rate hingga 96 kHz. Implementasi menggunakan dual-port BRAM sebagai audio buffer untuk smooth playback. Kontribusinya adalah comprehensive testbench dengan audio quality measurement (SNR, THD). Keterbatasannya adalah ketergantungan pada Zynq Processing System (PS) untuk DMA operation, tidak purely pada Programmable Logic (PL).
+% Contoh poin yang harus diisi:
+% - Zhang & Liu (2019): I2S TX+RX Zynq-7000, 96 kHz, latency <50 µs
+%   → Keterbatasan: bergantung pada PS DMA, tidak menggunakan AXI4-Lite kustom
+% - Anderson & Lee (2021): multi-channel I2S RX microphone array
+%   → Keterbatasan: hanya RX, tidak ada TX
 
-Anderson dan Lee (2021) merancang I2S interface untuk digital microphone array pada FPGA. Penelitian ini fokus pada multi-channel I2S receiver dengan TDM (Time Division Multiplexing) support hingga 8 channels. Keunggulannya adalah efficient resource sharing untuk multiple channels menggunakan time-multiplexed architecture. Keterbatasan adalah hanya mendukung receiving mode, tidak termasuk transmitting capability.
+\subsection{Penelitian tentang Peripheral AXI4-Lite Kustom pada FPGA}
 
-Tanaka et al. (2020) mengimplementasikan I2S codec dengan sample rate conversion pada Lattice FPGA. Penelitian ini menggunakan polyphase filter untuk resampling antara 44.1 kHz dan 48 kHz. Kontribusinya adalah high-quality audio conversion dengan minimal artifacts. Namun, kompleksitas DSP operations memerlukan dedicated DSP blocks yang signifikan.
+% Contoh poin:
+% - Sharma & Kumar (2021): panduan desain peripheral AXI4-Lite untuk MicroBlaze
+% - Rodriguez et al. (2022): perbandingan MicroBlaze V vs MicroBlaze classic
 
-\subsection{Penelitian tentang SoC berbasis RISC-V dan MicroBlaze}
+\subsection{Penelitian tentang Mekanisme FIFO dan Interrupt pada Peripheral Audio}
 
-Patterson dan Waterman (2017) memperkenalkan RISC-V ISA sebagai open-source instruction set architecture yang modular dan extensible. Ekosistem RISC-V telah berkembang pesat dengan implementasi processors dari berbagai vendors. MicroBlaze V dari Xilinx merupakan salah satu implementasi RISC-V soft processor yang optimized untuk FPGA deployment dengan AXI4 interface support.
-
-Rodriguez et al. (2022) membandingkan performa MicroBlaze classic dan MicroBlaze V pada aplikasi embedded systems. Hasil penelitian menunjukkan MicroBlaze V memiliki code density 30\% lebih baik dan performance/MHz yang comparable dengan MicroBlaze classic. Keunggulan MicroBlaze V adalah compatibility dengan RISC-V ecosystem tools dan software.
-
-Sharma dan Kumar (2021) mengimplementasikan custom peripheral untuk MicroBlaze menggunakan AXI4-Lite interface. Penelitian ini memberikan guideline untuk peripheral development termasuk register map design, interrupt handling, dan software driver development. Kontribusinya adalah template yang reusable untuk berbagai jenis peripheral.
-
-\subsection{Penelitian tentang AXI Protocol dan Peripheral Integration}
-
-ARM (2011) mempublikasikan spesifikasi AMBA AXI4 Protocol yang menjadi industry standard untuk on-chip interconnect. AXI4-Lite merupakan subset dari AXI4 yang disederhanakan untuk peripheral dengan lower throughput requirements, menggunakan single transaction model tanpa burst support.
-
-Chen et al. (2020) menganalisis performance overhead dari AXI interconnect pada multi-peripheral SoC. Penelitian menunjukkan latency AXI4-Lite untuk single read/write transaction adalah 2-4 clock cycles tergantung interconnect arbitration. Hasil ini penting untuk estimasi real-time performance pada embedded applications.
+% Contoh poin:
+% - Tanaka et al. (2020): I2S codec dengan sample-rate conversion dan FIFO
+%   pada Lattice FPGA
 
 \subsection{Gap Penelitian dan Kontribusi}
 
-Berdasarkan tinjauan pustaka di atas, beberapa gap yang teridentifikasi adalah:
+% Ringkaskan gap:
+% 1. Belum ada IP I2S TX kustom AXI4-Lite yang terdokumentasi lengkap
+%    untuk Basys3 dengan FIFO 256-frame, watermark IRQ, dan dua mode sampling
+% 2. Penelitian sebelumnya tidak mendokumentasikan register map secara eksplisit
+%    untuk I2S TX pada ekosistem MicroBlaze / Vitis
+%
+% Kontribusi penelitian ini:
+% 1. Rancangan lengkap I2S TX peripheral + AXI4-Lite slave pada Basys3
+% 2. Dokumentasi register map, state machine, dan clocking yang detail
+% 3. Verifikasi multi-layer: simulasi, ILA, uji audio PCM5102A
 
-\begin{enumerate}
-	\item Belum ada penelitian yang mengintegrasikan kedua peripheral (I2C dan I2S) dalam single SoC berbasis MicroBlaze V dengan AXI4-Lite interface.
-	\item Penelitian existing fokus pada single peripheral atau menggunakan processor architecture yang berbeda (ARM, OpenRISC).
-	\item Kurangnya dokumentasi lengkap untuk hardware-software co-design pada MicroBlaze V, khususnya untuk custom peripheral development.
-	\item Tidak ada benchmark resource utilization dan performance untuk I2C+I2S concurrent operation pada Xilinx 7-series FPGA.
-\end{enumerate}
 
-Penelitian ini berkontribusi dengan:
-\begin{enumerate}
-	\item Implementasi lengkap I2C dan I2S peripheral dalam Verilog dengan AXI4-Lite slave interface yang compatible dengan MicroBlaze V.
-	\item Demonstrasi concurrent peripheral operation dengan aplikasi C yang menunjukkan real-world use case.
-	\item Dokumentasi detail dari hardware design (RTL), software driver (C code), dan integration methodology.
-	\item Resource utilization dan performance benchmarks yang dapat menjadi referensi untuk similar implementations.
-\end{enumerate}
-
+% ================================================================
+% 2.2  DASAR TEORI
+%   Sub-bab berisi penjelasan konsep yang langsung mendukung
+%   perancangan di Bab III dan pengujian di Bab IV.
+% ================================================================
 \section{Dasar Teori}
 
-\subsection{Protokol Komunikasi I2C}
+% ----------------------------------------------------------------
+% 2.2.1  Protokol I2S (Inter-IC Sound)
+%   Jelaskan:
+%   - Sejarah singkat (Philips 1986)
+%   - Tiga sinyal: BCLK (Bit Clock), WS (Word Select / LRCLK), SDATA
+%   - Diagram timing: WS transisi 1 BCLK sebelum MSB, data left-aligned
+%   - Format 24-bit data dalam 32-bit slot (MSB first, 8-bit padding di LSB)
+%   - Hubungan frekuensi: BCLK = Fs × 2 × slot_bits
+%     Mode 0: BCLK = audio_clk / 8 ≈ 3,071 MHz → Fs ≈ 47,99 kHz
+%     Mode 1: BCLK = audio_clk / 4 ≈ 6,142 MHz → Fs ≈ 95,97 kHz
+%
+% [FIGURE PLACEHOLDER]
+%   Gambar 2.1 – Diagram timing I2S: BCLK, WS, dan SDATA untuk
+%   dua frame stereo dengan format 24-bit/32-bit slot
+%   → File: contents/figures/i2s-timing-diagram.pdf
+% ----------------------------------------------------------------
+\subsection{Protokol Inter-IC Sound (I2S)}
 
-I2C (Inter-Integrated Circuit) adalah protokol komunikasi serial dua-kawat yang dikembangkan oleh Philips Semiconductor (sekarang NXP) pada tahun 1982. Protokol ini menggunakan dua sinyal: Serial Data (SDA) dan Serial Clock (SCL). I2C mendukung komunikasi multi-master dan multi-slave pada bus yang sama dengan addressing mechanism 7-bit atau 10-bit.
+% [TODO: isi penjelasan teknis protokol I2S sesuai poin di atas]
 
-\subsubsection{Karakteristik Protokol I2C}
+% Placeholder diagram timing:
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=0.9\textwidth]{contents/figures/i2s-timing-diagram.pdf}
+%   \caption{Diagram timing I2S: sinyal BCLK, WS, dan SDATA untuk
+%            format 24-bit data dalam slot 32-bit (stereo).}
+%   \label{fig:i2s-timing}
+% \end{figure}
 
-Protokol I2C memiliki beberapa karakteristik utama:
-\begin{itemize}
-	\item \textbf{Two-wire interface}: Hanya memerlukan dua jalur (SDA dan SCL) plus ground, menghemat pin dan routing complexity.
-	\item \textbf{Master-slave architecture}: Master device mengontrol clock (SCL) dan initiate transactions. Slave device merespond dengan address matching.
-	\item \textbf{Bidirectional communication}: SDA line digunakan untuk transmit dan receive dengan open-drain/open-collector configuration.
-	\item \textbf{Acknowledgment mechanism}: Setiap byte transfer diikuti dengan ACK/NACK bit untuk error detection.
-	\item \textbf{Speed modes}: Standard mode (100 kbps), Fast mode (400 kbps), Fast mode Plus (1 Mbps), High-speed mode (3.4 Mbps).
-\end{itemize}
+% [TABLE PLACEHOLDER]
+%   Tabel 2.1 – Parameter I2S TX pada dua mode sampling
+%   Kolom: Parameter | Mode 0 (~48 kHz) | Mode 1 (~96 kHz) | Satuan
+%   Baris: audio_clk, pembagi BCLK, BCLK, Fs (nominal), Fs (terukur)
 
-\subsubsection{Format Data I2C}
+% \begin{table}[ht]
+%   \centering
+%   \caption{Parameter I2S TX pada dua mode \emph{sampling rate}.}
+%   \label{tab:i2s-params}
+%   \begin{tabular}{lccc}
+%     \hline
+%     Parameter & Mode 0 & Mode 1 & Satuan \\
+%     \hline
+%     Clock audio (MMCM) & 24,568\,97 & 24,568\,97 & MHz \\
+%     Pembagi BCLK       & 8          & 4          & -- \\
+%     BCLK               & 3,071      & 6,142      & MHz \\
+%     Slot per frame     & 32         & 32         & bit \\
+%     Sampling rate (Fs) & $\approx$47,99 & $\approx$95,97 & kHz \\
+%     \hline
+%   \end{tabular}
+% \end{table}
 
-Setiap I2C transaction terdiri dari beberapa komponen:
-\begin{enumerate}
-	\item \textbf{START condition}: SDA transition dari HIGH ke LOW saat SCL HIGH, menandai beginning of transaction.
-	\item \textbf{Address byte}: 7-bit slave address + 1-bit R/W (Read=1, Write=0).
-	\item \textbf{Acknowledge bit}: Slave pulls SDA LOW untuk indicate successful address recognition.
-	\item \textbf{Data bytes}: 8-bit data transmitted MSB first, diikuti ACK/NACK setiap byte.
-	\item \textbf{STOP condition}: SDA transition dari LOW ke HIGH saat SCL HIGH, menandai end of transaction.
-\end{enumerate}
 
-\subsubsection{Clock Stretching}
+% ----------------------------------------------------------------
+% 2.2.2  DAC PCM5102A
+%   Jelaskan:
+%   - Spesifikasi singkat: SNR 112 dB, 2Vrms output, 384 kHz max Fs
+%   - Mode tanpa konfigurasi I2C/SPI (hardware mode): pin FMT, FLT, SCK
+%   - Format data yang diterima: I2S, 16–32 bit, slave clock (BCLK & LRCLK dari master)
+%   - Koneksi ke FPGA: BCLK ← FPGA, LRCLK ← FPGA, DIN ← FPGA, VDD 3.3V, GND
+%   - Pin SCK: dapat di-ground atau dibiarkan (mode freerun)
+%
+% [FIGURE PLACEHOLDER]
+%   Gambar 2.2 – Pinout dan diagram koneksi PCM5102A ke Basys3
+%   → File: contents/figures/pcm5102a-pinout.png
+% ----------------------------------------------------------------
+\subsection{DAC PCM5102A}
 
-Clock stretching adalah mekanisme dimana slave device dapat hold SCL line LOW untuk slow down master, memberikan waktu untuk data processing. Master harus mendeteksi kondisi ini sebelum generating clock pulse berikutnya.
+% [TODO: isi deskripsi singkat PCM5102A]
 
-\subsection{Protokol Komunikasi I2S}
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=0.7\textwidth]{contents/figures/pcm5102a-pinout.png}
+%   \caption{Pinout PCM5102A dan diagram koneksi ke FPGA Basys3.}
+%   \label{fig:pcm5102a}
+% \end{figure}
 
-I2S (Inter-IC Sound) adalah protokol serial bus untuk transmisi digital audio data yang dikembangkan oleh Philips pada tahun 1986. Protokol ini didesain khusus untuk komunikasi antar audio devices dalam elektronik consumer.
 
-\subsubsection{Sinyal I2S}
+% ----------------------------------------------------------------
+% 2.2.3  Protokol AXI4-Lite
+%   Jelaskan:
+%   - AMBA AXI4-Lite sebagai subset AXI4 untuk peripheral berperforma rendah
+%   - Lima channel: AW (Write Address), W (Write Data), B (Write Response),
+%     AR (Read Address), R (Read Data)
+%   - Mekanisme handshake VALID-READY
+%   - Alur transaksi tulis dan baca (ringkas)
+%   - Mengapa AXI4-Lite dipilih untuk I2S TX (konfigurasi register, bukan
+%     high-bandwidth streaming)
+%
+% [FIGURE PLACEHOLDER]
+%   Gambar 2.3 – Diagram alur transaksi tulis dan baca AXI4-Lite
+%   → File: contents/figures/axi4lite-transaction.pdf
+% ----------------------------------------------------------------
+\subsection{Protokol AXI4-Lite}
 
-I2S menggunakan tiga sinyal utama:
-\begin{itemize}
-	\item \textbf{Serial Data (SD)}: Membawa actual audio data dalam format serial, two's complement representation.
-	\item \textbf{Word Select (WS/LRCLK)}: Menentukan channel (Left atau Right). WS=0 untuk left channel, WS=1 untuk right channel. Frequency = sample rate.
-	\item \textbf{Bit Clock (BCLK/SCK)}: Clock signal untuk serial data transmission. Frequency = sample rate × bit depth × 2 channels.
-\end{itemize}
+% [TODO: isi penjelasan teknis AXI4-Lite]
 
-\subsubsection{Format Data I2S}
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=0.85\textwidth]{contents/figures/axi4lite-transaction.pdf}
+%   \caption{Diagram alur transaksi tulis (kiri) dan baca (kanan)
+%            pada protokol AXI4-Lite.}
+%   \label{fig:axi4lite}
+% \end{figure}
 
-Philips I2S standard format memiliki karakteristik:
-\begin{itemize}
-	\item Data is transmitted MSB first.
-	\item WS changes one clock cycle before data transmission.
-	\item Data is left-aligned to WS dengan MSB transmitted first after WS transition.
-	\item Mendukung berbagai bit depths: 16-bit, 24-bit, 32-bit.
-	\item Stereo interleaved: left channel → right channel alternately.
-\end{itemize}
 
-\subsubsection{Sample Rate dan Bit Depth}
+% ----------------------------------------------------------------
+% 2.2.4  FPGA Basys3 dan Artix-7
+%   Jelaskan:
+%   - Basys3: FPGA Artix-7 XC7A35T-1CPG236C, 33.280 LUT, 1.800 Kb BRAM,
+%     100 MHz oscillator, JTAG on-board
+%   - Komponen Artix-7: CLB (LUT6 + FF), BRAM 36Kb, DSP48E1, MMCM/PLL
+%   - Antarmuka Pmod untuk koneksi ke PCM5102A
+%   - Keterbatasan: 33K LUT (cukup untuk MicroBlaze V + I2S TX + ILA)
+%
+% [FIGURE PLACEHOLDER]
+%   Gambar 2.4 – Foto board Basys3 dengan highlight Pmod dan JTAG
+%   → File: contents/figures/basys3-board.jpg
+% ----------------------------------------------------------------
+\subsection{FPGA Basys3 dan Artix-7}
 
-\textbf{Sample rate} menentukan berapa kali per detik audio signal di-sample:
-\begin{itemize}
-	\item 8 kHz: Telephony quality
-	\item 16 kHz: Wideband audio
-	\item 44.1 kHz: CD quality audio
-	\item 48 kHz: Professional audio, DAT
-	\item 96 kHz / 192 kHz: High-resolution audio
-\end{itemize}
+% [TODO: isi deskripsi Basys3 dan Artix-7]
 
-\textbf{Bit depth} menentukan dynamic range dan resolution:
-\begin{itemize}
-	\item 16-bit: 96 dB dynamic range, CD quality
-	\item 24-bit: 144 dB dynamic range, professional audio
-	\item 32-bit: 192 dB dynamic range (often 24-bit data + 8-bit padding)
-\end{itemize}
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=0.75\textwidth]{contents/figures/basys3-board.jpg}
+%   \caption{Board FPGA Basys3 (Artix-7 XC7A35T) yang digunakan sebagai
+%            platform implementasi.}
+%   \label{fig:basys3}
+% \end{figure}
 
-\subsection{MicroBlaze V Processor}
 
-MicroBlaze V adalah 32-bit RISC processor core dari Xilinx yang mengimplementasikan RISC-V instruction set architecture (ISA). MicroBlaze V merupakan evolution dari MicroBlaze classic dengan adopsi open-source RISC-V ISA.
+% ----------------------------------------------------------------
+% 2.2.5  Pembangkitan Clock dengan MMCM
+%   Jelaskan:
+%   - Mixed-Mode Clock Manager (MMCM) pada Artix-7
+%   - Clocking Wizard IP di Vivado: parameter input 100 MHz, output audio_clk
+%   - Hasil aktual MMCM: 24,56897 MHz (dari permintaan ~24,576 MHz)
+%   - Hubungan audio_clk → BCLK → WS (LRCLK):
+%       Mode 0: audio_clk/8 = BCLK, BCLK/64 = WS → Fs ≈ 47,99 kHz
+%       Mode 1: audio_clk/4 = BCLK, BCLK/64 = WS → Fs ≈ 95,97 kHz
+%   - Akurasi clock dan implikasi pada Fs
+%
+% [FIGURE PLACEHOLDER]
+%   Gambar 2.5 – Diagram hirarki pembangkitan clock MMCM:
+%   100 MHz → 24,569 MHz → BCLK → WS
+%   → File: contents/figures/mmcm-clocking.pdf
+% ----------------------------------------------------------------
+\subsection{Pembangkitan Clock dengan MMCM}
 
-\subsubsection{Arsitektur MicroBlaze V}
+% [TODO: isi penjelasan MMCM dan hirarki clock I2S]
 
-Karakteristik utama MicroBlaze V:
-\begin{itemize}
-	\item \textbf{32-bit RISC-V RV32I base ISA}: Integer instruction set dengan 32 general-purpose registers (x0-x31).
-	\item \textbf{Optional extensions}: M (multiply/divide), C (compressed instructions), Zicsr (CSR access).
-	\item \textbf{Harvard architecture}: Separate instruction and data memory interfaces.
-	\item \textbf{AXI4 interfaces}: AXI4 for memory access, AXI4-Lite untuk peripheral access.
-	\item \textbf{Interrupt controller}: Support untuk external interrupts dengan RISC-V interrupt handling mechanism.
-	\item \textbf{Configurable cache}: Optional instruction and data caches untuk performance improvement.
-\end{itemize}
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=0.80\textwidth]{contents/figures/mmcm-clocking.pdf}
+%   \caption{Diagram hirarki pembangkitan clock: MMCM menghasilkan
+%            24,56897\,MHz dari referensi 100\,MHz, kemudian dibagi
+%            menjadi BCLK dan WS untuk dua mode \emph{sampling rate}.}
+%   \label{fig:mmcm-clock}
+% \end{figure}
 
-\subsubsection{Memory Map}
 
-MicroBlaze V menggunakan memory-mapped I/O dimana peripheral registers di-map ke specific address ranges dalam address space. Typical memory map:
-\begin{itemize}
-	\item 0x0000\_0000 - 0x0000\_FFFF: Boot memory (BRAM)
-	\item 0x8000\_0000 - 0x8FFF\_FFFF: DDR memory (jika tersedia)
-	\item 0x4000\_0000 - 0x4FFF\_FFFF: Peripheral address space (AXI4-Lite slaves)
-\end{itemize}
+% ----------------------------------------------------------------
+% 2.2.6  FIFO dan Mekanisme Watermark Interrupt
+%   Jelaskan:
+%   - Konsep FIFO (First-In First-Out) sebagai buffer antara CPU dan
+%     hardware yang bekerja asinkron
+%   - TX FIFO 256 frame: 256 pasang sampel L/R (setiap frame = 2 × 24 bit)
+%   - Pointer write (dari CPU/AXI) dan pointer read (dari serializer I2S)
+%   - Kondisi FIFO: EMPTY, FULL, level counter
+%   - Watermark IRQ: CPU dikonfigurasi threshold (misal 64 frame);
+%     IRQ dikirim saat level FIFO ≤ threshold → CPU menulis batch baru
+%   - Manfaat: mengurangi overhead CPU dibanding polling terus-menerus
+%
+% [FIGURE PLACEHOLDER]
+%   Gambar 2.6 – Diagram FIFO TX dengan pointer write/read dan
+%   mekanisme watermark IRQ
+%   → File: contents/figures/fifo-watermark-diagram.pdf
+% ----------------------------------------------------------------
+\subsection{TX FIFO dan Mekanisme Watermark Interrupt}
 
-\subsection{AXI4-Lite Protocol}
+% [TODO: isi penjelasan FIFO dan watermark IRQ]
 
-AXI4-Lite (Advanced eXtensible Interface 4 Lite) adalah simplified subset dari AMBA AXI4 protocol yang didesain untuk peripheral dengan low-throughput requirements.
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=0.80\textwidth]{contents/figures/fifo-watermark-diagram.pdf}
+%   \caption{Diagram TX FIFO (256 frame) dengan pointer tulis dari CPU
+%            dan pointer baca oleh serializer I2S, serta mekanisme
+%            watermark IRQ yang dapat dikonfigurasi.}
+%   \label{fig:fifo-watermark}
+% \end{figure}
 
-\subsubsection{Channel Structure}
 
-AXI4-Lite memiliki 5 independent channels:
-\begin{enumerate}
-	\item \textbf{Write Address Channel (AW)}: Master sends write address dan control signals.
-	\item \textbf{Write Data Channel (W)}: Master sends write data.
-	\item \textbf{Write Response Channel (B)}: Slave sends write response (OKAY, SLVERR).
-	\item \textbf{Read Address Channel (AR)}: Master sends read address dan control signals.
-	\item \textbf{Read Data Channel (R)}: Slave sends read data dan response.
-\end{enumerate}
+% ----------------------------------------------------------------
+% 2.2.7  Vivado Design Suite dan Vitis
+%   Jelaskan secara ringkas:
+%   - Vivado: RTL synthesis, IP Integrator (block design), simulasi XSIM,
+%     ILA (Integrated Logic Analyzer), Hardware Manager
+%   - IP Packaging: cara mengemas modul Verilog kustom menjadi IP core
+%     yang dapat ditambahkan ke IP Catalog dan digunakan di IP Integrator
+%   - Vitis: platform SDK pengganti Xilinx SDK untuk pengembangan
+%     aplikasi bare-metal C/C++ pada MicroBlaze/ARM
+%   - Alur kerja: Vivado (hardware) → export XSA → Vitis (software)
+% ----------------------------------------------------------------
+\subsection{Vivado Design Suite dan Vitis}
 
-\subsubsection{Handshaking Mechanism}
-
-Setiap channel menggunakan VALID-READY handshake:
-\begin{itemize}
-	\item \textbf{VALID}: Driven by source, indicates valid data/address.
-	\item \textbf{READY}: Driven by destination, indicates ready to accept.
-	\item \textbf{Transfer occurs}: Ketika VALID dan READY both HIGH pada rising edge of clock.
-\end{itemize}
-
-\subsubsection{Transaction Flow}
-
-\textbf{Write transaction}:
-\begin{enumerate}
-	\item Master asserts AWVALID dengan address dan WVALID dengan data.
-	\item Slave asserts AWREADY dan WREADY ketika ready.
-	\item Transfer occurs on clock edge when all VALID-READY pairs HIGH.
-	\item Slave responds dengan BVALID dan BRESP.
-	\item Master acknowledges dengan BREADY.
-\end{enumerate}
-
-\textbf{Read transaction}:
-\begin{enumerate}
-	\item Master asserts ARVALID dengan read address.
-	\item Slave asserts ARREADY ketika ready.
-	\item Slave responds dengan RVALID, RDATA, dan RRESP.
-	\item Master acknowledges dengan RREADY.
-\end{enumerate}
-
-\subsection{FPGA dan Xilinx Vivado}
-
-Field-Programmable Gate Array (FPGA) adalah integrated circuit yang dapat dikonfigurasi oleh user setelah manufacturing. FPGA terdiri dari array of configurable logic blocks (CLBs) yang interconnected melalui programmable routing resources.
-
-\subsubsection{Komponen FPGA Xilinx}
-
-FPGA Xilinx 7-series terdiri dari:
-\begin{itemize}
-	\item \textbf{CLB (Configurable Logic Block)}: Terdiri dari LUTs (Look-Up Tables) dan Flip-Flops untuk implement logic functions.
-	\item \textbf{BRAM (Block RAM)}: Dual-port memory blocks untuk data storage, 36 Kbit per block.
-	\item \textbf{DSP48 slices}: Dedicated DSP blocks untuk arithmetic operations (multiply-accumulate).
-	\item \textbf{I/O Blocks}: Programmable I/O dengan support untuk berbagai standards (LVCMOS, LVDS, dll).
-	\item \textbf{Clock Management}: PLLs dan DCMs untuk clock generation dan distribution.
-\end{itemize}
-
-\subsubsection{Vivado Design Suite}
-
-Vivado adalah integrated design environment dari Xilinx yang mencakup:
-\begin{itemize}
-	\item \textbf{RTL synthesis}: Convert Verilog/VHDL ke gate-level netlist.
-	\item \textbf{Implementation}: Place-and-route untuk physical realization pada FPGA.
-	\item \textbf{Simulation}: Functional dan timing simulation dengan Vivado Simulator.
-	\item \textbf{IP Integrator}: Graphical tool untuk SoC block design dengan drag-and-drop IP cores.
-	\item \textbf{Timing analysis}: Static timing analysis untuk verify timing constraints.
-\end{itemize}
-
-\subsection{Verilog Hardware Description Language}
-
-Verilog adalah hardware description language (HDL) untuk modeling digital systems. Verilog digunakan untuk:
-\begin{itemize}
-	\item \textbf{Behavioral modeling}: Describe functionality tanpa implementation details.
-	\item \textbf{RTL modeling}: Register Transfer Level description yang synthesizable.
-	\item \textbf{Structural modeling}: Instantiation dan interconnection of modules.
-	\item \textbf{Testbench}: Verification environment untuk simulation.
-\end{itemize}
-
-\subsubsection{Konstruksi Verilog}
-
-Elemen utama Verilog:
-\begin{itemize}
-	\item \textbf{Module}: Building block dasar, analog dengan entity/architecture di VHDL.
-	\item \textbf{Ports}: Interface signals (input, output, inout).
-	\item \textbf{Wire}: Represent combinational connections.
-	\item \textbf{Reg}: Represent storage elements (not necessarily registers after synthesis).
-	\item \textbf{Always block}: Procedural block untuk sequential atau combinational logic.
-	\item \textbf{Assign statement}: Continuous assignment untuk combinational logic.
-\end{itemize}
-
-\subsection{State Machine Design}
-
-Finite State Machine (FSM) adalah model komputasi yang terdiri dari finite number of states, transitions, dan actions. FSM banyak digunakan dalam protocol implementation.
-
-\subsubsection{Jenis State Machine}
-
-\begin{itemize}
-	\item \textbf{Moore FSM}: Output hanya bergantung pada current state.
-	\item \textbf{Mealy FSM}: Output bergantung pada current state dan inputs.
-\end{itemize}
-
-\subsubsection{State Encoding}
-
-Teknik encoding states:
-\begin{itemize}
-	\item \textbf{Binary encoding}: Minimal number of flip-flops, N states need log2(N) bits.
-	\item \textbf{One-hot encoding}: Satu flip-flop per state, faster transition, more flip-flops.
-	\item \textbf{Gray encoding}: Only one bit changes between adjacent states, reduce glitches.
-\end{itemize}
-
-\section{Analisis Pemilihan Metode}
-
-Berdasarkan tinjauan pustaka dan dasar teori yang telah diuraikan, penelitian ini menggunakan metode dan tools berikut dengan justifikasi:
-
-\subsection{Pemilihan MicroBlaze V sebagai Processor Core}
-
-MicroBlaze V dipilih karena:
-\begin{enumerate}
-	\item Native support pada Xilinx Vivado dengan tight integration ke ecosystem.
-	\item RISC-V ISA yang open-source memungkinkan penggunaan GCC toolchain dan open-source software.
-	\item AXI4-Lite interface support yang memudahkan peripheral integration.
-	\item Dokumentasi dan community support yang baik.
-\end{enumerate}
-
-\subsection{Pemilihan AXI4-Lite untuk Peripheral Interface}
-
-AXI4-Lite dipilih karena:
-\begin{enumerate}
-	\item Industry standard protocol dengan well-defined specification.
-	\item Simplified protocol cocok untuk peripheral dengan low-bandwidth requirements.
-	\item Compatible dengan Xilinx IP Integrator untuk rapid SoC development.
-	\item Extensive tooling support untuk verification dan debugging.
-\end{enumerate}
-
-\subsection{Pemilihan Verilog HDL}
-
-Verilog dipilih dibanding VHDL atau SystemVerilog karena:
-\begin{enumerate}
-	\item Syntax yang lebih concise dan readable untuk RTL design.
-	\item Wide adoption dalam industry dan education.
-	\item Excellent support di Xilinx Vivado synthesis tool.
-	\item Abundant learning resources dan example codes.
-\end{enumerate}
-
-\subsection{Pendekatan Hardware-Software Co-Design}
-
-Penelitian ini menggunakan co-design approach dimana hardware (Verilog) dan software (C) dikembangkan secara parallel dan iterative. Keuntungannya:
-\begin{enumerate}
-	\item Early detection of integration issues.
-	\item Better understanding of performance bottlenecks.
-	\item Optimal partitioning antara hardware acceleration dan software flexibility.
-\end{enumerate}
+% [TODO: isi ringkasan alur kerja Vivado dan Vitis]

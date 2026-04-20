@@ -1,30 +1,372 @@
-\chapter{Hasil dan Pembahasan}
+% ============================================================
+% BAB IV – IMPLEMENTASI DAN PENGUJIAN
+% Topik: Peripheral I2S TX AXI4-Lite pada Basys3 + PCM5102A
+% ============================================================
 
-Berikut ini adalah yang perlu diperhatikan untuk mengisi bab hasil dan pembahasan:
+\chapter{Implementasi dan Pengujian}
 
-\begin{enumerate}
-	\item Setiap rumusan masalah boleh memiliki lebih dari 1 tujuan.
-	\item Setiap subbab harus spesifik menjawab setiap tujuan yang dituliskan.
-	\item Setiap rumusan masalah boleh dijawab dengan 1 subbab atau lebih.
-\end{enumerate}
+% Gambaran singkat isi bab:
+% Bab ini memaparkan hasil implementasi modul Verilog, konfigurasi
+% Vivado (MMCM, block design, synthesis), program Vitis (main.cpp),
+% serta hasil tiga metode pengujian: simulasi RTL, capture ILA, dan
+% uji keluaran audio pada PCM5102A.
 
-Berikut ini adalah contoh sub bab untuk menjelaskan tujuan penelitian.
 
-\section{Pembahasan Tujuan 1 dengan Hasil Penelitian 1 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
+% ================================================================
+% 4.1  IMPLEMENTASI MODUL VERILOG I2S TX
+%   Jelaskan:
+%   - Struktur file sumber Verilog: nama file, hierarki modul
+%   - Ringkasan implementasi state machine serializer
+%   - Ringkasan implementasi FIFO sinkron (RTL-level)
+%   - Ringkasan implementasi AXI4-Lite slave wrapper
+%   - Catatan coding style (synthesizable RTL, synchronous reset, dll.)
+% ================================================================
+\section{Implementasi Modul Verilog I2S TX}
 
-Sub bab pertama adalah membahas tujuan penelitian pertama dengan hasil penelitian ke-1. 
-Dapat ditambahkan beberapa sub bab jika diperlukan.
+% [TODO: tulis narasi implementasi RTL; sertakan potongan kode
+%  Verilog kunci (state machine, FIFO, AXI wrapper) jika diperlukan]
 
-\section{Pembahasan Tujuan 1 dengan Hasil Penelitian 2 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
+% Contoh \texttt{lstlisting} atau \texttt{verbatim} untuk kode:
+% \begin{verbatim}
+% // Contoh: state machine serializer
+% always @(posedge audio_clk) begin
+%   ...
+% end
+% \end{verbatim}
 
-Sub bab kedua adalah membahas tujuan penelitian pertama dengan hasil penelitian ke-2. Sub bab ini merupakan contoh tambahan sub bab pertama.
 
-\section{Pembahasan Tujuan 2 dengan Hasil Penelitian 3 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
+% ================================================================
+% 4.2  IMPLEMENTASI SoC DI VIVADO
+% ================================================================
+\section{Implementasi SoC di Vivado}
 
-Sub bab ketiga adalah membahas tujuan penelitian kedua. Dapat ditambahkan beberapa sub bab jika diperlukan.
+% ----------------------------------------------------------------
+% 4.2.1  Konfigurasi MMCM (Clocking Wizard)
+%   Jelaskan:
+%   - Pengaturan Clocking Wizard: input 100 MHz, output audio_clk
+%   - Frekuensi yang diminta vs aktual dari MMCM:
+%     Requested: 24,576 MHz → Actual: 24,568 97 MHz
+%   - Screenshot Clocking Wizard atau tabel requested vs actual
+%
+% [FIGURE/TABLE PLACEHOLDER]
+%   Gambar 4.1 – Screenshot Clocking Wizard: kolom Requested vs Actual
+%   ATAU Tabel 4.1 – Perbandingan clock yang diminta dan aktual
+%   → File: contents/figures/mmcm-requested-vs-actual.png
+% ----------------------------------------------------------------
+\subsection{Konfigurasi MMCM (Clocking Wizard)}
 
-\section{Perbandingan Hasil Penelitian dengan Hasil Terdahulu}
+% [TODO: tulis penjelasan konfigurasi MMCM]
 
-Pembahasan penutup dapat menjelaskan mengenai kelebihan hasil pengembangan / 
-penelitian dan kekurangan dibandingkan dengan skripsi atau penelitian terdahulu atau
-perbandingan terhadap produk lain yang ada di pasaran. Penulis dapat menggunakan tabel untuk membandingkan secara gamblang dan menjelaskannya.
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=0.85\textwidth]{contents/figures/mmcm-requested-vs-actual.png}
+%   \caption{Tampilan Clocking Wizard di Vivado: perbandingan
+%            frekuensi yang diminta (24,576\,MHz) dan aktual
+%            (24,568\,97\,MHz) untuk output audio clock.}
+%   \label{fig:mmcm-actual}
+% \end{figure}
+
+% [TABLE PLACEHOLDER]
+\begin{table}[ht]
+  \centering
+  \caption{Perbandingan frekuensi clock MMCM: diminta vs aktual.}
+  \label{tab:mmcm-clock}
+  % [TODO: isi dengan nilai aktual dari Vivado]
+  \begin{tabular}{lcc}
+    \hline
+    Parameter & Nilai Diminta & Nilai Aktual \\
+    \hline
+    Frekuensi output (audio\_clk) & 24,576\,000 MHz & 24,568\,97 MHz \\
+    Jitter (estimasi)             & --              & [TODO: isi] \\
+    Phase error                   & --              & [TODO: isi] \\
+    \hline
+  \end{tabular}
+\end{table}
+
+
+% ----------------------------------------------------------------
+% 4.2.2  Block Design dan Koneksi AXI
+%   Jelaskan:
+%   - Komponen yang ditambahkan ke IP Integrator
+%   - Proses IP packaging untuk modul I2S TX kustom
+%   - Koneksi AXI, clock, dan interrupt
+%   - Address editor: base address I2S TX IP
+%   - Constraint .xdc: pin Pmod untuk BCLK, WS, SDATA
+%
+% [FIGURE PLACEHOLDER]
+%   Gambar 4.2 – Screenshot block design Vivado (hasil akhir):
+%   MicroBlaze V, AXI Interconnect, I2S TX IP, Clocking Wizard, ILA
+%   → File: contents/figures/vivado-block-design.png
+% ----------------------------------------------------------------
+\subsection{Block Design dan Koneksi AXI}
+
+% [TODO: tulis penjelasan block design dan address mapping]
+
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=\textwidth]{contents/figures/vivado-block-design.png}
+%   \caption{Screenshot block design Vivado IP Integrator: komponen
+%            SoC beserta koneksi AXI, clock, dan interrupt.}
+%   \label{fig:block-design-impl}
+% \end{figure}
+
+
+% ----------------------------------------------------------------
+% 4.2.3  Laporan Sintesis dan Implementasi (Resource Utilization)
+%   Tabel: LUT, FF (Flip-Flop), BRAM, IO, Clock utilization
+%   Jelaskan apakah resource cukup tersedia di Artix-7 XC7A35T
+%
+% [TABLE PLACEHOLDER]
+%   Tabel 4.2 – Laporan utilisasi resource FPGA Basys3
+%   Kolom: Resource | Used | Available | Utilization (%)
+% ----------------------------------------------------------------
+\subsection{Laporan Sintesis dan Implementasi}
+
+% [TODO: isi tabel utilisasi setelah implementasi selesai]
+
+\begin{table}[ht]
+  \centering
+  \caption{Laporan utilisasi resource FPGA Artix-7 XC7A35T setelah
+           implementasi.}
+  \label{tab:resource}
+  % [TODO: isi dengan nilai aktual dari laporan Vivado]
+  \begin{tabular}{lrrl}
+    \hline
+    Resource & Terpakai & Tersedia & Utilisasi (\%) \\
+    \hline
+    LUT      & [TODO] & 20.800 & [TODO] \\
+    FF       & [TODO] & 41.600 & [TODO] \\
+    BRAM     & [TODO] & 50     & [TODO] \\
+    IO       & [TODO] & 106    & [TODO] \\
+    BUFG     & [TODO] & 32     & [TODO] \\
+    \hline
+  \end{tabular}
+\end{table}
+
+
+% ================================================================
+% 4.3  IMPLEMENTASI PROGRAM VITIS (main.cpp)
+%   Jelaskan:
+%   - Pembuatan platform dan domain di Vitis (dari file .xsa Vivado)
+%   - Isi main.cpp: inisialisasi, pengisian FIFO awal, ISR
+%   - Registrasi interrupt handler ke AXI INTC
+%   - Data audio uji yang digunakan (sine wave, sawtooth, dll.)
+%   - Cara menjalankan dan memuat bitstream ke Basys3 dari Vitis
+% ================================================================
+\section{Implementasi Program Vitis (\texttt{main.cpp})}
+
+% [TODO: tulis penjelasan implementasi software di Vitis;
+%  sertakan potongan kode kritis (init, ISR) sebagai listing]
+
+% \begin{verbatim}
+% // Contoh: inisialisasi I2S TX
+% I2S_TX_mWriteReg(BASEADDR, REG_MODE,  0x0);  // Mode 0: ~48kHz
+% I2S_TX_mWriteReg(BASEADDR, REG_THR,   0x40); // Watermark = 64 frame
+% I2S_TX_mWriteReg(BASEADDR, REG_CTRL,  0x3);  // IRQ_EN=1, TX_EN=1
+% \end{verbatim}
+
+
+% ================================================================
+% 4.4  VERIFIKASI MELALUI SIMULASI RTL
+% ================================================================
+\section{Verifikasi melalui Simulasi RTL}
+
+% ----------------------------------------------------------------
+% 4.4.1  Rancangan Testbench
+%   Jelaskan:
+%   - Komponen testbench: AXI4-Lite BFM (master model) + DUT (I2S TX)
+%   - Skenario uji:
+%     1. Inisialisasi register (CTRL, MODE, FIFO_THR)
+%     2. Penulisan sejumlah frame ke TX_DATA
+%     3. Pengamatan keluaran BCLK, WS, SDATA
+%     4. Verifikasi data yang di-serialkan sesuai urutan MSB-first
+%     5. Pengujian kondisi FIFO watermark (verifikasi IRQ)
+% ----------------------------------------------------------------
+\subsection{Rancangan Testbench}
+
+% [TODO: jelaskan struktur testbench dan skenario uji]
+
+
+% ----------------------------------------------------------------
+% 4.4.2  Hasil Waveform Simulasi
+%   Jelaskan hasil waveform dari XSIM / GTKWave:
+%   - WS periode: 1/Fs sesuai mode
+%   - BCLK frekuensi: sesuai mode
+%   - SDATA: 32-bit per channel, 24-bit data MSB-first + 8-bit nol
+%   - Verifikasi: nilai frame yang ditulis CPU cocok dengan yang di-serialkan
+%
+% [FIGURE PLACEHOLDER]
+%   Gambar 4.3 – Waveform simulasi RTL: BCLK, WS, SDATA untuk
+%   beberapa frame stereo (zoom ke detail satu frame L+R)
+%   → File: contents/figures/sim-waveform-i2s.png
+% ----------------------------------------------------------------
+\subsection{Hasil Waveform Simulasi}
+
+% [TODO: tulis analisis hasil waveform simulasi]
+
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=\textwidth]{contents/figures/sim-waveform-i2s.png}
+%   \caption{Waveform simulasi RTL: sinyal BCLK, WS (LRCLK), dan SDATA
+%            menunjukkan dua frame stereo dengan format 24-bit/slot 32-bit.}
+%   \label{fig:sim-waveform}
+% \end{figure}
+
+
+% ================================================================
+% 4.5  VERIFIKASI MELALUI ILA (INTEGRATED LOGIC ANALYZER)
+% ================================================================
+\section{Verifikasi melalui ILA (\emph{Integrated Logic Analyzer})}
+
+% ----------------------------------------------------------------
+% 4.5.1  Konfigurasi ILA
+%   Jelaskan:
+%   - Probe yang dipasang: BCLK, WS, SDATA, FIFO_LEVEL, IRQ
+%   - Sample depth yang digunakan
+%   - Trigger yang digunakan (misalnya: trigger pada rising edge WS)
+%   - Cara mengaktifkan ILA di Vivado Hardware Manager
+% ----------------------------------------------------------------
+\subsection{Konfigurasi ILA}
+
+% [TODO: tulis konfigurasi ILA dan sinyal yang di-probe]
+
+
+% ----------------------------------------------------------------
+% 4.5.2  Hasil Capture ILA – Mode 0 (~48 kHz)
+%   Jelaskan:
+%   - Periode WS terukur: ≈ 20,84 µs → Fs ≈ 47,99 kHz
+%   - Frekuensi BCLK terukur: ≈ 3,071 MHz
+%   - Verifikasi data pada SDATA (24-bit data + 8-bit nol di LSB)
+%
+% [FIGURE PLACEHOLDER]
+%   Gambar 4.4 – Screenshot ILA Vivado: BCLK, WS, SDATA pada Mode 0
+%   → File: contents/figures/ila-capture-48k.png
+% ----------------------------------------------------------------
+\subsection{Hasil \emph{Capture} ILA – Mode 0 (~48 kHz)}
+
+% [TODO: tulis analisis hasil capture ILA mode 48 kHz]
+
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=\textwidth]{contents/figures/ila-capture-48k.png}
+%   \caption{Screenshot ILA Vivado Hardware Manager: sinyal BCLK
+%            ($\approx$3,071\,MHz), WS ($\approx$47,99\,kHz), dan SDATA
+%            pada Mode~0.}
+%   \label{fig:ila-48k}
+% \end{figure}
+
+
+% ----------------------------------------------------------------
+% 4.5.3  Hasil Capture ILA – Mode 1 (~96 kHz)
+%   Jelaskan:
+%   - Periode WS terukur: ≈ 10,42 µs → Fs ≈ 95,97 kHz
+%   - Frekuensi BCLK terukur: ≈ 6,142 MHz
+%   - Verifikasi data pada SDATA
+%
+% [FIGURE PLACEHOLDER]
+%   Gambar 4.5 – Screenshot ILA Vivado: BCLK, WS, SDATA pada Mode 1
+%   → File: contents/figures/ila-capture-96k.png
+% ----------------------------------------------------------------
+\subsection{Hasil \emph{Capture} ILA – Mode 1 (~96 kHz)}
+
+% [TODO: tulis analisis hasil capture ILA mode 96 kHz]
+
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=\textwidth]{contents/figures/ila-capture-96k.png}
+%   \caption{Screenshot ILA Vivado Hardware Manager: sinyal BCLK
+%            ($\approx$6,142\,MHz), WS ($\approx$95,97\,kHz), dan SDATA
+%            pada Mode~1.}
+%   \label{fig:ila-96k}
+% \end{figure}
+
+% [TABLE PLACEHOLDER]
+%   Tabel 4.3 – Rekap hasil pengukuran parameter ILA vs nilai teoretis
+\begin{table}[ht]
+  \centering
+  \caption{Rekap hasil pengukuran parameter timing via ILA vs nilai teoretis.}
+  \label{tab:ila-measure}
+  % [TODO: isi dengan nilai aktual dari capture ILA]
+  \begin{tabular}{lccc}
+    \hline
+    Parameter & Mode 0 (teoretis) & Mode 0 (ILA) & Satuan \\
+    \hline
+    BCLK              & 3,071\,07 & [TODO] & MHz \\
+    WS (Fs)           & 47,986    & [TODO] & kHz \\
+    Periode WS        & 20,84     & [TODO] & µs  \\
+    \hline
+    Parameter & Mode 1 (teoretis) & Mode 1 (ILA) & Satuan \\
+    \hline
+    BCLK              & 6,142\,14 & [TODO] & MHz \\
+    WS (Fs)           & 95,972    & [TODO] & kHz \\
+    Periode WS        & 10,42     & [TODO] & µs  \\
+    \hline
+  \end{tabular}
+\end{table}
+
+
+% ================================================================
+% 4.6  VERIFIKASI MELALUI UJI KELUARAN AUDIO (PCM5102A)
+% ================================================================
+\section{Verifikasi melalui Uji Keluaran Audio}
+
+% ----------------------------------------------------------------
+% 4.6.1  Konfigurasi Koneksi Hardware
+%   Jelaskan:
+%   - Koneksi kabel Pmod Basys3 ke PCM5102A:
+%     BCLK (pin Pmod) → BCK (PCM5102A)
+%     WS   (pin Pmod) → LRCK (PCM5102A)
+%     SDATA(pin Pmod) → DIN (PCM5102A)
+%     3.3V, GND
+%   - Output PCM5102A ke speaker / headphone / osiloskop
+%   - Metode uji: pendengaran subjektif, osiloskop pada output analog,
+%     atau software audio analyzer (Audacity)
+% ----------------------------------------------------------------
+\subsection{Konfigurasi Koneksi Hardware}
+
+% [TODO: tulis konfigurasi koneksi hardware dan metode pengujian audio]
+
+
+% ----------------------------------------------------------------
+% 4.6.2  Hasil Pengujian Audio
+%   Jelaskan:
+%   - Data uji yang di-stream: sine wave 1 kHz, 440 Hz (nada A), atau tone sweep
+%   - Mode 0 (~48 kHz): apakah bunyi terdengar/terukur dengan benar?
+%   - Mode 1 (~96 kHz): apakah bunyi terdengar/terukur dengan benar?
+%   - Tidak ada distorsi / kebisingan yang signifikan
+%   - Screenshot Audacity atau foto output osiloskop sebagai bukti
+%
+% [FIGURE PLACEHOLDER]
+%   Gambar 4.6 – Bukti keluaran audio:
+%   (a) Screenshot Audacity / osiloskop output analog PCM5102A
+%   (b) Foto setup hardware (opsional)
+%   → File: contents/figures/audio-test-output.jpg
+%          contents/figures/audacity-screenshot.png
+% ----------------------------------------------------------------
+\subsection{Hasil Pengujian Audio}
+
+% [TODO: tulis analisis hasil pengujian audio]
+
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=0.85\textwidth]{contents/figures/audio-test-output.jpg}
+%   \caption{Bukti keluaran audio dari DAC PCM5102A: tampilan
+%            osiloskop atau Audacity menunjukkan sinyal audio
+%            yang diputar melalui sistem I2S TX.}
+%   \label{fig:audio-output}
+% \end{figure}
+
+
+% ================================================================
+% 4.7  PEMBAHASAN HASIL
+%   Rangkum semua hasil pengujian dan diskusikan:
+%   - Apakah spesifikasi awal tercapai? (format, Fs, FIFO, IRQ)
+%   - Apakah simulasi, ILA, dan audio test konsisten?
+%   - Keakuratan Fs: selisih teoretis vs terukur, implikasinya
+%   - Utilisasi resource: apakah masih ada ruang untuk pengembangan?
+%   - Keterbatasan yang ditemukan selama implementasi/pengujian
+% ================================================================
+\section{Pembahasan Hasil}
+
+% [TODO: tulis pembahasan komprehensif yang menghubungkan
+%  hasil simulasi, ILA, dan audio test dengan spesifikasi awal]

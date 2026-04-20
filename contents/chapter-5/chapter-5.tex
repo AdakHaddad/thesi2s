@@ -1,5 +1,150 @@
-\chapter{Tambahan (Opsional)}
+% ============================================================
+% BAB V – KESIMPULAN DAN SARAN
+% Topik: Peripheral I2S TX AXI4-Lite pada Basys3 + PCM5102A
+% ============================================================
 
-Anda boleh menambahkan Bab jika diperlukan. Jumlah Bab tidak harus sesuai dengan \textit{template}. 
+\chapter{Kesimpulan dan Saran}
 
-Bab tambahan ini diperlukan jika hasil penelitian untuk menjawab tujuan cukup panjang atau terdiri dari banyak sub bab. Mahasiswa boleh menjawab 1 tujuan penelitian dengan 1 bab.
+
+% ================================================================
+% 5.1  KESIMPULAN
+%   Kesimpulan harus:
+%   - Diawali dengan kalimat yang menyatakan apa yang telah dilakukan
+%   - Menjawab satu per satu tujuan penelitian berdasarkan data dari Bab IV
+%   - Bersifat faktual dan terukur (bukan opini)
+%
+%   Poin-poin yang perlu dijawab:
+%   1. Berhasil merancang modul I2S TX Verilog: format 24-bit/32-bit slot,
+%      stereo, dua mode sampling (~48 kHz dan ~96 kHz) dari audio_clk
+%      24,56897 MHz yang dibangkitkan MMCM.
+%   2. Berhasil mengintegrasikan modul sebagai slave AXI4-Lite ke SoC
+%      Basys3 dengan resource utilization yang masih dalam kapasitas
+%      Artix-7 XC7A35T; program demo Vitis berhasil dikembangkan.
+%   3. TX FIFO 256 frame dan watermark IRQ (threshold 64 frame, dapat
+%      dikonfigurasi) bekerja sesuai rancangan: CPU hanya diinterupsi
+%      saat FIFO mendekati kosong.
+%   4. Verifikasi berhasil melalui tiga jalur:
+%      (a) Simulasi RTL: waveform BCLK, WS, SDATA sesuai spesifikasi I2S
+%      (b) ILA: BCLK ~3,071 MHz / ~6,142 MHz, WS ~47,99 kHz / ~95,97 kHz
+%          sesuai mode; data SDATA terverifikasi MSB-first 24-bit
+%      (c) Uji audio PCM5102A: sinyal audio terdengar dengan benar
+%          pada kedua mode sampling
+% ================================================================
+\section{Kesimpulan}
+
+% [TODO: tulis 4–5 butir kesimpulan berdasarkan hasil di Bab IV]
+
+Penelitian ini telah berhasil merancang, mengimplementasikan, dan
+memverifikasi peripheral I2S transmitter berbasis AXI4-Lite pada FPGA
+Basys3 yang terhubung ke DAC PCM5102A. Kesimpulan penelitian ini adalah:
+
+\begin{enumerate}
+    \item Modul I2S transmitter berhasil dirancang dalam Verilog dengan
+          format \textbf{24-bit data / 32-bit slot per channel, stereo},
+          mendukung dua mode \emph{sampling rate}: Mode~0 ($\approx$47,99 kHz)
+          dan Mode~1 ($\approx$95,97 kHz), yang keduanya diturunkan dari clock
+          audio 24,568\,97 MHz hasil konfigurasi MMCM pada Basys3.
+          % [TODO: tambahkan nilai deviasi Fs jika ada]
+
+    \item Integrasi modul sebagai slave \textbf{AXI4-Lite} pada SoC
+          Basys3 di Vivado IP Integrator berhasil dilakukan dengan register
+          map enam register 32-bit; program demo \texttt{main.cpp} di Vitis
+          dapat mengonfigurasi mode, mengisi TX FIFO, dan menangani
+          watermark IRQ dengan benar.
+          % [TODO: tambahkan nilai utilisasi resource LUT/FF/BRAM aktual]
+
+    \item TX FIFO berkapasitas \textbf{256 frame stereo} beserta mekanisme
+          \textbf{watermark IRQ} (default threshold 64 frame, dapat
+          dikonfigurasi via register FIFO\_THR) bekerja sesuai rancangan:
+          CPU menerima interupsi hanya ketika level FIFO turun di bawah
+          ambang, sehingga overhead polling dapat dieliminasi.
+
+    \item Verifikasi melalui \textbf{simulasi RTL} (Vivado XSIM) menunjukkan
+          waveform BCLK, WS, dan SDATA yang sesuai dengan spesifikasi
+          protokol I2S Philips; tidak ada anomali \emph{glitch} atau
+          pelanggaran timing yang terdeteksi.
+          % [TODO: ringkaskan temuan spesifik dari simulasi]
+
+    \item Verifikasi \emph{on-chip} menggunakan \textbf{ILA} mengonfirmasi
+          frekuensi BCLK dan Fs pada kedua mode sesuai nilai teoritis
+          (deviasi $<$[TODO]\%), dan verifikasi \textbf{uji audio} pada
+          PCM5102A membuktikan keluaran sinyal audio yang bersih pada
+          kedua mode \emph{sampling rate}.
+          % [TODO: isi nilai deviasi dan kualitas audio yang terukur]
+\end{enumerate}
+
+
+% ================================================================
+% 5.2  SARAN
+%   Saran berisi aspek yang BELUM dikerjakan dan dapat dikembangkan
+%   pada penelitian atau skripsi lanjutan.
+%   Jangan memberi saran kepada pengguna/sistem; saran ditujukan
+%   kepada penelitian lanjutan.
+%
+%   Poin saran yang relevan:
+%   1. Penambahan DMA (Direct Memory Access) controller agar transfer
+%      data audio tidak membebani CPU (high-throughput streaming)
+%   2. Pengembangan Linux device driver (ALSA driver) agar peripheral
+%      dapat digunakan di sistem Linux berbasis Zynq atau Zynq MPSoC
+%   3. Penambahan mode sampling: 44,1 kHz (CD quality) dan 192 kHz
+%      (high-res audio) melalui konfigurasi MMCM tambahan
+%   4. Penambahan RX path (I2S receiver) untuk mencapai full-duplex
+%      (rekam + putar audio secara simultan)
+%   5. Portasi ke platform FPGA lain (Intel/Altera Cyclone V, Lattice ECP5)
+%   6. Optimasi resource: menggunakan BRAM sebagai FIFO untuk mengurangi
+%      penggunaan LUT/FF
+%   7. Penambahan fitur volume control atau DSP (equalizer, mixer) di
+%      dalam FPGA sebelum data dikirim ke DAC
+% ================================================================
+\section{Saran}
+
+% [TODO: tulis 4–6 butir saran pengembangan lanjutan]
+
+Berdasarkan hasil penelitian ini, beberapa saran untuk pengembangan
+lanjutan adalah:
+
+\begin{enumerate}
+    \item \textbf{Penambahan DMA Controller}: Transfer data audio saat ini
+          dilakukan melalui \emph{programmed I/O} yang membebani CPU.
+          Integrasi DMA (misalnya AXI DMA IP dari Xilinx) akan memungkinkan
+          \emph{streaming} audio berkapasitas besar dari memori ke FIFO
+          tanpa intervensi CPU, sehingga CPU dapat menjalankan tugas lain
+          secara paralel.
+
+    \item \textbf{Pengembangan Linux ALSA Driver}: Untuk memperluas
+          ekosistem penggunaan, peripheral I2S TX ini dapat diporting ke
+          platform berbasis Zynq-7000 atau Zynq UltraScale+ yang menjalankan
+          Linux, dengan mengembangkan driver ALSA (\emph{Advanced Linux
+          Sound Architecture}) sehingga dapat digunakan oleh aplikasi audio
+          Linux standar.
+
+    \item \textbf{Penambahan Mode Sampling}: Penelitian ini membatasi pada
+          dua mode (~48 kHz dan ~96 kHz). Pengembangan lanjutan dapat
+          menambahkan mode 44,1 kHz (standar CD) melalui konfigurasi MMCM
+          tambahan atau PLL terpisah, serta mode 192 kHz untuk
+          \emph{high-resolution audio}.
+
+    \item \textbf{Penambahan Jalur RX (Full-Duplex)}: Modul saat ini hanya
+          mencakup transmisi (TX). Penambahan jalur penerima I2S (RX) akan
+          memungkinkan aplikasi perekaman dan pemrosesan audio secara
+          \emph{full-duplex}, misalnya untuk sistem \emph{voice pickup}
+          dengan mikrofon digital I2S.
+
+    \item \textbf{Optimasi Resource dengan BRAM}: Implementasi TX FIFO saat
+          ini menggunakan register berbasis LUT/FF. Penggunaan BRAM
+          (\emph{Block RAM}) bawaan Artix-7 sebagai media penyimpanan FIFO
+          akan mengurangi konsumsi LUT secara signifikan dan memungkinkan
+          kedalaman FIFO yang lebih besar.
+
+    \item \textbf{Pemrosesan Sinyal Digital (DSP) On-chip}: Peripheral dapat
+          dikembangkan dengan menambahkan blok DSP di dalam FPGA sebelum data
+          dikirim ke DAC, misalnya: kontrol volume, \emph{equalizer} parametrik,
+          atau \emph{sample-rate converter} untuk mendukung berbagai Fs secara
+          fleksibel.
+\end{enumerate}
+
+
+\noindent \textcolor{red}{%
+Catatan: Mahasiswa perlu memastikan sinkronisasi antara rumusan masalah,
+tujuan, hasil pengujian (Bab IV), dan kesimpulan di atas sebelum
+menyelesaikan penulisan.}
