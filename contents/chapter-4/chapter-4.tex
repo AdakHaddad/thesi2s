@@ -1,30 +1,225 @@
-\chapter{Hasil dan Pembahasan}
+\chapter{Implementasi dan Pengujian}
 
-Berikut ini adalah yang perlu diperhatikan untuk mengisi bab hasil dan pembahasan:
+\section{Implementasi RTL (Verilog)}
 
+Peripheral I\textsuperscript{2}S TX diimplementasikan dalam bahasa Verilog dengan struktur modul sebagai berikut:
+
+\begin{itemize}
+    \item \textbf{\texttt{i2s\_tx\_top.v}}: Modul \textit{top-level} yang menggabungkan AXI slave, FIFO TX, serializer I\textsuperscript{2}S, dan logika IRQ.
+    \item \textbf{\texttt{i2s\_axi\_slave.v}}: Modul AXI4-Lite slave yang menangani transaksi baca-tulis register sesuai peta register pada Tabel~\ref{tab:register_map}.
+    \item \textbf{\texttt{i2s\_fifo\_tx.v}}: Modul FIFO TX sinkron berbasis BRAM (256 frame stereo, 48-bit lebar data).
+    \item \textbf{\texttt{i2s\_serializer.v}}: Modul serializer I\textsuperscript{2}S yang membangkitkan BCLK, WS, dan DATA sesuai format Philips I\textsuperscript{2}S 32-bit slot.
+    \item \textbf{\texttt{i2s\_irq\_ctrl.v}}: Modul logika IRQ untuk watermark dan underrun.
+\end{itemize}
+
+\noindent\textbf{Catatan implementasi kunci}:
+\begin{itemize}
+    \item \texttt{C\_S\_AXI\_ADDR\_WIDTH} disetel ke 8-bit (mendukung 64 alamat byte / 16 register 32-bit).
+    \item BCLK dibangkitkan dari \texttt{audio\_clk} menggunakan counter pembagi; pembagi dipilih berdasarkan \texttt{FS\_MODE}.
+    \item Satu bit delay pada DATA diimplementasikan dengan menggeser (shift) output serializer satu BCLK.
+    \item Padding 7-bit nol setelah bit data ke-24 ditangani oleh logika \textit{bit\_counter} di serializer.
+    \item Sinyal \texttt{i2s\_mclk} tersedia sebagai output (dihubungkan ke \texttt{audio\_clk}) meskipun tidak selalu diperlukan oleh PCM5102A.
+\end{itemize}
+
+\section{Implementasi Clocking Wizard dan Block Design Vivado}
+
+\subsection{Konfigurasi Clocking Wizard}
+
+Frekuensi \texttt{audio\_clk} dihasilkan oleh \textit{Clocking Wizard} IP dari Vivado. Konfigurasi yang digunakan:
+
+\begin{itemize}
+    \item Input: 100~MHz (clock sistem Basys3).
+    \item Output \texttt{clk\_out1}: Frekuensi yang diminta 24,576~MHz, frekuensi aktual 24,56897~MHz.
+\end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    % PANDUAN PENGAMBILAN GAMBAR:
+    % 1. Buka proyek di Vivado, klik dua kali IP "Clocking Wizard" di block design.
+    % 2. Navigasi ke tab "Output Clocks".
+    % 3. Pastikan "Output Freq (MHz) Requested" = 24.576 terlihat di kolom "Requested Frequency".
+    % 4. Nilai "Actual Output Freq (MHz)" akan terlihat di sebelahnya (~24.569).
+    % 5. Screenshot seluruh jendela konfigurasi tersebut.
+    % 6. Simpan sebagai figures/fig_clocking_wizard.png
+    \includegraphics[width=0.85\textwidth]{figures/fig_clocking_wizard}
+    \caption{\textit{Clocking Wizard}: frekuensi diminta vs.\ aktual untuk \texttt{audio\_clk} (24,576~MHz diminta, 24,56897~MHz aktual).}
+    \label{fig:clocking_wizard}
+\end{figure}
+
+\subsection{Vivado Block Design}
+
+\begin{figure}[htbp]
+    \centering
+    % PANDUAN PENGAMBILAN GAMBAR:
+    % 1. Buka "Block Design" di Vivado (biasanya bernama design_1.bd).
+    % 2. Pastikan seluruh komponen terlihat: Processor, AXI Interconnect,
+    %    I2S TX IP, Clocking Wizard, UART Lite, Processor System Reset, dsb.
+    % 3. Klik "Regenerate Layout" untuk merapikan tampilan.
+    % 4. Zoom out hingga seluruh desain terlihat dalam satu layar.
+    % 5. Screenshot dan simpan sebagai figures/fig_blok_desain_vivado.png
+    \includegraphics[width=0.9\textwidth]{figures/fig_blok_desain_vivado}
+    \caption{Vivado IP Integrator \textit{Block Design}: koneksi antar komponen sistem.}
+    \label{fig:blok_desain_vivado}
+\end{figure}
+
+\section{Pengujian Fungsional melalui Simulasi RTL}
+
+Simulasi RTL dilakukan menggunakan Vivado Simulator dengan testbench yang mengeksitasi antarmuka AXI4-Lite untuk mensimulasikan penulisan data audio (pola \textit{ramp} atau gelombang sinus 1~kHz).
+
+Prosedur pengujian simulasi:
 \begin{enumerate}
-	\item Setiap rumusan masalah boleh memiliki lebih dari 1 tujuan.
-	\item Setiap subbab harus spesifik menjawab setiap tujuan yang dituliskan.
-	\item Setiap rumusan masalah boleh dijawab dengan 1 subbab atau lebih.
+    \item Inisialisasi: tulis CONTROL (ENABLE=0, FIFO\_RST=1), tunggu.
+    \item Set WATERMARK = 64, IRQ\_EN = 0x01.
+    \item Prefill: tulis 200 frame (TX\_LEFT + TX\_RIGHT) ke FIFO.
+    \item Set CONTROL[ENABLE]=1.
+    \item Amati sinyal: BCLK, WS, DATA, FIFO\_LEVEL, IRQ.
+    \item Verifikasi: WS berganti setiap 32 BCLK, DATA sesuai MSB-first 24-bit, 1-bit delay.
 \end{enumerate}
 
-Berikut ini adalah contoh sub bab untuk menjelaskan tujuan penelitian.
+\begin{figure}[htbp]
+    \centering
+    % PANDUAN PENGAMBILAN GAMBAR:
+    % 1. Jalankan simulasi RTL di Vivado Simulator.
+    % 2. Tambahkan sinyal ke waveform: audio_clk, bclk, ws, i2s_data, fifo_level, irq.
+    % 3. Zoom ke beberapa frame I2S (sekitar 10-20 frame).
+    % 4. Pastikan terlihat: WS berganti setiap 32 BCLK, DATA valid setelah 1-bit delay.
+    % 5. Screenshot waveform (Full Width) dan simpan sebagai figures/fig_simulasi_timing.png
+    \includegraphics[width=0.95\textwidth]{figures/fig_simulasi_timing}
+    \caption{Waveform simulasi RTL: BCLK, WS, DATA, FIFO\_LEVEL, dan IRQ untuk beberapa frame stereo.}
+    \label{fig:simulasi_timing}
+\end{figure}
 
-\section{Pembahasan Tujuan 1 dengan Hasil Penelitian 1 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
+Aspek yang diverifikasi dari simulasi:
+\begin{itemize}
+    \item WS berganti tepat setiap 32 BCLK (konfirmasi frame 64 BCLK).
+    \item DATA dimulai satu siklus BCLK setelah transisi WS (1-bit delay).
+    \item Bit ke-1 hingga ke-24 sesuai dengan nilai data 24-bit yang ditulis.
+    \item Bit ke-25 hingga ke-32 adalah nol (padding).
+    \item IRQ aktif saat FIFO\_LEVEL $\le$ WATERMARK.
+    \item Setelah FIFO kosong: DATA = 0x000000 (underrun handling).
+\end{itemize}
 
-Sub bab pertama adalah membahas tujuan penelitian pertama dengan hasil penelitian ke-1. 
-Dapat ditambahkan beberapa sub bab jika diperlukan.
+\section{Pengujian Hardware menggunakan ILA}
 
-\section{Pembahasan Tujuan 1 dengan Hasil Penelitian 2 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
+ILA (\textit{Integrated Logic Analyzer}) dari Vivado digunakan untuk mengamati sinyal I\textsuperscript{2}S langsung pada hardware FPGA Basys3.
 
-Sub bab kedua adalah membahas tujuan penelitian pertama dengan hasil penelitian ke-2. Sub bab ini merupakan contoh tambahan sub bab pertama.
+\subsection{Konfigurasi ILA}
 
-\section{Pembahasan Tujuan 2 dengan Hasil Penelitian 3 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
+Probe yang digunakan:
+\begin{itemize}
+    \item \texttt{bclk}: frekuensi ~6,14~MHz (Mode~1) atau ~3,07~MHz (Mode~0).
+    \item \texttt{ws}: frekuensi ~95,97~kHz (Mode~1) atau ~47,99~kHz (Mode~0).
+    \item \texttt{i2s\_data}: data serial.
+    \item \texttt{fifo\_level[7:0]}: level FIFO saat ini.
+    \item \texttt{irq}: sinyal interrupt.
+    \item \texttt{underrun}: flag underrun.
+\end{itemize}
 
-Sub bab ketiga adalah membahas tujuan penelitian kedua. Dapat ditambahkan beberapa sub bab jika diperlukan.
+\subsection{Hasil Pengujian ILA}
 
-\section{Perbandingan Hasil Penelitian dengan Hasil Terdahulu}
+\begin{figure}[htbp]
+    \centering
+    % PANDUAN PENGAMBILAN GAMBAR:
+    % 1. Dengan FPGA terprogram dan Vitis berjalan, buka Vivado Hardware Manager.
+    % 2. Hubungkan ke target Basys3, buka "hw_ila_1".
+    % 3. Set trigger: EITHER pada rising edge WS, ATAU pada rising edge IRQ.
+    % 4. Run trigger, tunggu capture.
+    % 5. Tampilkan sinyal: bclk, ws, i2s_data, fifo_level, irq, underrun.
+    % 6. Zoom ke bagian yang menunjukkan: transisi WS, beberapa frame data, event IRQ.
+    % 7. Gunakan cursor A dan B untuk mengukur periode BCLK dan WS.
+    % 8. Catat nilai yang terukur ke Tabel 3.2 (kolom "Diukur ILA").
+    % 9. Screenshot dan simpan sebagai figures/fig_ila_capture.png
+    \includegraphics[width=0.95\textwidth]{figures/fig_ila_capture}
+    \caption{Capture ILA: sinyal BCLK, WS, DATA, FIFO\_LEVEL, dan IRQ pada hardware Basys3 (Mode~1, $\approx$96~kHz).}
+    \label{fig:ila_capture}
+\end{figure}
 
-Pembahasan penutup dapat menjelaskan mengenai kelebihan hasil pengembangan / 
-penelitian dan kekurangan dibandingkan dengan skripsi atau penelitian terdahulu atau
-perbandingan terhadap produk lain yang ada di pasaran. Penulis dapat menggunakan tabel untuk membandingkan secara gamblang dan menjelaskannya.
+Hasil pengukuran dari ILA dirangkum pada Tabel~\ref{tab:clock_calc} (kolom ``Diukur (ILA)''). Pastikan nilai yang terukur konsisten dengan nilai aktual MMCM yang dihitung pada Tabel~\ref{tab:clock_calc}.
+
+\section{Pengujian Audio dengan DAC PCM5102A}
+
+DAC PCM5102A dihubungkan ke pin I/O FPGA Basys3 sesuai dengan \textit{constraints file} XDC. Koneksi yang diperlukan: BCLK, WS, DATA, GND, dan VCC (3,3~V).
+
+\begin{figure}[htbp]
+    \centering
+    % PANDUAN PENGAMBILAN GAMBAR:
+    % Opsi A - Oscilloscope pada output analog PCM5102A:
+    % 1. Hubungkan probe oscilloscope ke pin OUTL atau OUTR dari PCM5102A.
+    % 2. Jalankan program Vitis yang menghasilkan gelombang sinus 1 kHz.
+    % 3. Set trigger oscilloscope: channel/DC, level sekitar 0V.
+    % 4. Capture waveform sinus 1 kHz dan ukur frekuensi serta amplitudo.
+    % 5. Screenshot atau foto layar oscilloscope, simpan sebagai figures/fig_osiloskop_output.png
+    %
+    % Opsi B - Audio analyzer / spectrum analyzer software:
+    % 1. Hubungkan output audio PCM5102A ke sound card PC.
+    % 2. Gunakan software seperti Audacity atau REW untuk merekam dan menganalisis.
+    % 3. Capture tampilan spektrum yang menunjukkan puncak di 1 kHz.
+    \includegraphics[width=0.85\textwidth]{figures/fig_osiloskop_output}
+    \caption{Output analog gelombang sinus 1~kHz dari DAC PCM5102A (diukur dengan oscilloscope).}
+    \label{fig:osiloskop_output}
+\end{figure}
+
+Pengujian audio mencakup:
+\begin{enumerate}
+    \item Playback gelombang sinus 1~kHz: verifikasi frekuensi output sesuai pada oscilloscope.
+    \item Pengujian mute: set \texttt{CONTROL[MUTE]=1}, output harus nol/senyap.
+    \item Pengujian mode Fs: ganti antara Mode~0 ($\approx$48~kHz) dan Mode~1 ($\approx$96~kHz) menggunakan prosedur aman (pause $\to$ reset FIFO $\to$ ubah mode $\to$ prefill $\to$ play).
+    \item Pengujian underrun: hentikan pengisian FIFO, amati gangguan (\textit{glitch}) pada output audio dan flag UNDERRUN pada ILA.
+    \item Pengujian watermark IRQ: amati respon ISR saat IRQ aktif dan keberhasilan pengisian ulang FIFO.
+\end{enumerate}
+
+\section{Evaluasi Kinerja}
+
+\subsection{Akurasi Laju Sampling}
+
+Berdasarkan nilai \texttt{audio\_clk} aktual dari MMCM (24,56897~MHz), laju sampling aktual dan deviasi dari nilai nominal adalah:
+
+\begin{table}[htbp]
+\centering
+\caption{Akurasi Laju Sampling Peripheral I\textsuperscript{2}S TX}
+\label{tab:akurasi_fs}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\textbf{Mode} & \textbf{$F_s$ Nominal} & \textbf{$F_s$ Aktual} & \textbf{Error (\%)} & \textbf{Audible?} \\
+\hline
+Mode~0 ($\div 8$) & 48.000 Hz & 47.986 Hz & $-0{,}029\%$ & Tidak \\
+\hline
+Mode~1 ($\div 4$) & 96.000 Hz & 95.973 Hz & $-0{,}029\%$ & Tidak \\
+\hline
+\end{tabular}
+\end{table}
+
+Deviasi yang sangat kecil ($<0{,}1\%$) ini tidak dapat didengar oleh manusia dan masih dalam toleransi DAC PCM5102A.
+
+\subsection{Utilisasi Sumber Daya FPGA}
+
+\noindent\textbf{Catatan}: Lengkapi tabel berikut dari Vivado \textit{Utilization Report} setelah implementasi.
+
+\begin{table}[htbp]
+\centering
+\caption{Utilisasi Sumber Daya FPGA (Basys3 Artix-7 XC7A35T)}
+\label{tab:utilization}
+\begin{tabular}{|l|r|r|r|}
+\hline
+\textbf{Sumber Daya} & \textbf{Digunakan} & \textbf{Tersedia} & \textbf{Utilisasi (\%)} \\
+\hline
+Slice LUTs & \textit{(isi)} & 20.800 & \textit{(hitung)} \\
+\hline
+Slice Registers (FF) & \textit{(isi)} & 41.600 & \textit{(hitung)} \\
+\hline
+Block RAM Tile & \textit{(isi)} & 50 & \textit{(hitung)} \\
+\hline
+DSP48 Slices & \textit{(isi)} & 90 & \textit{(hitung)} \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Overhead CPU: Polling vs.\ Interrupt}
+
+Mekanisme \textit{interrupt watermark} secara signifikan mengurangi beban CPU dibandingkan \textit{polling} terus-menerus. Dengan watermark = 64 frame pada Mode~1 ($F_s \approx 96$~kHz), ISR terpicu kira-kira setiap:
+
+\[
+t_{ISR} = \frac{(256 - 64) \text{ frame}}{95{,}97 \times 10^3 \text{ frame/s}} \approx 2{,}0\,\text{ms}
+\]
+
+Ini berarti prosesor bebas selama $\sim$2~ms antara setiap ISR, cukup untuk menjalankan tugas lain tanpa risiko underrun (selama ISR mengisi ulang dengan cepat).

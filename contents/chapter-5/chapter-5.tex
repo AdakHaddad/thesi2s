@@ -1,5 +1,44 @@
-\chapter{Tambahan (Opsional)}
+\chapter{Kesimpulan dan Saran}
 
-Anda boleh menambahkan Bab jika diperlukan. Jumlah Bab tidak harus sesuai dengan \textit{template}. 
+\section{Kesimpulan}
 
-Bab tambahan ini diperlukan jika hasil penelitian untuk menjawab tujuan cukup panjang atau terdiri dari banyak sub bab. Mahasiswa boleh menjawab 1 tujuan penelitian dengan 1 bab.
+Penelitian ini telah berhasil merancang dan mengimplementasikan peripheral I\textsuperscript{2}S TX berbasis AXI4-Lite menggunakan Verilog pada FPGA Basys3 (Artix-7 XC7A35T). Berdasarkan pengujian yang dilakukan, dapat disimpulkan:
+
+\begin{enumerate}
+    \item Peripheral I\textsuperscript{2}S TX berhasil dirancang dalam Verilog dengan format Philips I\textsuperscript{2}S 32-bit slot untuk data 24-bit stereo, memenuhi spesifikasi yang ditetapkan.
+
+    \item Antarmuka AXI4-Lite dengan peta register yang lengkap (ID, CONTROL, STATUS, WATERMARK, IRQ\_EN, IRQ\_STATUS, VOLUME, TX\_LEFT, TX\_RIGHT) berhasil diimplementasikan dan memungkinkan kontrol penuh dari perangkat lunak.
+
+    \item Dua mode laju sampling berhasil diimplementasikan:
+    \begin{itemize}
+        \item Mode~0 ($\approx$47,99~kHz, BCLK $\div 8$): deviasi $-0{,}029\%$ dari 48~kHz.
+        \item Mode~1 ($\approx$95,97~kHz, BCLK $\div 4$): deviasi $-0{,}029\%$ dari 96~kHz.
+    \end{itemize}
+    Deviasi ini disebabkan oleh ketidaksempurnaan frekuensi aktual MMCM (24,56897~MHz vs.\ 24,576~MHz yang diminta) dan berada jauh di bawah ambang batas yang dapat didengar.
+
+    \item FIFO TX dengan kedalaman 256 frame stereo dan mekanisme \textit{interrupt watermark} berhasil diimplementasikan. Mekanisme ini terbukti efektif dalam mencegah \textit{underrun} dan mengurangi beban CPU dibandingkan metode \textit{polling}.
+
+    \item Verifikasi fungsional melalui simulasi RTL mengkonfirmasi kebenaran timing I\textsuperscript{2}S: WS berganti setiap 32 BCLK, DATA dimulai satu siklus setelah transisi WS (1-bit delay), dan \textit{padding} nol pada 7 bit akhir slot.
+
+    \item Pengujian hardware menggunakan ILA pada Basys3 mengkonfirmasi frekuensi BCLK dan WS yang terukur konsisten dengan perhitungan dari \texttt{audio\_clk} aktual MMCM.
+
+    \item Output audio dari DAC PCM5102A menghasilkan sinyal yang benar pada pengujian gelombang sinus 1~kHz, mengkonfirmasi fungsionalitas end-to-end sistem.
+\end{enumerate}
+
+\section{Saran}
+
+Beberapa pengembangan lanjutan yang dapat dilakukan berdasarkan penelitian ini:
+
+\begin{enumerate}
+    \item \textbf{Penambahan mode RX (receiver)}: Memperluas peripheral menjadi full-duplex I\textsuperscript{2}S TX+RX untuk aplikasi yang memerlukan perekaman audio.
+
+    \item \textbf{Integrasi DMA}: Mengganti mekanisme pengisian FIFO berbasis CPU dengan AXI DMA untuk \textit{streaming} audio yang lebih efisien dan mengurangi beban CPU secara drastis.
+
+    \item \textbf{Konversi laju sampling yang lebih presisi}: Menggunakan crystal audio eksternal 24,576~MHz (standar industri) sebagai sumber clock untuk menghilangkan deviasi yang disebabkan oleh MMCM.
+
+    \item \textbf{Dukungan laju sampling tambahan}: Menambahkan mode laju sampling 44,1~kHz dan variannya (88,2~kHz, 176,4~kHz) dengan menggunakan MMCM terpisah atau PLL yang dikonfigurasi untuk kelipatan 44,1~kHz.
+
+    \item \textbf{Integrasi Linux ASoC}: Mengembangkan driver Linux berbasis framework ASoC (\textit{ALSA System on Chip}) dan \textit{device tree binding} untuk memungkinkan penggunaan peripheral ini pada sistem Linux tertanam.
+
+    \item \textbf{Volume control hardware}: Mengimplementasikan kontrol volume dengan resolusi lebih tinggi menggunakan modul perkalian \textit{fixed-point} (memanfaatkan DSP48 FPGA) sebagai pengganti atenuasi berbasis pergeseran bit.
+\end{enumerate}

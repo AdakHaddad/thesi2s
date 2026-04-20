@@ -1,0 +1,172 @@
+\chapter*{LAMPIRAN}
+
+\section{Panduan Pengambilan Gambar dan Bukti Pengujian}
+\label{sec:panduan_gambar}
+
+Lampiran ini memberikan panduan langkah-demi-langkah untuk mengambil gambar dan bukti pengujian yang diperlukan dalam skripsi. Setiap sub-bagian mencantumkan nama file gambar yang harus disimpan di direktori \texttt{figures/} serta deskripsi isi yang diharapkan.
+
+\subsection{Tabel Frekuensi Diminta vs.\ Aktual (Clocking Wizard)}
+
+\textbf{Tujuan}: Mendokumentasikan perbedaan antara frekuensi \texttt{audio\_clk} yang diminta dan yang aktual dari MMCM, untuk mendukung pembahasan pada Bagian~\ref{tab:clock_calc}.
+
+\textbf{Langkah-langkah}:
+\begin{enumerate}
+    \item Buka proyek di Xilinx Vivado.
+    \item Pada tab \textit{Sources}, cari IP \textit{Clocking Wizard} (biasanya bernama \texttt{clk\_wiz\_0}).
+    \item Klik dua kali untuk membuka konfigurasi IP.
+    \item Navigasi ke tab \textbf{Output Clocks}.
+    \item Pastikan kolom \textbf{Requested Frequency (MHz)} menunjukkan \texttt{24.576} dan kolom \textbf{Actual Output Freq (MHz)} menunjukkan nilai aktual ($\approx$24,569).
+    \item Screenshot seluruh tab tersebut, termasuk judul jendela dan nama IP.
+    \item Simpan sebagai \texttt{figures/fig\_clocking\_wizard.png}.
+    \item Catat nilai aktual ke Tabel~\ref{tab:clock_calc} (kolom \textit{Aktual}).
+\end{enumerate}
+
+\textbf{Apa yang harus terlihat}: Tabel dengan kolom \textit{Output Clock Port}, \textit{Requested Frequency}, dan \textit{Actual Output Frequency}. Nilai aktual harus terlihat sedikit berbeda dari yang diminta karena keterbatasan granularitas MMCM.
+
+\subsection{Vivado Block Design / Diagram Blok Sistem}
+
+\textbf{Tujuan}: Mendokumentasikan arsitektur sistem yang dibangun di Vivado IP Integrator untuk Gambar~\ref{fig:blok_desain_vivado}.
+
+\textbf{Langkah-langkah}:
+\begin{enumerate}
+    \item Buka Vivado dan navigasi ke \textbf{Flow Navigator} $\to$ \textbf{IP Integrator} $\to$ \textbf{Open Block Design}.
+    \item Pastikan semua koneksi sudah benar dan tidak ada error atau warning kritis.
+    \item Klik kanan pada area kosong $\to$ pilih \textbf{Regenerate Layout} untuk merapikan tampilan.
+    \item Gunakan \textbf{Ctrl+Shift+F} atau tombol \textbf{Fit to Window} untuk menampilkan seluruh desain.
+    \item Pastikan komponen berikut terlihat: Processor/Microblaze (jika ada), AXI Interconnect, I2S TX IP, Clocking Wizard, AXI UART Lite, Processor System Reset, dan koneksinya.
+    \item Screenshot seluruh jendela block design.
+    \item Simpan sebagai \texttt{figures/fig\_blok\_desain\_vivado.png}.
+\end{enumerate}
+
+\textbf{Apa yang harus terlihat}: Diagram blok lengkap dengan semua IP yang saling terhubung melalui garis AXI, clock, dan reset. Label setiap IP harus terbaca dengan jelas.
+
+\subsection{Waveform ILA (BCLK, WS, DATA, FIFO Level, IRQ)}
+
+\textbf{Tujuan}: Membuktikan fungsionalitas hardware yang sesungguhnya pada FPGA Basys3 untuk Gambar~\ref{fig:ila_capture}.
+
+\textbf{Persiapan}:
+\begin{itemize}
+    \item FPGA Basys3 sudah terprogram dengan bitstream yang menyertakan ILA.
+    \item Program Vitis (\texttt{main.cpp}) sedang berjalan dan menghasilkan audio.
+    \item Vivado Hardware Manager terhubung ke target Basys3 via USB-JTAG.
+\end{itemize}
+
+\textbf{Langkah-langkah}:
+\begin{enumerate}
+    \item Di Vivado, buka \textbf{Hardware Manager} $\to$ \textbf{Open Target} $\to$ \textbf{Auto Connect}.
+    \item Setelah terhubung, klik pada \texttt{hw\_ila\_1} di panel \textit{Hardware}.
+    \item Pada panel \textit{Waveform}, tambahkan probe berikut: \texttt{bclk}, \texttt{ws}, \texttt{i2s\_data}, \texttt{fifo\_level[7:0]}, \texttt{irq}, \texttt{underrun}.
+    \item Set trigger: pada panel \textit{Settings}, set trigger condition ke \textbf{rising edge pada \texttt{irq}} (untuk menangkap momen IRQ aktif).
+    \item Klik \textbf{Run Trigger} ($\triangleright$) dan tunggu capture.
+    \item Setelah capture, zoom ke bagian yang menunjukkan:
+    \begin{itemize}
+        \item Beberapa frame I\textsuperscript{2}S lengkap (lihat WS berganti setiap 32 BCLK).
+        \item Data valid pada sinyal \texttt{i2s\_data}.
+        \item FIFO\_LEVEL turun dan kemudian naik setelah ISR mengisi ulang.
+        \item IRQ aktif saat FIFO\_LEVEL $\le$ WATERMARK.
+    \end{itemize}
+    \item Gunakan \textbf{Marker/Cursor} (klik kanan pada waveform) untuk mengukur periode BCLK dan WS.
+    \item Catat nilai yang terukur ke Tabel~\ref{tab:clock_calc} (kolom \textit{Diukur ILA}).
+    \item Screenshot waveform dan simpan sebagai \texttt{figures/fig\_ila\_capture.png}.
+\end{enumerate}
+
+\textbf{Nilai yang diharapkan}:
+\begin{itemize}
+    \item Periode BCLK Mode~1: $\approx 163\,\text{ns}$ (frekuensi $\approx 6{,}14$~MHz).
+    \item Periode WS Mode~1: $\approx 10{,}42\,\mu\text{s}$ (frekuensi $\approx 95{,}97$~kHz).
+    \item DATA: bit ke-1 nol (delay), bit ke-2 hingga ke-25 adalah data 24-bit, bit ke-26 hingga ke-32 nol (padding).
+\end{itemize}
+
+\subsection{Output Oscilloscope atau Bukti Audio}
+
+\textbf{Tujuan}: Membuktikan bahwa output analog dari DAC PCM5102A menghasilkan sinyal audio yang benar untuk Gambar~\ref{fig:osiloskop_output}.
+
+\subsubsection{Metode A: Oscilloscope pada Output Analog PCM5102A}
+
+\begin{enumerate}
+    \item Pastikan program Vitis menghasilkan gelombang sinus 1~kHz (24-bit, stereo).
+    \item Hubungkan probe oscilloscope Channel~1 ke pin \texttt{OUTL} (output kiri) dari modul PCM5102A.
+    \item Hubungkan probe Channel~2 ke pin \texttt{OUTR} (output kanan, opsional).
+    \item Set oscilloscope: Time/div = $200\,\mu\text{s}$, Volt/div = $200\,\text{mV}$.
+    \item Trigger: Channel~1, DC, level $\approx 0\,\text{V}$.
+    \item Amati gelombang sinus yang terbentuk. Ukur frekuensi (harus $\approx 1$~kHz) dan amplitudo.
+    \item Aktifkan fitur \textbf{Frequency Measure} pada oscilloscope untuk membaca frekuensi secara otomatis.
+    \item Screenshot layar oscilloscope dan simpan sebagai \texttt{figures/fig\_osiloskop\_output.png}.
+\end{enumerate}
+
+\subsubsection{Metode B: Spectrum Analyzer Software}
+
+\begin{enumerate}
+    \item Hubungkan output audio PCM5102A ke port \textit{line-in} sound card PC menggunakan kabel audio 3,5~mm.
+    \item Buka software analisis audio (mis.\ Audacity, REW, atau Spectrum Analyzer online).
+    \item Rekam selama $\sim$5 detik saat program Vitis menghasilkan sinus 1~kHz.
+    \item Tampilkan spektrum frekuensi. Harus terdapat puncak tunggal yang dominan di 1~kHz.
+    \item Screenshot tampilan spektrum dan simpan sebagai \texttt{figures/fig\_osiloskop\_output.png} (atau nama file yang sesuai).
+\end{enumerate}
+
+\textbf{Apa yang harus terlihat}: Gelombang sinus yang bersih dengan frekuensi 1~kHz pada oscilloscope, atau puncak spektrum di 1~kHz pada spectrum analyzer. Tidak boleh ada \textit{glitch} atau \textit{noise} yang signifikan.
+
+\subsection{Diagram Blok Sistem (Buatan Sendiri)}
+
+\textbf{Tujuan}: Membuat diagram blok sistem yang bersih untuk Gambar~\ref{fig:blok_sistem} dalam laporan.
+
+\textbf{Rekomendasi alat}:
+\begin{itemize}
+    \item \textbf{draw.io} (gratis, berbasis web): \url{https://app.diagrams.net/}
+    \item \textbf{Microsoft Visio} (berbayar)
+    \item \textbf{Inkscape} (gratis, open-source)
+    \item \textbf{TikZ} (langsung di LaTeX, untuk konsistensi gaya)
+\end{itemize}
+
+\textbf{Elemen yang harus ada dalam diagram}:
+\begin{itemize}
+    \item Blok \textbf{Vitis Software} (prosesor / CPU).
+    \item Panah AXI4-Lite (dua arah: baca dan tulis register).
+    \item Blok \textbf{AXI Register Map} (dengan label: CONTROL, STATUS, TX\_LEFT, TX\_RIGHT, dll.).
+    \item Panah dari TX\_RIGHT $\to$ blok \textbf{FIFO TX (256 frame)}.
+    \item Panah dari FIFO $\to$ blok \textbf{I\textsuperscript{2}S Serializer}.
+    \item Output dari serializer: \textbf{BCLK}, \textbf{WS}, \textbf{DATA} $\to$ blok \textbf{PCM5102A DAC}.
+    \item Blok \textbf{FIFO Level Monitor} $\to$ panah ke \textbf{IRQ Logic} $\to$ panah IRQ ke prosesor.
+    \item Blok \textbf{MMCM/Clocking Wizard} $\to$ \texttt{audio\_clk} 24,569~MHz $\to$ blok \textbf{BCLK Divider ($\div 4$ / $\div 8$)}.
+\end{itemize}
+
+Simpan sebagai \texttt{figures/fig\_blok\_sistem.png} dengan resolusi minimal 300~DPI.
+
+\subsection{Diagram Timing I\textsuperscript{2}S (Buatan Sendiri)}
+
+\textbf{Tujuan}: Membuat diagram timing I\textsuperscript{2}S yang jelas untuk Gambar~\ref{fig:i2s_timing}.
+
+\textbf{Rekomendasi alat}:
+\begin{itemize}
+    \item \textbf{WaveDrom} (\url{https://wavedrom.com/}): alat khusus untuk diagram timing digital, gratis berbasis web.
+    \item \textbf{TimingAnalyzer} atau alat serupa.
+\end{itemize}
+
+\textbf{Contoh kode WaveDrom} untuk format I\textsuperscript{2}S 32-bit slot:
+\begin{verbatim}
+{ signal: [
+  { name: "BCLK", wave: "p..................." },
+  { name: "WS",   wave: "0...............1..." },
+  { name: "DATA", wave: "x.0.23456789......x.", 
+    data: ["MSB","D22","D21","D20","...","D0","0","0","0","0"] }
+], head: {text: "I2S 32-bit slot (L channel): 1-bit delay + 24-bit data + 7-bit padding"}
+}
+\end{verbatim}
+
+Simpan diagram yang dihasilkan sebagai \texttt{figures/fig\_i2s\_timing.png}.
+
+\subsection{Flowchart Software Vitis (Buatan Sendiri)}
+
+\textbf{Tujuan}: Membuat flowchart alur kerja program \texttt{main.cpp} untuk Gambar~\ref{fig:flowchart_software}.
+
+\textbf{Elemen flowchart yang diperlukan}:
+\begin{enumerate}
+    \item \textbf{Start} $\to$ Inisialisasi peripheral (reset FIFO, set FS\_MODE, set WATERMARK).
+    \item $\to$ Prefill FIFO (tulis $\sim$200 frame sinus 1~kHz).
+    \item $\to$ Aktifkan IRQ (tulis IRQ\_EN) $\to$ Set ENABLE=1.
+    \item $\to$ Loop tunggu IRQ \textit{(sleep/wait)}.
+    \item Cabang ISR: Baca IRQ\_STATUS $\to$ Clear IRQ (W1C) $\to$ Isi ulang FIFO (128 frame) $\to$ Kembali.
+    \item Cabang UNDERRUN: Baca flag UNDERRUN $\to$ Reset FIFO $\to$ Prefill ulang $\to$ Set ENABLE.
+\end{enumerate}
+
+Gunakan draw.io atau alat serupa, simpan sebagai \texttt{figures/fig\_flowchart\_software.png}.
