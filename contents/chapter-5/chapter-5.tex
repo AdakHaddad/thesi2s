@@ -1,5 +1,78 @@
-\chapter{Tambahan (Opsional)}
+\chapter{Kesimpulan dan Saran}
 
-Anda boleh menambahkan Bab jika diperlukan. Jumlah Bab tidak harus sesuai dengan \textit{template}. 
+\section{Kesimpulan}
 
-Bab tambahan ini diperlukan jika hasil penelitian untuk menjawab tujuan cukup panjang atau terdiri dari banyak sub bab. Mahasiswa boleh menjawab 1 tujuan penelitian dengan 1 bab.
+Penelitian ini telah berhasil merancang dan mengimplementasikan peripheral I2S TX-only
+berbasis Verilog dengan antarmuka AXI4-Lite pada papan pengembangan Basys3
+(Xilinx Artix-7 XC7A35T). Berdasarkan hasil implementasi dan pengujian yang dilakukan,
+dapat disimpulkan bahwa:
+
+\begin{enumerate}
+\item Peripheral I2S TX-only berhasil dirancang dalam bahasa Verilog dengan
+      antarmuka AXI4-Lite yang mencakup sembilan register yang dapat dikonfigurasi
+      melalui MicroBlaze, menghasilkan sinyal BCLK, WS, dan DATA yang memenuhi
+      standar I2S Philips dengan slot 32-bit dan data audio 24-bit MSB-\textit{first}.
+
+\item Dua mode laju sampel berhasil diimplementasikan menggunakan satu bit kendali
+      FS\_MODE pada register CONTROL:
+      \begin{itemize}
+      \item Mode~1 ($\approx$96\,kHz): BCLK $\approx$6,142\,MHz, WS $\approx$95,97\,kHz.
+      \item Mode~0 ($\approx$48\,kHz): BCLK $\approx$3,071\,MHz, WS $\approx$47,99\,kHz.
+      \end{itemize}
+      Galat frekuensi aktual terhadap nilai target ($\pm$0,029\%) berada dalam batas
+      toleransi yang dapat diterima DAC PCM5102A.
+
+\item TX FIFO berkedalaman 256 frame stereo berhasil diimplementasikan sebagai array
+      register sinkron, dengan mekanisme \textit{push} pada penulisan TX\_RIGHT dan
+      \textit{pop} pada setiap batas frame I2S. Kondisi \textit{underrun} ditangani
+      dengan keluaran nol otomatis dan indikasi flag status.
+
+\item Mekanisme IRQ \textit{watermark} yang dapat dikonfigurasi berhasil diimplementasikan
+      dan diuji dengan aplikasi demo \texttt{main.cpp} pada Xilinx Vitis, memungkinkan
+      ISR mengisi ulang FIFO secara efisien tanpa \textit{polling} konstan.
+
+\item Fungsionalitas sistem berhasil diverifikasi melalui dua metode: simulasi RTL
+      menggunakan Vivado Simulator dan pengujian perangkat keras langsung menggunakan
+      ILA pada Basys3 dengan keluaran audio nyata ke DAC PCM5102A. Sinyal sinus
+      1\,kHz terputar bersih tanpa artefak yang terdengar.
+\end{enumerate}
+
+\section{Saran}
+
+Berdasarkan keterbatasan penelitian yang ada, berikut adalah saran untuk pengembangan
+lebih lanjut:
+
+\begin{enumerate}
+\item \textbf{Integrasi DMA (\textit{Direct Memory Access})}: Menggantikan mekanisme
+      pengisian FIFO berbasis IRQ dari CPU (Vitis \texttt{main.cpp}) dengan AXI DMA
+      dari Xilinx. Data audio dapat disimpan di BRAM atau DDR, kemudian dipindahkan
+      ke FIFO secara otomatis tanpa intervensi CPU, sehingga membebaskan CPU untuk
+      tugas lain.
+
+\item \textbf{Dukungan Format Lebih Lanjut}: Menambahkan dukungan untuk format
+      \textit{left-justified} (LJ) dan \textit{right-justified} (RJ) selain format
+      standar Philips, serta mode TDM (\textit{Time Division Multiplexing}) untuk
+      lebih dari dua kanal audio.
+
+\item \textbf{Mode Laju Sampel Tambahan}: Menambahkan mode laju sampel 192\,kHz
+      (BCLK = audio\_clk/2) dan 44,1\,kHz dengan konfigurasi MMCM yang sesuai, atau
+      menggunakan osilator audio eksternal (24,576\,MHz atau 22,5792\,MHz) untuk
+      presisi frekuensi yang lebih baik.
+
+\item \textbf{Penerimaan I2S (RX Mode)}: Menambahkan modul I2S receiver untuk
+      mendukung operasi penuh (\textit{full duplex}) dengan mikrofon digital atau
+      ADC yang menggunakan protokol I2S, sehingga sistem dapat digunakan untuk
+      aplikasi rekaman dan pemrosesan audio real-time.
+
+\item \textbf{Integrasi Linux ASoC Driver}: Pada tahap pengembangan lanjutan
+      dengan platform yang mendukung Linux (misalnya Zynq-7000 atau Zynq UltraScale+),
+      peripheral ini dapat dijadikan dasar untuk pengembangan \textit{CPU DAI driver}
+      menggunakan framework ASoC (\textit{ALSA System on Chip}) dengan
+      \textit{Device Tree} binding yang sesuai.
+
+\item \textbf{Pengujian Kualitas Audio}: Melakukan pengukuran kualitas audio yang
+      lebih komprehensif seperti SNR (\textit{Signal-to-Noise Ratio}), THD
+      (\textit{Total Harmonic Distortion}), dan SINAD menggunakan perangkat lunak
+      analisis audio (misalnya REW atau ARTA) untuk memvalidasi kualitas keluaran
+      secara objektif.
+\end{enumerate}

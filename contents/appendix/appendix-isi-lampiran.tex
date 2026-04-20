@@ -1,251 +1,99 @@
 \chapter*{LAMPIRAN}
-%\addcontentsline{toc}{chapter}{LAMPIRAN}	
+%\addcontentsline{toc}{chapter}{LAMPIRAN}
 
-\section{Hasil Resource Utilization}
+\section{Hasil \textit{Resource Utilization} FPGA}
 
-\subsection{Post-Implementation Resource Report}
+\subsection{Laporan Utilisasi Setelah Implementasi}
 
-Berikut adalah hasil resource utilization dari Vivado implementation untuk complete SoC design:
+Laporan utilisasi sumber daya FPGA dihasilkan oleh Vivado setelah \textit{Run Implementation}
+selesai. Data diambil dari file \texttt{utilization\_placed.rpt} atau dari jendela
+\textit{Design Summary} Vivado.
 
 \begin{table}[h]
 \centering
-\caption{FPGA Resource Utilization Summary}
+\caption{Utilisasi sumber daya FPGA Artix-7 XC7A35T -- SoC lengkap dan
+         komponen peripheral I2S secara terpisah. Nilai diisi setelah
+         implementasi Vivado selesai.}
 \begin{tabular}{|l|r|r|r|}
 \hline
-\textbf{Resource} & \textbf{Used} & \textbf{Available} & \textbf{Utilization (\%)} \\
+\textbf{Sumber Daya} & \textbf{Terpakai} & \textbf{Tersedia} & \textbf{(\%)} \\
 \hline
-\multicolumn{4}{|c|}{\textbf{Complete SoC (MicroBlaze V + I2C + I2S)}} \\
+\multicolumn{4}{|c|}{\textbf{SoC Lengkap (MicroBlaze + I2S + UART + Timer + INTC)}} \\
 \hline
-Slice LUTs & 8,432 & 63,400 & 13.30 \\
+Slice LUT      & \textit{(isi)} & 20.800 & \textit{(hitung)} \\
 \hline
-Slice Registers & 6,891 & 126,800 & 5.43 \\
+Slice Register & \textit{(isi)} & 41.600 & \textit{(hitung)} \\
 \hline
-Block RAM Tile & 28 & 135 & 20.74 \\
+Block RAM Tile & \textit{(isi)} & 50      & \textit{(hitung)} \\
 \hline
-DSP48 Slices & 3 & 240 & 1.25 \\
+DSP48E1        & \textit{(isi)} & 90      & \textit{(hitung)} \\
 \hline
-\multicolumn{4}{|c|}{\textbf{I2C Peripheral Only}} \\
+\multicolumn{4}{|c|}{\textbf{Peripheral I2S Kustom Saja}} \\
 \hline
-Slice LUTs & 187 & - & - \\
+Slice LUT      & \textit{(isi)} & --      & -- \\
 \hline
-Slice Registers & 142 & - & - \\
+Slice Register & \textit{(isi)} & --      & -- \\
 \hline
-\multicolumn{4}{|c|}{\textbf{I2S Peripheral Only}} \\
-\hline
-Slice LUTs & 324 & - & - \\
-\hline
-Slice Registers & 278 & - & - \\
-\hline
-Block RAM Tile & 2 & - & - \\
+Block RAM Tile & \textit{(isi)} & --      & -- \\
 \hline
 \end{tabular}
 \end{table}
 
-\subsection{Timing Report}
+\subsection{Laporan Timing}
 
 \begin{table}[h]
 \centering
-\caption{Timing Analysis Results}
+\caption{Hasil analisis timing Vivado setelah implementasi.}
 \begin{tabular}{|l|l|}
 \hline
-\textbf{Parameter} & \textbf{Value} \\
+\textbf{Parameter} & \textbf{Nilai} \\
 \hline
-Target Clock Frequency (AXI) & 100 MHz \\
+Frekuensi \textit{clock} target (AXI / MicroBlaze) & 100\,MHz \\
 \hline
-Achieved Clock Frequency & 112.5 MHz \\
+\textit{Worst Negative Slack} (WNS) & \textit{(isi dari Vivado)} \\
 \hline
-Worst Negative Slack (WNS) & 1.234 ns \\
+\textit{Total Negative Slack} (TNS) & \textit{(isi dari Vivado)} \\
 \hline
-Total Negative Slack (TNS) & 0 ns \\
-\hline
-Timing Met? & \textbf{Yes} \\
+\textit{Timing Constraints Met?} & \textit{(isi: Yes/No)} \\
 \hline
 \end{tabular}
 \end{table}
 
-\section{Timing Diagram}
+\section{Penugasan Pin Basys3 (\textit{Pin Assignment})}
 
-\subsection{I2C Write Transaction Timing}
+Tabel berikut menampilkan penugasan pin FPGA Artix-7 XC7A35T pada Basys3 untuk sinyal
+I2S yang terhubung ke modul PCM5102A melalui Pmod, serta sinyal pendukung (UART, \textit{clock}).
 
-Berikut adalah capture dari logic analyzer untuk I2C write transaction:
+\begin{table}[h]
+\centering
+\caption{Penugasan pin FPGA Basys3 untuk peripheral I2S dan sinyal pendukung.
+         Nomor pin Pmod disesuaikan dengan koneksi fisik ke modul PCM5102A.}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Sinyal} & \textbf{Pin FPGA} & \textbf{Pmod} & \textbf{Keterangan} \\
+\hline
+\texttt{i2s\_bclk}   & \textit{(isi)} & JA pin 1 & I2S Bit Clock ke PCM5102A \\
+\hline
+\texttt{i2s\_ws}     & \textit{(isi)} & JA pin 2 & I2S Word Select (LRCLK) \\
+\hline
+\texttt{i2s\_data}   & \textit{(isi)} & JA pin 3 & I2S Serial Data (DIN PCM5102A) \\
+\hline
+\texttt{uart\_tx}    & \textit{(isi)} & -- & UART TX (ke USB-UART Basys3) \\
+\hline
+\texttt{uart\_rx}    & \textit{(isi)} & -- & UART RX (dari USB-UART Basys3) \\
+\hline
+\texttt{sys\_clk}    & W5             & -- & Osilator 100\,MHz papan Basys3 \\
+\hline
+\texttt{reset\_n}    & \textit{(isi)} & -- & Tombol reset (BTN[0] atau CPU\_RESETN) \\
+\hline
+\end{tabular}
+\end{table}
 
-\begin{verbatim}
-Time (us)    SCL    SDA    Description
--------------------------------------------------
-0.0          1      1      IDLE (both lines high)
-2.5          1      0      START condition
-5.0          0      1      Bit 7 (slave address)
-7.5          1      1      
-10.0         0      0      Bit 6
-12.5         1      0      
-...
-45.0         0      1      ACK from slave
-47.5         1      1      
-50.0         0      1      Data byte bit 7
-...
-95.0         0      1      ACK from slave
-97.5         1      0      STOP condition
-100.0        1      1      IDLE
-\end{verbatim}
-
-\subsection{I2S Audio Transmission Timing}
-
-\begin{verbatim}
-Sample Rate: 44.1 kHz
-Bit Depth: 16-bit
-BCLK Frequency: 1.4112 MHz (44.1k × 16 × 2)
-LRCLK Frequency: 44.1 kHz
-
-LRCLK: ___|‾‾‾|___|‾‾‾|___  (Left=0, Right=1)
-BCLK:  |‾|_|‾|_|‾|_|‾|_|‾|_  (Continuous)
-SD:    [MSB................LSB]  (Serial data)
-\end{verbatim}
-
-\section{Test Results Log}
-
-\subsection{I2C Sensor Reading Test}
-
-Output dari UART console untuk I2C sensor test:
-
-\begin{verbatim}
-=== I2C Sensor Test ===
-I2C initialized at 100kbps
-
-Testing LM75 Temperature Sensor (Address: 0x48)
-Reading temperature...
-Temperature: 24.5 C
-Reading temperature...
-Temperature: 24.625 C
-
-Testing BH1750 Light Sensor (Address: 0x23)
-Configuring sensor...
-Reading light intensity...
-Light: 342 lux
-
-Testing VL53L0X Distance Sensor (Address: 0x29)
-Initializing sensor...
-Reading distance...
-Distance: 157 mm
-
-All sensors operational!
-\end{verbatim}
-
-\subsection{I2S Audio Playback Test}
-
-\begin{verbatim}
-=== I2S Audio Playback Test ===
-I2S initialized at 44.1kHz, 16-bit
-Generating 440Hz sine wave...
-Buffer filled: 512 samples
-
-Starting playback...
-Audio streaming...
-FIFO level: 75%
-FIFO level: 50%
-FIFO level: 25%
-Refilling buffer...
-FIFO level: 100%
-
-Playback running continuously.
-Audio output verified on oscilloscope and speaker.
-\end{verbatim}
-
-\subsection{Concurrent Operation Test}
-
-\begin{verbatim}
-=== I2C + I2S Concurrent Demo ===
-I2C initialized at 100kbps
-I2S initialized at 44.1kHz, 16-bit
-Audio playback started (440Hz tone)
-
-[00:00:01] Temperature: 24.5 C | Audio: Playing
-[00:00:02] Temperature: 24.625 C | Audio: Playing
-[00:00:03] Temperature: 24.5 C | Audio: Playing
-[00:00:04] Temperature: 24.75 C | Audio: Playing
-[00:00:05] Temperature: 24.625 C | Audio: Playing
-
-Concurrent operation successful!
-No interference detected between I2C and I2S.
-CPU overhead: ~15% (estimated)
-\end{verbatim}
-
-\section{Block Design Screenshot Description}
-
-Vivado IP Integrator Block Design terdiri dari komponen-komponen berikut:
-
-\begin{enumerate}
-\item \textbf{MicroBlaze V (microblaze\_riscv\_0)}
+\textbf{Catatan koneksi PCM5102A:}
 \begin{itemize}
-    \item 32-bit RISC-V processor core
-    \item Clock: 100 MHz
-    \item Instruction cache: 8 KB
-    \item Data cache: 8 KB
-\end{itemize}
-
-\item \textbf{AXI Interconnect (microblaze\_riscv\_0\_axi\_periph)}
-\begin{itemize}
-    \item 1 Master port (from MicroBlaze V)
-    \item 5 Slave ports (to peripherals)
-    \item Address decoding for peripheral access
-\end{itemize}
-
-\item \textbf{Local Memory}
-\begin{itemize}
-    \item DLMB/ILMB BRAM controllers
-    \item 64 KB Block RAM for program and data
-\end{itemize}
-
-\item \textbf{I2C Controller (i2c\_controller\_0)}
-\begin{itemize}
-    \item Custom IP core
-    \item Base address: 0x44A0\_0000
-    \item AXI4-Lite slave interface
-\end{itemize}
-
-\item \textbf{I2S Transmitter (i2s\_transmitter\_0)}
-\begin{itemize}
-    \item Custom IP core
-    \item Base address: 0x44A1\_0000
-    \item AXI4-Lite slave interface
-\end{itemize}
-
-\item \textbf{AXI UART Lite}
-\begin{itemize}
-    \item Base address: 0x4060\_0000
-    \item Baud rate: 115200
-\end{itemize}
-
-\item \textbf{AXI Timer}
-\begin{itemize}
-    \item Base address: 0x41C0\_0000
-    \item For timing and delay functions
-\end{itemize}
-
-\item \textbf{AXI Interrupt Controller}
-\begin{itemize}
-    \item Manages interrupts from all peripherals
-    \item Connected to MicroBlaze V interrupt input
-\end{itemize}
-
-\item \textbf{Clocking Wizard}
-\begin{itemize}
-    \item Input: 100 MHz from board
-    \item Output: 100 MHz for system clock
-    \item Locked signal for reset management
-\end{itemize}
-
-\item \textbf{Processor System Reset}
-\begin{itemize}
-    \item Generates synchronized reset signals
-    \item Reset sources: external reset, clock lock
-\end{itemize}
-\end{enumerate}
-
-\textbf{Connections:}
-\begin{itemize}
-\item All AXI4-Lite slave ports connected via AXI Interconnect
-\item All peripherals share common 100 MHz clock
-\item Synchronized reset distributed to all components
-\item Interrupt signals aggregated through AXI INTC to processor
-\item External I/O: I2C (SDA, SCL), I2S (BCLK, LRCLK, SD), UART (TX, RX)
+\item \textbf{FLT} $\to$ GND (filter \textit{normal phase}).
+\item \textbf{DEMP} $\to$ GND (\textit{de-emphasis} nonaktif).
+\item \textbf{XSMT} $\to$ VCC (3,3\,V; aktifkan keluaran analog).
+\item \textbf{VCC} (modul) $\to$ VCC 3,3\,V Pmod Basys3.
+\item \textbf{GND} (modul) $\to$ GND Pmod Basys3.
 \end{itemize}

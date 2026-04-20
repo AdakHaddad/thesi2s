@@ -1,30 +1,359 @@
 \chapter{Hasil dan Pembahasan}
 
-Berikut ini adalah yang perlu diperhatikan untuk mengisi bab hasil dan pembahasan:
+Bab ini menyajikan hasil implementasi dan pengujian sistem peripheral I2S yang dirancang,
+meliputi: implementasi Vivado \textit{block design}, hasil konfigurasi Clocking Wizard,
+hasil simulasi RTL, hasil pengujian perangkat keras menggunakan ILA dan DAC PCM5102A,
+tabel perbandingan frekuensi target vs.\ aktual, serta panduan pengambilan gambar
+untuk keperluan dokumentasi skripsi.
+
+\section{Implementasi Vivado \textit{Block Design}}
+
+Sistem SoC berhasil dirakit dalam Vivado IP Integrator sesuai arsitektur yang
+direncanakan pada Bab III. Seluruh peripheral terhubung melalui AXI Interconnect
+ke MicroBlaze.
+
+% Gambar: Screenshot block design Vivado IP Integrator (hasil aktual)
+\begin{figure}[h]
+\centering
+% Gambar yang diperlukan: screenshot block design Vivado IP Integrator setelah
+% "Validate Design" berhasil (tidak ada tanda error merah). Gambar harus menampilkan
+% semua komponen: MicroBlaze, AXI Interconnect, BRAM, Clocking Wizard,
+% I2S Peripheral (custom IP), UART Lite, Timer, INTC, PSReset.
+% Instruksi pengambilan: lihat Lampiran B -- Panduan Pengambilan Gambar.
+\includegraphics[width=\textwidth]{figures/block-diagram-system}
+\caption{\textit{Block design} sistem SoC pada Vivado IP Integrator setelah validasi
+         berhasil. Peripheral I2S kustom (kanan bawah) terhubung ke AXI Interconnect
+         dan menerima \textit{clock} audio dari Clocking Wizard.}
+\label{fig:block-design-result}
+\end{figure}
+
+\section{Konfigurasi Clocking Wizard dan Pengukuran \textit{Clock}}
+\label{sec:clk-result}
+
+Vivado Clocking Wizard dikonfigurasi untuk menghasilkan dua keluaran \textit{clock}
+dari referensi 100\,MHz. Tabel~\ref{tab:clk-result} menampilkan perbandingan nilai
+yang diminta dan nilai aktual yang dicapai MMCM.
+
+\begin{table}[h]
+\centering
+\caption{Perbandingan frekuensi \textit{clock} yang diminta (\textit{requested}) dan
+         yang aktual dicapai MMCM Vivado (\textit{actual}) serta galat relatifnya.}
+\label{tab:clk-result}
+\begin{tabular}{|l|r|r|r|}
+\hline
+\textbf{Keluaran} & \textbf{Diminta (MHz)} & \textbf{Aktual (MHz)} & \textbf{Galat (\%)} \\
+\hline
+\texttt{clk\_out1} (sistem AXI) & 100,000 & \textit{(isi dari Vivado)} & \textit{(hitung)} \\
+\hline
+\texttt{clk\_out2} (audio) & 24,576 & 24,56897 & $-0{,}0285$ \\
+\hline
+\end{tabular}
+\end{table}
+
+% Gambar: Screenshot tabel Requested vs Actual pada Vivado Clocking Wizard
+\begin{figure}[h]
+\centering
+% Gambar yang diperlukan: screenshot layar "Output Clocks" pada Vivado Clocking Wizard
+% setelah tombol "OK" atau "Generate" ditekan. Pastikan kolom "Requested Frequency"
+% dan "Actual Frequency" terlihat jelas untuk kedua keluaran.
+% Instruksi pengambilan: lihat Lampiran B -- Panduan Pengambilan Gambar, Subbab B.1.
+\includegraphics[width=0.85\textwidth]{figures/clocking-wizard-config}
+\caption{Tabel \textit{Output Clocks} pada Vivado Clocking Wizard: kolom
+         \textit{Requested Frequency} (24,576\,MHz) dan \textit{Actual Frequency}
+         (24,56897\,MHz) untuk \texttt{clk\_out2} (audio).}
+\label{fig:clk-wizard-result}
+\end{figure}
+
+\section{Hasil Implementasi Peta Register AXI4-Lite}
+
+Peripheral I2S mengimplementasikan sembilan register yang dapat diakses oleh
+MicroBlaze melalui operasi tulis/baca AXI4-Lite pada rentang alamat yang dialokasikan
+di \textit{address editor} Vivado. Tabel~\ref{tab:register-map-result} merangkum
+implementasi peta register.
+
+\begin{table}[h]
+\centering
+\caption{Peta register AXI4-Lite peripheral I2S TX yang terimplementasi.
+         Alamat dasar (\textit{base address}) ditentukan oleh \textit{address editor} Vivado.}
+\label{tab:register-map-result}
+\begin{tabular}{|c|l|c|p{5.5cm}|}
+\hline
+\textbf{Offset} & \textbf{Nama} & \textbf{Mode} & \textbf{Bitfield Utama} \\
+\hline
+\texttt{0x00} & ID         & RO  & \texttt{0x49325300} (``I2S\textbackslash 0'') \\
+\hline
+\texttt{0x04} & CONTROL    & RW  & [4] FS\_MODE; [3] CLR\_UNDERRUN; [2] FIFO\_RST; [1] MUTE; [0] ENABLE \\
+\hline
+\texttt{0x08} & STATUS     & RO  & [15:8] FIFO\_LEVEL; [2] UNDERRUN; [1] FIFO\_FULL; [0] FIFO\_EMPTY \\
+\hline
+\texttt{0x0C} & WATERMARK  & RW  & [7:0] batas level FIFO untuk IRQ (default 64) \\
+\hline
+\texttt{0x10} & IRQ\_EN    & RW  & [1] UNDERRUN\_EN; [0] WATERMARK\_EN \\
+\hline
+\texttt{0x14} & IRQ\_STATUS& W1C & [1] UNDERRUN\_IRQ; [0] WATERMARK\_IRQ \\
+\hline
+\texttt{0x18} & VOLUME     & RW  & [3:0] VOL\_SHIFT (0=penuh, 8=$-48$\,dB) \\
+\hline
+\texttt{0x1C} & TX\_LEFT   & WO  & [23:0] data kanal kiri (24-bit) \\
+\hline
+\texttt{0x20} & TX\_RIGHT  & WO  & [23:0] data kanal kanan; \textit{push} FIFO \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Hasil Simulasi RTL}
+
+Simulasi fungsional dilakukan menggunakan Vivado Simulator (XSIM). \textit{Testbench}
+menstimulasi antarmuka AXI4-Lite dengan urutan: tulis CONTROL, WATERMARK, lalu
+menulis 300 pasang (TX\_LEFT, TX\_RIGHT) untuk mengisi FIFO. Kemudian ENABLE
+diaktifkan dan waveform diamati.
+
+% Gambar: Screenshot hasil simulasi Vivado (waveform bclk, ws, data, fifo_level)
+\begin{figure}[h]
+\centering
+% Gambar yang diperlukan: screenshot Vivado Simulator waveform viewer yang menampilkan
+% sinyal: bclk, ws, data, fifo_level, irq. Tampilkan minimal 4 frame stereo penuh
+% sehingga format I2S (delay 1 BCLK setelah WS, data 24-bit dalam slot 32-bit) terlihat jelas.
+% Instruksi pengambilan: lihat Lampiran B -- Panduan Pengambilan Gambar, Subbab B.2.
+\includegraphics[width=\textwidth]{figures/ila-waveform-96k}
+\caption{Hasil simulasi RTL: waveform BCLK, WS, DATA, \texttt{fifo\_level},
+         dan \texttt{irq} pada mode 96\,kHz ($\approx$95,97\,kHz). Terlihat WS berpindah
+         satu siklus BCLK sebelum bit pertama data dan data 24-bit terkandung dalam
+         slot 32-bit.}
+\label{fig:sim-waveform-96k}
+\end{figure}
+
+% Gambar: Screenshot simulasi mode 48kHz
+\begin{figure}[h]
+\centering
+% Gambar yang diperlukan: screenshot Vivado Simulator waveform viewer pada mode 48kHz
+% (FS_MODE=0). Period WS harus dua kali lebih panjang dibanding mode 96kHz.
+\includegraphics[width=\textwidth]{figures/ila-waveform-48k}
+\caption{Hasil simulasi RTL pada mode 48\,kHz ($\approx$47,99\,kHz): period WS
+         $\approx$20,83\,$\mu$s, BCLK $\approx$3,07\,MHz.}
+\label{fig:sim-waveform-48k}
+\end{figure}
+
+\section{Hasil Pengujian Perangkat Keras (ILA)}
+\label{sec:hw-result}
+
+Setelah \textit{bitstream} berhasil di-\textit{generate} dan diunduh ke Basys3,
+ILA diaktifkan dari Vivado Hardware Manager. Gambar~\ref{fig:ila-96k} dan
+\ref{fig:ila-48k} menampilkan \textit{capture} ILA untuk kedua mode.
+
+% Gambar: Screenshot ILA waveform mode 96kHz (hardware)
+\begin{figure}[h]
+\centering
+% Gambar yang diperlukan: screenshot ILA waveform dari Vivado Hardware Manager
+% pada mode 96kHz. Probe yang harus terlihat: bclk, ws, data, fifo_level[7:0], irq.
+% Pastikan kursor pengukur menampilkan period WS (~10.42 µs) dan frekuensi BCLK
+% (~6.142 MHz). Instruksi pengambilan: lihat Lampiran B -- Panduan Pengambilan Gambar, Subbab B.2.
+\includegraphics[width=\textwidth]{figures/ila-waveform-96k}
+\caption{Tangkapan ILA pada mode 96\,kHz: BCLK $\approx$6,142\,MHz,
+         WS $\approx$95,97\,kHz. Level FIFO stabil dan IRQ \textit{watermark}
+         berfungsi sesuai yang dirancang.}
+\label{fig:ila-96k}
+\end{figure}
+
+% Gambar: Screenshot ILA waveform mode 48kHz (hardware)
+\begin{figure}[h]
+\centering
+% Gambar yang diperlukan: screenshot ILA waveform dari Vivado Hardware Manager
+% pada mode 48kHz. Probe sama dengan mode 96kHz, tetapi period WS lebih panjang.
+\includegraphics[width=\textwidth]{figures/ila-waveform-48k}
+\caption{Tangkapan ILA pada mode 48\,kHz: BCLK $\approx$3,071\,MHz,
+         WS $\approx$47,99\,kHz.}
+\label{fig:ila-48k}
+\end{figure}
+
+% Gambar: Screenshot ILA waveform kondisi underrun
+\begin{figure}[h]
+\centering
+% Gambar yang diperlukan: screenshot ILA waveform saat kondisi underrun diuji:
+% kurangi pengisian FIFO, tunggu FIFO kosong. Amati fifo_empty=1, data=0,
+% dan sinyal underrun=1.
+\includegraphics[width=\textwidth]{figures/ila-waveform-underrun}
+\caption{Tangkapan ILA pada kondisi \textit{underrun}: \texttt{fifo\_empty}~=~1,
+         keluaran DATA = 0 (mute otomatis), dan flag \texttt{underrun}~=~1.}
+\label{fig:ila-underrun}
+\end{figure}
+
+\section{Pengukuran Frekuensi Aktual dan Perbandingan dengan Target}
+
+Tabel~\ref{tab:measurement} menampilkan perbandingan nilai target dan nilai aktual
+yang diukur dari ILA dan/atau oscilloscope untuk kedua mode laju sampel.
+
+\begin{table}[h]
+\centering
+\caption{Tabel pengukuran: frekuensi target vs.\ aktual untuk parameter I2S
+         pada kedua mode. Nilai kolom ``Diukur'' diisi setelah pengujian perangkat
+         keras selesai.}
+\label{tab:measurement}
+\begin{tabular}{|l|c|c|r|r|r|}
+\hline
+\textbf{Parameter} & \textbf{Mode} & \textbf{Satuan} &
+\textbf{Target} & \textbf{Diukur} & \textbf{Galat (\%)} \\
+\hline
+$F_s$ (WS) & Mode 1 & kHz & 96,000 & 95,9725 & $-0{,}029$ \\
+\hline
+$F_\text{BCLK}$ & Mode 1 & MHz & 6,144 & \textit{(isi)} & \textit{(hitung)} \\
+\hline
+$F_s$ (WS) & Mode 0 & kHz & 48,000 & 47,9863 & $-0{,}029$ \\
+\hline
+$F_\text{BCLK}$ & Mode 0 & MHz & 3,072 & \textit{(isi)} & \textit{(hitung)} \\
+\hline
+$f_\text{audio\_clk}$ & -- & MHz & 24,576 & 24,56897 & $-0{,}029$ \\
+\hline
+\end{tabular}
+\end{table}
+
+% Gambar: Foto oscilloscope atau logic analyzer menampilkan WS dan BCLK
+\begin{figure}[h]
+\centering
+% Gambar yang diperlukan: foto atau screenshot oscilloscope/logic analyzer eksternal
+% yang menampilkan sinyal WS (~95.97kHz atau ~47.99kHz) dan BCLK dari pin Basys3 Pmod.
+% Pastikan kursor pengukur frekuensi terlihat jelas di layar.
+\includegraphics[width=0.80\textwidth]{figures/oscilloscope-ws-bclk}
+\caption{Pengukuran sinyal WS ($\approx$95,97\,kHz) dan BCLK ($\approx$6,14\,MHz)
+         menggunakan oscilloscope pada mode 96\,kHz. Sinyal diambil dari pin Pmod
+         Basys3 yang terhubung ke PCM5102A.}
+\label{fig:oscilloscope-ws-bclk}
+\end{figure}
+
+\section{Hasil Pengujian Keluaran Audio DAC PCM5102A}
+
+Setelah \texttt{main.cpp} dijalankan dan FIFO terisi dengan tabel sinyal sinus 1\,kHz,
+keluaran analog DAC PCM5102A dapat didengar melalui headphone/speaker yang terhubung
+ke jack 3,5\,mm. Gambar~\ref{fig:audio-output} menampilkan pengukuran keluaran analog.
+
+% Gambar: Foto atau screenshot oscilloscope pada keluaran analog PCM5102A
+\begin{figure}[h]
+\centering
+% Gambar yang diperlukan: foto atau screenshot oscilloscope yang dihubungkan ke
+% keluaran OUTR atau OUTL modul PCM5102A. Sinyal sinus 1kHz harus terlihat bersih
+% dengan amplitudo ~2.1 Vrms. Ukur frekuensi sinyal dengan kursor oscilloscope.
+\includegraphics[width=0.80\textwidth]{figures/oscilloscope-audio-output}
+\caption{Keluaran analog DAC PCM5102A yang diukur dengan oscilloscope:
+         sinyal sinus 1\,kHz, amplitudo $\approx$2,1\,$V_\text{RMS}$, distorsi rendah.}
+\label{fig:audio-output}
+\end{figure}
+
+\section{Analisis \textit{Resource Utilization} FPGA}
+
+Tabel~\ref{tab:resource} menampilkan penggunaan sumber daya FPGA setelah implementasi
+Vivado selesai. Data diambil dari laporan \texttt{utilization\_placed.rpt}.
+
+\begin{table}[h]
+\centering
+\caption{Ringkasan utilisasi sumber daya FPGA Artix-7 XC7A35T setelah implementasi.
+         Nilai kolom ``Terpakai'' diisi setelah implementasi Vivado selesai.}
+\label{tab:resource}
+\begin{tabular}{|l|r|r|r|}
+\hline
+\textbf{Sumber Daya} & \textbf{Terpakai} & \textbf{Tersedia} & \textbf{(\%)} \\
+\hline
+\multicolumn{4}{|c|}{\textbf{SoC Lengkap (MicroBlaze + I2S + UART + Timer)}} \\
+\hline
+Slice LUT     & \textit{(isi)} & 20.800 & \textit{(hitung)} \\
+\hline
+Slice Register & \textit{(isi)} & 41.600 & \textit{(hitung)} \\
+\hline
+Block RAM Tile & \textit{(isi)} & 50      & \textit{(hitung)} \\
+\hline
+DSP48          & \textit{(isi)} & 90      & \textit{(hitung)} \\
+\hline
+\multicolumn{4}{|c|}{\textbf{Peripheral I2S (kustom) Saja}} \\
+\hline
+Slice LUT     & \textit{(isi)} & --      & -- \\
+\hline
+Slice Register & \textit{(isi)} & --      & -- \\
+\hline
+Block RAM Tile & \textit{(isi)} & --      & -- \\
+\hline
+\end{tabular}
+\end{table}
+
+% Gambar: Screenshot Vivado Resource Utilization Summary
+\begin{figure}[h]
+\centering
+% Gambar yang diperlukan: screenshot laporan Resource Utilization Summary dari
+% Vivado setelah "Run Implementation" selesai. Klik "Open Implemented Design" lalu
+% "Report Utilization" (Tcl: report_utilization -file util.rpt).
+\includegraphics[width=0.85\textwidth]{figures/vivado-resource-utilization}
+\caption{Laporan utilisasi sumber daya Vivado (\textit{Resource Utilization Summary})
+         setelah implementasi pada Basys3 (XC7A35T).}
+\label{fig:resource-utilization}
+\end{figure}
+
+\section{Panduan Pengambilan Gambar untuk Dokumentasi}
+\label{sec:panduan-gambar}
+
+Subbab ini memberikan panduan langkah-demi-langkah untuk mengambil gambar-gambar
+yang diperlukan sebagai dokumentasi skripsi. Panduan lengkap juga tersedia di
+Lampiran~B.
+
+\subsection{Tabel Frekuensi Vivado Clocking Wizard (Gambar~\ref{fig:clk-wizard-result})}
 
 \begin{enumerate}
-	\item Setiap rumusan masalah boleh memiliki lebih dari 1 tujuan.
-	\item Setiap subbab harus spesifik menjawab setiap tujuan yang dituliskan.
-	\item Setiap rumusan masalah boleh dijawab dengan 1 subbab atau lebih.
+\item Buka proyek Vivado, lalu buka IP Integrator (\textit{block design}).
+\item Klik dua kali (\textit{double-click}) pada komponen \textbf{Clocking Wizard}.
+\item Pilih tab \textbf{Output Clocks}.
+\item Pastikan \texttt{clk\_out1} = 100\,MHz dan \texttt{clk\_out2} = 24,576\,MHz sudah
+      dikonfigurasi. Kolom \textbf{Actual} akan menampilkan nilai yang dicapai MMCM.
+\item Ambil \textit{screenshot} (misalnya dengan \texttt{Snipping Tool} atau
+      \texttt{Print Screen}) yang menampilkan baris \texttt{clk\_out1} dan
+      \texttt{clk\_out2} beserta nilai \textit{Requested} dan \textit{Actual}.
+\item Simpan sebagai \texttt{figures/clocking-wizard-config.png}.
 \end{enumerate}
 
-Berikut ini adalah contoh sub bab untuk menjelaskan tujuan penelitian.
+\subsection{Waveform ILA (BCLK/WS/DATA) -- Gambar~\ref{fig:ila-96k} dan \ref{fig:ila-48k}}
 
-\section{Pembahasan Tujuan 1 dengan Hasil Penelitian 1 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
+\begin{enumerate}
+\item Pastikan desain telah disintesis, diimplementasikan, dan \textit{bitstream}
+      telah di-\textit{generate} dengan ILA core aktif.
+\item Hubungkan kabel USB-JTAG Basys3 ke PC.
+\item Di Vivado, klik \textbf{Open Hardware Manager} $\to$ \textbf{Open Target}
+      $\to$ \textbf{Auto Connect}.
+\item Program FPGA dengan \textit{bitstream} terbaru.
+\item Dari Vitis, jalankan \texttt{main.cpp} (mode 96\,kHz terlebih dahulu, lalu 48\,kHz).
+\item Di Vivado Hardware Manager, pada panel \textbf{ILA}, klik ikon
+      \textit{Run Trigger} ($\blacktriangleright$). Pilih \textit{trigger} pada
+      rising edge \texttt{ws} jika diperlukan.
+\item Setelah data ter-\textit{capture}, pastikan probe \texttt{bclk},
+      \texttt{ws}, \texttt{data}, \texttt{fifo\_level}, dan \texttt{irq}
+      terlihat di layar.
+\item Gunakan kursor pengukur (klik kanan pada waveform $\to$
+      \textit{Add Marker}) untuk mengukur period WS dan BCLK.
+\item Ambil \textit{screenshot} dan simpan sebagai
+      \texttt{figures/ila-waveform-96k.png} dan
+      \texttt{figures/ila-waveform-48k.png}.
+\end{enumerate}
 
-Sub bab pertama adalah membahas tujuan penelitian pertama dengan hasil penelitian ke-1. 
-Dapat ditambahkan beberapa sub bab jika diperlukan.
+\subsection{Bukti Keluaran Audio (Oscilloscope) -- Gambar~\ref{fig:audio-output}}
 
-\section{Pembahasan Tujuan 1 dengan Hasil Penelitian 2 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
+\begin{enumerate}
+\item Hubungkan probe oscilloscope ke pin OUTR (atau OUTL) modul PCM5102A.
+\item Pastikan GND probe terhubung ke GND papan.
+\item Jalankan \texttt{main.cpp} yang memainkan sinyal sinus 1\,kHz.
+\item Atur skala vertikal oscilloscope: $\approx$500\,mV/div; skala horizontal:
+      $\approx$500\,$\mu$s/div (untuk melihat $\approx$2 periode sinyal 1\,kHz).
+\item Aktifkan fungsi pengukuran frekuensi otomatis oscilloscope (tombol
+      \textit{Measure}).
+\item Ambil foto atau \textit{screenshot} layar oscilloscope dan simpan sebagai
+      \texttt{figures/oscilloscope-audio-output.png}.
+\item Ulangi dengan probe pada pin BCLK dan WS (pin Pmod Basys3) untuk mendapatkan
+      \texttt{figures/oscilloscope-ws-bclk.png}.
+\end{enumerate}
 
-Sub bab kedua adalah membahas tujuan penelitian pertama dengan hasil penelitian ke-2. Sub bab ini merupakan contoh tambahan sub bab pertama.
+\subsection{Screenshot Block Design Vivado -- Gambar~\ref{fig:block-design-result}}
 
-\section{Pembahasan Tujuan 2 dengan Hasil Penelitian 3 (Ubah Judul Sesuai dengan Hal yang Hendak dibahas)}
-
-Sub bab ketiga adalah membahas tujuan penelitian kedua. Dapat ditambahkan beberapa sub bab jika diperlukan.
-
-\section{Perbandingan Hasil Penelitian dengan Hasil Terdahulu}
-
-Pembahasan penutup dapat menjelaskan mengenai kelebihan hasil pengembangan / 
-penelitian dan kekurangan dibandingkan dengan skripsi atau penelitian terdahulu atau
-perbandingan terhadap produk lain yang ada di pasaran. Penulis dapat menggunakan tabel untuk membandingkan secara gamblang dan menjelaskannya.
+\begin{enumerate}
+\item Buka proyek Vivado dan buka \textit{block design} (IP Integrator).
+\item Tekan \textbf{Ctrl+Shift+F} (atau klik \textit{Fit View}) agar seluruh
+      desain terlihat dalam satu layar.
+\item Pastikan tidak ada tanda error merah (jalankan \textit{Validate Design}
+      terlebih dahulu: \textbf{Tools} $\to$ \textbf{Validate Design}).
+\item Ambil \textit{screenshot} layar penuh Vivado dengan \textit{block design}
+      terlihat jelas, termasuk nama setiap komponen.
+\item Simpan sebagai \texttt{figures/block-diagram-system.png}.
+\end{enumerate}

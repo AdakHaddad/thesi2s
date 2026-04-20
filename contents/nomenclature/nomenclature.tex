@@ -1,25 +1,35 @@
-\begin{center}
-	\textbf{[SAMPLE]}
-\end{center}
-
 \begin{tabular}{llp{3in}}
-	$b$	& \hspace{1.5cm} = &	bias \\
-	$K(x_i,x_j)$ & \hspace{1.5cm} = & fungsi kernel \\ 
-	$y$	& \hspace{1.5cm} = & kelas keluaran \\
-	$C$	&  \hspace{1.5cm} = & parameter untuk mengendalaikan besarnya pertukaran antara penalti variabel slack dengan ukuran margin \\
-	$L_D$	& \hspace{1.5cm} = & persamaan Lagrange dual \\
-	$L_P$	& \hspace{1.5cm}  = &	persamaan Lagrange primal \\
-	$\textbf{w}$ &  \hspace{1.5cm} = &	vektor bobot \\
-	$\textbf{x}$ &  \hspace{1.5cm} = &	vektor masukan\\
-		ANFIS &  \hspace{1.5cm} = &	Adaptive Network Fuzzy Inference System\\
-		ANSI	&  \hspace{1.5cm} = &	American National Standards Institute\\
-		DAG	&  \hspace{1.5cm} = & Directed Acyclic Graph\\
-		DDAG &  \hspace{1.5cm} = & Decision Directed Acyclic Graph\\
-		HIS	&  \hspace{1.5cm} = & Hue Saturation Intensity\\
-		QP	&  \hspace{1.5cm} = & Quadratic Programming\\
-		RBF	&  \hspace{1.5cm} = &	Radial Basis Function\\
-		RGB	&  \hspace{1.5cm} = & Red Green Blue\\
-		SV	&  \hspace{1.5cm} = &	Support Vector\\
-		SVM	&  \hspace{1.5cm} = & Support Vector Machines\\
-		
+$F_s$        & \hspace{1.5cm} = & laju sampel audio (\textit{sample rate}) dalam Hz \\
+$F_\text{BCLK}$ & \hspace{1.5cm} = & frekuensi sinyal BCLK (\textit{Bit Clock}) dalam Hz \\
+$f_\text{audio}$ & \hspace{1.5cm} = & frekuensi \textit{clock} audio dari MMCM ($\approx$24,57\,MHz) \\
+$D$          & \hspace{1.5cm} = & faktor pembagi (\textit{divider}) BCLK dari \textit{clock} audio \\
+$N_\text{slot}$ & \hspace{1.5cm} = & jumlah bit per slot kanal I2S (32-bit pada penelitian ini) \\
+AXI4-Lite    & \hspace{1.5cm} = & \textit{Advanced eXtensible Interface 4 Lite} -- protokol bus on-chip ARM \\
+BCLK         & \hspace{1.5cm} = & \textit{Bit Clock} -- sinyal klock serial I2S \\
+BRAM         & \hspace{1.5cm} = & \textit{Block RAM} -- memori blok pada FPGA Xilinx \\
+BSP          & \hspace{1.5cm} = & \textit{Board Support Package} -- paket dukungan perangkat keras Vitis \\
+DAC          & \hspace{1.5cm} = & \textit{Digital-to-Analog Converter} -- konverter digital-ke-analog \\
+DSP          & \hspace{1.5cm} = & \textit{Digital Signal Processing} \\
+FIFO         & \hspace{1.5cm} = & \textit{First-In First-Out} -- struktur data antrean \\
+FPGA         & \hspace{1.5cm} = & \textit{Field-Programmable Gate Array} \\
+HDL          & \hspace{1.5cm} = & \textit{Hardware Description Language} \\
+I2S          & \hspace{1.5cm} = & \textit{Inter-IC Sound} -- protokol bus audio serial \\
+ILA          & \hspace{1.5cm} = & \textit{Integrated Logic Analyzer} -- penganalisis logika internal Vivado \\
+IP           & \hspace{1.5cm} = & \textit{Intellectual Property} (core/blok IP pada FPGA) \\
+IRQ          & \hspace{1.5cm} = & \textit{Interrupt Request} -- permintaan interupsi \\
+ISR          & \hspace{1.5cm} = & \textit{Interrupt Service Routine} -- rutin layanan interupsi \\
+JTAG         & \hspace{1.5cm} = & \textit{Joint Test Action Group} -- antarmuka pemrograman/\textit{debugging} \\
+LRCLK        & \hspace{1.5cm} = & \textit{Left-Right Clock} -- nama lain untuk sinyal WS pada I2S \\
+LSB          & \hspace{1.5cm} = & \textit{Least Significant Bit} \\
+LUT          & \hspace{1.5cm} = & \textit{Look-Up Table} -- elemen logika dasar FPGA \\
+MMCM         & \hspace{1.5cm} = & \textit{Mixed-Mode Clock Manager} -- manajer klock FPGA Xilinx \\
+MSB          & \hspace{1.5cm} = & \textit{Most Significant Bit} \\
+PCM          & \hspace{1.5cm} = & \textit{Pulse Code Modulation} \\
+Pmod         & \hspace{1.5cm} = & \textit{Peripheral Module} -- konektor ekspansi pada papan Digilent \\
+RTL          & \hspace{1.5cm} = & \textit{Register-Transfer Level} -- level abstraksi desain HDL \\
+SNR          & \hspace{1.5cm} = & \textit{Signal-to-Noise Ratio} -- rasio sinyal terhadap derau \\
+SoC          & \hspace{1.5cm} = & \textit{System-on-Chip} \\
+TX           & \hspace{1.5cm} = & \textit{Transmitter} / transmisi \\
+UART         & \hspace{1.5cm} = & \textit{Universal Asynchronous Receiver-Transmitter} \\
+WS           & \hspace{1.5cm} = & \textit{Word Select} -- sinyal pemilih kanal (kiri/kanan) pada I2S \\
 \end{tabular}

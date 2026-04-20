@@ -1,0 +1,154 @@
+\chapter*{LAMPIRAN}
+
+\section{Panduan Pengambilan Gambar untuk Dokumentasi Skripsi}
+\label{app:panduan-gambar}
+
+Lampiran ini memberikan panduan langkah-demi-langkah untuk mengambil gambar-gambar
+yang diperlukan sebagai bukti pengujian pada skripsi ini. Setiap subbab berkorespondensi
+dengan gambar tertentu yang digunakan dalam Bab III dan Bab IV.
+
+\subsection{Tabel Frekuensi Vivado Clocking Wizard (\textit{Requested vs Actual})}
+\label{app:panduan-clkwiz}
+
+\textbf{Tujuan:} Mendokumentasikan bahwa MMCM Vivado dikonfigurasi dengan target
+24,576\,MHz dan nilai aktual yang dicapai adalah 24,56897\,MHz.
+
+\textbf{Langkah-langkah:}
+\begin{enumerate}
+\item Buka proyek Vivado dan klik \textbf{Open Block Design} pada panel \textit{Flow Navigator}.
+\item Pada kanvas \textit{block design}, klik dua kali (\textit{double-click}) pada komponen
+      \textbf{Clocking Wizard} untuk membuka jendela konfigurasinya.
+\item Pilih tab \textbf{Output Clocks} di bagian atas jendela.
+\item Pastikan konfigurasi sebagai berikut:
+      \begin{itemize}
+      \item \texttt{clk\_out1}: diminta = 100,000\,MHz
+      \item \texttt{clk\_out2}: diminta = 24,576\,MHz
+      \end{itemize}
+\item Kolom \textbf{Actual} menampilkan nilai yang dapat dicapai MMCM. Pastikan nilai
+      \texttt{clk\_out2} aktual terbaca \textbf{24,56897\,MHz} (atau nilai terdekat yang
+      dilaporkan Vivado).
+\item Ambil \textit{screenshot} seluruh jendela Clocking Wizard menggunakan
+      \texttt{Snipping Tool} (Windows) atau \texttt{Shift+Ctrl+PrtScn} (Linux).
+      Pastikan baris \texttt{clk\_out1} dan \texttt{clk\_out2} beserta kolom
+      \textit{Requested} dan \textit{Actual} terlihat jelas.
+\item Simpan gambar sebagai \texttt{figures/clocking-wizard-config.png} di direktori
+      proyek LaTeX.
+\item Klik \textbf{Cancel} (jangan \textit{OK}) jika tidak ada perubahan yang perlu disimpan.
+\end{enumerate}
+
+\textbf{Catatan:} Jika tombol \textit{OK} atau \textit{Generate} sudah pernah ditekan
+sebelumnya, nilai \textit{Actual} sudah tetap. Tidak perlu melakukan \textit{re-generate}
+hanya untuk mengambil screenshot.
+
+\subsection{ILA Waveform untuk BCLK, WS, dan DATA}
+\label{app:panduan-ila}
+
+\textbf{Tujuan:} Mendokumentasikan sinyal I2S yang dihasilkan peripheral pada perangkat
+keras nyata (Basys3) menggunakan ILA (Integrated Logic Analyzer) bawaan Vivado.
+
+\textbf{Prasyarat:}
+\begin{itemize}
+\item \textit{Bitstream} sudah di-\textit{generate} dengan ILA core yang aktif (probe:
+      \texttt{bclk}, \texttt{ws}, \texttt{data}, \texttt{fifo\_level[7:0]}, \texttt{irq},
+      \texttt{underrun}).
+\item Kabel USB-JTAG (Basys3) terhubung ke PC.
+\item Aplikasi \texttt{main.cpp} sudah dikompilasi di Vitis.
+\end{itemize}
+
+\textbf{Langkah-langkah:}
+\begin{enumerate}
+\item Di Vivado, klik \textbf{Open Hardware Manager} (panel \textit{Flow Navigator}).
+\item Klik \textbf{Open Target} $\to$ \textbf{Auto Connect}. Tunggu koneksi berhasil.
+\item Klik \textbf{Program Device} dan pilih file \textit{bitstream} (.bit).
+      Klik \textbf{Program}.
+\item Di Vitis, jalankan aplikasi \texttt{main.cpp} dengan klik \textbf{Run As} $\to$
+      \textbf{Launch Hardware (Single Application Debug)}.
+\item Kembali ke Vivado Hardware Manager. Panel \textbf{ILA} akan terlihat di bagian bawah.
+\item Pada panel ILA, klik ikon \textbf{Run Trigger} ($\blacktriangleright|$) untuk
+      memulai \textit{capture}. Jika diperlukan, atur \textit{trigger condition}:
+      \textit{TRIG\_IN} = rising edge \texttt{ws}, \textit{Trigger Position} = 512.
+\item Setelah data ter-\textit{capture} (lampu status hijau), amati waveform di panel.
+\item Untuk mengukur frekuensi:
+      \begin{itemize}
+      \item Klik kanan pada waveform \texttt{ws} $\to$ \textbf{Add Marker at Cursor}.
+      \item Tandai dua rising edge WS yang berurutan.
+      \item Baca nilai period (dalam ns) pada status bar bawah; hitung
+            $F_s = 1 / \text{period}$.
+      \end{itemize}
+\item Ambil \textit{screenshot} yang menampilkan probe \texttt{bclk}, \texttt{ws},
+      \texttt{data}, \texttt{fifo\_level}, dan \texttt{irq} dengan minimal 4 frame
+      stereo terlihat jelas. Simpan sebagai:
+      \begin{itemize}
+      \item Mode 96\,kHz: \texttt{figures/ila-waveform-96k.png}
+      \item Mode 48\,kHz: \texttt{figures/ila-waveform-48k.png}
+      \end{itemize}
+\item Untuk mengambil gambar kondisi \textit{underrun}: hentikan sementara pengisian
+      FIFO di \texttt{main.cpp} (komentari pemanggilan ISR atau turunkan frekuensi
+      pengisian), tunggu FIFO kosong, lalu amati flag \texttt{underrun} = 1 dan
+      DATA = 0. Simpan sebagai \texttt{figures/ila-waveform-underrun.png}.
+\end{enumerate}
+
+\subsection{Bukti Oscilloscope atau Keluaran Audio}
+\label{app:panduan-scope}
+
+\textbf{Tujuan:} Mendokumentasikan sinyal fisik di luar FPGA: sinyal digital I2S pada
+pin Pmod Basys3, dan sinyal analog keluaran DAC PCM5102A.
+
+\textbf{Peralatan yang diperlukan:}
+\begin{itemize}
+\item Oscilloscope dengan dua kanal (atau lebih).
+\item Probe oscilloscope (BNC atau kabel crocodile).
+\item Modul PCM5102A terhubung ke Pmod Basys3.
+\item Headphone atau speaker dengan jack 3,5\,mm.
+\end{itemize}
+
+\textbf{Pengambilan gambar sinyal digital (BCLK dan WS):}
+\begin{enumerate}
+\item Hubungkan probe Ch1 oscilloscope ke pin \textbf{BCLK} (Pmod Basys3).
+\item Hubungkan probe Ch2 oscilloscope ke pin \textbf{WS} (Pmod Basys3).
+\item Set GND probe ke pin GND Pmod.
+\item Jalankan \texttt{main.cpp} pada Vitis.
+\item Atur \textit{timebase} oscilloscope: untuk mode 96\,kHz, gunakan
+      $\approx$5\,$\mu$s/div (untuk melihat beberapa period WS).
+\item Aktifkan pengukuran frekuensi otomatis (\textit{Measure} $\to$ \textit{Freq})
+      untuk Ch1 (BCLK) dan Ch2 (WS).
+\item Ambil foto/screenshot layar oscilloscope yang menampilkan kedua sinyal beserta
+      nilai frekuensi yang terukur. Simpan sebagai \texttt{figures/oscilloscope-ws-bclk.png}.
+\end{enumerate}
+
+\textbf{Pengambilan gambar sinyal analog (keluaran audio PCM5102A):}
+\begin{enumerate}
+\item Hubungkan probe Ch1 oscilloscope ke pin \textbf{OUTR} (atau \textbf{OUTL})
+      pada modul PCM5102A.
+\item Set GND probe ke GND modul PCM5102A.
+\item Pastikan \texttt{main.cpp} sedang memainkan sinyal sinus 1\,kHz.
+\item Atur \textit{timebase}: $\approx$500\,$\mu$s/div; skala vertikal:
+      $\approx$1\,V/div.
+\item Aktifkan pengukuran frekuensi dan amplitudo (\textit{Measure} $\to$ \textit{Freq},
+      \textit{Pk-Pk} atau \textit{RMS}).
+\item Ambil foto/screenshot dan simpan sebagai \texttt{figures/oscilloscope-audio-output.png}.
+\item Sambungkan headphone/speaker ke jack 3,5\,mm modul PCM5102A dan dengarkan.
+      Sinyal sinus 1\,kHz harus terdengar sebagai nada tunggal yang bersih tanpa
+      distorsi yang terdengar.
+\end{enumerate}
+
+\subsection{Screenshot Block Design Vivado}
+\label{app:panduan-blockdesign}
+
+\textbf{Tujuan:} Mendokumentasikan arsitektur SoC secara visual dari Vivado IP Integrator.
+
+\textbf{Langkah-langkah:}
+\begin{enumerate}
+\item Buka proyek Vivado dan klik \textbf{Open Block Design}.
+\item Jalankan \textbf{Validate Design} (menu \textbf{Tools} $\to$ \textbf{Validate Design}
+      atau tekan \textbf{F6}) dan pastikan tidak ada \textit{error} (hanya \textit{warning}
+      minor yang dapat diterima).
+\item Tekan \textbf{Ctrl+Shift+F} atau klik ikon \textbf{Fit View} (ikon kaca pembesar
+      dengan tanda ``+'') di \textit{toolbar} untuk menampilkan seluruh desain dalam
+      satu layar.
+\item Pastikan semua nama komponen terlihat jelas. Jika perlu, perbesar resolusi tampilan
+      Vivado atau gunakan mode \textit{fullscreen}.
+\item Ambil \textit{screenshot} dengan \texttt{Snipping Tool}/\texttt{PrtScn} yang
+      mencakup seluruh kanvas \textit{block design} beserta nama-nama komponen.
+\item Simpan sebagai \texttt{figures/block-diagram-system.png}.
+\end{enumerate}
