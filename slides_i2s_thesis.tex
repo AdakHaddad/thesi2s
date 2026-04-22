@@ -1,0 +1,234 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+\usefonttheme{professionalfonts}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[indonesian]{babel}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{array}
+
+\title{Perancangan IP I2S TX AXI4-Lite pada SoC MicroBlaze V}
+\subtitle{Implementasi pada FPGA Basys3 dengan DAC PCM5102A}
+\author{Nama Mahasiswa \\ NIM}
+\institute{Departemen Teknik Elektro dan Teknologi Informasi\\Universitas Gadjah Mada}
+\date{April 2026}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline Presentasi}
+  \tableofcontents
+\end{frame}
+
+\section{Pendahuluan}
+
+\begin{frame}{Latar Belakang}
+  \begin{itemize}
+    \item Kebutuhan sistem embedded audio meningkat, sehingga dibutuhkan antarmuka serial yang stabil dan terukur.
+    \item I2S dipilih untuk jalur audio digital, sedangkan AXI4-Lite digunakan untuk kontrol register dari prosesor.
+    \item Penelitian berfokus pada IP custom \textbf{I2S TX} berbasis Verilog pada SoC \textbf{MicroBlaze V}.
+    \item Implementasi target: \textbf{Basys3} dengan keluaran ke DAC \textbf{PCM5102A}.
+    \item Nilai tambah: dukungan \textbf{FIFO + watermark interrupt} untuk menjaga playback tetap kontinu.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Rumusan Masalah}
+  \begin{enumerate}
+    \item Bagaimana merancang IP \textbf{I2S TX} dengan antarmuka \textbf{AXI4-Lite} agar dapat diakses melalui register memory-mapped?
+    \item Bagaimana mendukung dua mode frekuensi sampling (sekitar 48 kHz dan 96 kHz) dari satu \texttt{audio\_clk}?
+    \item Bagaimana menerapkan \textbf{FIFO TX} dan \textbf{interupsi watermark} untuk menekan underrun dan beban CPU?
+    \item Bagaimana memverifikasi fungsionalitas dan timing melalui ILA, pengukuran frekuensi, serta uji audio PCM5102A?
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Tujuan dan Batasan}
+  \textbf{Tujuan utama}
+  \begin{itemize}
+    \item Merancang IP I2S TX stereo 24-bit (slot 32-bit) dengan kontrol register AXI4-Lite.
+    \item Mengintegrasikan IP ke Vivado Block Design dan mengoperasikan playback dari aplikasi Vitis.
+    \item Memvalidasi sistem pada hardware nyata dengan ILA dan keluaran audio PCM5102A.
+  \end{itemize}
+
+  \vspace{0.5em}
+  \textbf{Batasan penelitian}
+  \begin{itemize}
+    \item TX-only, format Philips I2S, bare-metal, tanpa DMA dan tanpa Linux.
+    \item Platform uji: Basys3 + PCM5102A dengan metode programmed I/O dan ISR refill.
+  \end{itemize}
+\end{frame}
+
+\section{Dasar Teori}
+
+\begin{frame}{Ringkasan Dasar Teori}
+  \begin{itemize}
+    \item \textbf{I2S}: tiga sinyal utama (BCLK, WS/LRCK, DATA), data serial MSB-first.
+    \item \textbf{AXI4-Lite}: akses memory-mapped untuk konfigurasi dan pemantauan status peripheral.
+    \item \textbf{FIFO TX}: buffer antara domain tulis CPU dan domain serialisasi audio.
+    \item \textbf{Watermark IRQ}: memicu pengisian ulang data sebelum FIFO kosong (underrun).
+    \item \textbf{Clocking MMCM}: nilai \textit{requested} dan \textit{actual} memengaruhi $F_s$ terukur.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Relasi Clock I2S}
+  Untuk format stereo 32-bit per kanal:
+  \[
+    N_{bits/frame} = 64
+  \]
+  \[
+    F_s = \frac{f_{BCLK}}{64}
+  \]
+
+  \vspace{0.5em}
+  \begin{itemize}
+    \item Mode 1: pembagi untuk target sekitar 48 kHz.
+    \item Mode 2: pembagi untuk target sekitar 96 kHz.
+    \item Nilai aktual mengikuti hasil Clocking Wizard (requested vs actual).
+  \end{itemize}
+\end{frame}
+
+\section{Perancangan Sistem}
+
+\begin{frame}{Arsitektur Sistem}
+  \begin{columns}[T]
+    \column{0.58\textwidth}
+      \begin{itemize}
+        \item MicroBlaze V sebagai AXI master.
+        \item AXI interconnect menuju IP I2S TX.
+        \item Clocking Wizard menyediakan \texttt{audio\_clk}.
+        \item IRQ dari IP dapat dihubungkan ke AXI INTC.
+        \item Output I2S menuju PCM5102A.
+      \end{itemize}
+    \column{0.42\textwidth}
+      \IfFileExists{contents/figures/block-diagram-sistem-i2s-axi.pdf}{%
+        \includegraphics[width=\linewidth]{contents/figures/block-diagram-sistem-i2s-axi.pdf}%
+      }{%
+        \fbox{\parbox{0.95\linewidth}{\centering Placeholder gambar arsitektur sistem}}%
+      }
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Desain Internal IP I2S TX}
+  \begin{itemize}
+    \item Blok utama: AXI register bank, FIFO TX, clock divider, serializer I2S, interrupt logic.
+    \item Mekanisme push frame: tulis \texttt{TX\_LEFT} lalu \texttt{TX\_RIGHT}.
+    \item Status memantau level FIFO, flag empty/full, dan kondisi underrun.
+  \end{itemize}
+
+  \vspace{0.5em}
+  \IfFileExists{contents/figures/block-diagram-ip-i2s-tx-intern.pdf}{%
+    \centering\includegraphics[width=0.84\textwidth]{contents/figures/block-diagram-ip-i2s-tx-intern.pdf}%
+  }{%
+    \centering\fbox{\parbox{0.84\textwidth}{\centering Placeholder gambar blok internal IP}}
+  }
+\end{frame}
+
+\begin{frame}{Ringkasan Register Map}
+  \small
+  \begin{tabular}{>{\ttfamily}p{1.3cm} p{1.2cm} p{7.2cm}}
+    \toprule
+    Offset & Akses & Fungsi \\
+    \midrule
+    0x00 & RO & ID/versi IP \\
+    0x04 & RW & CONTROL: enable, mute, mode sampling, reset FIFO \\
+    0x08 & RO & STATUS: level FIFO, empty/full, underrun \\
+    0x0C & RW & WATERMARK level \\
+    0x10 & RW & IRQ\_EN \\
+    0x14 & W1C & IRQ\_STATUS \\
+    0x1C & WO & TX\_LEFT (24-bit data) \\
+    0x20 & WO & TX\_RIGHT (push frame stereo) \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\section{Implementasi dan Pengujian}
+
+\begin{frame}{Implementasi di Vivado dan Vitis}
+  \begin{itemize}
+    \item RTL IP dikembangkan sebagai custom peripheral AXI4-Lite (register, FIFO, serializer, IRQ).
+    \item Integrasi pada Vivado Block Design: MicroBlaze V, BRAM, Clocking Wizard, AXI interconnect, I2S IP.
+    \item Alur aplikasi Vitis:
+      \begin{itemize}
+        \item inisialisasi register,
+        \item prefill FIFO,
+        \item refill data via ISR watermark.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Metodologi Pengujian}
+  \begin{itemize}
+    \item Verifikasi bentuk sinyal I2S: BCLK, LRCK/WS, dan DATA pada satu frame stereo.
+    \item ILA untuk observasi internal: level FIFO, flag underrun, dan event interrupt.
+    \item Pengukuran frekuensi clock aktual dan estimasi $F_s$ untuk dua mode sampling.
+    \item Uji audio pada PCM5102A menggunakan sinyal uji (misal sine 1 kHz).
+  \end{itemize}
+
+  \vspace{0.5em}
+  \IfFileExists{contents/figures/ila-bclk-ws-data.png}{%
+    \centering\includegraphics[width=0.80\textwidth]{contents/figures/ila-bclk-ws-data.png}%
+  }{%
+    \centering\fbox{\parbox{0.80\textwidth}{\centering Placeholder tangkapan ILA BCLK/WS/DATA}}
+  }
+\end{frame}
+
+\begin{frame}{Ringkasan Hasil (Isi Nilai Pengukuran)}
+  \small
+  \begin{tabular}{lcc}
+    \toprule
+    Parameter & Mode 48 kHz & Mode 96 kHz \\
+    \midrule
+    $f_{audio\_clk}$ requested & -- MHz & -- MHz \\
+    $f_{audio\_clk}$ aktual & -- MHz & -- MHz \\
+    $f_{BCLK}$ terukur & -- MHz & -- MHz \\
+    $F_s$ terukur & -- kHz & -- kHz \\
+    Error terhadap target & -- \% & -- \% \\
+    Underrun saat uji & -- & -- \\
+    IRQ refill rata-rata & -- Hz & -- Hz \\
+    Utilisasi LUT/FF/BRAM & -- & -- \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Keterkaitan Hasil terhadap Tujuan}
+  \begin{itemize}
+    \item \textbf{Tujuan 1 (IP AXI4-Lite)}: dibuktikan oleh register map dan operasi tulis/baca register.
+    \item \textbf{Tujuan 2 (dua mode sampling)}: dibuktikan oleh pengukuran $f_{BCLK}$ dan $F_s$ pada dua mode.
+    \item \textbf{Tujuan 3 (stabilitas playback)}: dibuktikan oleh perilaku FIFO, IRQ watermark, dan minimnya underrun.
+    \item \textbf{Tujuan 4 (validasi hardware)}: dibuktikan melalui ILA dan uji dengar PCM5102A.
+  \end{itemize}
+\end{frame}
+
+\section{Penutup}
+
+\begin{frame}{Kesimpulan}
+  \begin{itemize}
+    \item IP I2S TX AXI4-Lite berhasil dirancang dan terintegrasi pada SoC MicroBlaze V di Basys3.
+    \item Dua mode sampling berhasil diimplementasikan dari satu sumber \texttt{audio\_clk}.
+    \item Mekanisme FIFO dan watermark interrupt efektif menjaga kontinuitas aliran data audio.
+    \item Validasi fungsional dan timing dilakukan melalui ILA serta uji keluaran PCM5102A.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Saran Pengembangan}
+  \begin{itemize}
+    \item Integrasi DMA untuk mengurangi beban CPU.
+    \item Menambah dukungan mode RX atau full-duplex.
+    \item Menambah variasi format audio dan frekuensi sampling.
+    \item Integrasi dengan Linux/ASoC untuk skenario aplikasi lanjutan.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \centering
+  \Large Terima kasih
+\end{frame}
+
+\end{document}

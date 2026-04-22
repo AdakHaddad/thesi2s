@@ -27,27 +27,64 @@ Bagian ini merangkum \textbf{perancangan fungsional} IP yang menjadi inti skrips
 \end{figure}
 
 \subsection{Register map (target implementasi)}
-Tabel \ref{tab:ch3-regmap} merangkum offset register word-aligned. Akses \textbf{W1C} = tulis-1-untuk-\textit{clear}; \textbf{W1P} = pulsa tulis satu siklus (sesuai implementasi).
+Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang dipakai pada implementasi final. Fokus desain adalah tiga register utama untuk firmware: \texttt{DATA\_LEFT}, \texttt{DATA\_RIGHT}, dan \texttt{CONTROL}. Satu word tambahan \texttt{RESERVED} dipertahankan untuk ekspansi di masa depan.
 
 \begin{table}[htbp]
-	\centering
-	\caption{Ringkasan register IP I2S TX (target).}
-	\label{tab:ch3-regmap}
-	\begin{tabular}{|l|l|p{6.5cm}|}
-		\hline
-		\textbf{Offset} & \textbf{Akses} & \textbf{Keterangan} \\
-		\hline
-		\texttt{0x00} & RO & \texttt{ID} / versi \\
-		\texttt{0x04} & RW & \texttt{CONTROL}: enable, mute, \texttt{FS\_MODE}, reset FIFO, dsb. \\
-		\texttt{0x08} & RO & \texttt{STATUS}: level FIFO, empty/full, underrun \\
-		\texttt{0x0C} & RW & \texttt{WATERMARK} \\
-		\texttt{0x10} & RW & \texttt{IRQ\_EN} \\
-		\texttt{0x14} & RW1C & \texttt{IRQ\_STATUS} \\
-		\texttt{0x1C} & WO & \texttt{TX\_LEFT} (24-bit) \\
-		\texttt{0x20} & WO & \texttt{TX\_RIGHT}: tulis meng-\textit{push} satu frame stereo \\
-		\hline
-	\end{tabular}
+\centering
+\caption{Register map IP I2S AXI4-Lite (implementasi final).}
+\label{tab:ch3-regmap}
+\begin{tabular}{|l|l|p{6.3cm}|p{3.4cm}|}
+\hline
+	extbf{Offset} & \textbf{Nama Register} & \textbf{Fungsi} & \textbf{Packing / Catatan} \\
+\hline
+	exttt{0x00} & \texttt{DATA\_LEFT} & Sampel audio kanal kiri & \texttt{[SAMPLE\_WIDTH-1:0]} berisi data sampel kiri, sisanya 0 \\
+	exttt{0x04} & \texttt{DATA\_RIGHT} & Sampel audio kanal kanan & \texttt{[SAMPLE\_WIDTH-1:0]} berisi data sampel kanan, sisanya 0 \\
+	exttt{0x08} & \texttt{CONTROL} & Enable, mute, mode sampling, dan lebar sampel & Lihat Tabel \ref{tab:ch3-control-bits} \\
+	exttt{0x0C} & \texttt{RESERVED} & Cadangan untuk ekspansi register di masa depan & Tidak digunakan pada versi ini \\
+\hline
+\end{tabular}
 \end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Bitfield register \texttt{CONTROL}.}
+\label{tab:ch3-control-bits}
+\begin{tabular}{|c|l|c|p{8.2cm}|}
+\hline
+	extbf{Bit(s)} & \textbf{Field} & \textbf{Default} & \textbf{Fungsi / Keterangan} \\
+\hline
+	exttt{0} & \texttt{ENABLE} & 0 & 1 = output aktif, 0 = output nonaktif \\
+	exttt{1} & \texttt{MUTE} & 0 & 1 = data audio dipaksa nol (mute) \\
+	exttt{2} & \texttt{FS\_MODE} & 0 & 0/1 = memilih mode frekuensi sampling keluarga cepat / lambat \\
+	exttt{3} & \texttt{FS\_FAMILY} & 0 & 0 = keluarga 48/96 kHz; 1 = keluarga 44.1/88.2 kHz \\
+	exttt{7:4} & \texttt{RESERVED} & 0 & Cadangan untuk ekstensi berikutnya \\
+	exttt{12:8} & \texttt{SAMPLE\_WIDTH} & 24 & Lebar sampel aktual per kanal, rentang 1--32 bit \\
+	exttt{31:13} & \texttt{RESERVED} & 0 & Cadangan untuk perluasan kontrol di masa depan \\
+\hline
+\end{tabular}
+\end{table}
+
+\noindent\textbf{Aturan packing data:}
+\begin{itemize}
+\item \texttt{DATA\_LEFT}: \texttt{[SAMPLE\_WIDTH-1:0]} berisi sampel kiri, \texttt{[31:SAMPLE\_WIDTH]} bernilai 0.
+\item \texttt{DATA\_RIGHT}: \texttt{[SAMPLE\_WIDTH-1:0]} berisi sampel kanan, \texttt{[31:SAMPLE\_WIDTH]} bernilai 0.
+\item Firmware menulis pasangan data kiri/kanan sebelum mengaktifkan \texttt{ENABLE}.
+\item Jika \texttt{MUTE=1}, keluaran data dipaksa nol meskipun register data terisi.
+\end{itemize}
+
+\noindent\textbf{Contoh nilai \texttt{CONTROL}:}
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+	extbf{ENABLE} & \textbf{MUTE} & \textbf{FS\_MODE} & \textbf{FS\_FAMILY} & \textbf{SAMPLE\_WIDTH} & \textbf{Makna} \\
+\hline
+1 & 0 & 0 & 0 & 24 & 96 kHz, 24 bit \\
+1 & 0 & 1 & 0 & 16 & 48 kHz, 16 bit \\
+1 & 1 & 1 & 1 & 24 & 44.1 kHz, mute \\
+1 & 0 & 0 & 1 & 32 & 88.2 kHz, 32 bit \\
+\hline
+\end{tabular}
+\end{center}
 
 \subsection{Integrasi Vivado Block Design}
 \begin{figure}[htbp]
