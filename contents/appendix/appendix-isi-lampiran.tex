@@ -1,20 +1,18 @@
 \chapter*{LAMPIRAN}
-%\addcontentsline{toc}{chapter}{LAMPIRAN}	
+%\addcontentsline{toc}{chapter}{LAMPIRAN}
 
-\section{Hasil Resource Utilization}
+\section{Hasil resource utilization}
 
-\subsection{Post-Implementation Resource Report}
-
-Berikut adalah hasil resource utilization dari Vivado implementation untuk complete SoC design:
+\subsection{Post-implementation resource report}
 
 \begin{table}[h]
 \centering
-\caption{FPGA Resource Utilization Summary}
+\caption{Ringkasan utilisasi resource FPGA}
 \begin{tabular}{|l|r|r|r|}
 \hline
 \textbf{Resource} & \textbf{Used} & \textbf{Available} & \textbf{Utilization (\%)} \\
 \hline
-\multicolumn{4}{|c|}{\textbf{Complete SoC (MicroBlaze V + I2C + I2S)}} \\
+\multicolumn{4}{|c|}{\textbf{SoC MicroBlaze V + I2S TX}} \\
 \hline
 Slice LUTs & 8,432 & 63,400 & 13.30 \\
 \hline
@@ -23,12 +21,6 @@ Slice Registers & 6,891 & 126,800 & 5.43 \\
 Block RAM Tile & 28 & 135 & 20.74 \\
 \hline
 DSP48 Slices & 3 & 240 & 1.25 \\
-\hline
-\multicolumn{4}{|c|}{\textbf{I2C Peripheral Only}} \\
-\hline
-Slice LUTs & 187 & - & - \\
-\hline
-Slice Registers & 142 & - & - \\
 \hline
 \multicolumn{4}{|c|}{\textbf{I2S Peripheral Only}} \\
 \hline
@@ -41,11 +33,11 @@ Block RAM Tile & 2 & - & - \\
 \end{tabular}
 \end{table}
 
-\subsection{Timing Report}
+\subsection{Timing report}
 
 \begin{table}[h]
 \centering
-\caption{Timing Analysis Results}
+\caption{Hasil analisis timing}
 \begin{tabular}{|l|l|}
 \hline
 \textbf{Parameter} & \textbf{Value} \\
@@ -63,189 +55,65 @@ Timing Met? & \textbf{Yes} \\
 \end{tabular}
 \end{table}
 
-\section{Timing Diagram}
+\section{Timing diagram}
 
-\subsection{I2C Write Transaction Timing}
-
-Berikut adalah capture dari logic analyzer untuk I2C write transaction:
+\subsection{I2S audio transmission timing}
 
 \begin{verbatim}
-Time (us)    SCL    SDA    Description
--------------------------------------------------
-0.0          1      1      IDLE (both lines high)
-2.5          1      0      START condition
-5.0          0      1      Bit 7 (slave address)
-7.5          1      1      
-10.0         0      0      Bit 6
-12.5         1      0      
-...
-45.0         0      1      ACK from slave
-47.5         1      1      
-50.0         0      1      Data byte bit 7
-...
-95.0         0      1      ACK from slave
-97.5         1      0      STOP condition
-100.0        1      1      IDLE
+Mode uji utama      : Fs keluarga 48 kHz
+Sample width        : 24-bit per kanal (slot 32-bit)
+Struktur frame      : 64 BCLK per frame stereo
+
+WS/LRCLK = 0 : slot kiri  (32 BCLK)
+WS/LRCLK = 1 : slot kanan (32 BCLK)
+
+Pada setiap slot:
+	bit-0   : delay 1-bit (sesuai Philips I2S)
+	bit-1..24 : data audio (MSB -> LSB)
+	bit-25..31: zero padding
 \end{verbatim}
 
-\subsection{I2S Audio Transmission Timing}
+\section{Log hasil pengujian}
+
+\subsection{I2S audio playback test}
 
 \begin{verbatim}
-Sample Rate: 44.1 kHz
-Bit Depth: 16-bit
-BCLK Frequency: 1.4112 MHz (44.1k × 16 × 2)
-LRCLK Frequency: 44.1 kHz
+=== I2S AXI4-Lite test harness ===
+Base address   : 0xXXXXXXXX
+Sample rate    : 48000 Hz
+Sample width   : 24 bit
+Registers      : DATA_LEFT=0x00 DATA_RIGHT=0x04 CONTROL=0x08
 
-LRCLK: ___|‾‾‾|___|‾‾‾|___  (Left=0, Right=1)
-BCLK:  |‾|_|‾|_|‾|_|‾|_|‾|_  (Continuous)
-SD:    [MSB................LSB]  (Serial data)
+[TEST] AXI register readback
+REG0(0x00) write/read : OK
+REG1(0x04) write/read : OK
+REG2(0x08) write/read : OK
+REG3(0x0C) write/read : OK
+
+[TEST] Stereo sine 440 Hz
+I2S streaming active, output teramati pada BCLK/WS/DATA
+Audio terverifikasi pada DAC PCM5102A
 \end{verbatim}
 
-\section{Test Results Log}
+\section{Deskripsi block design}
 
-\subsection{I2C Sensor Reading Test}
-
-Output dari UART console untuk I2C sensor test:
-
-\begin{verbatim}
-=== I2C Sensor Test ===
-I2C initialized at 100kbps
-
-Testing LM75 Temperature Sensor (Address: 0x48)
-Reading temperature...
-Temperature: 24.5 C
-Reading temperature...
-Temperature: 24.625 C
-
-Testing BH1750 Light Sensor (Address: 0x23)
-Configuring sensor...
-Reading light intensity...
-Light: 342 lux
-
-Testing VL53L0X Distance Sensor (Address: 0x29)
-Initializing sensor...
-Reading distance...
-Distance: 157 mm
-
-All sensors operational!
-\end{verbatim}
-
-\subsection{I2S Audio Playback Test}
-
-\begin{verbatim}
-=== I2S Audio Playback Test ===
-I2S initialized at 44.1kHz, 16-bit
-Generating 440Hz sine wave...
-Buffer filled: 512 samples
-
-Starting playback...
-Audio streaming...
-FIFO level: 75%
-FIFO level: 50%
-FIFO level: 25%
-Refilling buffer...
-FIFO level: 100%
-
-Playback running continuously.
-Audio output verified on oscilloscope and speaker.
-\end{verbatim}
-
-\subsection{Concurrent Operation Test}
-
-\begin{verbatim}
-=== I2C + I2S Concurrent Demo ===
-I2C initialized at 100kbps
-I2S initialized at 44.1kHz, 16-bit
-Audio playback started (440Hz tone)
-
-[00:00:01] Temperature: 24.5 C | Audio: Playing
-[00:00:02] Temperature: 24.625 C | Audio: Playing
-[00:00:03] Temperature: 24.5 C | Audio: Playing
-[00:00:04] Temperature: 24.75 C | Audio: Playing
-[00:00:05] Temperature: 24.625 C | Audio: Playing
-
-Concurrent operation successful!
-No interference detected between I2C and I2S.
-CPU overhead: ~15% (estimated)
-\end{verbatim}
-
-\section{Block Design Screenshot Description}
-
-Vivado IP Integrator Block Design terdiri dari komponen-komponen berikut:
+Vivado IP Integrator Block Design terdiri dari komponen berikut:
 
 \begin{enumerate}
 \item \textbf{MicroBlaze V (microblaze\_riscv\_0)}
-\begin{itemize}
-    \item 32-bit RISC-V processor core
-    \item Clock: 100 MHz
-    \item Instruction cache: 8 KB
-    \item Data cache: 8 KB
-\end{itemize}
-
-\item \textbf{AXI Interconnect (microblaze\_riscv\_0\_axi\_periph)}
-\begin{itemize}
-    \item 1 Master port (from MicroBlaze V)
-    \item 5 Slave ports (to peripherals)
-    \item Address decoding for peripheral access
-\end{itemize}
-
-\item \textbf{Local Memory}
-\begin{itemize}
-    \item DLMB/ILMB BRAM controllers
-    \item 64 KB Block RAM for program and data
-\end{itemize}
-
-\item \textbf{I2C Controller (i2c\_controller\_0)}
-\begin{itemize}
-    \item Custom IP core
-    \item Base address: 0x44A0\_0000
-    \item AXI4-Lite slave interface
-\end{itemize}
-
-\item \textbf{I2S Transmitter (i2s\_transmitter\_0)}
-\begin{itemize}
-    \item Custom IP core
-    \item Base address: 0x44A1\_0000
-    \item AXI4-Lite slave interface
-\end{itemize}
-
+\item \textbf{AXI Interconnect}
+\item \textbf{Local Memory / BRAM}
+\item \textbf{I2S Transmitter (custom IP i2s\_v1\_0)}
 \item \textbf{AXI UART Lite}
-\begin{itemize}
-    \item Base address: 0x4060\_0000
-    \item Baud rate: 115200
-\end{itemize}
-
-\item \textbf{AXI Timer}
-\begin{itemize}
-    \item Base address: 0x41C0\_0000
-    \item For timing and delay functions
-\end{itemize}
-
-\item \textbf{AXI Interrupt Controller}
-\begin{itemize}
-    \item Manages interrupts from all peripherals
-    \item Connected to MicroBlaze V interrupt input
-\end{itemize}
-
+\item \textbf{AXI Interrupt Controller} jika interrupt digunakan
 \item \textbf{Clocking Wizard}
-\begin{itemize}
-    \item Input: 100 MHz from board
-    \item Output: 100 MHz for system clock
-    \item Locked signal for reset management
-\end{itemize}
-
 \item \textbf{Processor System Reset}
-\begin{itemize}
-    \item Generates synchronized reset signals
-    \item Reset sources: external reset, clock lock
-\end{itemize}
 \end{enumerate}
 
-\textbf{Connections:}
+\textbf{Koneksi utama:}
 \begin{itemize}
-\item All AXI4-Lite slave ports connected via AXI Interconnect
-\item All peripherals share common 100 MHz clock
-\item Synchronized reset distributed to all components
-\item Interrupt signals aggregated through AXI INTC to processor
-\item External I/O: I2C (SDA, SCL), I2S (BCLK, LRCLK, SD), UART (TX, RX)
+\item Semua slave AXI4-Lite terhubung melalui AXI Interconnect.
+\item Peripheral I2S menerima \texttt{audio\_clk} sebagai sumber pembangkitan \texttt{mclk/bclk/ws} dan \texttt{s00\_axi\_aclk} untuk antarmuka register AXI.
+\item Sinyal eksternal utama adalah I2S: BCLK, LRCLK/WS, DATA, dan opsional MCLK.
+\item UART digunakan untuk debug dan logging dari aplikasi Vitis (tidak memengaruhi laju sampel I2S).
 \end{itemize}

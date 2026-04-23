@@ -2,25 +2,17 @@
 
 \section{Latar Belakang}
 
-\hspace{1cm}Perkembangan teknologi sistem embedded dan Internet of Things (IoT) telah mengubah lanskap industri teknologi informasi secara fundamental. Menurut data dari Statista (2023), jumlah perangkat IoT yang terhubung diprediksi mencapai 29.4 miliar unit pada tahun 2030, meningkat signifikan dari 15.1 miliar unit pada tahun 2020. Pertumbuhan eksponensial ini mendorong kebutuhan akan peripheral komunikasi yang efisien, handal, dan dapat diprogram melalui software. Dua protokol komunikasi yang paling dominan dalam ekosistem sistem embedded adalah I2C (Inter-Integrated Circuit) dan I2S (Inter-IC Sound).
+\hspace{1cm}Perkembangan sistem embedded modern mendorong kebutuhan akan antarmuka audio digital yang fleksibel, dapat dikonfigurasi melalui perangkat lunak, dan mudah diintegrasikan ke dalam arsitektur System-on-Chip (SoC). Pada berbagai aplikasi seperti audio playback, perangkat edukasi, synthesizer sederhana, sistem notifikasi suara, dan eksperimen digital signal processing, data audio perlu dikirim dari prosesor ke perangkat audio eksternal secara sinkron dan andal. Dalam konteks ini, I2S (Inter-IC Sound) menjadi protokol yang sangat relevan karena dirancang khusus untuk transmisi data audio digital antarchip.
 
-\hspace{1cm}Protokol I2C, yang dikembangkan oleh Philips Semiconductor pada tahun 1982, telah menjadi standar de facto untuk komunikasi serial dua-kawat (SDA dan SCL) yang memungkinkan komunikasi multi-master dan multi-slave. Dalam konteks IoT dan edge computing, I2C digunakan secara luas untuk interfacing dengan berbagai sensor seperti accelerometer, gyroscope, temperature sensor, humidity sensor, dan modul GPS. Keunggulan I2C terletak pada kesederhanaan arsitekturnya yang hanya memerlukan dua jalur komunikasi, namun mampu mendukung hingga 127 perangkat pada satu bus. Protokol ini mendukung berbagai mode kecepatan: standard mode (100 kbps), fast mode (400 kbps), fast mode plus (1 Mbps), dan high-speed mode (3.4 Mbps). Penelitian oleh Chen et al. (2020) menunjukkan bahwa 78\% dari sistem IoT komersial menggunakan I2C sebagai protokol komunikasi utama untuk sensor interfacing.
+\hspace{1cm}I2S merupakan standar antarmuka serial audio yang dikembangkan oleh Philips dan banyak digunakan untuk menghubungkan prosesor, codec, DAC, dan perangkat audio digital lain. Protokol ini menggunakan tiga sinyal utama, yaitu \textit{bit clock} (BCLK), \textit{word select} (WS/LRCLK), dan \textit{serial data} (SD). Relasi timing antar sinyal tersebut harus dipenuhi dengan ketat agar penerima audio dapat merekonstruksi sampel digital dengan benar. Dukungan terhadap berbagai \textit{sample rate} dan \textit{bit depth} membuat I2S cocok untuk implementasi audio pada FPGA, terutama ketika dibutuhkan fleksibilitas desain pada level register transfer.
 
-\hspace{1cm}Sementara itu, I2S (Inter-IC Sound) merupakan standar antarmuka bus serial elektrik untuk transmisi data audio digital yang dikembangkan oleh Philips pada tahun 1986. Dalam era streaming audio dan smart speakers, I2S menjadi protokol krusial untuk aplikasi audio processing, voice recognition, dan multimedia systems. I2S menggunakan tiga sinyal utama: bit clock (BCLK), word select (WS/LRCLK), dan serial data (SD). Format ini mendukung berbagai sample rate (8 kHz hingga 192 kHz) dan bit depth (16-bit, 24-bit, 32-bit), menjadikannya ideal untuk aplikasi audio berkualitas tinggi. Menurut Market Research Future (2022), pasar global untuk digital audio interface diproyeksikan tumbuh dengan CAGR 12.3\% antara 2022-2028, didorong oleh meningkatnya permintaan untuk smart home devices dan wearable audio technology.
+\hspace{1cm}FPGA menawarkan keunggulan utama dalam pengembangan sistem audio digital karena logika perangkat kerasnya dapat dikustomisasi sesuai kebutuhan aplikasi. Dibandingkan pendekatan berbasis perangkat keras tetap, FPGA memungkinkan perancangan antarmuka komunikasi, logika buffer, pembagi clock, dan jalur data serial secara langsung dalam Verilog atau VHDL. Ketika dikombinasikan dengan soft processor seperti MicroBlaze V, FPGA juga memberikan model kerja hardware-software co-design: fungsi real-time dan timing kritis ditangani oleh perangkat keras, sementara konfigurasi, pengiriman data, dan pengujian dikendalikan oleh perangkat lunak.
 
-\hspace{1cm}Dalam implementasi sistem embedded modern, FPGA (Field-Programmable Gate Array) menawarkan fleksibilitas tinggi untuk mengimplementasikan berbagai protokol komunikasi dalam bentuk IP core yang dapat dikustomisasi sesuai kebutuhan aplikasi. Berbeda dengan ASIC (Application-Specific Integrated Circuit) yang memerlukan biaya development tinggi dan waktu time-to-market yang panjang, FPGA memungkinkan rapid prototyping dan iterasi desain yang cepat. Penggunaan soft processor seperti MicroBlaze RISC-V pada FPGA memungkinkan integrasi antara hardware acceleration dan software flexibility dalam satu chip, memberikan solusi yang efisien untuk sistem embedded kompleks.
+\hspace{1cm}MicroBlaze V sebagai prosesor soft-core berbasis RISC-V pada ekosistem AMD/Xilinx menyediakan fondasi yang sesuai untuk integrasi peripheral kustom pada Vivado dan Vitis. Melalui antarmuka AXI4-Lite, peripheral dapat diakses dengan model memory-mapped I/O yang sederhana namun efektif. Dengan pendekatan ini, prosesor dapat menulis sampel audio, mengatur mode operasi, serta membaca status dari peripheral I2S menggunakan instruksi load/store biasa. Pendekatan tersebut memudahkan pengembangan perangkat lunak uji sekaligus menjaga modularitas desain perangkat keras.
 
-\hspace{1cm}Arsitektur RISC-V yang bersifat open-source dan modular telah mengalami adopsi yang signifikan dalam industri teknologi informasi. Berbeda dengan arsitektur proprietary seperti ARM atau x86, RISC-V menawarkan Instruction Set Architecture (ISA) yang dapat dikustomisasi tanpa biaya lisensi. Menurut laporan dari RISC-V International (2023), lebih dari 3000 anggota dari 70 negara telah bergabung dalam ekosistem RISC-V, termasuk perusahaan besar seperti Google, NVIDIA, dan Western Digital. Dalam konteks embedded systems, RISC-V menawarkan beberapa keunggulan: ukuran code yang compact, konsumsi daya yang rendah, dan kemampuan untuk menambahkan custom instructions sesuai kebutuhan aplikasi spesifik.
+\hspace{1cm}Dalam praktik implementasi audio pada FPGA, permasalahan tidak hanya terletak pada pembangkitan sinyal I2S, tetapi juga pada kestabilan aliran data. Jika sampel audio tidak tersedia tepat saat serializer membutuhkan data baru, maka akan terjadi \textit{underrun} yang menghasilkan gangguan audio. Oleh karena itu, sistem membutuhkan strategi buffering yang memadai, misalnya FIFO TX dan interupsi \textit{watermark}, sehingga prosesor dapat mengisi ulang data sebelum buffer kosong. Selain itu, akurasi frekuensi clock hasil Clocking Wizard dan kesesuaian pinout ke modul DAC eksternal juga menjadi faktor penting yang memengaruhi keberhasilan sistem secara keseluruhan.
 
-\hspace{1cm}Integrasi peripheral I2C dan I2S dengan sistem prosesor pada FPGA memerlukan antarmuka standar yang memfasilitasi komunikasi antara prosesor dan peripheral. Protokol AXI4-Lite (Advanced eXtensible Interface) dari ARM telah menjadi standar industri untuk komunikasi on-chip dalam sistem berbasis System-on-Chip (SoC) dan FPGA. AXI4-Lite menyediakan antarmuka yang sederhana namun efisien untuk transfer data antara master (prosesor) dan slave (peripheral), dengan mekanisme handshaking yang robust dan dukungan untuk berbagai ukuran data (32-bit atau 64-bit). Protokol ini mendukung memory-mapped I/O yang memungkinkan developer untuk mengakses peripheral register menggunakan instruksi load/store standar, menyederhanakan development software driver.
-
-\hspace{1cm}Dari perspektif software engineering, implementasi driver untuk peripheral hardware memerlukan pemahaman yang mendalam tentang memory-mapped register, interrupt handling, dan Direct Memory Access (DMA). Pengembangan bare-metal driver atau Linux device driver untuk I2C dan I2S peripheral melibatkan beberapa layer abstraksi: Hardware Abstraction Layer (HAL), peripheral driver layer, dan application programming interface (API). Penelitian oleh Anderson dan Lee (2021) menunjukkan bahwa kualitas software driver memiliki dampak signifikan terhadap reliabilitas dan performa sistem embedded, dengan bug pada driver layer menyumbang 35\% dari total system failures.
-
-\hspace{1cm}Penelitian sebelumnya telah menunjukkan keberhasilan implementasi berbagai protokol komunikasi pada FPGA. Kumar et al. (2018) mengimplementasikan kontroler I2C menggunakan Verilog dengan fokus pada optimasi kecepatan transfer data, mencapai throughput 380 kbps pada fast mode dengan error rate di bawah 0.01\%. Zhang dan Liu (2019) mengembangkan IP core I2S untuk aplikasi audio processing pada FPGA Xilinx dengan hasil yang menunjukkan latency di bawah 50 microseconds dan mampu menangani sample rate hingga 96 kHz. Patel dan Singh (2020) mengintegrasikan multiple I2C slaves pada single FPGA platform menggunakan AXI interconnect, mendemonstrasikan scalability dan modularity dari pendekatan IP core based design.
-
-\hspace{1cm}Namun, implementasi terintegrasi dari kedua protokol komunikasi ini dalam satu sistem dengan prosesor RISC-V dan antarmuka AXI4-Lite masih memerlukan penelitian lebih lanjut, khususnya dalam aspek: (1) optimasi resource utilization pada FPGA untuk mendukung multiple peripheral, (2) development software ecosystem termasuk driver, API, dan example applications, (3) analisis performa sistem dalam skenario concurrent I2C transactions dan I2S audio streaming, dan (4) strategi debugging dan testing untuk hardware-software co-design.
-
-\hspace{1cm}Kebutuhan akan sistem komunikasi yang fleksibel dan dapat dikonfigurasi melalui perangkat lunak menjadi motivasi utama dalam penelitian ini. \textbf{Fokus inti skripsi ini adalah peripheral transmitter I2S} dengan antarmuka \textbf{AXI4-Lite} pada SoC berbasis \textbf{MicroBlaze V}, board \textbf{Basys3}, dan keluaran menuju modul \textbf{PCM5102A}. Peripheral dirancang untuk \textbf{TX-only}, format \textbf{Philips I2S} dengan \textbf{24 bit per saluran} dalam \textbf{slot 32 bit}, \textbf{dua mode} frekuensi sampling (nilai nominal sekitar 48 kHz dan 96 kHz) dari satu sumber \texttt{audio\_clk}, serta register memory-mapped utama \textbf{DATA\_LEFT}, \textbf{DATA\_RIGHT}, dan \textbf{CONTROL} untuk memuat sampel dan mengaktifkan keluaran. Konteks I2C pada latar belakang menggambarkan ekosistem embedded; cakupan implementasi utama mengikuti rumusan masalah pada bagian berikut.
+\hspace{1cm}Berdasarkan kebutuhan tersebut, skripsi ini berfokus pada perancangan \textbf{IP core transmitter I2S berbasis Verilog} dengan antarmuka \textbf{AXI4-Lite} yang dapat diintegrasikan ke dalam SoC \textbf{MicroBlaze V} pada board \textbf{Basys3}. Target keluaran audio adalah modul \textbf{PCM5102A} sebagai DAC eksternal. Desain difokuskan pada mode \textbf{TX-only}, format \textbf{Philips I2S}, stereo, dengan \textbf{24 bit per saluran} dalam \textbf{slot 32 bit}, serta dua mode frekuensi sampling nominal sekitar 48 kHz dan 96 kHz. Penelitian ini mencakup perancangan RTL, integrasi Vivado Block Design, pengembangan perangkat lunak uji di Vitis, serta validasi melalui ILA, pengukuran sinyal, dan bukti keluaran audio.
 
 \begin{figure}[htbp]
 	\centering
@@ -36,37 +28,35 @@
 
 \section{Rumusan Masalah}
 
-Berdasarkan latar belakang yang telah diuraikan, rumusan masalah dalam penelitian ini adalah:
+Berdasarkan latar belakang tersebut, rumusan masalah penelitian ini adalah:
 
 \begin{enumerate}
 	\item Bagaimana merancang \textbf{IP core transmitter I2S} berbasis Verilog dengan antarmuka \textbf{AXI4-Lite} sehingga dapat dikontrol dari program Vitis melalui register memory-mapped?
-	\item Bagaimana mendukung \textbf{dua mode frekuensi sampling} (sekitar 48 kHz dan 96 kHz) dari satu \texttt{audio\_clk} dengan pembagi yang dapat dipilih, memperhitungkan frekuensi \textit{actual} dari Clocking Wizard?
-	\item Bagaimana merancang \textbf{FIFO TX} dan \textbf{interupsi watermark} untuk meminimalkan underrun dan mengurangi beban CPU saat pengisian data audio?
-	\item Bagaimana melakukan \textbf{verifikasi fungsional dan timing} (simulasi bila tersedia, \textbf{ILA}, pengukuran osiloskop, serta uji dengar pada PCM5102A)?
-\end{enumerate}	
+	\item Bagaimana mendukung \textbf{dua mode frekuensi sampling} (sekitar 48 kHz dan 96 kHz) dari satu \texttt{audio\_clk} dengan pembagi yang dapat dipilih, sambil memperhatikan frekuensi aktual hasil Clocking Wizard?
+	\item Bagaimana merancang \textbf{FIFO TX} dan \textbf{interupsi watermark} untuk meminimalkan \textit{underrun} dan mengurangi beban CPU saat pengisian data audio?
+	\item Bagaimana melakukan \textbf{verifikasi fungsional dan timing} melalui simulasi bila tersedia, \textbf{ILA}, pengukuran sinyal, dan uji keluaran audio pada PCM5102A?
+\end{enumerate}
 
 \section{Tujuan Penelitian}
 
-Tujuan penelitian diselaraskan dengan rumusan masalah. Tujuan harus jelas, spesifik, terukur, dan dapat dicapai dalam jangka waktu skripsi.
-
-\noindent\textit{(Contoh template tujuan per prodi pada berkas asli telah dihapus; sesuaikan lagi dengan pembimbing bila diperlukan.)}
+Tujuan penelitian ini disusun agar selaras dengan rumusan masalah yang telah ditetapkan.
 
 \subsection{Tujuan perancangan dan integrasi perangkat keras}
 \begin{enumerate}
-	\item Merancang dan mengimplementasikan modul \textbf{I2S TX} dengan \textbf{AXI4-Lite slave}, register map (\texttt{ID}, \texttt{CONTROL}, \texttt{STATUS}, \texttt{WATERMARK}, \texttt{IRQ\_EN}, \texttt{IRQ\_STATUS}, \texttt{TX\_LEFT}, \texttt{TX\_RIGHT}, dan register terkait), serializer \textbf{Philips I2S} \textbf{24-bit} per saluran dalam \textbf{slot 32-bit}, serta \textbf{FIFO TX} dengan sinyal \textbf{irq}.
-	\item Mengimplementasikan \textbf{pembagi clock} untuk dua mode \(F_s\) (sekitar 48 kHz dan 96 kHz) dari \texttt{audio\_clk} dan mengintegrasikan IP ke \textbf{Vivado Block Design} pada FPGA \textbf{Basys3} (Artix-7) dengan pemetaan pin pada file \texttt{.xdc}.
+	\item Merancang dan mengimplementasikan modul \textbf{I2S TX} dengan \textbf{AXI4-Lite slave}, register kontrol dan data, serializer \textbf{Philips I2S}, serta \textbf{FIFO TX} untuk mendukung pengiriman sampel audio stereo.
+	\item Mengimplementasikan \textbf{pembagi clock} untuk dua mode frekuensi sampling nominal dan mengintegrasikan IP ke dalam \textbf{Vivado Block Design} pada FPGA \textbf{Basys3} beserta pemetaan pin pada file \texttt{.xdc}.
 \end{enumerate}
 
 \subsection{Tujuan integrasi SoC dan perangkat lunak}
 \begin{enumerate}
-	\item Membangun SoC berbasis \textbf{MicroBlaze V} dengan AXI interconnect, memori BRAM, \textbf{Clocking Wizard} untuk \texttt{audio\_clk}, \textbf{AXI INTC} bila digunakan untuk \texttt{irq}, serta akses register melalui \textbf{Vitis}.
-	\item Mengembangkan aplikasi \textbf{Vitis} (bahasa C) untuk konfigurasi register, \textbf{prefill FIFO}, penanganan \textbf{ISR} isi ulang FIFO berkelompok, dan pemutaran sinyal uji (misalnya sine 1 kHz).
+	\item Membangun SoC berbasis \textbf{MicroBlaze V} dengan AXI interconnect, BRAM, Clocking Wizard, dan akses ke peripheral I2S melalui \textbf{Vitis}.
+	\item Mengembangkan aplikasi \textbf{Vitis} dalam bahasa C untuk konfigurasi register, \textbf{prefill FIFO}, penanganan \textbf{ISR} isi ulang FIFO, dan pemutaran sinyal uji audio.
 \end{enumerate}
 
 \subsection{Tujuan verifikasi dan validasi}
 \begin{enumerate}
-	\item Memverifikasi sistem melalui \textbf{ILA} (BCLK, WS, DATA, level FIFO, underrun, irq), pengukuran frekuensi pada osiloskop bila tersedia, dan \textbf{bukti audio} pada PCM5102A.
-	\item Melakukan synthesis dan implementation pada FPGA Xilinx Artix-7 serta menganalisis \textit{resource utilization} (LUT, FF, BRAM).
+	\item Memverifikasi sistem melalui \textbf{ILA}, pengamatan sinyal \texttt{i2s\_bclk}, \texttt{i2s\_ws}, \texttt{i2s\_data}, level FIFO, serta bukti keluaran audio pada PCM5102A.
+	\item Melakukan synthesis dan implementation pada FPGA Xilinx Artix-7 serta menganalisis \textit{resource utilization} seperti LUT, FF, dan BRAM.
 \end{enumerate}
 
 \section{Batasan Penelitian}
@@ -75,84 +65,59 @@ Batasan penelitian dalam pengembangan \textbf{IP core I2S TX AXI4-Lite} ini meli
 
 \subsection{Batasan perangkat keras dan RTL}
 \begin{enumerate}
-	\item Modul I2S dirancang sebagai \textbf{transmitter (TX-only)}; tidak mencakup mode receiver atau full-duplex.
-	\item Format audio dibatasi pada \textbf{Philips I2S}, stereo, \textbf{24 bit} per saluran dalam \textbf{slot 32 bit}; tidak mencakup TDM, left/right-justified, atau multi-channel.
-	\item Dukungan frekuensi sampling dibatasi pada \textbf{dua mode} (nilai nominal sekitar 48 kHz dan 96 kHz) dari satu sumber \texttt{audio\_clk}; variasi frekuensi aktual mengikuti hasil \textbf{Clocking Wizard}.
-	\item Transfer data audio ke IP menggunakan \textbf{programmed I/O} (register/FIFO); tidak mencakup \textbf{DMA} terintegrasi.
-	\item Verifikasi dilakukan pada board \textbf{Basys3} dan modul \textbf{PCM5102A}; hasil pada platform lain dapat berbeda.
+	\item Modul I2S dirancang sebagai \textbf{transmitter (TX-only)}; tidak mencakup receiver atau mode full-duplex.
+	\item Format audio dibatasi pada \textbf{Philips I2S}, stereo, \textbf{24 bit} per saluran dalam \textbf{slot 32 bit}; tidak mencakup TDM, left-justified, right-justified, atau multi-channel.
+	\item Dukungan frekuensi sampling dibatasi pada \textbf{dua mode} nominal, yaitu sekitar 48 kHz dan 96 kHz, yang berasal dari satu sumber \texttt{audio\_clk}.
+	\item Transfer data audio ke IP menggunakan \textbf{programmed I/O} berbasis register/FIFO dan tidak mencakup integrasi \textbf{DMA}.
+	\item Pengujian perangkat keras dilakukan pada board \textbf{Basys3} dengan modul \textbf{PCM5102A}; hasil pada platform lain dapat berbeda.
 \end{enumerate}
 
 \subsection{Batasan SoC dan perangkat lunak}
 \begin{enumerate}
-	\item Prosesor yang digunakan adalah \textbf{MicroBlaze V} (RISC-V) pada ekosistem Xilinx Vivado/Vitis.
-	\item Lingkungan perangkat lunak \textbf{bare-metal} (tanpa RTOS atau Linux pada ruang lingkup utama).
-	\item UART digunakan untuk debug/log; tidak menggantikan bus I2S untuk streaming PCM real-time penuh.
+	\item Prosesor yang digunakan adalah \textbf{MicroBlaze V} pada ekosistem Vivado dan Vitis.
+	\item Lingkungan perangkat lunak yang digunakan adalah \textbf{bare-metal} tanpa RTOS atau Linux pada ruang lingkup utama.
+	\item UART digunakan untuk debug dan logging, bukan sebagai jalur streaming audio utama.
 \end{enumerate}
 
 \subsection{Batasan pengujian dan dokumentasi}
 \begin{enumerate}
-	\item Pengujian laboratorium: ILA, osiloskop (bila ada), dan uji dengar; tidak mencakup EMI daya, stress 24/7, atau sertifikasi produk.
-	\item Dokumentasi mengikuti kebutuhan skripsi (diagram, register map, hasil ukur); bukan datasheet komersial lengkap.
+	\item Pengujian dibatasi pada ILA, osiloskop bila tersedia, dan uji dengar sederhana pada keluaran audio.
+	\item Dokumentasi disusun untuk kebutuhan skripsi dan tidak dimaksudkan sebagai datasheet komersial lengkap.
 \end{enumerate}
 
 \section{Manfaat Penelitian}
 
-Manfaat yang diharapkan dari penelitian ini dibagi menjadi beberapa kategori:
-
-\subsection{Manfaat Akademik dan Pembelajaran}
+\subsection{Manfaat akademik}
 \begin{enumerate}
-	\item Menghasilkan modul \textbf{I2S TX AXI4-Lite} dalam Verilog yang dapat digunakan kembali sebagai acuan untuk desain audio pada FPGA dan studi integrasi prosesor--peripheral.
-	\item Memberikan studi kasus lengkap tentang perancangan peripheral dalam Verilog mulai dari spesifikasi protokol, state machine design, hingga integrasi dengan processor-based SoC.
-	\item Menyediakan template implementasi antarmuka AXI4-Lite slave dalam Verilog yang dapat diadaptasi untuk peripheral lain seperti SPI, UART, CAN, atau GPIO controller.
-	\item Mendemonstrasikan metodologi hardware-software co-design pada FPGA: bagaimana Verilog modules berinteraksi dengan C programs melalui memory-mapped registers.
-	\item Dapat digunakan sebagai modul pembelajaran praktikum untuk mata kuliah: Sistem Digital, Desain Digital Lanjut, Embedded Systems, Computer Architecture, atau FPGA Programming.
-	\item Memberikan hands-on experience dalam full development cycle: RTL design, simulation, synthesis, implementation, C programming, debugging, dan hardware validation.
-	\item Menyediakan dokumentasi lengkap termasuk: timing diagrams, state machine diagrams, register specifications, dan code examples yang dapat menjadi learning resources.
+	\item Menghasilkan contoh perancangan \textbf{IP I2S TX AXI4-Lite} berbasis Verilog yang dapat digunakan sebagai acuan pembelajaran audio digital pada FPGA.
+	\item Menyediakan studi kasus hardware-software co-design pada FPGA yang melibatkan RTL, integrasi SoC, dan pemrograman embedded C.
+	\item Memberikan dokumentasi register map, strategi buffering, dan validasi sinyal I2S yang dapat digunakan kembali pada penelitian sejenis.
 \end{enumerate}
 
-\subsection{Manfaat Praktis untuk Proyek dan Aplikasi}
+\subsection{Manfaat praktis}
 \begin{enumerate}
-	\item Modul dapat dipakai sebagai dasar \textbf{audio output} pada proyek FPGA (alarm, synthesizer sederhana, notifikasi suara).
-	\item Pola \textbf{FIFO + IRQ} dapat diadaptasi ke peripheral streaming lain (mis.\ video sederhana, logging ADC).
-	\item SoC architecture yang dikembangkan dapat di-scale up dengan menambahkan peripheral lain atau dioptimasi untuk specific applications (smart sensors, audio processing boards, industrial controllers).
-	\item Program C yang dikembangkan dapat digunakan sebagai starting point untuk aplikasi yang lebih kompleks: multi-sensor systems, data fusion algorithms, atau real-time control systems.
-	\item Methodology yang digunakan (block design approach, modular peripheral design) dapat diadopsi untuk rapid prototyping dalam proyek capstone, kompetisi robotika, atau startup technology products.
+	\item Menyediakan dasar untuk proyek \textbf{audio output} berbasis FPGA seperti generator nada, alarm, dan sistem multimedia sederhana.
+	\item Menunjukkan pola desain \textbf{FIFO + watermark interrupt} yang dapat diadaptasi pada peripheral streaming lain.
+	\item Menjadi fondasi pengembangan lebih lanjut menuju sistem audio digital yang lebih kompleks, misalnya integrasi DMA atau dukungan Linux/ASoC.
 \end{enumerate}
 
-\subsection{Manfaat untuk Komunitas Open Source dan Kolaborasi}
+\subsection{Manfaat pengembangan keahlian}
 \begin{enumerate}
-	\item Source code Verilog untuk IP I2S TX dapat dibagikan ke komunitas melalui platform seperti GitHub dengan lisensi open-source (MIT, Apache 2.0, atau GPL) sesuai kebijakan kampus.
-	\item Kontribusi ke ekosistem MicroBlaze V dan RISC-V dengan menyediakan ready-to-use peripheral modules yang compatible dengan AXI4-Lite interface standard.
-	\item Testbench dan simulation files dapat membantu developers lain dalam verification process untuk peripheral designs mereka.
-	\item Block design files (.bd) dan constraint files (.xdc) dapat menjadi template untuk projects dengan hardware configuration yang similar.
-	\item Dokumentasi dan tutorial dapat di-publish sebagai blog posts, YouTube videos, atau technical articles, membantu komunitas maker dan FPGA enthusiasts.
-	\item Dapat menjadi basis untuk collaborative projects: misalnya menambahkan peripheral lain, porting ke FPGA boards lain, atau mengembangkan RTOS support.
+	\item Memberikan pengalaman praktis dalam Verilog HDL, AXI4-Lite, integrasi Vivado Block Design, dan pengembangan aplikasi Vitis.
+	\item Mengembangkan kemampuan debugging hardware-software melalui ILA, pengukuran sinyal, dan analisis hasil implementasi.
+	\item Menjadi portofolio yang relevan untuk bidang FPGA, embedded systems, dan desain SoC.
 \end{enumerate}
-
-\subsection{Manfaat untuk Pengembangan Skill dan Karir}
-\begin{enumerate}
-	\item Memberikan pengalaman praktis dalam Verilog HDL programming untuk sequential logic, state machines, dan interface protocols—skills yang highly demanded di industri semiconductor.
-	\item Mengembangkan kompetensi dalam embedded C programming: register-level programming, interrupt handling, peripheral drivers—fundamental skills untuk embedded software engineers.
-	\item Hands-on experience dengan Xilinx Vivado dan Vitis tools yang merupakan industry-standard tools untuk FPGA development, meningkatkan employability di companies seperti AMD/Xilinx, Intel/Altera, atau FPGA design houses.
-	\item Memahami SoC architecture dan AXI protocol yang relevan untuk positions seperti: SoC Design Engineer, FPGA Engineer, Embedded Systems Engineer, atau Hardware-Software Integration Engineer.
-	\item Membangun portfolio project yang concrete dan demonstrable: dapat ditunjukkan dalam interview melalui live demo, code walkthrough, atau technical presentation.
-	\item Mengembangkan soft skills: technical documentation writing, problem-solving dalam debugging hardware-software issues, systematic testing and validation approach.
-	\item Mempersiapkan foundation untuk advanced topics: jika melanjutkan ke graduate studies, pengalaman ini valuable untuk research dalam computer architecture, embedded systems, atau FPGA acceleration.
-\end{enumerate}
-
-
 
 \section{Sistematika Penulisan}
 
-\noindent\textbf{Bab I} (berkas \texttt{chapter-1.tex}) membahas pendahuluan: latar belakang audio digital dan I2S pada FPGA, rumusan masalah, tujuan, batasan, manfaat, serta sistematika penulisan.
+\noindent\textbf{Bab I} membahas pendahuluan yang mencakup latar belakang, rumusan masalah, tujuan, batasan, manfaat, dan sistematika penulisan.
 
-\noindent\textbf{Bab II} (\texttt{chapter-2.tex}) memuat tinjauan pustaka dan dasar teori: audio digital, protokol I2S, AXI4-Lite, FIFO dan interupsi watermark, clocking MMCM, PCM5102A, serta gambar \textit{placeholder} pada \texttt{contents/figures/}.
+\noindent\textbf{Bab II} memuat tinjauan pustaka dan dasar teori mengenai audio digital, protokol I2S, antarmuka AXI4-Lite, buffering FIFO, Clocking Wizard, MicroBlaze V, dan PCM5102A.
 
-\noindent\textbf{Bab III} (\texttt{chapter-3.tex}) menyajikan metode penelitian dan ringkasan perancangan: alat dan bahan, spesifikasi IP, register map, arsitektur integrasi Vivado.
+\noindent\textbf{Bab III} menyajikan metode penelitian dan rancangan sistem, termasuk alat dan bahan, spesifikasi IP, register map, dan integrasi pada Vivado.
 
-\noindent\textbf{Bab IV} (\texttt{chapter-4.tex}) berisi implementasi RTL, integrasi, pengujian ILA, pengukuran, dan bukti audio.
+\noindent\textbf{Bab IV} berisi implementasi RTL, integrasi sistem, hasil pengujian ILA, pengukuran, dan validasi audio.
 
-\noindent\textbf{Bab V} (\texttt{chapter-5.tex}, opsional) dapat diisi pembahasan tambahan atau dibiarkan ringkas.
+\noindent\textbf{Bab V} memuat pembahasan tambahan atau analisis opsional jika diperlukan.
 
-\noindent\textbf{Bab VI} (\texttt{chapter-6.tex}) berisi kesimpulan dan saran pengembangan.
-
+\noindent\textbf{Bab VI} berisi kesimpulan dan saran pengembangan.

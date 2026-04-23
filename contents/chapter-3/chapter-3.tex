@@ -2,15 +2,16 @@
 
 \section{Spesifikasi dan arsitektur IP I2S TX}
 
-Bagian ini merangkum \textbf{perancangan fungsional} IP yang menjadi inti skripsi. Detail RTL dan register final mengacu pada dokumentasi proyek FPGA (repositori implementasi).
+Bagian ini merangkum \textbf{perancangan fungsional} IP yang menjadi inti skripsi. Implementasi difokuskan pada peripheral \textbf{I2S transmitter} dengan antarmuka \textbf{AXI4-Lite} agar dapat dikontrol oleh program C pada MicroBlaze V.
 
 \subsection{Daftar fitur IP}
 \begin{itemize}
-	\item Antarmuka \textbf{AXI4-Lite} (32 bit) untuk kontrol dan pengisian data audio.
-	\item Mode \textbf{TX-only}; stereo; format \textbf{Philips I2S}; \textbf{24 bit} per saluran dalam \textbf{slot 32 bit}.
-	\item Dua mode frekuensi sampling (nilai nominal \textbf{sekitar} 48 kHz dan 96 kHz) melalui pembagi \texttt{audio\_clk}.
-	\item \textbf{FIFO TX} dengan status level, \textit{underrun}, dan \textbf{interupsi watermark} (serta enable/clear pada register).
-	\item Keluaran ke modul \textbf{PCM5102A}: BCLK, LRCK/WS, DATA (dan MCLK bila diperlukan sesuai modul).
+	\item Antarmuka \textbf{AXI4-Lite} 32 bit untuk konfigurasi dan pengisian data audio.
+	\item Mode \textbf{TX-only}, stereo, format \textbf{Philips I2S}, \textbf{24 bit} per saluran dalam \textbf{slot 32 bit}.
+	\item Dua mode frekuensi sampling nominal, yaitu \textbf{sekitar 48 kHz} dan \textbf{96 kHz}, melalui pembagi clock internal.
+	\item \textbf{FIFO TX} untuk menjaga kontinuitas aliran sampel audio.
+	\item Status level FIFO, \textit{underrun}, dan \textbf{interupsi watermark}.
+	\item Keluaran menuju modul \textbf{PCM5102A}: BCLK, LRCK/WS, DATA, dan MCLK bila digunakan.
 \end{itemize}
 
 \subsection{Blok diagram perancangan IP}
@@ -22,25 +23,24 @@ Bagian ini merangkum \textbf{perancangan fungsional} IP yang menjadi inti skrips
 		\setlength{\fboxsep}{14pt}%
 		\fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/block-diagram-ip-i2s-tx-intern.pdf} (AXI regs, FIFO, clkgen, serializer, irq).}}}%
 	}
-	\caption{Blok diagram internal IP I2S TX (konsep).}
+	\caption{Blok diagram internal IP I2S TX.}
 	\label{fig:ch3-block-ip-intern}
 \end{figure}
 
-\subsection{Register map (target implementasi)}
-Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang dipakai pada implementasi final. Fokus desain adalah tiga register utama untuk firmware: \texttt{DATA\_LEFT}, \texttt{DATA\_RIGHT}, dan \texttt{CONTROL}. Satu word tambahan \texttt{RESERVED} dipertahankan untuk ekspansi di masa depan.
+\subsection{Register map}
+Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada implementasi final.
 
 \begin{table}[htbp]
 \centering
-\caption{Register map IP I2S AXI4-Lite (implementasi final).}
+\caption{Register map IP I2S AXI4-Lite.}
 \label{tab:ch3-regmap}
-\begin{tabular}{|l|l|p{6.3cm}|p{3.4cm}|}
+\begin{tabular}{|l|l|p{6.0cm}|p{3.6cm}|}
 \hline
-	extbf{Offset} & \textbf{Nama Register} & \textbf{Fungsi} & \textbf{Packing / Catatan} \\
+\textbf{Offset} & \textbf{Nama Register} & \textbf{Fungsi} & \textbf{Packing / Catatan} \\
 \hline
-	exttt{0x00} & \texttt{DATA\_LEFT} & Sampel audio kanal kiri & \texttt{[SAMPLE\_WIDTH-1:0]} berisi data sampel kiri, sisanya 0 \\
-	exttt{0x04} & \texttt{DATA\_RIGHT} & Sampel audio kanal kanan & \texttt{[SAMPLE\_WIDTH-1:0]} berisi data sampel kanan, sisanya 0 \\
-	exttt{0x08} & \texttt{CONTROL} & Enable, mute, mode sampling, dan lebar sampel & Lihat Tabel \ref{tab:ch3-control-bits} \\
-	exttt{0x0C} & \texttt{RESERVED} & Cadangan untuk ekspansi register di masa depan & Tidak digunakan pada versi ini \\
+\texttt{0x00} & \texttt{DATA\_LEFT} & Sampel audio kanal kiri & \texttt{[SAMPLE\_WIDTH-1:0]} berisi data kiri \\
+\texttt{0x04} & \texttt{DATA\_RIGHT} & Sampel audio kanal kanan & \texttt{[SAMPLE\_WIDTH-1:0]} berisi data kanan \\
+\texttt{0x08} & \texttt{CONTROL} & Enable, mute, mode sampling, dan lebar sampel & Lihat Tabel \ref{tab:ch3-control-bits} \\
 \hline
 \end{tabular}
 \end{table}
@@ -49,42 +49,27 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang dipakai pada imp
 \centering
 \caption{Bitfield register \texttt{CONTROL}.}
 \label{tab:ch3-control-bits}
-\begin{tabular}{|c|l|c|p{8.2cm}|}
+\begin{tabular}{|c|l|c|p{8.0cm}|}
 \hline
-	extbf{Bit(s)} & \textbf{Field} & \textbf{Default} & \textbf{Fungsi / Keterangan} \\
+\textbf{Bit(s)} & \textbf{Field} & \textbf{Default} & \textbf{Fungsi / Keterangan} \\
 \hline
-	exttt{0} & \texttt{ENABLE} & 0 & 1 = output aktif, 0 = output nonaktif \\
-	exttt{1} & \texttt{MUTE} & 0 & 1 = data audio dipaksa nol (mute) \\
-	exttt{2} & \texttt{FS\_MODE} & 0 & 0/1 = memilih mode frekuensi sampling keluarga cepat / lambat \\
-	exttt{3} & \texttt{FS\_FAMILY} & 0 & 0 = keluarga 48/96 kHz; 1 = keluarga 44.1/88.2 kHz \\
-	exttt{7:4} & \texttt{RESERVED} & 0 & Cadangan untuk ekstensi berikutnya \\
-	exttt{12:8} & \texttt{SAMPLE\_WIDTH} & 24 & Lebar sampel aktual per kanal, rentang 1--32 bit \\
-	exttt{31:13} & \texttt{RESERVED} & 0 & Cadangan untuk perluasan kontrol di masa depan \\
+\texttt{0} & \texttt{ENABLE} & 0 & 1 = output audio aktif \\
+\texttt{1} & \texttt{MUTE} & 0 & 1 = data audio dipaksa nol \\
+\texttt{2} & \texttt{FS\_MODE} & 0 & Memilih mode frekuensi sampling nominal rendah / tinggi \\
+\texttt{7:3} & \texttt{RESERVED} & 0 & Cadangan \\
+\texttt{12:8} & \texttt{SAMPLE\_WIDTH} & 24 & Lebar sampel aktual per kanal \\
+\texttt{31:13} & \texttt{RESERVED} & 0 & Cadangan \\
 \hline
 \end{tabular}
 \end{table}
 
-\noindent\textbf{Aturan packing data:}
+\subsection{Aturan packing data}
 \begin{itemize}
-\item \texttt{DATA\_LEFT}: \texttt{[SAMPLE\_WIDTH-1:0]} berisi sampel kiri, \texttt{[31:SAMPLE\_WIDTH]} bernilai 0.
-\item \texttt{DATA\_RIGHT}: \texttt{[SAMPLE\_WIDTH-1:0]} berisi sampel kanan, \texttt{[31:SAMPLE\_WIDTH]} bernilai 0.
-\item Firmware menulis pasangan data kiri/kanan sebelum mengaktifkan \texttt{ENABLE}.
-\item Jika \texttt{MUTE=1}, keluaran data dipaksa nol meskipun register data terisi.
+\item \texttt{DATA\_LEFT}: \texttt{[SAMPLE\_WIDTH-1:0]} berisi sampel kiri.
+\item \texttt{DATA\_RIGHT}: \texttt{[SAMPLE\_WIDTH-1:0]} berisi sampel kanan.
+\item Firmware menulis pasangan data kiri/kanan sebelum data dipindahkan ke FIFO TX.
+\item Jika \texttt{MUTE=1}, keluaran serial dipaksa nol tanpa mengubah isi buffer.
 \end{itemize}
-
-\noindent\textbf{Contoh nilai \texttt{CONTROL}:}
-\begin{center}
-\begin{tabular}{|c|c|c|c|c|c|}
-\hline
-	extbf{ENABLE} & \textbf{MUTE} & \textbf{FS\_MODE} & \textbf{FS\_FAMILY} & \textbf{SAMPLE\_WIDTH} & \textbf{Makna} \\
-\hline
-1 & 0 & 0 & 0 & 24 & 96 kHz, 24 bit \\
-1 & 0 & 1 & 0 & 16 & 48 kHz, 16 bit \\
-1 & 1 & 1 & 1 & 24 & 44.1 kHz, mute \\
-1 & 0 & 0 & 1 & 32 & 88.2 kHz, 32 bit \\
-\hline
-\end{tabular}
-\end{center}
 
 \subsection{Integrasi Vivado Block Design}
 \begin{figure}[htbp]
@@ -95,561 +80,139 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang dipakai pada imp
 		\setlength{\fboxsep}{14pt}%
 		\fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/block-design-vivado-i2s-screenshot.png} (screenshot BD Vivado).}}}%
 	}
-	\caption{Integrasi IP pada Block Design (MicroBlaze, interconnect, clock, I2S).}
+	\caption{Integrasi IP I2S pada Block Design.}
 	\label{fig:ch3-bd-vivado}
 \end{figure}
 
 \section{Alat dan Bahan}
 
-Penelitian ini menggunakan berbagai alat dan bahan yang terbagi dalam kategori hardware dan software untuk mendukung perancangan, implementasi, dan pengujian sistem SoC dengan peripheral I2C dan I2S.
+\subsection{Perangkat keras}
 
-\subsection{Perangkat Keras (Hardware)}
+\subsubsection{Board FPGA}
+\textbf{Basys3} digunakan sebagai platform implementasi utama. Board ini berbasis FPGA Xilinx Artix-7 dan menyediakan sumber clock, antarmuka USB-UART, serta header PMOD untuk koneksi ke perangkat eksternal.
 
-\subsubsection{FPGA Development Board}
+\subsubsection{Modul DAC audio}
+\textbf{PCM5102A Audio DAC Module} digunakan sebagai penerima data I2S. Modul ini mendukung antarmuka audio serial, berbagai \textit{sample rate}, dan keluaran analog stereo untuk verifikasi suara.
 
-\textbf{Xilinx FPGA 7-series Development Board} merupakan platform utama untuk implementasi design. Spesifikasi yang digunakan:
+\subsubsection{Perangkat bantu}
 \begin{itemize}
-	\item \textbf{FPGA Device}: Xilinx Artix-7 atau Zynq-7000 series
-	\item \textbf{Logic Cells}: Minimal 50K logic cells untuk accommodate MicroBlaze V + peripherals
-	\item \textbf{Block RAM}: Minimal 1.8 Mb untuk program memory dan data buffers
-	\item \textbf{DSP Slices}: Untuk potential DSP operations
-	\item \textbf{I/O Pins}: Sufficient user I/O untuk I2C, I2S, UART connections
-	\item \textbf{Clock Source}: On-board oscillator (100 MHz typical)
-	\item \textbf{Programming Interface}: JTAG interface untuk bitstream download dan debugging
+	\item \textbf{Oscilloscope / logic analyzer / ILA} untuk memverifikasi sinyal BCLK, WS, dan DATA.
+	\item \textbf{Speaker atau headphone aktif} untuk uji keluaran audio.
+	\item \textbf{Breadboard dan kabel jumper} untuk koneksi Basys3 ke PCM5102A.
 \end{itemize}
 
-Board ini dipilih karena compatibility dengan Vivado Design Suite dan representative dari target deployment platforms.
-
-\subsubsection{Sensor I2C}
-
-Beberapa sensor I2C digunakan untuk testing dan demonstrasi I2C peripheral functionality:
-
-\begin{enumerate}
-	\item \textbf{LM75 Temperature Sensor}
-	\begin{itemize}
-		\item I2C address: 0x48-0x4F (configurable dengan address pins)
-		\item Resolution: 0.125°C
-		\item Temperature range: -55°C to +125°C
-		\item Supply voltage: 2.8V to 5.5V
-		\item Digunakan untuk basic I2C read operations testing
-	\end{itemize}
-	
-	\item \textbf{BH1750 Light Intensity Sensor}
-	\begin{itemize}
-		\item I2C address: 0x23 atau 0x5C (selectable)
-		\item Range: 1 - 65535 lux
-		\item Measurement modes: Continuous atau One-time
-		\item Digunakan untuk testing different I2C command sequences
-	\end{itemize}
-	
-	\item \textbf{VL53L0X Time-of-Flight Distance Sensor}
-	\begin{itemize}
-		\item I2C address: 0x29 (default, programmable)
-		\item Range: Up to 2 meters
-		\item Multiple measurement modes
-		\item Digunakan untuk testing I2C with complex register operations
-	\end{itemize}
-\end{enumerate}
-
-\subsubsection{Audio Components untuk I2S}
-
-\begin{enumerate}
-	\item \textbf{PCM5102A Audio DAC Module}
-	\begin{itemize}
-		\item I2S slave device
-		\item Support sample rates: 8 kHz - 384 kHz
-		\item Bit depths: 16-bit to 32-bit
-		\item Analog output: Line-level stereo
-		\item Digunakan untuk testing I2S transmitter dengan actual audio playback
-	\end{itemize}
-	
-	\item \textbf{Audio Speaker/Headphone}
-	\begin{itemize}
-		\item 3.5mm audio jack
-		\item Untuk listening test dan audio quality verification
-	\end{itemize}
-\end{enumerate}
-
-\subsubsection{Supporting Hardware}
-
+\subsection{Perangkat lunak}
 \begin{itemize}
-	\item \textbf{USB-to-UART Converter}: Untuk serial communication dengan PC (debugging, data logging)
-	\item \textbf{Logic Analyzer / Oscilloscope}: Untuk verifying signal timing dan protocol compliance pada hardware level
-	\item \textbf{Breadboard dan Jumper Wires}: Untuk prototyping connections
-	\item \textbf{Pull-up Resistors}: 4.7kΩ untuk I2C SDA dan SCL lines
-	\item \textbf{Power Supply}: 5V dan 3.3V untuk sensors dan modules
-\end{itemize}
-
-\subsection{Perangkat Lunak (Software)}
-
-\subsubsection{Xilinx Vivado Design Suite}
-
-\textbf{Vivado Design Suite 2023.2} (atau versi compatible) digunakan untuk:
-\begin{itemize}
-	\item \textbf{RTL Development}: Editing dan managing Verilog source files
-	\item \textbf{Simulation}: Behavioral dan post-implementation simulation
-	\item \textbf{Synthesis}: Converting Verilog RTL ke gate-level netlist
-	\item \textbf{Implementation}: Place-and-route untuk generating bitstream
-	\item \textbf{IP Integrator}: Block design untuk SoC assembly dengan MicroBlaze V dan peripherals
-	\item \textbf{Timing Analysis}: Verifying timing constraints dan clock domains
-	\item \textbf{Hardware Manager}: Programming FPGA dan debugging dengan ILA (Integrated Logic Analyzer)
-\end{itemize}
-
-\subsubsection{Xilinx Vitis IDE}
-
-\textbf{Vitis Unified Software Platform 2023.2} digunakan untuk:
-\begin{itemize}
-	\item \textbf{C Application Development}: Writing dan editing embedded C code
-	\item \textbf{Driver Development}: Creating low-level peripheral drivers
-	\item \textbf{BSP Generation}: Board Support Package creation dari hardware design
-	\item \textbf{Compilation}: Building executable (.elf) dengan RISC-V GCC compiler
-	\item \textbf{Debugging}: Source-level debugging via JTAG dengan breakpoints dan variable watch
-	\item \textbf{Performance Analysis}: Profiling CPU usage dan peripheral timing
-\end{itemize}
-
-\subsubsection{Simulation Tools}
-
-\begin{itemize}
-	\item \textbf{Vivado Simulator (XSIM)}: Integrated simulator untuk functional dan timing simulation
-	\item \textbf{ModelSim} (optional): Third-party simulator untuk advanced verification
-	\item \textbf{GTKWave} (optional): Waveform viewer untuk analyzing simulation results
-\end{itemize}
-
-\subsubsection{Version Control dan Documentation}
-
-\begin{itemize}
-	\item \textbf{Git}: Version control system untuk source code management
-	\item \textbf{GitHub/GitLab}: Remote repository untuk backup dan collaboration
-	\item \textbf{LaTeX}: Untuk penulisan dokumentasi dan thesis
-	\item \textbf{Draw.io / Microsoft Visio}: Untuk creating block diagrams dan flowcharts
-\end{itemize}
-
-\subsubsection{Communication dan Testing Tools}
-
-\begin{itemize}
-	\item \textbf{PuTTY / Tera Term}: Serial terminal untuk UART communication
-	\item \textbf{Audacity}: Audio recording dan analysis software untuk I2S testing
-	\item \textbf{Logic Analyzer Software}: Untuk capturing dan analyzing I2C/I2S signals
+	\item \textbf{AMD Vivado Design Suite} untuk RTL design, synthesis, implementation, dan integrasi SoC.
+	\item \textbf{Xilinx Vitis} untuk pengembangan perangkat lunak uji dalam bahasa C.
+	\item \textbf{Vivado Simulator} atau simulasi lain bila digunakan untuk verifikasi RTL.
+	\item \textbf{LaTeX} untuk penulisan dokumen skripsi.
 \end{itemize}
 
 \section{Metode yang Digunakan}
 
-Penelitian ini menggunakan pendekatan hardware-software co-design dengan metodologi iterative development. Proses development dibagi menjadi beberapa fase yang saling terkait.
+\subsection{Metode perancangan hardware}
 
-\subsection{Metode Perancangan Hardware (RTL Design)}
-
-\subsubsection{Spesifikasi Peripheral}
-
-Langkah pertama adalah mendefinisikan spesifikasi lengkap untuk masing-masing peripheral:
-
-\textbf{I2C Controller Specifications}:
-\begin{itemize}
-	\item Mode: Master-only operation
-	\item Speed: Standard mode (100 kbps) dan Fast mode (400 kbps)
-	\item Addressing: 7-bit addressing
-	\item Features: START/STOP generation, ACK/NACK handling, clock stretching support
-	\item AXI4-Lite slave interface dengan register-based configuration
-	\item Interrupt generation pada transaction completion
-\end{itemize}
-
-\textbf{I2S Transmitter Specifications}:
-\begin{itemize}
-	\item Mode: Transmitter (master mode)
-	\item Sample rates: 8 kHz, 16 kHz, 32 kHz, 44.1 kHz, 48 kHz
-	\item Bit depths: 16-bit, 24-bit
-	\item Format: Philips I2S standard
-	\item FIFO buffer: Untuk continuous audio streaming
-	\item AXI4-Lite slave interface untuk configuration dan data transfer
-	\item Interrupt generation pada FIFO threshold
-\end{itemize}
-
-\subsubsection{Architecture Design}
-
-Perancangan arsitektur top-level peripheral mencakup:
+Perancangan perangkat keras dilakukan dengan tahapan berikut:
 \begin{enumerate}
-	\item \textbf{Module Hierarchy}: Defining top module, submodules, dan interface boundaries
-	\item \textbf{State Machine Design}: 
-	\begin{itemize}
-		\item I2C Controller: States untuk IDLE, START, ADDRESS, WRITE, READ, ACK, STOP
-		\item I2S Transmitter: States untuk IDLE, LEFT\_CHANNEL, RIGHT\_CHANNEL
-	\end{itemize}
-	\item \textbf{Register Map Design}: Address allocation untuk configuration dan status registers
-	\item \textbf{FIFO Design}: Depth calculation based on latency requirements
-	\item \textbf{Clock Domain Crossing}: Handling multiple clock domains (AXI clock, I2C clock, I2S clock)
+	\item Menentukan spesifikasi I2S TX meliputi format data, lebar sampel, mode frekuensi sampling, FIFO, dan interrupt.
+	\item Mendesain arsitektur modul yang mencakup AXI4-Lite slave, register internal, FIFO TX, pembagi clock, dan serializer I2S.
+	\item Mengimplementasikan RTL dalam Verilog dengan pemisahan blok sekuensial dan kombinasional secara jelas.
+	\item Mengintegrasikan peripheral ke dalam Vivado IP Integrator bersama MicroBlaze V, BRAM, clocking, dan peripheral pendukung.
 \end{enumerate}
 
-\subsubsection{RTL Coding}
+\subsection{Metode verifikasi dan simulasi}
 
-Implementation dalam Verilog mengikuti best practices:
-\begin{itemize}
-	\item \textbf{Coding Style}: Synthesizable RTL dengan clear separation between combinational dan sequential logic
-	\item \textbf{Parameterization}: Using parameters untuk configurability (clock frequencies, FIFO depth)
-	\item \textbf{Synchronous Design}: Single clock domain per module dengan proper CDC (Clock Domain Crossing) handling
-	\item \textbf{Reset Strategy}: Synchronous reset untuk all registers
-	\item \textbf{Naming Convention}: Consistent naming untuk signals, registers, parameters
-	\item \textbf{Comments}: Adequate commenting untuk clarity
-\end{itemize}
-
-\subsection{Metode Verifikasi dan Simulasi}
-
-\subsubsection{Testbench Development}
-
-Untuk setiap peripheral module, dibuat comprehensive testbench:
-
-\textbf{I2C Testbench}:
-\begin{itemize}
-	\item \textbf{Stimulus Generation}: Writing sequences untuk different I2C operations (read, write, repeated start)
-	\item \textbf{Slave Model}: BFM (Bus Functional Model) untuk simulating I2C slave responses
-	\item \textbf{Checking}: Automatic checking of protocol compliance (timing, ACK/NACK, data integrity)
-	\item \textbf{Coverage}: Statement coverage dan FSM state coverage
-\end{itemize}
-
-\textbf{I2S Testbench}:
-\begin{itemize}
-	\item \textbf{Audio Data Generation}: Creating test audio patterns (sine wave, square wave)
-	\item \textbf{Timing Verification}: Checking BCLK, LRCLK frequencies dan phase relationships
-	\item \textbf{Data Integrity}: Verifying transmitted data matches input data
-	\item \textbf{FIFO Testing}: Underrun dan overrun conditions
-\end{itemize}
-
-\subsubsection{Simulation Methodology}
-
+Verifikasi dilakukan pada dua level:
 \begin{enumerate}
-	\item \textbf{Functional Simulation}: Verifying logic functionality tanpa timing information
-	\item \textbf{Timing Simulation}: Post-implementation simulation dengan actual delays
-	\item \textbf{Regression Testing}: Automated test suite untuk detecting regressions
+	\item \textbf{Verifikasi fungsional RTL}, untuk memastikan pembangkitan sinyal I2S, urutan bit, dan logika FIFO berjalan sesuai spesifikasi.
+	\item \textbf{Validasi hardware}, untuk memastikan desain tetap bekerja setelah synthesis dan implementation pada FPGA nyata.
 \end{enumerate}
 
-\subsection{Metode Integrasi SoC}
+Parameter yang diamati meliputi:
+\begin{itemize}
+	\item relasi timing \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data};
+	\item level FIFO dan kejadian underrun;
+	\item akurasi frekuensi sampling nominal rendah dan tinggi;
+	\item keberhasilan keluaran audio pada DAC.
+\end{itemize}
 
-\subsubsection{Vivado IP Integrator Workflow}
+\subsection{Metode integrasi SoC}
 
-Integrasi peripheral ke MicroBlaze V SoC menggunakan IP Integrator:
+Integrasi peripheral ke dalam SoC dilakukan melalui alur berikut:
 \begin{enumerate}
-	\item \textbf{IP Packaging}: Packaging I2C dan I2S modules sebagai custom IP cores dengan metadata
-	\item \textbf{Block Design}: Creating block diagram dalam IP Integrator
-	\item \textbf{IP Instantiation}: Adding MicroBlaze V, AXI interconnect, I2C peripheral, I2S peripheral
-	\item \textbf{Connection}: Automatic dan manual connection of AXI interfaces, clocks, resets, interrupts
-	\item \textbf{Address Allocation}: Assigning base addresses untuk each peripheral
-	\item \textbf{Validation}: Running design validation untuk detecting connection errors
-	\item \textbf{Wrapper Generation}: Creating HDL wrapper untuk block design
+	\item \textbf{IP Packaging}: mengemas modul I2S sebagai custom IP.
+	\item \textbf{Block Design}: menghubungkan MicroBlaze V, AXI interconnect, BRAM, Clocking Wizard, UART, dan IP I2S.
+	\item \textbf{Address Allocation}: menetapkan base address peripheral agar dapat diakses dari Vitis.
+	\item \textbf{Constraint Management}: memetakan pin I2S ke konektor board sesuai file \texttt{.xdc}.
 \end{enumerate}
 
-\subsubsection{Constraint Management}
+\subsection{Metode pengembangan software}
 
+Perangkat lunak uji dikembangkan dalam bahasa C pada Vitis dengan fungsi utama:
 \begin{itemize}
-	\item \textbf{Timing Constraints}: Defining clock frequencies, input/output delays
-	\item \textbf{Physical Constraints}: Pin assignments untuk I2C (SDA, SCL), I2S (BCLK, LRCLK, SD), UART
-	\item \textbf{Synthesis Constraints}: Optimization directives untuk area/speed trade-offs
+	\item menginisialisasi register peripheral I2S;
+	\item menulis sampel audio ke register atau FIFO;
+	\item mengaktifkan mode operasi dan memilih frekuensi sampling;
+	\item menangani interupsi watermark untuk isi ulang FIFO;
+	\item menghasilkan sinyal uji sederhana seperti gelombang sinus atau \textit{square wave}.
 \end{itemize}
 
-\subsection{Metode Pengembangan Software}
+\subsection{Metode pengujian hardware}
 
-\subsubsection{Driver Development}
-
-Low-level drivers dikembangkan untuk each peripheral:
-
-\textbf{I2C Driver Structure}:
-\begin{itemize}
-	\item \texttt{i2c\_init()}: Initialize peripheral, configure speed
-	\item \texttt{i2c\_write()}: Write data to slave device
-	\item \texttt{i2c\_read()}: Read data from slave device
-	\item \texttt{i2c\_write\_read()}: Combined write-read transaction
-	\item \texttt{i2c\_interrupt\_handler()}: Handle transaction completion interrupts
-\end{itemize}
-
-\textbf{I2S Driver Structure}:
-\begin{itemize}
-	\item \texttt{i2s\_init()}: Initialize peripheral, configure sample rate dan bit depth
-	\item \texttt{i2s\_write\_buffer()}: Write audio samples to FIFO
-	\item \texttt{i2s\_start()}: Start audio transmission
-	\item \texttt{i2s\_stop()}: Stop transmission
-	\item \texttt{i2s\_interrupt\_handler()}: Handle FIFO threshold interrupts
-\end{itemize}
-
-\subsubsection{Application Development}
-
-Test applications dikembangkan untuk demonstrate peripheral functionality:
-
-\textbf{I2C Sensor Reading Application}:
-\begin{itemize}
-	\item Initialize I2C peripheral
-	\item Configure sensor devices (LM75, BH1750, VL53L0X)
-	\item Periodic reading dari multiple sensors
-	\item Display readings via UART
-	\item Error handling untuk I2C communication failures
-\end{itemize}
-
-\textbf{I2S Audio Playback Application}:
-\begin{itemize}
-	\item Initialize I2S peripheral dengan target sample rate
-	\item Load audio data (sine wave generation atau pre-stored samples)
-	\item Stream data to I2S FIFO
-	\item Handle FIFO refill via interrupts
-	\item Monitor playback status
-\end{itemize}
-
-\textbf{Concurrent Operation Demo}:
-\begin{itemize}
-	\item Multi-threaded atau interrupt-driven approach
-	\item Simultaneous I2C sensor polling dan I2S audio streaming
-	\item Demonstrating resource sharing dan interrupt prioritization
-	\item Performance monitoring (CPU usage, latency)
-\end{itemize}
-
-\subsection{Metode Pengujian Hardware}
-
-\subsubsection{Functional Testing}
-
+Pengujian hardware dilakukan dengan langkah berikut:
 \begin{enumerate}
-	\item \textbf{Individual Peripheral Testing}:
-	\begin{itemize}
-		\item I2C: Reading sensor IDs, configuration registers, data registers
-		\item I2S: Playing test tones, verifying audio output quality
-	\end{itemize}
-	
-	\item \textbf{Protocol Compliance Testing}:
-	\begin{itemize}
-		\item Capturing I2C signals dengan logic analyzer
-		\item Verifying START/STOP conditions, timing parameters
-		\item Measuring I2S clock accuracy dan jitter
-	\end{itemize}
-	
-	\item \textbf{Stress Testing}:
-	\begin{itemize}
-		\item Continuous I2C transactions dengan varying speeds
-		\item Long-duration audio playback
-		\item Concurrent operation under maximum load
-	\end{itemize}
+	\item Memprogram FPGA dengan bitstream hasil implementasi.
+	\item Menghubungkan Basys3 ke PCM5102A.
+	\item Menjalankan aplikasi Vitis untuk mengirim sampel audio.
+	\item Mengamati sinyal I2S menggunakan ILA atau osiloskop.
+	\item Memverifikasi keluaran audio melalui speaker/headphone.
 \end{enumerate}
 
-\subsubsection{Performance Benchmarking}
+\subsection{Pengukuran dan evaluasi}
 
-Metrics yang diukur:
+Metode evaluasi meliputi:
 \begin{itemize}
-	\item \textbf{Latency}: Time from software command to actual bus activity
-	\item \textbf{Throughput}: Effective data rate untuk I2C dan I2S
-	\item \textbf{CPU Overhead}: Percentage of CPU time spent dalam interrupt handlers
-	\item \textbf{Resource Utilization}: LUTs, FFs, BRAMs used by design (dari implementation report)
-	\item \textbf{Clock Frequency}: Maximum achievable clock frequency (dari timing report)
+	\item \textbf{Resource utilization}: LUT, FF, dan BRAM dari laporan implementasi.
+	\item \textbf{Clock accuracy}: frekuensi aktual hasil Clocking Wizard dan frekuensi terukur sinyal I2S.
+	\item \textbf{Fungsionalitas audio}: keberhasilan playback dan tidak terjadinya underrun pada skenario uji utama.
 \end{itemize}
 
 \section{Alur Tugas Akhir}
 
-Penelitian ini mengikuti workflow yang terstruktur dari requirement analysis hingga validation. Alur kerja dibagi menjadi beberapa fase yang sequential dengan iterative refinement.
-
-\subsection{Fase 1: Analisis Kebutuhan dan Spesifikasi}
-
-\textbf{Durasi}: 2 minggu
-
-\textbf{Aktivitas}:
-\begin{itemize}
-	\item Literature review untuk memahami prior art dan best practices
-	\item Studi protokol I2C dan I2S specifications
-	\item Analisis MicroBlaze V architecture dan AXI4-Lite protocol
-	\item Defining peripheral specifications (register map, features, performance targets)
-	\item Selecting target FPGA platform dan sensors
-\end{itemize}
-
-\textbf{Output}:
-\begin{itemize}
-	\item Specification document untuk I2C dan I2S peripherals
-	\item Register map definitions
-	\item Bill of materials untuk hardware components
-\end{itemize}
-
-\subsection{Fase 2: Perancangan Hardware (RTL Design)}
-
-\textbf{Durasi}: 4 minggu
-
-\textbf{Aktivitas}:
-\begin{itemize}
-	\item Architecture design: block diagrams, state machines
-	\item Verilog RTL coding untuk I2C controller
-	\item Verilog RTL coding untuk I2S transmitter
-	\item AXI4-Lite slave interface implementation
-	\item Code review dan static analysis
-\end{itemize}
-
-\textbf{Output}:
-\begin{itemize}
-	\item Verilog source files untuk I2C module
-	\item Verilog source files untuk I2S module
-	\item Block diagrams dan documentation
-\end{itemize}
-
-\subsection{Fase 3: Verifikasi dan Simulasi}
-
-\textbf{Durasi}: 3 minggu
-
-\textbf{Aktivitas}:
-\begin{itemize}
-	\item Developing testbenches untuk each peripheral
-	\item Functional simulation dengan Vivado Simulator
-	\item Debug dan fixing RTL bugs
-	\item Code coverage analysis
-	\item Regression testing dengan automated scripts
-\end{itemize}
-
-\textbf{Output}:
-\begin{itemize}
-	\item Verified RTL code dengan passing testbenches
-	\item Simulation reports dan waveforms
-	\item Coverage reports
-\end{itemize}
-
-\subsection{Fase 4: Integrasi SoC}
-
-\textbf{Durasi}: 2 minggu
-
-\textbf{Aktivitas}:
-\begin{itemize}
-	\item Packaging peripherals sebagai Vivado IP cores
-	\item Creating block design dengan IP Integrator
-	\item Instantiating MicroBlaze V, AXI interconnect, peripherals
-	\item Address assignment dan connection verification
-	\item Adding supporting IPs: UART, Timer, Interrupt Controller
-	\item Synthesis dan implementation
-	\item Timing analysis dan constraint refinement
-\end{itemize}
-
-\textbf{Output}:
-\begin{itemize}
-	\item Complete SoC block design
-	\item Generated bitstream (.bit file)
-	\item Hardware handoff files untuk Vitis (.xsa file)
-	\item Resource utilization dan timing reports
-\end{itemize}
-
-\subsection{Fase 5: Pengembangan Software}
-
-\textbf{Durasi}: 3 minggu
-
-\textbf{Aktivitas}:
-\begin{itemize}
-	\item Setting up Vitis project dengan hardware platform
-	\item Developing peripheral drivers (I2C, I2S)
-	\item Developing sensor interfacing code (LM75, BH1750, VL53L0X)
-	\item Developing audio playback application
-	\item Implementing concurrent demo application
-	\item Software debugging dan testing via UART logging
-\end{itemize}
-
-\textbf{Output}:
-\begin{itemize}
-	\item I2C driver library (.c/.h files)
-	\item I2S driver library
-	\item Sensor test applications
-	\item Audio demo application
-	\item Concurrent operation demo
-\end{itemize}
-
-\subsection{Fase 6: Hardware Testing dan Validasi}
-
-\textbf{Durasi}: 2 minggu
-
-\textbf{Aktivitas}:
-\begin{itemize}
-	\item Programming FPGA dengan bitstream
-	\item Hardware setup: connecting sensors, audio DAC, logic analyzer
-	\item Running I2C test applications
-	\item Running I2S test applications
-	\item Running concurrent demo
-	\item Protocol compliance verification dengan logic analyzer
-	\item Performance benchmarking
-	\item Audio quality testing
-\end{itemize}
-
-\textbf{Output}:
-\begin{itemize}
-	\item Test results dan logs
-	\item Logic analyzer captures
-	\item Audio recordings
-	\item Performance metrics
-	\item Issue list dan resolutions
-\end{itemize}
-
-\subsection{Fase 7: Dokumentasi dan Analisis}
-
-\textbf{Durasi}: 2 minggu
-
-\textbf{Aktivitas}:
-\begin{itemize}
-	\item Analyzing test results
-	\item Comparing performance dengan specifications
-	\item Creating user documentation untuk peripherals
-	\item Writing thesis chapters (methodology, results, discussion)
-	\item Preparing diagrams, tables, graphs
-	\item Code documentation dan commenting
-\end{itemize}
-
-\textbf{Output}:
-\begin{itemize}
-	\item Thesis manuscript
-	\item Technical documentation
-	\item Presentation materials
-	\item GitHub repository dengan complete source code
-\end{itemize}
-
-\subsection{Diagram Alur Penelitian}
-
-Berikut adalah flow diagram yang menggambarkan alur penelitian secara keseluruhan:
-
+Penelitian ini mengikuti tahapan berikut:
 \begin{enumerate}
-	\item \textbf{START} → Analisis Kebutuhan
-	\item Analisis Kebutuhan → Spesifikasi Peripheral (I2C, I2S)
-	\item Spesifikasi → Perancangan Arsitektur RTL
-	\item Perancangan RTL → Implementasi Verilog (I2C Module)
-	\item Implementasi Verilog → Implementasi Verilog (I2S Module)
-	\item I2C Module → Verifikasi dengan Testbench
-	\item I2S Module → Verifikasi dengan Testbench
-	\item Testbench Verification → [Decision: Pass/Fail]
-	\item Fail → Kembali ke RTL Coding untuk debugging
-	\item Pass → Packaging sebagai Vivado IP Cores
-	\item IP Cores → SoC Integration dengan IP Integrator
-	\item SoC Integration → Synthesis dan Implementation
-	\item Implementation → [Decision: Timing Met?]
-	\item Timing Not Met → Constraint Refinement → Kembali ke Implementation
-	\item Timing Met → Generate Bitstream
-	\item Bitstream → Software Development (Drivers, Applications)
-	\item Software Development → Compilation dengan Vitis
-	\item Compilation → Hardware Testing pada FPGA
-	\item Hardware Testing → [Decision: Functional?]
-	\item Not Functional → Debugging → Kembali ke Software atau Hardware sesuai issue
-	\item Functional → Performance Benchmarking
-	\item Benchmarking → Protocol Compliance Testing
-	\item Compliance Testing → [Decision: Meet Specifications?]
-	\item Not Meet → Optimization → Kembali ke RTL atau Software
-	\item Meet Specifications → Documentation dan Analysis
-	\item Documentation → \textbf{END} (Thesis Completion)
+	\item Analisis kebutuhan sistem audio digital dan studi literatur tentang I2S, AXI4-Lite, dan MicroBlaze V.
+	\item Perancangan spesifikasi peripheral I2S TX.
+	\item Implementasi RTL Verilog dan verifikasi awal.
+	\item Integrasi ke dalam SoC pada Vivado Block Design.
+	\item Pengembangan perangkat lunak uji di Vitis.
+	\item Pengujian hardware dengan ILA, pengukuran sinyal, dan validasi audio.
+	\item Analisis hasil, penyusunan dokumen, dan penarikan kesimpulan.
 \end{enumerate}
-
-\subsection{Timeline Penelitian}
 
 \begin{table}[h]
 \centering
-\caption{Timeline Penelitian Tugas Akhir}
+\caption{Timeline penelitian tugas akhir}
 \begin{tabular}{|l|l|c|}
 \hline
 \textbf{Fase} & \textbf{Aktivitas} & \textbf{Durasi (Minggu)} \\
 \hline
-1 & Analisis Kebutuhan dan Spesifikasi & 2 \\
+1 & Analisis kebutuhan dan studi pustaka & 2 \\
 \hline
-2 & Perancangan Hardware (RTL Design) & 4 \\
+2 & Perancangan RTL I2S TX & 4 \\
 \hline
-3 & Verifikasi dan Simulasi & 3 \\
+3 & Verifikasi dan simulasi & 3 \\
 \hline
-4 & Integrasi SoC & 2 \\
+4 & Integrasi SoC di Vivado & 2 \\
 \hline
-5 & Pengembangan Software & 3 \\
+5 & Pengembangan software uji di Vitis & 3 \\
 \hline
-6 & Hardware Testing dan Validasi & 2 \\
+6 & Pengujian hardware dan validasi audio & 2 \\
 \hline
-7 & Dokumentasi dan Analisis & 2 \\
+7 & Analisis hasil dan penulisan skripsi & 2 \\
 \hline
 \textbf{Total} & & \textbf{18 Minggu} \\
 \hline
 \end{tabular}
 \end{table}
-
-Timeline ini bersifat estimasi dan dapat disesuaikan berdasarkan progress actual dan challenges yang ditemui during implementation. Beberapa fase dapat overlap, terutama software development yang dapat dimulai segera setelah initial bitstream generation, secara parallel dengan hardware refinement.

@@ -1,519 +1,111 @@
 \chapter*{LAMPIRAN}
 
-\section{Source Code Peripheral I2C}
+\section{Cuplikan kode implementasi I2S}
 
-\subsection{I2C Controller RTL (Verilog)}
+\subsection{Cuplikan RTL: sinkronisasi register AXI ke domain \texttt{audio\_clk}}
 
-\subsubsection{I2C Top Module}
 \begin{lstlisting}[language=Verilog]
-module i2c_controller #(
-    parameter C_S_AXI_DATA_WIDTH = 32,
-    parameter C_S_AXI_ADDR_WIDTH = 4
-)(
-    // AXI4-Lite Interface
-    input  wire                                S_AXI_ACLK,
-    input  wire                                S_AXI_ARESETN,
-    input  wire [C_S_AXI_ADDR_WIDTH-1:0]      S_AXI_AWADDR,
-    input  wire                                S_AXI_AWVALID,
-    output wire                                S_AXI_AWREADY,
-    input  wire [C_S_AXI_DATA_WIDTH-1:0]      S_AXI_WDATA,
-    input  wire [(C_S_AXI_DATA_WIDTH/8)-1:0]  S_AXI_WSTRB,
-    input  wire                                S_AXI_WVALID,
-    output wire                                S_AXI_WREADY,
-    output wire [1:0]                          S_AXI_BRESP,
-    output wire                                S_AXI_BVALID,
-    input  wire                                S_AXI_BREADY,
-    input  wire [C_S_AXI_ADDR_WIDTH-1:0]      S_AXI_ARADDR,
-    input  wire                                S_AXI_ARVALID,
-    output wire                                S_AXI_ARREADY,
-    output wire [C_S_AXI_DATA_WIDTH-1:0]      S_AXI_RDATA,
-    output wire [1:0]                          S_AXI_RRESP,
-    output wire                                S_AXI_RVALID,
-    input  wire                                S_AXI_RREADY,
-    
-    // I2C Interface
-    inout  wire                                I2C_SDA,
-    inout  wire                                I2C_SCL,
-    
-    // Interrupt
-    output wire                                interrupt
-);
-
-// Register addresses
-localparam ADDR_CONTROL  = 4'h0;
-localparam ADDR_STATUS   = 4'h4;
-localparam ADDR_DATA_TX  = 4'h8;
-localparam ADDR_DATA_RX  = 4'hC;
-
-// State machine states
-localparam IDLE       = 4'd0;
-localparam START      = 4'd1;
-localparam ADDRESS    = 4'd2;
-localparam ACK_ADDR   = 4'd3;
-localparam WRITE_DATA = 4'd4;
-localparam ACK_WRITE  = 4'd5;
-localparam READ_DATA  = 4'd6;
-localparam ACK_READ   = 4'd7;
-localparam STOP       = 4'd8;
-
-// Internal signals
-reg [3:0]  state, next_state;
-reg [7:0]  data_tx_reg, data_rx_reg;
-reg [6:0]  slave_addr;
-reg        rw_bit;
-reg [7:0]  bit_counter;
-reg        scl_enable;
-reg        sda_out;
-reg        busy;
-
-// AXI4-Lite slave logic implementation
-// ... (register read/write handling)
-
-// I2C FSM implementation
-always @(posedge S_AXI_ACLK) begin
-    if (!S_AXI_ARESETN)
-        state <= IDLE;
+always @(posedge audio_clk or posedge audio_rst)
+begin
+    if (audio_rst)
+    begin
+        ctrl_sync_a   <= 32'd0;
+        ctrl_sync_b   <= 32'd0;
+        sample_left_q <= 32'd0;
+        sample_right_q<= 32'd0;
+    end
     else
-        state <= next_state;
-end
-
-// ... (FSM next state logic and output logic)
-
-endmodule
-\end{lstlisting}
-
-\newpage
-\subsection{I2C Driver (C Language)}
-
-\subsubsection{I2C Driver Header File}
-\begin{lstlisting}[language=C]
-// i2c_driver.h
-#ifndef I2C_DRIVER_H
-#define I2C_DRIVER_H
-
-#include "xil_types.h"
-#include "xstatus.h"
-
-// I2C Register Offsets
-#define I2C_CONTROL_REG    0x00
-#define I2C_STATUS_REG     0x04
-#define I2C_DATA_TX_REG    0x08
-#define I2C_DATA_RX_REG    0x0C
-
-// Control Register Bits
-#define I2C_CTRL_START     (1 << 0)
-#define I2C_CTRL_STOP      (1 << 1)
-#define I2C_CTRL_READ      (1 << 2)
-#define I2C_CTRL_WRITE     (1 << 3)
-#define I2C_CTRL_SPEED     (1 << 4)  // 0=100kbps, 1=400kbps
-
-// Status Register Bits
-#define I2C_STAT_BUSY      (1 << 0)
-#define I2C_STAT_ACK       (1 << 1)
-#define I2C_STAT_DONE      (1 << 2)
-#define I2C_STAT_ERROR     (1 << 3)
-
-// Function prototypes
-int i2c_init(u32 base_addr, u32 speed);
-int i2c_write(u32 base_addr, u8 slave_addr, u8 *data, u32 len);
-int i2c_read(u32 base_addr, u8 slave_addr, u8 *data, u32 len);
-int i2c_write_read(u32 base_addr, u8 slave_addr, 
-                   u8 *wr_data, u32 wr_len,
-                   u8 *rd_data, u32 rd_len);
-
-#endif // I2C_DRIVER_H
-\end{lstlisting}
-
-\newpage
-\subsubsection{I2C Driver Implementation}
-\begin{lstlisting}[language=C]
-// i2c_driver.c
-#include "i2c_driver.h"
-#include "xil_io.h"
-#include "sleep.h"
-
-int i2c_init(u32 base_addr, u32 speed) {
-    u32 ctrl_val = 0;
-    
-    // Set speed mode
-    if (speed == 400000)
-        ctrl_val |= I2C_CTRL_SPEED;
-    
-    Xil_Out32(base_addr + I2C_CONTROL_REG, ctrl_val);
-    return XST_SUCCESS;
-}
-
-int i2c_write(u32 base_addr, u8 slave_addr, u8 *data, u32 len) {
-    u32 i;
-    u32 status;
-    
-    // Send START condition
-    Xil_Out32(base_addr + I2C_CONTROL_REG, I2C_CTRL_START);
-    usleep(10);
-    
-    // Send slave address with write bit
-    Xil_Out32(base_addr + I2C_DATA_TX_REG, (slave_addr << 1) | 0);
-    Xil_Out32(base_addr + I2C_CONTROL_REG, I2C_CTRL_WRITE);
-    
-    // Wait for ACK
-    do {
-        status = Xil_In32(base_addr + I2C_STATUS_REG);
-    } while (status & I2C_STAT_BUSY);
-    
-    if (!(status & I2C_STAT_ACK))
-        return XST_FAILURE;
-    
-    // Write data bytes
-    for (i = 0; i < len; i++) {
-        Xil_Out32(base_addr + I2C_DATA_TX_REG, data[i]);
-        Xil_Out32(base_addr + I2C_CONTROL_REG, I2C_CTRL_WRITE);
-        
-        do {
-            status = Xil_In32(base_addr + I2C_STATUS_REG);
-        } while (status & I2C_STAT_BUSY);
-        
-        if (!(status & I2C_STAT_ACK))
-            return XST_FAILURE;
-    }
-    
-    // Send STOP condition
-    Xil_Out32(base_addr + I2C_CONTROL_REG, I2C_CTRL_STOP);
-    
-    return XST_SUCCESS;
-}
-
-int i2c_read(u32 base_addr, u8 slave_addr, u8 *data, u32 len) {
-    u32 i;
-    u32 status;
-    
-    // Send START condition
-    Xil_Out32(base_addr + I2C_CONTROL_REG, I2C_CTRL_START);
-    usleep(10);
-    
-    // Send slave address with read bit
-    Xil_Out32(base_addr + I2C_DATA_TX_REG, (slave_addr << 1) | 1);
-    Xil_Out32(base_addr + I2C_CONTROL_REG, I2C_CTRL_WRITE);
-    
-    // Wait for ACK
-    do {
-        status = Xil_In32(base_addr + I2C_STATUS_REG);
-    } while (status & I2C_STAT_BUSY);
-    
-    if (!(status & I2C_STAT_ACK))
-        return XST_FAILURE;
-    
-    // Read data bytes
-    for (i = 0; i < len; i++) {
-        Xil_Out32(base_addr + I2C_CONTROL_REG, I2C_CTRL_READ);
-        
-        do {
-            status = Xil_In32(base_addr + I2C_STATUS_REG);
-        } while (status & I2C_STAT_BUSY);
-        
-        data[i] = Xil_In32(base_addr + I2C_DATA_RX_REG) & 0xFF;
-    }
-    
-    // Send STOP condition
-    Xil_Out32(base_addr + I2C_CONTROL_REG, I2C_CTRL_STOP);
-    
-    return XST_SUCCESS;
-}
-\end{lstlisting}
-
-\newpage
-\section{Source Code Peripheral I2S}
-
-\subsection{I2S Transmitter RTL (Verilog)}
-
-\subsubsection{I2S Top Module}
-\begin{lstlisting}[language=Verilog]
-module i2s_transmitter #(
-    parameter C_S_AXI_DATA_WIDTH = 32,
-    parameter C_S_AXI_ADDR_WIDTH = 4,
-    parameter FIFO_DEPTH = 256
-)(
-    // AXI4-Lite Interface
-    input  wire                                S_AXI_ACLK,
-    input  wire                                S_AXI_ARESETN,
-    input  wire [C_S_AXI_ADDR_WIDTH-1:0]      S_AXI_AWADDR,
-    input  wire                                S_AXI_AWVALID,
-    output wire                                S_AXI_AWREADY,
-    input  wire [C_S_AXI_DATA_WIDTH-1:0]      S_AXI_WDATA,
-    input  wire [(C_S_AXI_DATA_WIDTH/8)-1:0]  S_AXI_WSTRB,
-    input  wire                                S_AXI_WVALID,
-    output wire                                S_AXI_WREADY,
-    output wire [1:0]                          S_AXI_BRESP,
-    output wire                                S_AXI_BVALID,
-    input  wire                                S_AXI_BREADY,
-    input  wire [C_S_AXI_ADDR_WIDTH-1:0]      S_AXI_ARADDR,
-    input  wire                                S_AXI_ARVALID,
-    output wire                                S_AXI_ARREADY,
-    output wire [C_S_AXI_DATA_WIDTH-1:0]      S_AXI_RDATA,
-    output wire [1:0]                          S_AXI_RRESP,
-    output wire                                S_AXI_RVALID,
-    input  wire                                S_AXI_RREADY,
-    
-    // I2S Interface
-    output wire                                I2S_BCLK,
-    output wire                                I2S_LRCLK,
-    output wire                                I2S_SD,
-    
-    // Interrupt
-    output wire                                interrupt
-);
-
-// Register addresses
-localparam ADDR_CONTROL    = 4'h0;
-localparam ADDR_STATUS     = 4'h4;
-localparam ADDR_DATA_FIFO  = 4'h8;
-localparam ADDR_CONFIG     = 4'hC;
-
-// State machine
-localparam IDLE         = 2'd0;
-localparam LEFT_CHANNEL = 2'd1;
-localparam RIGHT_CHANNEL= 2'd2;
-
-reg [1:0]  state;
-reg [5:0]  bit_count;
-reg [31:0] left_data, right_data;
-reg        lrclk_reg, bclk_reg;
-reg        sd_reg;
-
-// FIFO signals
-wire [31:0] fifo_dout;
-wire        fifo_empty, fifo_full;
-reg         fifo_rd_en;
-
-// Configuration registers
-reg [15:0] sample_rate_div;
-reg [1:0]  bit_depth_sel; // 00=16bit, 01=24bit, 10=32bit
-reg        enable;
-
-// FIFO instantiation
-fifo_audio #(
-    .DATA_WIDTH(32),
-    .DEPTH(FIFO_DEPTH)
-) audio_fifo (
-    .clk(S_AXI_ACLK),
-    .rst(!S_AXI_ARESETN),
-    .wr_en(fifo_wr_en),
-    .din(fifo_din),
-    .rd_en(fifo_rd_en),
-    .dout(fifo_dout),
-    .empty(fifo_empty),
-    .full(fifo_full)
-);
-
-// I2S generation logic
-always @(posedge S_AXI_ACLK) begin
-    if (!S_AXI_ARESETN) begin
-        state <= IDLE;
-        bclk_reg <= 0;
-        lrclk_reg <= 0;
-    end else if (enable) begin
-        // State machine for I2S transmission
-        // ... (implementation)
+    begin
+        ctrl_sync_a   <= slv_reg2;   // CONTROL @ 0x08
+        ctrl_sync_b   <= ctrl_sync_a;
+        sample_left_q <= slv_reg0;   // DATA_LEFT  @ 0x00
+        sample_right_q<= slv_reg1;   // DATA_RIGHT @ 0x04
     end
 end
-
-assign I2S_BCLK  = bclk_reg;
-assign I2S_LRCLK = lrclk_reg;
-assign I2S_SD    = sd_reg;
-
-endmodule
 \end{lstlisting}
 
-\newpage
-\subsection{I2S Driver (C Language)}
+\subsection{Cuplikan RTL: generator sinyal I2S Philips}
 
-\begin{lstlisting}[language=C]
-// i2s_driver.h
-#ifndef I2S_DRIVER_H
-#define I2S_DRIVER_H
-
-#include "xil_types.h"
-
-#define I2S_CONTROL_REG  0x00
-#define I2S_STATUS_REG   0x04
-#define I2S_DATA_REG     0x08
-#define I2S_CONFIG_REG   0x0C
-
-#define I2S_CTRL_ENABLE  (1 << 0)
-#define I2S_CTRL_START   (1 << 1)
-#define I2S_CTRL_STOP    (1 << 2)
-
-typedef enum {
-    I2S_RATE_8K  = 0,
-    I2S_RATE_16K = 1,
-    I2S_RATE_32K = 2,
-    I2S_RATE_44K = 3,
-    I2S_RATE_48K = 4
-} i2s_sample_rate_t;
-
-typedef enum {
-    I2S_BIT_16 = 0,
-    I2S_BIT_24 = 1,
-    I2S_BIT_32 = 2
-} i2s_bit_depth_t;
-
-int i2s_init(u32 base_addr, i2s_sample_rate_t rate, 
-             i2s_bit_depth_t depth);
-int i2s_start(u32 base_addr);
-int i2s_stop(u32 base_addr);
-int i2s_write_samples(u32 base_addr, u32 *samples, u32 count);
-
-#endif
+\begin{lstlisting}[language=Verilog]
+always @(posedge audio_clk or posedge audio_rst)
+begin
+    if (audio_rst)
+    begin
+        bit_count_q <= 6'd0;
+        data_q      <= 1'b0;
+        ws_q        <= 1'b0;
+        bclk_q      <= 1'b0;
+    end
+    else if (bclk_en_w)
+    begin
+        if (!enable_sync)
+        begin
+            bit_count_q <= 6'd0;
+            data_q      <= 1'b0;
+            ws_q        <= 1'b0;
+            bclk_q      <= 1'b0;
+        end
+        else if (bclk_q)
+        begin
+            bclk_q      <= 1'b0;
+            data_q      <= i2s_next_serial_bit(sample_for_i2s_left,
+                                               sample_for_i2s_right,
+                                               bit_count_q,
+                                               sample_width_sync);
+            ws_q        <= bit_count_q[5]; // 0=left slot, 1=right slot
+            bit_count_q <= bit_count_q + 6'd1;
+        end
+        else
+            bclk_q <= 1'b1;
+    end
+end
 \end{lstlisting}
 
-\newpage
-\section{Test Application Source Code}
-
-\subsection{Main Application - Concurrent I2C and I2S Demo}
+\subsection{Cuplikan aplikasi uji Vitis (bare-metal)}
 
 \begin{lstlisting}[language=C]
-// main.c
-#include "xparameters.h"
-#include "xil_printf.h"
-#include "i2c_driver.h"
-#include "i2s_driver.h"
-#include "lm75_sensor.h"
-#include "sleep.h"
-#include <math.h>
+#define I2S_BASE      XPAR_I2S_0_BASEADDR
+#define I2S_DATA_L    (I2S_BASE + 0x00U)
+#define I2S_DATA_R    (I2S_BASE + 0x04U)
+#define I2S_CONTROL   (I2S_BASE + 0x08U)
 
-#define I2C_BASE   XPAR_I2C_CONTROLLER_0_S00_AXI_BASEADDR
-#define I2S_BASE   XPAR_I2S_TRANSMITTER_0_S00_AXI_BASEADDR
+#define CTRL_ENABLE        (1U << 0)
+#define CTRL_MUTE          (1U << 1)
+#define CTRL_FS_MODE       (1U << 2)
+#define CTRL_FS_FAMILY     (1U << 3)
+#define CTRL_SAMPLE_WIDTH(w) (((w) & 0x1FU) << 8)
 
-#define SAMPLE_RATE 44100
-#define FREQUENCY   440  // A4 note
-#define AMPLITUDE   30000
-
-// Generate sine wave samples
-void generate_sine_wave(u32 *buffer, u32 num_samples) {
-    int i;
-    for (i = 0; i < num_samples; i++) {
-        float t = (float)i / SAMPLE_RATE;
-        s16 sample = (s16)(AMPLITUDE * sin(2 * M_PI * FREQUENCY * t));
-        // Pack left and right channels
-        buffer[i] = ((u32)sample << 16) | (sample & 0xFFFF);
-    }
+static inline void i2s_write_sample(u32 left, u32 right) {
+    Xil_Out32(I2S_DATA_L, left);
+    Xil_Out32(I2S_DATA_R, right);
 }
 
-int main() {
-    float temperature;
-    u32 audio_buffer[512];
-    int status;
-    
-    xil_printf("=== I2C + I2S Concurrent Demo ===\r\n");
-    
-    // Initialize I2C
-    status = i2c_init(I2C_BASE, 100000);
-    if (status != XST_SUCCESS) {
-        xil_printf("I2C init failed!\r\n");
-        return -1;
-    }
-    xil_printf("I2C initialized at 100kbps\r\n");
-    
-    // Initialize I2S
-    status = i2s_init(I2S_BASE, I2S_RATE_44K, I2S_BIT_16);
-    if (status != XST_SUCCESS) {
-        xil_printf("I2S init failed!\r\n");
-        return -1;
-    }
-    xil_printf("I2S initialized at 44.1kHz, 16-bit\r\n");
-    
-    // Generate audio samples
-    generate_sine_wave(audio_buffer, 512);
-    
-    // Start I2S audio playback
-    i2s_start(I2S_BASE);
-    xil_printf("Audio playback started (440Hz tone)\r\n");
-    
-    // Main loop: read sensors while audio plays
+int main(void) {
+    init_platform();
+
+    // ENABLE=1, MUTE=0, FS_MODE=0, FS_FAMILY=0, SAMPLE_WIDTH=24
+    Xil_Out32(I2S_CONTROL, CTRL_ENABLE | CTRL_SAMPLE_WIDTH(24));
+
     while (1) {
-        // Read temperature from LM75
-        status = lm75_read_temperature(I2C_BASE, 0x48, &temperature);
-        if (status == XST_SUCCESS) {
-            xil_printf("Temperature: %.2f C\r\n", temperature);
-        } else {
-            xil_printf("Sensor read error\r\n");
-        }
-        
-        // Refill I2S buffer
-        i2s_write_samples(I2S_BASE, audio_buffer, 512);
-        
-        // Wait before next reading
-        sleep(1);
+        i2s_write_sample(0x00007FFF, 0x00007FFF);
+        usleep(1000000U / 48000U);
     }
-    
-    return 0;
 }
 \end{lstlisting}
 
-\newpage
-\section{Spesifikasi Teknis Sistem}
+\subsection{Register map I2S}
 
-\subsection{Register Map I2C Peripheral}
-
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
-\caption{I2C Controller Register Map}
-\begin{tabular}{|l|l|p{6cm}|}
+\caption{Ringkasan register peripheral I2S}
+\begin{tabular}{|l|l|p{8cm}|}
 \hline
-\textbf{Offset} & \textbf{Name} & \textbf{Description} \\
+\textbf{Offset} & \textbf{Register} & \textbf{Keterangan} \\
 \hline
-0x00 & CONTROL & Control register: START, STOP, R/W command bits \\
-\hline
-0x04 & STATUS & Status register: BUSY, ACK, DONE, ERROR flags \\
-\hline
-0x08 & DATA\_TX & Transmit data register (8-bit) \\
-\hline
-0x0C & DATA\_RX & Receive data register (8-bit) \\
-\hline
-\end{tabular}
-\end{table}
-
-\subsection{Register Map I2S Peripheral}
-
-\begin{table}[h]
-\centering
-\caption{I2S Transmitter Register Map}
-\begin{tabular}{|l|l|p{6cm}|}
-\hline
-\textbf{Offset} & \textbf{Name} & \textbf{Description} \\
-\hline
-0x00 & CONTROL & Control register: ENABLE, START, STOP \\
-\hline
-0x04 & STATUS & Status register: FIFO status, busy flag \\
-\hline
-0x08 & DATA\_FIFO & Audio data FIFO (32-bit samples) \\
-\hline
-0x0C & CONFIG & Configuration: sample rate, bit depth \\
-\hline
-\end{tabular}
-\end{table}
-
-\subsection{Pin Assignment}
-
-\begin{table}[h]
-\centering
-\caption{FPGA Pin Assignment}
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Signal} & \textbf{Pin} & \textbf{Description} \\
-\hline
-I2C\_SDA & IO\_L12P\_T1\_MRCC\_34 & I2C Serial Data \\
-\hline
-I2C\_SCL & IO\_L12N\_T1\_MRCC\_34 & I2C Serial Clock \\
-\hline
-I2S\_BCLK & IO\_L13P\_T2\_MRCC\_34 & I2S Bit Clock \\
-\hline
-I2S\_LRCLK & IO\_L13N\_T2\_MRCC\_34 & I2S Left/Right Clock \\
-\hline
-I2S\_SD & IO\_L14P\_T2\_SRCC\_34 & I2S Serial Data \\
-\hline
-UART\_TX & IO\_L15P\_T2\_DQS\_34 & UART Transmit \\
-\hline
-UART\_RX & IO\_L15N\_T2\_DQS\_34 & UART Receive \\
+\texttt{0x00} & \texttt{DATA\_LEFT} & Register data kanal kiri (payload ditempatkan pada bit rendah sesuai \texttt{SAMPLE\_WIDTH}) \\
+\texttt{0x04} & \texttt{DATA\_RIGHT} & Register data kanal kanan (payload ditempatkan pada bit rendah sesuai \texttt{SAMPLE\_WIDTH}) \\
+\texttt{0x08} & \texttt{CONTROL} & Bit [0] \texttt{ENABLE}, [1] \texttt{MUTE}, [2] \texttt{FS\_MODE}, [3] \texttt{FS\_FAMILY}, [12:8] \texttt{SAMPLE\_WIDTH} \\
+\texttt{0x0C} & \texttt{RESERVED} & Cadangan pengembangan lanjutan (status/interrupt pada versi berikutnya) \\
 \hline
 \end{tabular}
 \end{table}
