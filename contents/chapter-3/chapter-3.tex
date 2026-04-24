@@ -10,7 +10,6 @@ Bagian ini merangkum \textbf{perancangan fungsional} IP yang menjadi inti skrips
     \item Mode \textbf{TX-only}, stereo, format \textbf{Philips I2S}, \textbf{24 bit} per saluran dalam \textbf{slot 32 bit}.
     \item Dukungan dua keluarga frekuensi sampling nominal (\textbf{48/96 kHz} dan \textbf{44.1/88.2 kHz}), melalui pembagi clock internal.
     \item \textbf{Jalur data} lewat register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT} dan \texttt{CONTROL}, \textbf{tanpa FIFO} internal.
-    \item \textbf{Status} dan/atau \textbf{interupsi} bila periph mendukung (bukan watermark level FIFO bila desain hanya memakai register).
     \item Keluaran menuju modul \textbf{PCM5102A}: BCLK, LRCK/WS, DATA, dan MCLK bila digunakan.
 \end{itemize}
 
@@ -21,7 +20,7 @@ Bagian ini merangkum \textbf{perancangan fungsional} IP yang menjadi inti skrips
         \includegraphics[width=0.92\textwidth]{contents/figures/block-diagram-ip-i2s-tx-intern.pdf}%
     }{%
         \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/block-diagram-ip-i2s-tx-intern.pdf} (AXI regs, buffer/register, clkgen, serializer, irq).}}}%
+        \fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/block-diagram-ip-i2s-tx-intern.pdf} (AXI regs, buffer/register, clkgen, serializer).}}}%
     }
     \caption{Blok diagram internal IP I2S TX.}
     \label{fig:ch3-block-ip-intern}
@@ -66,32 +65,32 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
 \end{table}
 
 % taruh sebelum figure (boleh di preamble juga)
-\setlength{\bitwidth}{1.1em}
+\bytefieldsetup{bitwidth=1.2em}
 
 \begin{figure}[htbp]
   \centering
-  \begin{bytefield}[endianness=big]{37}
-    % Header disesuaikan untuk total 37 bit
+  \begin{bytefield}[endianness=big]{32}
+    % Header disesuaikan untuk total 32 bit
 % Membuat baris kotak tanpa garis (none) untuk menaruh angka bit secara manual
     \bitbox[none]{19}{\scriptsize 31 \hfill 13~}
     \bitbox[none]{5}{\scriptsize ~12 \hfill 8~}
-    \bitbox[none]{5}{\scriptsize ~7 \hfill 4}
-    \bitbox[none]{2}{\scriptsize 3}
-    \bitbox[none]{2}{\scriptsize 2}
-    \bitbox[none]{2}{\scriptsize 1}
-    \bitbox[none]{2}{\scriptsize 0} \\ % Jangan lupa '\\' untuk turun baris
+    \bitbox[none]{4}{\scriptsize ~7 \hfill 4~}
+    \bitbox[none]{1}{\scriptsize 3}
+    \bitbox[none]{1}{\scriptsize 2}
+    \bitbox[none]{1}{\scriptsize 1}
+    \bitbox[none]{1}{\scriptsize 0} \\ % Jangan lupa '\\' untuk turun baris
     % Field dari kiri (MSB) ke kanan (LSB)
-    % Total = 19 + 5 + 5 + 2 + 2 + 2 + 2 = 37 bits
+    % Total = 19 + 5 + 4 + 1 + 1 + 1 + 1 = 32 bits
     \bitbox{19}{RESERVED}
     \bitbox{5}{\shortstack{\scriptsize SAMPLE\\ \scriptsize WIDTH}}    
-    \bitbox{5}{\tiny RESERVED}
-    \bitbox{2}{\tiny FSF}
-    \bitbox{2}{\tiny FSM}
-    \bitbox{2}{\tiny M}
-    \bitbox{2}{\tiny EN}
+    \bitbox{4}{\tiny RESV}
+    \bitbox{1}{\tiny FSF}
+    \bitbox{1}{\tiny FSM}
+    \bitbox{1}{\tiny M}
+    \bitbox{1}{\tiny EN}
   \end{bytefield}
-  \caption{Bit diagram register \texttt{CONTROL} (Versi 37-bit).}
-  \label{fig:ch3-control-reg-diagram-37}
+  \caption{Bit diagram register \texttt{CONTROL} (Versi 32-bit).}
+  \label{fig:ch3-control-reg-diagram-32}
 \end{figure}
 
 
@@ -147,8 +146,8 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
 
 Perancangan perangkat keras dilakukan dengan tahapan berikut:
 \begin{enumerate}
-    \item Menentukan spesifikasi I2S TX meliputi format data, lebar sampel, mode frekuensi sampling, buffer/register data, dan interupsi bila digunakan.
-    \item Mendesain arsitektur modul yang mencakup AXI4-Lite slave, register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT} dan \texttt{CONTROL}, pembagi clock, dan serializer I2S.
+    \item Menentukan spesifikasi I2S TX meliputi format data, lebar sampel, mode frekuensi sampling, dan pemetaan register.
+    \item Mendesain arsitektur modul yang mencakup AXI4-Lite slave, register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT} dan \texttt{CONTROL}, pembagi clock, serta serializer I2S.
     \item Mengimplementasikan RTL dalam Verilog dengan pemisahan blok sekuensial dan kombinasional secara jelas.
     \item Mengintegrasikan peripheral ke dalam Vivado IP Integrator bersama MicroBlaze V, BRAM, clocking, dan peripheral pendukung.
 \end{enumerate}
@@ -186,7 +185,7 @@ Perangkat lunak uji dikembangkan dalam bahasa C pada Vitis dengan fungsi utama:
     \item menginisialisasi register peripheral I2S;
     \item menulis sampel audio ke register \texttt{DATA\_LEFT} dan \texttt{DATA\_RIGHT};
     \item mengaktifkan mode operasi dan memilih frekuensi sampling;
-    \item menangani interupsi bila desain memakainya;
+    \item menyinkronkan waktu penulisan data ke dalam register secara langsung (\textit{programmed I/O});
     \item menghasilkan sinyal uji sederhana seperti gelombang sinus atau \textit{square wave}.
 \end{itemize}
 

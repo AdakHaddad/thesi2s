@@ -4,7 +4,7 @@ Bab ini menyajikan \textbf{implementasi} IP I2S TX AXI4-Lite, integrasi pada Bas
 
 \section{Implementasi RTL dan integrasi Vivado}
 
-RTL direalisasikan dalam bahasa Verilog dengan slave AXI4-Lite, FIFO, unit interupsi, pembagi clock untuk dua mode \(F_s\), dan serializer Philips I2S 24-bit pada slot 32-bit. Integrasi dilakukan melalui IP Integrator; pin I2S dan opsional \texttt{irq} dipetakan pada file \texttt{.xdc}.
+RTL direalisasikan dalam bahasa Verilog dengan slave AXI4-Lite, pembagi clock untuk dua mode \(F_s\), dan serializer Philips I2S 24-bit pada slot 32-bit. Integrasi dilakukan melalui IP Integrator; pin I2S dipetakan pada file \texttt{.xdc}.
 
 \begin{figure}[htbp]
 	\centering
@@ -36,11 +36,11 @@ Lampirkan nilai \textit{requested} dan \textit{actual} untuk \texttt{audio\_clk}
 
 \section{Simulasi RTL (opsional)}
 
-Jika testbench disimulasikan, lampirkan cuplikan gelombang verifikasi serializer dan FIFO (push/pop).
+Jika testbench disimulasikan, lampirkan cuplikan gelombang verifikasi serializer saat menerima sampel dari register AXI4-Lite.
 
 \section{Pengujian dengan ILA}
 
-Probe minimal: \texttt{i2s\_bclk}, \texttt{i2s\_ws}, \texttt{i2s\_data}, level FIFO, \texttt{underrun}, \texttt{irq}. Trigger pada tepi WS memudahkan verifikasi 64 BCLK per frame.
+Probe minimal: \texttt{i2s\_bclk}, \texttt{i2s\_ws}, \texttt{i2s\_data}. Trigger pada tepi WS memudahkan verifikasi 64 BCLK per frame.
 
 \begin{figure}[htbp]
 	\centering
@@ -104,12 +104,12 @@ Isi Tabel \ref{tab:ch4-ukur} dengan hasil pengukuran (osiloskop / ILA / frekuens
 
 \section{Kendala dan solusi}
 
-Dokumentasikan \textit{pain points}: misalnya CDC register--FIFO, prioritas ISR, kesalahan constraint pin, atau deviasi MMCM; serta solusi yang diterapkan.
+Dokumentasikan \textit{pain points}: misalnya latensi AXI4-Lite, presisi waktu pembaruan register, kesalahan constraint pin, atau deviasi MMCM; serta solusi yang diterapkan.
 
 \section{Pembahasan terhadap tujuan penelitian}
 
 \begin{enumerate}
-	\item Tujuan perancangan IP: (\textit{jelaskan apakah register map, FIFO, irq, dan serializer telah terbukti pada hardware}).
-	\item Tujuan integrasi SoC dan Vitis: (\textit{jelaskan alur prefill + ISR}).
+	\item Tujuan perancangan IP: (\textit{jelaskan apakah register map dan serializer telah terbukti pada hardware}).
+	\item Tujuan integrasi SoC dan Vitis: (\textit{jelaskan keberhasilan pemutaran audio dengan programmed I/O}).
 	\item Tujuan verifikasi: (\textit{acu Gambar \ref{fig:ch4-ila} dan bukti audio}).
 \end{enumerate}
