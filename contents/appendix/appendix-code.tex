@@ -27,6 +27,9 @@ end
 \subsection{Cuplikan RTL: generator sinyal I2S Philips}
 
 \begin{lstlisting}[language=Verilog]
+wire bclk_en_w = fs_mode_sync ? (clock_div_q[0] == 1'b0)
+                               : (clock_div_q[1:0] == 2'd0);
+
 always @(posedge audio_clk or posedge audio_rst)
 begin
     if (audio_rst)

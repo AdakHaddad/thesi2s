@@ -99,20 +99,44 @@ Di FPGA, \(F_s\) **efektif** ditentukan oleh **berapa kali LRCK berganti per det
 
 **Lemah v1:** CPU harus menulis **tepat sebelum** frame habis; tanpa FIFO mudah **underrun** (suara putus / noise).
 
-### 5.4 Rumus \(F_s\) untuk implementasi divider saat ini
+### 5.4 Rumus \(F_s\) dan koreksi `FS_MODE`
 
-Dengan struktur pembagi di RTL yang ada (analisis dari pola `audio_clk` → enable BCLK):
+Untuk format stereo 32-bit per kanal:
 
 \[
-F_s \approx \frac{f_{\mathrm{audio\_clk}}}{512}
+F_s = \frac{f_{\mathrm{audio\_clk}}}{\mathrm{divider} \times 2 \times 64}
 \]
 
-Contoh:
+Dengan clock aktual hasil Clocking Wizard:
 
-- Jika \(f_{\mathrm{audio\_clk}} = 24{,}576\) MHz nominal → \(F_s = 48\) kHz.
-- Jika MMCM memberi **24,56897 MHz** (nilai “nyata”) → \(F_s \approx 47{,}9863\) kHz → di skripsi tulis **≈ 48 kHz** dan lampirkan **ukuran**.
+- keluarga 48 kHz: `audio_clk = 24.597 MHz`
+- keluarga 44.1 kHz: `audio_clk = 22.426 MHz`
 
-**Catatan:** mode **≈96 kHz** dengan **BCLK = audio_clk/4** adalah target **v2** (perlu mengubah pembagi / `FS_MODE`), **bukan** perilaku file v1 saat ini.
+Untuk `audio_clk = 24.597 MHz`:
+
+- divider 4 → `BCLK = 24.597/4/2 = 3.0746 MHz` → `WS = 48.03 kHz`
+- divider 2 → `BCLK = 24.597/2/2 = 6.1493 MHz` → `WS = 96.08 kHz`
+
+Masalah pada RTL awal adalah logika `FS_MODE` terbalik:
+
+```verilog
+wire bclk_en_w = fs_mode_sync ? (clock_div_q == 3'd0)
+                               : (clock_div_q[1:0] == 2'd0);
+```
+
+Saat `fs_mode_sync=1`, logika di atas justru memberi pulsa setiap 8 siklus `audio_clk`, sehingga `WS` turun ke sekitar `24.02 kHz`, bukan naik ke sekitar `96 kHz`. Koreksi yang dibutuhkan:
+
+```verilog
+wire bclk_en_w = fs_mode_sync ? (clock_div_q[0] == 1'b0)
+                               : (clock_div_q[1:0] == 2'd0);
+```
+
+Dengan koreksi ini:
+
+- `FS_MODE=0` → low-\(F_s\) (`44.1/48 kHz`) memakai divider 4
+- `FS_MODE=1` → high-\(F_s\) (`88.2/96 kHz`) memakai divider 2
+
+**Catatan penting:** bit `fs_sync` di RTL sekarang belum dipakai untuk memilih sumber `audio_clk`. Artinya, perpindahan keluarga 48 kHz ke 44.1 kHz harus dilakukan di top-level dengan clock mux, misalnya `BUFGMUX`, bukan hanya dengan mengubah bit kontrol di serializer.
 
 ---
 
@@ -123,7 +147,7 @@ Contoh:
 | **Register map** (`ID`, `CONTROL`, `STATUS`, `WATERMARK`, `IRQ_*`, `TX_LEFT`, `TX_RIGHT`) | Kontrol jelas, siap driver & dokumentasi |
 | **FIFO** + **watermark IRQ** | Playback stabil; ISR isi batch, bukan per-sample |
 | **Push frame** saat tulis `TX_RIGHT` (setelah `TX_LEFT` di-latch) | Komit stereo atomik |
-| **FS_MODE** div4 vs div8 | Dua mode \(F_s\) dari `audio_clk` yang sama |
+| **FS_MODE** div4 vs div2 | Dua mode \(F_s\) dari `audio_clk` yang sama |
 | **Serializer 24-bit** dalam slot 32 | Selaras rekomendasi akademik + PCM5102A |
 
 Detail implementasi ada di repo FPGA: `I2S_V2_IMPLEMENTATION_SPEC.md` dan `I2S_SLAVE_LITE_MASTER_GUIDE.md` (folder `ip_repo/i2s_1_0/`).

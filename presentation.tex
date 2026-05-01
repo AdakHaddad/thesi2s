@@ -83,11 +83,14 @@
   \[
     F_s = \frac{f_{BCLK}}{64}
   \]
+  \[
+    f_{BCLK} = \frac{f_{audio\_clk}}{\mathrm{divider} \times 2}
+  \]
 
   \vspace{0.5em}
   \begin{itemize}
-    \item Mode 1: pembagi untuk target sekitar 48 kHz.
-    \item Mode 2: pembagi untuk target sekitar 96 kHz.
+    \item \texttt{FS\_MODE=0}: divider 4 untuk target sekitar 48 kHz.
+    \item \texttt{FS\_MODE=1}: divider 2 untuk target sekitar 96 kHz.
     \item Nilai aktual mengikuti hasil Clocking Wizard (requested vs actual).
   \end{itemize}
 \end{frame}
@@ -174,14 +177,15 @@
   \small
   \begin{tabular}{lcc}
     \toprule
-    Parameter & Mode 48 kHz & Mode 96 kHz \\
+    Parameter & \texttt{FS\_MODE=0} & \texttt{FS\_MODE=1} \\
     \midrule
-    $f_{audio\_clk}$ requested & -- MHz & -- MHz \\
-    $f_{audio\_clk}$ aktual & -- MHz & -- MHz \\
-    $f_{BCLK}$ terukur & -- MHz & -- MHz \\
-    $F_s$ terukur & -- kHz & -- kHz \\
-    Error terhadap target & -- \% & -- \% \\
-    Utilisasi LUT/FF & -- & -- \\
+    $f_{audio\_clk}$ requested & 24.576 MHz & 24.576 MHz \\
+    $f_{audio\_clk}$ aktual & 24.597 MHz & 24.597 MHz \\
+    Divider yang dibutuhkan & 4 & 2 \\
+    $f_{BCLK}$ hasil benar & 3.0746 MHz & 6.1493 MHz \\
+    $F_s$ hasil benar & 48.03 kHz & 96.08 kHz \\
+    Gejala RTL awal & benar & turun jadi 24.02 kHz \\
+    Catatan & tervalidasi & perlu balik logika \texttt{FS\_MODE} \\
     \bottomrule
   \end{tabular}
 \end{frame}
@@ -189,8 +193,8 @@
 \begin{frame}{Keterkaitan Hasil terhadap Tujuan}
   \begin{itemize}
     \item \textbf{Tujuan 1 (IP AXI4-Lite)}: dibuktikan oleh register map dan operasi pembaruan register secara terus-menerus.
-    \item \textbf{Tujuan 2 (dua mode sampling)}: dibuktikan oleh pengukuran $f_{BCLK}$ dan $F_s$ pada dua mode.
-    \item \textbf{Tujuan 3 (validasi hardware)}: dibuktikan melalui pengujian ILA dan kualitas keluaran pada PCM5102A.
+    \item \textbf{Tujuan 2 (dua mode sampling)}: analisis menunjukkan divider 4 dan 2 memang cukup untuk 48/96 kHz pada clock aktual 24.597 MHz, tetapi implementasi awal masih perlu koreksi pada logika \texttt{FS\_MODE}.
+    \item \textbf{Tujuan 3 (validasi hardware)}: dibuktikan melalui pengujian ILA dan kualitas keluaran pada PCM5102A, sekaligus mengungkap isu integrasi clock family 44.1/48 kHz di top-level.
   \end{itemize}
 \end{frame}
 

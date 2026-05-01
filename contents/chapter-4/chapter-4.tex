@@ -20,7 +20,22 @@ RTL direalisasikan dalam bahasa Verilog dengan slave AXI4-Lite, pembagi clock un
 
 \section{Konfigurasi Clocking Wizard}
 
-Lampirkan nilai \textit{requested} dan \textit{actual} untuk \texttt{audio\_clk} serta clock sistem prosesor.
+Pengujian dilakukan dengan dua keluaran utama dari \textit{Clocking Wizard}: \texttt{AXI ACLK} untuk domain prosesor dan \texttt{audio\_clk} untuk domain serializer I2S. Hasil \textit{requested} dan \textit{actual} yang diperoleh dirangkum pada Tabel \ref{tab:ch4-clk-aktual}. Perbedaan kecil antara nilai target dan nilai aktual berasal dari keterbatasan rasio MMCM pada Basys3, sehingga analisis frekuensi I2S pada bagian berikutnya menggunakan nilai aktual ini.
+
+\begin{table}[htbp]
+	\centering
+	\caption{Konfigurasi clock hasil Clocking Wizard.}
+	\label{tab:ch4-clk-aktual}
+	\begin{tabular}{|l|c|c|}
+		\hline
+		\textbf{Clock} & \textbf{Requested} & \textbf{Actual} \\
+		\hline
+		AXI ACLK & 100 MHz & 100 MHz \\
+		audio\_clk keluarga 48 kHz & 24,576 MHz & 24,597 MHz \\
+		audio\_clk keluarga 44,1 kHz & 22,579 MHz & 22,426 MHz \\
+		\hline
+	\end{tabular}
+\end{table}
 
 \begin{figure}[htbp]
 	\centering
@@ -84,32 +99,55 @@ Sambungkan modul sesuai pinout pabrik/modul (BCLK, LRCK, DIN, daya, ground). Uji
 
 \section{Evaluasi kinerja}
 
-Isi Tabel \ref{tab:ch4-ukur} dengan hasil pengukuran (osiloskop / ILA / frekuensi dilaporkan tool). Sertakan mode pembagi (\(F_s\) rendah vs tinggi).
+Evaluasi dilakukan dengan menghitung ulang relasi \texttt{audio\_clk}, \texttt{BCLK}, dan \texttt{WS} menggunakan nilai clock aktual 24,597 MHz pada keluarga 48 kHz. Untuk format stereo 32-bit per kanal, satu frame memerlukan 64 periode \texttt{BCLK}, sehingga:
+
+\[
+F_s = \frac{f_{\mathrm{audio\_clk}}}{\mathrm{divider} \times 2 \times 64}
+\]
+
+Pada implementasi yang diinginkan, \texttt{FS\_MODE=0} memakai pembagi 4 untuk mode laju rendah (44,1/48 kHz), sedangkan \texttt{FS\_MODE=1} memakai pembagi 2 untuk mode laju tinggi (88,2/96 kHz). Hasil analisis terhadap clock aktual ditunjukkan pada Tabel \ref{tab:ch4-ukur}.
 
 \begin{table}[htbp]
 	\centering
-	\caption{Hasil pengukuran frekuensi (contoh---ganti dengan data riil).}
+	\caption{Analisis frekuensi berdasarkan clock aktual 24,597 MHz.}
 	\label{tab:ch4-ukur}
 	\begin{tabular}{|l|c|c|}
 		\hline
-		\textbf{Besaran} & \textbf{Target nominal} & \textbf{Terukur / actual} \\
+		\textbf{Besaran} & \textbf{Target nominal} & \textbf{Hasil analisis / ukur} \\
 		\hline
-		\texttt{audio\_clk} & 24,576 MHz & (isi) \\
-		\(F_s\) mode rendah & $\approx$48 kHz & (isi) \\
-		\(F_s\) mode tinggi & $\approx$96 kHz & (isi) \\
-		\(f_{\mathrm{BCLK}}\) (mode tinggi) & $\approx$6,144 MHz & (isi) \\
+		\texttt{audio\_clk} keluarga 48 kHz & 24,576 MHz & 24,597 MHz \\
+		\texttt{BCLK} saat divider 4 & 3,072 MHz & 3,0746 MHz \\
+		\(F_s\) saat divider 4 & 48 kHz & 48,03 kHz \\
+		\texttt{BCLK} saat divider 2 & 6,144 MHz & 6,1493 MHz \\
+		\(F_s\) saat divider 2 & 96 kHz & 96,08 kHz \\
 		\hline
 	\end{tabular}
 \end{table}
 
+Jika logika \texttt{FS\_MODE} dibalik seperti pada RTL awal, mode \texttt{FS\_MODE=1} justru menghasilkan \texttt{bclk\_en} setiap 8 siklus \texttt{audio\_clk}, sehingga \texttt{BCLK} turun menjadi sekitar 1,537 MHz dan \texttt{WS} menjadi sekitar 24,02 kHz. Nilai ini menjelaskan mengapa mode yang seharusnya menuju 96 kHz justru teramati jauh lebih lambat pada perangkat keras.
+
 \section{Kendala dan solusi}
 
-Dokumentasikan \textit{pain points}: misalnya latensi AXI4-Lite, presisi waktu pembaruan register, kesalahan constraint pin, atau deviasi MMCM; serta solusi yang diterapkan.
+Kendala utama pada tahap validasi bukan berasal dari antarmuka AXI4-Lite, melainkan dari pemetaan mode frekuensi pada domain \texttt{audio\_clk}. RTL awal menggunakan logika:
+
+\begin{verbatim}
+wire bclk_en_w = fs_mode_sync ? (clock_div_q == 3'd0)
+                               : (clock_div_q[1:0] == 2'd0);
+\end{verbatim}
+
+Logika tersebut membuat \texttt{FS\_MODE=1} menghasilkan \texttt{enable} setiap 8 siklus \texttt{audio\_clk}, padahal mode laju tinggi membutuhkan pembagi yang lebih kecil. Perbaikannya adalah menukar kondisi sehingga mode tinggi memakai divider 2:
+
+\begin{verbatim}
+wire bclk_en_w = fs_mode_sync ? (clock_div_q[0] == 1'b0)
+                               : (clock_div_q[1:0] == 2'd0);
+\end{verbatim}
+
+Kendala kedua adalah bit \texttt{fs\_sync} yang telah disinkronkan di domain audio belum digunakan untuk memilih keluarga clock 48 kHz atau 44,1 kHz. Dengan demikian, penggantian antara 24,597 MHz dan 22,426 MHz belum terjadi di dalam top-level. Solusi yang disarankan adalah menambahkan pemilih clock pada level integrasi, misalnya \texttt{BUFGMUX} atau mekanisme \textit{clock mux} setara, sehingga \texttt{audio\_clk} benar-benar berpindah mengikuti bit \texttt{FS}.
 
 \section{Pembahasan terhadap tujuan penelitian}
 
 \begin{enumerate}
-	\item Tujuan perancangan IP: (\textit{jelaskan apakah register map dan serializer telah terbukti pada hardware}).
-	\item Tujuan integrasi SoC dan Vitis: (\textit{jelaskan keberhasilan pemutaran audio dengan programmed I/O}).
-	\item Tujuan verifikasi: (\textit{acu Gambar \ref{fig:ch4-ila} dan bukti audio}).
+	\item Tujuan perancangan IP tercapai pada level fungsi dasar: register AXI4-Lite aktif, data kiri-kanan dapat dimuat dari perangkat lunak, dan serializer menghasilkan format Philips I2S dengan 64 \texttt{BCLK} per frame stereo.
+	\item Tujuan integrasi SoC dan Vitis tercapai untuk skenario \textit{programmed I/O}; aplikasi bare-metal mampu menulis sampel ke register dan memicu keluaran audio menuju PCM5102A.
+	\item Tujuan verifikasi clock memberikan temuan penting: mode laju rendah sesuai dengan analisis (\(\approx 48{,}03\) kHz untuk clock aktual 24,597 MHz), sedangkan mode laju tinggi belum benar karena logika \texttt{FS\_MODE} terbalik dan pemilihan keluarga clock 44,1/48 kHz belum dihubungkan pada top-level. Temuan ini menjadi dasar perbaikan RTL dan integrasi clock pada iterasi berikutnya.
 \end{enumerate}
