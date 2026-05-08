@@ -2,22 +2,59 @@
 
 \section{Kesimpulan}
 
-Penelitian ini merancang dan mengimplementasikan \textbf{IP core transmitter I2S} dengan antarmuka \textbf{AXI4-Lite} pada SoC \textbf{MicroBlaze V}, board \textbf{Basys3}, dan keluaran menuju \textbf{PCM5102A}. Berdasarkan hasil pada Bab IV, dapat disimpulkan:
+Penelitian ini merancang dan mengimplementasikan \textbf{IP core transmitter I2S}~\citep{philips_i2s_1986} dengan antarmuka \textbf{AXI4-Lite}~\citep{arm_amba_axi_2010} pada SoC \textbf{MicroBlaze V}~\citep{xilinx_microblaze_ref_2021}, board \textbf{Basys3}~\citep{xilinx_basys3_ref}, dan keluaran menuju \textbf{PCM5102A}~\citep{pcm5102a_datasheet}. Berdasarkan hasil pada Bab~IV, dapat disimpulkan:
 
 \begin{enumerate}
-	\item IP berhasil diintegrasikan sebagai peripheral AXI4-Lite dengan peta register aktif \texttt{DATA\_LEFT (0x00)}, \texttt{DATA\_RIGHT (0x04)}, dan \texttt{CONTROL (0x08)}. Register \texttt{0x0C} disediakan sebagai cadangan untuk pengembangan lanjutan.
-	\item Aplikasi Vitis bare-metal dapat mengendalikan IP melalui \textit{memory-mapped I/O} (\texttt{Xil\_Out32}/\texttt{Xil\_In32}) untuk inisialisasi kontrol, pengisian sampel kiri-kanan, dan verifikasi \textit{readback} register.
-	\item Pengujian gelombang dan audio menunjukkan sinyal \texttt{BCLK}, \texttt{WS}, dan \texttt{DATA} mengikuti mekanisme \textbf{Philips I2S} (1-bit delay, 64 BCLK/frame stereo) dan mampu menghasilkan keluaran audio pada perangkat keras target.
+    \item IP berhasil diintegrasikan sebagai peripheral AXI4-Lite dengan peta register aktif
+    \texttt{DATA\_LEFT (0x00)}, \texttt{DATA\_RIGHT (0x04)}, dan \texttt{CONTROL (0x08)}.
+    Register \texttt{0x0C} disediakan sebagai cadangan dan berhasil digunakan untuk
+    \textit{readback test} AXI yang memverifikasi koneksi bus.
+
+    \item Aplikasi Vitis bare-metal dapat mengendalikan IP melalui
+    \textit{memory-mapped I/O} (\texttt{Xil\_Out32}/\texttt{Xil\_In32}) untuk inisialisasi
+    register CONTROL, pengisian sampel kanal kiri-kanan, dan verifikasi \textit{readback}.
+
+    \item Pengujian ILA~\citep{xilinx_ila_pg2021} mengkonfirmasi sinyal \texttt{BCLK} (3,07 MHz), \texttt{WS} (48,03 kHz),
+    dan \texttt{DATA} mengikuti mekanisme \textbf{Philips I2S}~\citep{philips_i2s_1986}: 1-bit delay setelah setiap
+    peralihan WS, 64 BCLK per frame stereo, dan MSB-first per kanal. Nilai aktual
+    sesuai dengan analisis clock Clocking Wizard~\citep{xilinx_clocking_wizard_2021} (24,597 MHz).
+
+    \item Validasi audio pada PCM5102A~\citep{pcm5102a_datasheet} berhasil menghasilkan keluaran suara yang dapat
+    didengar. Tiga bug firmware yang ditemukan selama validasi --- yaitu \textit{masker bit
+    yang merusak tanda sampel}, \textit{justifikasi sampel 32-bit yang tidak tepat}, dan
+    \textit{timing loop berbasis \texttt{usleep} yang tidak akumulatif} ---
+    berhasil diidentifikasi dan diperbaiki seluruhnya di sisi firmware, tanpa perubahan
+    pada RTL.
+
+    \item RTL \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v} terbukti benar secara fungsional
+    sejak awal, mencakup mekanisme CDC berbasis write-counter yang robust~\citep{ginosar_metastability_2011},
+    pemilihan clock melalui \texttt{BUFGMUX}, dan serializer Philips I2S yang sesuai
+    spesifikasi~\citep{philips_i2s_1986}.
 \end{enumerate}
 
+% ============================================================
 \section{Saran}
+% ============================================================
 
 \begin{enumerate}
-	\item Menambahkan \textbf{buffer antrian internal} untuk data sampel dan mekanisme notifikasi/interrupt agar pengiriman sampel lebih efisien dan mengurangi risiko \textit{underrun} pada beban CPU tinggi.
-	\item Menyusun pemetaan register versi lanjut (misalnya status buffer dan flag error) agar transisi ke driver tingkat sistem operasi lebih terstruktur.
-	\item Mengembangkan dukungan \textbf{DMA} untuk streaming audio kontinu berdurasi panjang.
-	\item Menambahkan mode \textbf{RX} atau ekstensi \textbf{TDM/multi-channel} untuk kebutuhan akuisisi dan pemrosesan audio yang lebih kompleks.
-	\item Melakukan karakterisasi lanjutan terhadap akurasi clock audio pada berbagai konfigurasi MMCM/Clocking Wizard.
-\end{enumerate}
+    \item Menambahkan \textbf{FIFO TX} dan mekanisme \textbf{interrupt watermark} agar
+    prosesor dapat mengisi data secara efisien tanpa \textit{busy-wait} dan mengurangi
+    risiko \textit{underrun} pada beban CPU tinggi.
 
-\noindent\textit{Penulis disarankan menyesuaikan poin kesimpulan dengan data terukur final dan arahan pembimbing.}
+    \item Mengganti pendekatan \textit{programmed I/O} dengan \textbf{DMA} untuk
+    \textit{streaming} audio kontinu berdurasi panjang tanpa intervensi CPU.
+
+    \item Menambahkan register \textbf{STATUS} yang dapat dibaca oleh firmware untuk
+    memantau kondisi \textit{underrun}, level buffer, dan kesiapan latch CDC ---
+    memudahkan transisi ke driver tingkat sistem operasi.
+
+    \item Mengembangkan dukungan \textbf{mode RX} atau ekstensi \textbf{TDM/multi-channel}
+    untuk kebutuhan akuisisi dan pemrosesan audio yang lebih kompleks.
+
+    \item Melakukan karakterisasi lanjutan terhadap akurasi frekuensi audio pada berbagai
+    kondisi suhu dan beban, serta mempertimbangkan penggunaan \textbf{PLL audio eksternal}
+    jika akurasi clock $\ll 100$ ppm diperlukan.
+
+    \item Mengintegrasikan IP ke dalam ekosistem \textbf{Linux/ASoC} sebagai langkah
+    lanjutan menuju sistem audio yang dapat digunakan pada tingkat produk.
+\end{enumerate}

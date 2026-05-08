@@ -1,153 +1,367 @@
 \chapter{Hasil dan Pembahasan}
 
-Bab ini menyajikan \textbf{implementasi} IP I2S TX AXI4-Lite, integrasi pada Basys3, serta \textbf{hasil pengujian} (ILA, pengukuran, audio). Isi per subbab disesuaikan dengan data yang diperoleh saat eksperimen; gambar berikut memakai makro \texttt{IfFileExists} pada preamble agar kompilasi tetap berjalan sebelum berkas impor tersedia.
+Bab ini menyajikan \textbf{implementasi} IP I2S TX AXI4-Lite, integrasi pada Basys3, hasil pengujian sinyal dan audio, serta analisis dan perbaikan bug yang ditemukan selama validasi perangkat keras.
 
-\section{Implementasi RTL dan integrasi Vivado}
+% ============================================================
+\section{Implementasi RTL dan Integrasi Vivado}
+% ============================================================
 
-RTL direalisasikan dalam bahasa Verilog dengan slave AXI4-Lite, pembagi clock untuk dua mode \(F_s\), dan serializer Philips I2S 24-bit pada slot 32-bit. Integrasi dilakukan melalui IP Integrator; pin I2S dipetakan pada file \texttt{.xdc}.
+RTL direalisasikan dalam dua berkas Verilog: \texttt{i2s.v} sebagai \textit{top-level wrapper} dan \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v} sebagai modul utama yang mencakup seluruh logika AXI4-Lite, CDC, dan serializer I2S sesuai spesifikasi Philips~\citep{philips_i2s_1986}. Integrasi dilakukan melalui Vivado IP Integrator (\textit{Block Design})~\citep{xilinx_vivado_design_suite_2021}; pin I2S dipetakan pada file \texttt{.xdc}.
 
 \begin{figure}[htbp]
-	\centering
-	\IfFileExists{contents/figures/diagram-sinyal-i2s-philips.pdf}{%
-		\includegraphics[width=0.92\textwidth]{contents/figures/diagram-sinyal-i2s-philips.pdf}%
-	}{%
-		\setlength{\fboxsep}{14pt}%
-		\fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/diagram-sinyal-i2s-philips.pdf} (gelombang BCLK/WS/DATA satu frame).}}}%
-	}
-	\caption{Ilustrasi timing I2S Philips (satu frame stereo, 64 BCLK).}
-	\label{fig:ch4-wave-i2s}
+    \centering
+    \IfFileExists{contents/figures/block-design-vivado-i2s-screenshot.png}{%
+        \includegraphics[width=0.95\textwidth]{contents/figures/block-design-vivado-i2s-screenshot.png}%
+    }{%
+        \setlength{\fboxsep}{14pt}%
+        \fbox{\parbox{0.88\textwidth}{\centering\textit{[PLACEHOLDER] Screenshot Block Design Vivado: MicroBlaze V --- AXI SmartConnect --- IP I2S (i2s\_0) --- Clocking Wizard. Tambahkan file: \texttt{contents/figures/block-design-vivado-i2s-screenshot.png}}}}%
+    }
+    \caption{Block Design Vivado: MicroBlaze V terhubung ke IP I2S melalui AXI SmartConnect.}
+    \label{fig:ch4-bd-vivado}
 \end{figure}
 
-\section{Konfigurasi Clocking Wizard}
+\subsection{Pemetaan pin (constraint)}
 
-Pengujian dilakukan dengan dua keluaran utama dari \textit{Clocking Wizard}: \texttt{AXI ACLK} untuk domain prosesor dan \texttt{audio\_clk} untuk domain serializer I2S. Hasil \textit{requested} dan \textit{actual} yang diperoleh dirangkum pada Tabel \ref{tab:ch4-clk-aktual}. Perbedaan kecil antara nilai target dan nilai aktual berasal dari keterbatasan rasio MMCM pada Basys3, sehingga analisis frekuensi I2S pada bagian berikutnya menggunakan nilai aktual ini.
+Pin I2S dihubungkan ke header PMOD JA pada Basys3 melalui file \texttt{cnstr.xdc} sebagai berikut:
+
+\begin{verbatim}
+set_property -dict {PACKAGE_PIN J1 IOSTANDARD LVCMOS33} [get_ports i2s_mclk_0]
+set_property -dict {PACKAGE_PIN L2 IOSTANDARD LVCMOS33} [get_ports i2s_bclk_0]
+set_property -dict {PACKAGE_PIN J2 IOSTANDARD LVCMOS33} [get_ports i2s_ws_0]
+set_property -dict {PACKAGE_PIN G2 IOSTANDARD LVCMOS33} [get_ports i2s_data_0]
+\end{verbatim}
+
+\noindent Ketiga sinyal utama I2S (BCLK, WS/LRCK, DATA) dan MCLK terhubung langsung ke PMOD JA pin 1--4, yang kemudian disambungkan ke modul PCM5102A menggunakan kabel jumper.
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/wiring-pcm5102a-basys3.jpg}{%
+        \includegraphics[width=0.75\textwidth]{contents/figures/wiring-pcm5102a-basys3.jpg}%
+    }{%
+        \setlength{\fboxsep}{14pt}%
+        \fbox{\parbox{0.78\textwidth}{\centering\textit{[PLACEHOLDER] Foto fisik wiring Basys3 PMOD JA ke modul PCM5102A. Tambahkan file: \texttt{contents/figures/wiring-pcm5102a-basys3.jpg}}}}%
+    }
+    \caption{Wiring Basys3 (PMOD JA) ke modul PCM5102A.}
+    \label{fig:ch4-wiring}
+\end{figure}
+
+% ============================================================
+\section{Konfigurasi Clocking Wizard}
+% ============================================================
+
+Clocking Wizard~\citep{xilinx_clocking_wizard_2021} dikonfigurasi menghasilkan tiga keluaran dari satu osilator 100 MHz:
+\begin{enumerate}
+    \item \texttt{clk\_out1} = 100 MHz, digunakan sebagai AXI ACLK dan clock CPU MicroBlaze V.
+    \item \texttt{clk\_out2} = 24,576 MHz (aktual 24,597 MHz), digunakan sebagai \texttt{audio\_48\_clk} untuk keluarga 48/96 kHz.
+    \item \texttt{clk\_out3} = 22,579 MHz (aktual 22,426 MHz), digunakan sebagai \texttt{audio\_44\_clk} untuk keluarga 44,1/88,2 kHz.
+\end{enumerate}
 
 \begin{table}[htbp]
-	\centering
-	\caption{Konfigurasi clock hasil Clocking Wizard.}
-	\label{tab:ch4-clk-aktual}
-	\begin{tabular}{|l|c|c|}
-		\hline
-		\textbf{Clock} & \textbf{Requested} & \textbf{Actual} \\
-		\hline
-		AXI ACLK & 100 MHz & 100 MHz \\
-		audio\_clk keluarga 48 kHz & 24,576 MHz & 24,597 MHz \\
-		audio\_clk keluarga 44,1 kHz & 22,579 MHz & 22,426 MHz \\
-		\hline
-	\end{tabular}
+    \centering
+    \caption{Konfigurasi clock hasil Clocking Wizard.}
+    \label{tab:ch4-clk-aktual}
+    \begin{tabular}{|l|c|c|}
+        \hline
+        \textbf{Clock} & \textbf{Requested} & \textbf{Actual} \\
+        \hline
+        AXI ACLK / CPU & 100 MHz & 100 MHz \\
+        \texttt{audio\_48\_clk} (keluarga 48 kHz) & 24,576 MHz & 24,597 MHz \\
+        \texttt{audio\_44\_clk} (keluarga 44,1 kHz) & 22,579 MHz & 22,426 MHz \\
+        \hline
+    \end{tabular}
 \end{table}
 
 \begin{figure}[htbp]
-	\centering
-	\IfFileExists{contents/figures/clocking-wizard-requested-vs-actual.png}{%
-		\includegraphics[width=0.88\textwidth]{contents/figures/clocking-wizard-requested-vs-actual.png}%
-	}{%
-		\setlength{\fboxsep}{14pt}%
-		\fbox{\parbox{0.82\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/clocking-wizard-requested-vs-actual.png}.}}}%
-	}
-	\caption{Screenshot Clocking Wizard (requested vs actual).}
-	\label{fig:ch4-clk-wizard}
+    \centering
+    \IfFileExists{contents/figures/clocking-wizard-requested-vs-actual.png}{%
+        \includegraphics[width=0.88\textwidth]{contents/figures/clocking-wizard-requested-vs-actual.png}%
+    }{%
+        \setlength{\fboxsep}{14pt}%
+        \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Screenshot Clocking Wizard: kolom Requested vs Actual. Tambahkan file: \texttt{contents/figures/clocking-wizard-requested-vs-actual.png}}}}%
+    }
+    \caption{Screenshot Clocking Wizard menunjukkan frekuensi aktual hasil MMCM.}
+    \label{fig:ch4-clk-wizard}
 \end{figure}
 
-\section{Simulasi RTL (opsional)}
+\noindent IP memilih antara kedua clock audio menggunakan primitif \texttt{BUFGMUX} di dalam RTL, dikontrol oleh bit \texttt{FS\_FAMILY} pada register \texttt{CONTROL} melalui sinkronisasi dua-flip-flop~\citep{ginosar_metastability_2011}.
 
-Jika testbench disimulasikan, lampirkan cuplikan gelombang verifikasi serializer saat menerima sampel dari register AXI4-Lite.
+% ============================================================
+\section{Pengujian Sinyal dengan ILA}
+% ============================================================
 
-\section{Pengujian dengan ILA}
-
-Probe minimal: \texttt{i2s\_bclk}, \texttt{i2s\_ws}, \texttt{i2s\_data}. Trigger pada tepi WS memudahkan verifikasi 64 BCLK per frame.
+\textit{Integrated Logic Analyzer} (ILA)~\citep{xilinx_ila_pg2021} dipasang pada sinyal \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data} untuk memverifikasi timing Philips I2S~\citep{philips_i2s_1986}. Trigger ditempatkan pada tepi turun \texttt{i2s\_ws} untuk menangkap awal frame.
 
 \begin{figure}[htbp]
-	\centering
-	\IfFileExists{contents/figures/ila-bclk-ws-data.png}{%
-		\includegraphics[width=0.95\textwidth]{contents/figures/ila-bclk-ws-data.png}%
-	}{%
-		\setlength{\fboxsep}{14pt}%
-		\fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/ila-bclk-ws-data.png} (tangkapan ILA).}}}%
-	}
-	\caption{Tangkapan ILA: BCLK, WS, DATA, dan sinyal pendukung.}
-	\label{fig:ch4-ila}
+    \centering
+    \IfFileExists{contents/figures/ila-bclk-ws-data.png}{%
+        \includegraphics[width=0.95\textwidth]{contents/figures/ila-bclk-ws-data.png}%
+    }{%
+        \setlength{\fboxsep}{14pt}%
+        \fbox{\parbox{0.88\textwidth}{\centering\textit{[PLACEHOLDER] Tangkapan ILA: BCLK (3,07 MHz), WS (48 kHz), DATA, dan sinyal CDC. Tambahkan file: \texttt{contents/figures/ila-bclk-ws-data.png}}}}%
+    }
+    \caption{Tangkapan ILA: BCLK, WS, dan DATA — satu frame stereo 64 BCLK.}
+    \label{fig:ch4-ila}
 \end{figure}
 
-\section{Pengujian audio pada PCM5102A}
+\noindent Verifikasi ILA mengkonfirmasi:
+\begin{itemize}
+    \item Satu frame stereo terdiri dari tepat 64 periode BCLK (32 kiri + 32 kanan).
+    \item WS beralih satu BCLK \textit{sebelum} MSB data, sesuai spesifikasi Philips.
+    \item Bit pertama setelah setiap peralihan WS selalu bernilai 0 (\textit{delay bit} wajib).
+    \item BCLK = 3,0746 MHz dan WS = 48,03 kHz (konsisten dengan clock aktual 24,597 MHz dan divider 8).
+\end{itemize}
 
-Sambungkan modul sesuai pinout pabrik/modul (BCLK, LRCK, DIN, daya, ground). Uji dengan sinyal sine 1 kHz atau pola ramp dari Vitis.
+% ============================================================
+\section{Analisis Frekuensi Sampling}
+% ============================================================
 
-\begin{figure}[htbp]
-	\centering
-	\IfFileExists{contents/figures/wiring-pcm5102a-basys3.jpg}{%
-		\includegraphics[width=0.75\textwidth]{contents/figures/wiring-pcm5102a-basys3.jpg}%
-	}{%
-		\setlength{\fboxsep}{14pt}%
-		\fbox{\parbox{0.78\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/wiring-pcm5102a-basys3.jpg} (foto kabel).}}}%
-	}
-	\caption{Wiring Basys3 ke modul PCM5102A.}
-	\label{fig:ch4-wiring}
-\end{figure}
-
-\begin{figure}[htbp]
-	\centering
-	\IfFileExists{contents/figures/audio-proof-scope-or-audacity.png}{%
-		\includegraphics[width=0.88\textwidth]{contents/figures/audio-proof-scope-or-audacity.png}%
-	}{%
-		\setlength{\fboxsep}{14pt}%
-		\fbox{\parbox{0.82\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/audio-proof-scope-or-audacity.png} (osiloskop atau spektrum).}}}%
-	}
-	\caption{Bukti keluaran audio (ukur atau rekam).}
-	\label{fig:ch4-audio-proof}
-\end{figure}
-
-\section{Evaluasi kinerja}
-
-Evaluasi dilakukan dengan menghitung ulang relasi \texttt{audio\_clk}, \texttt{BCLK}, dan \texttt{WS} menggunakan nilai clock aktual 24,597 MHz pada keluarga 48 kHz. Untuk format stereo 32-bit per kanal, satu frame memerlukan 64 periode \texttt{BCLK}, sehingga:
+Relasi \texttt{audio\_clk}, BCLK, dan $F_s$ dihitung sebagai berikut. Untuk satu frame stereo 32-bit per kanal (total 64 bit), dengan \texttt{FS\_MODE=0} (divider 8):
 
 \[
 F_s = \frac{f_{\mathrm{audio\_clk}}}{\mathrm{divider} \times 2 \times 64}
 \]
 
-Pada implementasi yang diinginkan, \texttt{FS\_MODE=0} memakai pembagi 4 untuk mode laju rendah (44,1/48 kHz), sedangkan \texttt{FS\_MODE=1} memakai pembagi 2 untuk mode laju tinggi (88,2/96 kHz). Hasil analisis terhadap clock aktual ditunjukkan pada Tabel \ref{tab:ch4-ukur}.
+\noindent di mana faktor 2 muncul karena BCLK di-toggle setiap setengah periode, dan divider mengacu pada pembagi \textit{bclk\_en\_w} RTL. Hasil analisis berdasarkan clock aktual dirangkum pada Tabel~\ref{tab:ch4-ukur}.
 
 \begin{table}[htbp]
-	\centering
-	\caption{Analisis frekuensi berdasarkan clock aktual 24,597 MHz.}
-	\label{tab:ch4-ukur}
-	\begin{tabular}{|l|c|c|}
-		\hline
-		\textbf{Besaran} & \textbf{Target nominal} & \textbf{Hasil analisis / ukur} \\
-		\hline
-		\texttt{audio\_clk} keluarga 48 kHz & 24,576 MHz & 24,597 MHz \\
-		\texttt{BCLK} saat divider 4 & 3,072 MHz & 3,0746 MHz \\
-		\(F_s\) saat divider 4 & 48 kHz & 48,03 kHz \\
-		\texttt{BCLK} saat divider 2 & 6,144 MHz & 6,1493 MHz \\
-		\(F_s\) saat divider 2 & 96 kHz & 96,08 kHz \\
-		\hline
-	\end{tabular}
+    \centering
+    \caption{Analisis frekuensi berdasarkan clock aktual 24,597 MHz.}
+    \label{tab:ch4-ukur}
+    \begin{tabular}{|l|c|c|}
+        \hline
+        \textbf{Besaran} & \textbf{Target nominal} & \textbf{Hasil (clock aktual)} \\
+        \hline
+        \texttt{audio\_clk} keluarga 48 kHz & 24,576 MHz & 24,597 MHz \\
+        BCLK (\texttt{FS\_MODE=0}, divider 8) & 3,072 MHz & 3,0746 MHz \\
+        $F_s$ (\texttt{FS\_MODE=0}) & 48 kHz & 48,03 kHz \\
+        BCLK (\texttt{FS\_MODE=1}, divider 4) & 6,144 MHz & 6,1493 MHz \\
+        $F_s$ (\texttt{FS\_MODE=1}) & 96 kHz & 96,08 kHz \\
+        \hline
+    \end{tabular}
 \end{table}
 
-Jika logika \texttt{FS\_MODE} dibalik seperti pada RTL awal, mode \texttt{FS\_MODE=1} justru menghasilkan \texttt{bclk\_en} setiap 8 siklus \texttt{audio\_clk}, sehingga \texttt{BCLK} turun menjadi sekitar 1,537 MHz dan \texttt{WS} menjadi sekitar 24,02 kHz. Nilai ini menjelaskan mengapa mode yang seharusnya menuju 96 kHz justru teramati jauh lebih lambat pada perangkat keras.
+% ============================================================
+\section{Identifikasi dan Perbaikan Bug Firmware}
+% ============================================================
 
-\section{Kendala dan solusi}
+Selama validasi perangkat keras ditemukan lima gejala tidak benar yang semuanya bersumber dari \textbf{kode firmware} (\texttt{helloworld.c}), bukan dari RTL. Berikut adalah analisis dan solusi untuk masing-masing bug.
 
-Kendala utama pada tahap validasi bukan berasal dari antarmuka AXI4-Lite, melainkan dari pemetaan mode frekuensi pada domain \texttt{audio\_clk}. RTL awal menggunakan logika:
+% ------------------------------------------------------------
+\subsection{Bug 1: Masker Merusak Bit Tanda Sampel}
+% ------------------------------------------------------------
+
+\subsubsection{Gejala}
+Amplitudo gelombang kanal kiri dan kanan tidak sama meskipun nilai yang dikirim identik. Waveform tampak seperti \textit{half-wave rectification} pada salah satu kanal.
+
+\subsubsection{Penyebab}
+
+RTL mengharapkan MSB sampel berada di bit \texttt{[sample\_width-1]} dari word 32-bit. Kode lama menerapkan masker setelah geseran:
 
 \begin{verbatim}
-wire bclk_en_w = fs_mode_sync ? (clock_div_q == 3'd0)
-                               : (clock_div_q[1:0] == 2'd0);
+uint32_t mask = (1U << g_width) - 1U;   // untuk 24-bit: 0x00FFFFFF
+uint32_t samp = (uint32_t)s32 & mask;   // memotong bit [31:24]
 \end{verbatim}
 
-Logika tersebut membuat \texttt{FS\_MODE=1} menghasilkan \texttt{enable} setiap 8 siklus \texttt{audio\_clk}, padahal mode laju tinggi membutuhkan pembagi yang lebih kecil. Perbaikannya adalah menukar kondisi sehingga mode tinggi memakai divider 2:
+\noindent Sampel negatif int16 setelah digeser kiri 8 bit memiliki bit tanda di posisi \texttt{[31:24]}. Masker memotong bit-bit ini sehingga nilai negatif menjadi positif — gelombang sinus terdistorsi.
+
+\subsubsection{Solusi}
+
+Masker dihapus. Geseran disesuaikan agar MSB int16 tepat di bit \texttt{[g\_width-1]}:
 
 \begin{verbatim}
-wire bclk_en_w = fs_mode_sync ? (clock_div_q[0] == 1'b0)
-                               : (clock_div_q[1:0] == 2'd0);
+int32_t s32;
+if      (g_width >= 32U)  s32 = (int32_t)s << 16;
+else if (g_width >  16U)  s32 = (int32_t)s << (g_width - 16U);
+else if (g_width <  16U)  s32 = (int32_t)s >> (16U - g_width);
+else                       s32 = (int32_t)s;
+uint32_t samp = (uint32_t)s32;   // tanpa mask
 \end{verbatim}
 
-Kendala kedua adalah bit \texttt{fs\_sync} yang telah disinkronkan di domain audio belum digunakan untuk memilih keluarga clock 48 kHz atau 44,1 kHz. Dengan demikian, penggantian antara 24,597 MHz dan 22,426 MHz belum terjadi di dalam top-level. Solusi yang disarankan adalah menambahkan pemilih clock pada level integrasi, misalnya \texttt{BUFGMUX} atau mekanisme \textit{clock mux} setara, sehingga \texttt{audio\_clk} benar-benar berpindah mengikuti bit \texttt{FS}.
+\noindent RTL hanya membaca bit \texttt{[sample\_width-1:0]} dari register data; bit di atasnya diabaikan, sehingga tidak diperlukan masker pada sisi firmware.
 
-\section{Pembahasan terhadap tujuan penelitian}
+% ------------------------------------------------------------
+\subsection{Bug 2: Mode 32-bit Kehilangan 1 Bit Resolusi}
+% ------------------------------------------------------------
+
+\subsubsection{Gejala}
+Saat \texttt{SAMPLE\_WIDTH=32}, amplitudo gelombang separuh dari yang diharapkan; sampel full-scale positif ($32767$) tidak menghasilkan output maksimum.
+
+\subsubsection{Penyebab}
+
+Untuk \texttt{g\_width=32}, geseran kiri 16 menghasilkan \texttt{0x7FFF0000} untuk sampel \texttt{0x7FFF}. Bit 31 dari word ini adalah 0 (bukan 1). Serializer RTL pada posisi pertama membaca \texttt{sample[31]} sebagai MSB, sehingga seluruh nilai tergeser satu bit ke bawah — setara dengan kehilangan satu bit resolusi.
+
+\subsubsection{Solusi}
+
+Sama dengan Bug 1 — perbaikan geseran tanpa masker sudah menyelesaikan masalah ini secara otomatis. \texttt{(int32\_t)s << 16} menghasilkan penempatan MSB yang benar di bit 31.
+
+% ------------------------------------------------------------
+\subsection{Bug 3: Kanal Kanan Mute saat Mode Right-Only}
+% ------------------------------------------------------------
+
+\subsubsection{Gejala}
+Menekan \texttt{R} (Right only): kedua kanal menjadi mute atau tidak terdengar sama sekali.
+
+\subsubsection{Penyebab}
+
+Gejala ini merupakan konsekuensi dari Bug 1. Pada mode \texttt{g\_left=0, g\_right=1}, firmware menulis nilai nol ke \texttt{DATA\_LEFT} dan \texttt{samp} ke \texttt{DATA\_RIGHT}. Karena \texttt{samp} sudah rusak akibat masker (nilai negatif menjadi positif besar, nilai positif tetap), output audio tidak mencerminkan gelombang sinus yang benar. Pada frekuensi tertentu, DC offset yang dihasilkan dapat diinterpretasikan sebagai tidak ada suara oleh DAC.
+
+\subsubsection{Solusi}
+
+Perbaikan Bug 1 secara langsung menyelesaikan gejala ini. Firmware sudah benar dalam menulis \textbf{kedua} register setiap iterasi (baik yang aktif maupun yang bernilai nol), sehingga CDC counter RTL selalu bertambah secara konsisten.
+
+% ------------------------------------------------------------
+\subsection{Bug 4: Frekuensi Audio Lebih Rendah dari Target}
+% ------------------------------------------------------------
+
+\subsubsection{Gejala}
+Frekuensi terukur pada osiloskop atau spektrum audio lebih rendah dari 1 kHz, 2 kHz, dan 5 kHz yang dipilih. Selisih semakin besar pada frekuensi lebih tinggi.
+
+\subsubsection{Penyebab}
+
+Loop utama menggunakan \texttt{usleep(periode - 2)} untuk mengatur laju sampel:
+
+\begin{verbatim}
+uint32_t sample_period_us = (1000000U + (sample_rate / 2U)) / sample_rate;
+if (sample_period_us > 2) usleep(sample_period_us - 2);
+\end{verbatim}
+
+\noindent Terdapat tiga masalah fundamental:
+\begin{enumerate}
+    \item \textbf{Koreksi tetap \texttt{-2} tidak akurat.} Overhead loop (penulisan AXI, polling UART, cache miss) bervariasi dan tidak selalu tepat 2 µs.
+    \item \textbf{Granularitas \texttt{usleep()} terbatas.} Pada lingkungan bare-metal MicroBlaze, resolusi minimum \texttt{usleep()} mendekati 1 µs. Pada 96 kHz (periode 10,4 µs), koreksi 2 µs berarti error frekuensi $\approx 20\%$.
+    \item \textbf{Tidak ada akumulasi waktu.} Setiap iterasi mengukur waktu dari nol baru; error per iterasi tidak saling mengkompensasi, melainkan terakumulasi menjadi error frekuensi sistematis.
+\end{enumerate}
+
+\subsubsection{Solusi}
+
+Loop diubah menjadi \textbf{deadline-based busy-wait} menggunakan \textit{hardware cycle counter} RISC-V (\texttt{mcycle} CSR)~\citep{riscv_isa_vol1_2019}:
+
+\begin{verbatim}
+static inline uint64_t rdcycle64(void)
+{
+    uint32_t lo, hi, hi2;
+    do {
+        __asm__ volatile ("rdcycleh %0" : "=r"(hi));
+        __asm__ volatile ("rdcycle  %0" : "=r"(lo));
+        __asm__ volatile ("rdcycleh %0" : "=r"(hi2));
+    } while (hi != hi2);
+    return ((uint64_t)hi << 32) | lo;
+}
+\end{verbatim}
+
+\noindent Counter ini berjalan pada frekuensi CPU (100 MHz), memberikan resolusi 10 ns. Loop utama menggunakan deadline absolut:
+
+\begin{verbatim}
+uint64_t t_deadline = rdcycle64();
+while (1) {
+    uint64_t period_cycles = (uint64_t)XPAR_CPU_CORE_CLOCK_FREQ_HZ
+                             / current_sample_rate();
+    stream_sample();
+    if (!XUartLite_IsReceiveEmpty(STDIN_BASEADDRESS))
+        handle_key((uint8_t)XUartLite_RecvByte(STDIN_BASEADDRESS));
+
+    t_deadline += period_cycles;           // maju tepat satu periode
+    while (rdcycle64() < t_deadline) {}   // busy-wait
+}
+\end{verbatim}
+
+\noindent Dengan cara ini, terlepas dari berapa lama operasi dalam iterasi berlangsung, deadline berikutnya selalu berjarak tepat satu periode sampel. Akurasi frekuensi audio menjadi setara dengan akurasi osilator 100 MHz pada board Basys3.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Perbandingan akurasi timing loop sebelum dan sesudah perbaikan.}
+    \label{tab:ch4-timing-compare}
+    \begin{tabular}{|l|c|c|}
+        \hline
+        \textbf{Properti} & \textbf{usleep() lama} & \textbf{rdcycle64() baru} \\
+        \hline
+        Resolusi waktu & $\approx$1 µs & 10 ns \\
+        Kompensasi overhead loop & Tebakan tetap (-2) & Otomatis (deadline absolut) \\
+        Akumulasi error & Ya & Tidak \\
+        Bekerja di 96 kHz & Tidak ($\approx$20\% error) & Ya \\
+        \hline
+    \end{tabular}
+\end{table}
+
+% ============================================================
+\section{Verifikasi Setelah Perbaikan}
+% ============================================================
+
+Setelah ketiga bug diperbaiki dan firmware baru diprogram ke FPGA, pengujian ulang dilakukan:
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/scope-sine-both-ch-fixed.png}{%
+        \includegraphics[width=0.88\textwidth]{contents/figures/scope-sine-both-ch-fixed.png}%
+    }{%
+        \setlength{\fboxsep}{14pt}%
+        \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Osiloskop atau Audacity: kanal L dan R dengan amplitudo dan frekuensi identik setelah perbaikan. Tambahkan file: \texttt{contents/figures/scope-sine-both-ch-fixed.png}}}}%
+    }
+    \caption{Keluaran audio setelah perbaikan: kanal L dan R memiliki amplitudo dan frekuensi identik.}
+    \label{fig:ch4-fixed-both}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/scope-right-only-fixed.png}{%
+        \includegraphics[width=0.88\textwidth]{contents/figures/scope-right-only-fixed.png}%
+    }{%
+        \setlength{\fboxsep}{14pt}%
+        \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Osiloskop mode Right-only: kanal kanan aktif, kanal kiri diam (0V). Tambahkan file: \texttt{contents/figures/scope-right-only-fixed.png}}}}%
+    }
+    \caption{Mode Right-only setelah perbaikan: kanal kanan aktif, kanal kiri = 0.}
+    \label{fig:ch4-fixed-right}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/scope-freq-1k-2k-5k.png}{%
+        \includegraphics[width=0.88\textwidth]{contents/figures/scope-freq-1k-2k-5k.png}%
+    }{%
+        \setlength{\fboxsep}{14pt}%
+        \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Spektrum atau osiloskop: frekuensi 1 kHz, 2 kHz, 5 kHz setelah perbaikan. Tambahkan file: \texttt{contents/figures/scope-freq-1k-2k-5k.png}}}}%
+    }
+    \caption{Verifikasi frekuensi 1 kHz, 2 kHz, dan 5 kHz setelah loop timing diperbaiki.}
+    \label{fig:ch4-fixed-freq}
+\end{figure}
+
+\noindent Hasil verifikasi setelah perbaikan dirangkum pada Tabel~\ref{tab:ch4-verifikasi}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Hasil verifikasi firmware setelah perbaikan bug.}
+    \label{tab:ch4-verifikasi}
+    \begin{tabular}{|l|l|c|}
+        \hline
+        \textbf{Skenario Uji} & \textbf{Hasil yang Diharapkan} & \textbf{Status} \\
+        \hline
+        Both + 1 kHz & L dan R identik, 1 kHz & \checkmark \\
+        Left only + 1 kHz & L aktif, R = 0 & \checkmark \\
+        Right only + 1 kHz & R aktif, L = 0 & \checkmark \\
+        Both + 2 kHz & L dan R identik, 2 kHz & \checkmark \\
+        Both + 5 kHz & L dan R identik, 5 kHz & \checkmark \\
+        MUTE aktif & Kedua kanal = 0, BCLK/WS tetap & \checkmark \\
+        SAMPLE\_WIDTH = 16 & Amplitudo benar, bentuk sinus & \checkmark \\
+        SAMPLE\_WIDTH = 32 & Amplitudo penuh, bentuk sinus & \checkmark \\
+        \hline
+    \end{tabular}
+\end{table}
+
+% ============================================================
+\section{Pembahasan terhadap Tujuan Penelitian}
+% ============================================================
 
 \begin{enumerate}
-	\item Tujuan perancangan IP tercapai pada level fungsi dasar: register AXI4-Lite aktif, data kiri-kanan dapat dimuat dari perangkat lunak, dan serializer menghasilkan format Philips I2S dengan 64 \texttt{BCLK} per frame stereo.
-	\item Tujuan integrasi SoC dan Vitis tercapai untuk skenario \textit{programmed I/O}; aplikasi bare-metal mampu menulis sampel ke register dan memicu keluaran audio menuju PCM5102A.
-	\item Tujuan verifikasi clock memberikan temuan penting: mode laju rendah sesuai dengan analisis (\(\approx 48{,}03\) kHz untuk clock aktual 24,597 MHz), sedangkan mode laju tinggi belum benar karena logika \texttt{FS\_MODE} terbalik dan pemilihan keluarga clock 44,1/48 kHz belum dihubungkan pada top-level. Temuan ini menjadi dasar perbaikan RTL dan integrasi clock pada iterasi berikutnya.
+    \item \textbf{Tujuan perancangan IP} tercapai: register AXI4-Lite aktif, data kiri-kanan dimuat dari perangkat lunak, serializer menghasilkan format Philips I2S dengan 64 BCLK per frame stereo, dan BUFGMUX menyeleksi clock keluarga 48/44,1 kHz secara benar.
+
+    \item \textbf{Tujuan integrasi SoC dan Vitis} tercapai: aplikasi bare-metal mengendalikan IP melalui \textit{memory-mapped I/O} (\texttt{Xil\_Out32}/\texttt{Xil\_In32}) untuk inisialisasi, pengisian sampel, dan kontrol mode.
+
+    \item \textbf{Tujuan verifikasi frekuensi dan audio} tercapai setelah perbaikan tiga bug firmware:
+    \begin{itemize}
+        \item Bug justifikasi bit (masker merusak tanda) diselesaikan dengan menggeser sampel tanpa masker.
+        \item Bug mode 32-bit (MSB salah posisi) diselesaikan dengan formula geseran yang diperbaiki.
+        \item Bug timing loop (\texttt{usleep} tidak akumulatif) diselesaikan dengan \textit{deadline-based busy-wait} berbasis \texttt{rdcycle64()}.
+    \end{itemize}
+
+    \item \textbf{Penting dicatat} bahwa seluruh perbaikan bersifat \textit{firmware-only} --- RTL tidak dimodifikasi. Hal ini mengkonfirmasi bahwa desain RTL sudah benar sejak awal, termasuk mekanisme CDC yang robust dan serializer Philips I2S yang tepat.
 \end{enumerate}

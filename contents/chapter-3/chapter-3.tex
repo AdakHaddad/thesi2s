@@ -2,15 +2,15 @@
 
 \section{Spesifikasi dan arsitektur IP I2S TX}
 
-Bagian ini merangkum \textbf{perancangan fungsional} IP yang menjadi inti skripsi. Implementasi difokuskan pada peripheral \textbf{I2S transmitter} dengan antarmuka \textbf{AXI4-Lite} agar dapat dikontrol oleh program C pada MicroBlaze V.
+Bagian ini merangkum \textbf{perancangan fungsional} IP yang menjadi inti skripsi. Implementasi difokuskan pada peripheral \textbf{I2S transmitter} dengan antarmuka \textbf{AXI4-Lite} agar dapat dikontrol oleh program C pada MicroBlaze V~\citep{xilinx_microblaze_ref_2021}.
 
 \subsection{Daftar fitur IP}
 \begin{itemize}
-    \item Antarmuka \textbf{AXI4-Lite} 32 bit untuk konfigurasi dan pengisian data audio.
-    \item Mode \textbf{TX-only}, stereo, format \textbf{Philips I2S}, \textbf{24 bit} per saluran dalam \textbf{slot 32 bit}.
-    \item Dukungan dua keluarga frekuensi sampling nominal (\textbf{48/96 kHz} dan \textbf{44.1/88.2 kHz}), melalui pembagi clock internal.
+    \item Antarmuka \textbf{AXI4-Lite} 32 bit untuk konfigurasi dan pengisian data audio~\citep{arm_amba_axi_2010}.
+    \item Mode \textbf{TX-only}, stereo, format \textbf{Philips I2S}~\citep{philips_i2s_1986}, \textbf{24 bit} per saluran dalam \textbf{slot 32 bit}.
+    \item Dukungan dua keluarga frekuensi sampling nominal (\textbf{48/96 kHz} dan \textbf{44,1/88,2 kHz}), melalui pembagi clock internal dan \texttt{BUFGMUX}~\citep{xilinx_clocking_wizard_2021}.
     \item \textbf{Jalur data} lewat register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT} dan \texttt{CONTROL}, \textbf{tanpa FIFO} internal.
-    \item Keluaran menuju modul \textbf{PCM5102A}: BCLK, LRCK/WS, DATA, dan MCLK bila digunakan.
+    \item Keluaran menuju modul \textbf{PCM5102A}~\citep{pcm5102a_datasheet}: BCLK, LRCK/WS, DATA, dan MCLK bila digunakan.
 \end{itemize}
 
 \subsection{Blok diagram perancangan IP}
@@ -54,11 +54,11 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
 \textbf{Bit(s)} & \textbf{Field} & \textbf{Default} & \textbf{Fungsi / Keterangan} \\
 \hline
 \texttt{0} & \texttt{ENABLE} & 0 & 1 = output audio aktif, 0 = output nonaktif \\
-\texttt{1} & \texttt{MUTE} & 0 & 1 = data audio dipaksa nol \\
-\texttt{2} & \texttt{FS\_MODE} & 0 & 0/1 = memilih \textit{nominal sample rate} (rendah/tinggi) \\
-\texttt{3} & \texttt{FS\_FAMILY} & 0 & 0 = keluarga 48/96 kHz, 1 = keluarga 44.1/88.2 kHz \\
+\texttt{1} & \texttt{MUTE} & 0 & 1 = data audio dipaksa nol, clock tetap berjalan \\
+\texttt{2} & \texttt{FS\_FAMILY} & 0 & 0 = keluarga 48/96 kHz, 1 = keluarga 44,1/88,2 kHz \\
+\texttt{3} & \texttt{FS\_MODE} & 0 & 0 = Fs rendah (48/44,1 kHz); 1 = Fs tinggi (96/88,2 kHz) \\
 \texttt{7:4} & \texttt{RESERVED} & 0 & Cadangan untuk ekstensi di masa depan \\
-\texttt{12:8} & \texttt{SAMPLE\_WIDTH} & 24 & Lebar bit sampel per kanal (1..32) \\
+\texttt{12:8} & \texttt{SAMPLE\_WIDTH} & 32 & Lebar bit sampel per kanal (1--32); nilai 0 diinterpretasikan sebagai 32 \\
 \texttt{31:13} & \texttt{RESERVED} & 0 & Cadangan \\
 \hline
 \end{tabular}
@@ -82,10 +82,10 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
     % Field dari kiri (MSB) ke kanan (LSB)
     % Total = 19 + 5 + 4 + 1 + 1 + 1 + 1 = 32 bits
     \bitbox{19}{RESERVED}
-    \bitbox{5}{\shortstack{\scriptsize SAMPLE\\ \scriptsize WIDTH}}    
+    \bitbox{5}{\shortstack{\scriptsize SAMPLE\\ \scriptsize WIDTH}}
     \bitbox{4}{\tiny RESV}
-    \bitbox{1}{\tiny FSF}
     \bitbox{1}{\tiny FSM}
+    \bitbox{1}{\tiny FSF}
     \bitbox{1}{\tiny M}
     \bitbox{1}{\tiny EN}
   \end{bytefield}
@@ -96,10 +96,11 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
 
 \subsection{Aturan packing data}
 \begin{itemize}
-\item \texttt{DATA\_LEFT}: \texttt{[SAMPLE\_WIDTH-1:0]} berisi sampel kiri.
-\item \texttt{DATA\_RIGHT}: \texttt{[SAMPLE\_WIDTH-1:0]} berisi sampel kanan.
-\item Firmware menulis pasangan kiri/kanan; sampel diteruskan ke serializer tanpa antrean FIFO.
-\item Jika \texttt{MUTE=1}, keluaran serial dipaksa nol tanpa mengubah isi buffer.
+\item \texttt{DATA\_LEFT}: sampel kanal kiri ditulis dengan \textbf{MSB di bit \texttt{[SAMPLE\_WIDTH-1]}} dari word 32-bit. Bit di atas \texttt{SAMPLE\_WIDTH-1} diabaikan oleh RTL.
+\item \texttt{DATA\_RIGHT}: aturan packing sama dengan \texttt{DATA\_LEFT}, untuk sampel kanal kanan.
+\item Firmware harus selalu menulis \textbf{kedua} register setiap periode sampel agar counter CDC RTL bertambah secara konsisten untuk kedua kanal.
+\item Contoh konversi untuk sampel int16: geser kiri sebesar \texttt{(SAMPLE\_WIDTH - 16)} bit sehingga MSB tepat di bit \texttt{[SAMPLE\_WIDTH-1]}, \textbf{tanpa masker tambahan}.
+\item Jika \texttt{MUTE=1}, serializer memaksa keluaran DATA ke nol tanpa mengubah isi register sampel.
 \end{itemize}
 
 \subsection{Integrasi Vivado Block Design}
@@ -120,10 +121,10 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
 \subsection{Perangkat keras}
 
 \subsubsection{Board FPGA}
-\textbf{Basys3} digunakan sebagai platform implementasi utama. Board ini berbasis FPGA Xilinx Artix-7 dan menyediakan sumber clock, antarmuka USB-UART, serta header PMOD untuk koneksi ke perangkat eksternal.
+\textbf{Basys3} digunakan sebagai platform implementasi utama~\citep{xilinx_basys3_ref}. Board ini berbasis FPGA Xilinx Artix-7 dan menyediakan sumber clock 100 MHz, antarmuka USB-UART, serta header PMOD untuk koneksi ke perangkat eksternal.
 
 \subsubsection{Modul DAC audio}
-\textbf{PCM5102A Audio DAC Module} digunakan sebagai penerima data I2S. Modul ini mendukung antarmuka audio serial, berbagai \textit{sample rate}, dan keluaran analog stereo untuk verifikasi suara.
+\textbf{PCM5102A Audio DAC Module} digunakan sebagai penerima data I2S~\citep{pcm5102a_datasheet}. Modul ini mendukung antarmuka audio serial, berbagai \textit{sample rate} hingga 384 kHz, dan keluaran analog stereo untuk verifikasi suara.
 
 \subsubsection{Perangkat bantu}
 \begin{itemize}
@@ -134,8 +135,8 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
 
 \subsection{Perangkat lunak}
 \begin{itemize}
-    \item \textbf{AMD Vivado Design Suite} untuk RTL design, synthesis, implementation, dan integrasi SoC.
-    \item \textbf{Xilinx Vitis} untuk pengembangan perangkat lunak uji dalam bahasa C.
+    \item \textbf{AMD Vivado Design Suite} untuk RTL design, synthesis, implementation, dan integrasi SoC~\citep{xilinx_vivado_design_suite_2021}.
+    \item \textbf{Xilinx Vitis} untuk pengembangan perangkat lunak uji dalam bahasa C~\citep{xilinx_vitis_embedded_2021}.
     \item \textbf{Vivado Simulator} atau simulasi lain bila digunakan untuk verifikasi RTL.
     \item \textbf{LaTeX} untuk penulisan dokumen skripsi.
 \end{itemize}
@@ -146,10 +147,10 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
 
 Perancangan perangkat keras dilakukan dengan tahapan berikut:
 \begin{enumerate}
-    \item Menentukan spesifikasi I2S TX meliputi format data, lebar sampel, mode frekuensi sampling, dan pemetaan register.
-    \item Mendesain arsitektur modul yang mencakup AXI4-Lite slave, register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT} dan \texttt{CONTROL}, pembagi clock, serta serializer I2S.
-    \item Mengimplementasikan RTL dalam Verilog dengan pemisahan blok sekuensial dan kombinasional secara jelas.
-    \item Mengintegrasikan peripheral ke dalam Vivado IP Integrator bersama MicroBlaze V, BRAM, clocking, dan peripheral pendukung.
+    \item Menentukan spesifikasi I2S TX meliputi format data~\citep{philips_i2s_1986}, lebar sampel, mode frekuensi sampling, dan pemetaan register.
+    \item Mendesain arsitektur modul yang mencakup AXI4-Lite slave~\citep{arm_amba_axi_2010}, register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT} dan \texttt{CONTROL}, pembagi clock, serta serializer I2S.
+    \item Mengimplementasikan RTL dalam Verilog~\citep{palnitkar_verilog_2003} dengan pemisahan blok sekuensial dan kombinasional secara jelas.
+    \item Mengintegrasikan peripheral ke dalam Vivado IP Integrator~\citep{xilinx_vivado_design_suite_2021} bersama MicroBlaze V, BRAM, clocking, dan peripheral pendukung.
 \end{enumerate}
 
 \subsection{Metode verifikasi dan simulasi}
@@ -172,10 +173,10 @@ Parameter yang diamati meliputi:
 
 Integrasi peripheral ke dalam SoC dilakukan melalui alur berikut:
 \begin{enumerate}
-    \item \textbf{IP Packaging}: mengemas modul I2S sebagai custom IP.
-    \item \textbf{Block Design}: menghubungkan MicroBlaze V, AXI interconnect, BRAM, Clocking Wizard, UART, dan IP I2S.
-    \item \textbf{Address Allocation}: menetapkan base address peripheral agar dapat diakses dari Vitis.
-    \item \textbf{Constraint Management}: memetakan pin I2S ke konektor board sesuai file \texttt{.xdc}.
+    \item \textbf{IP Packaging}: mengemas modul I2S sebagai custom IP menggunakan Vivado IP Integrator~\citep{xilinx_vivado_design_suite_2021}.
+    \item \textbf{Block Design}: menghubungkan MicroBlaze V~\citep{xilinx_microblaze_ref_2021}, AXI interconnect~\citep{xilinx_axi_ref_2017}, BRAM, Clocking Wizard~\citep{xilinx_clocking_wizard_2021}, UART, dan IP I2S.
+    \item \textbf{Address Allocation}: menetapkan base address peripheral agar dapat diakses dari Vitis~\citep{xilinx_vitis_embedded_2021}.
+    \item \textbf{Constraint Management}: memetakan pin I2S ke konektor board sesuai file \texttt{.xdc}~\citep{xilinx_basys3_ref}.
 \end{enumerate}
 
 \subsection{Metode pengembangan software}

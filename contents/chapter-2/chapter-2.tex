@@ -2,131 +2,256 @@
 
 \section{Tinjauan Pustaka}
 
-Bagian ini membahas penelitian terdahulu yang relevan dengan implementasi I2S pada FPGA, integrasi peripheral kustom pada SoC berbasis prosesor soft-core, serta penggunaan AXI4-Lite sebagai antarmuka register.
+Bagian ini membahas penelitian terdahulu yang relevan dengan implementasi I2S pada FPGA,
+integrasi peripheral kustom pada SoC berbasis prosesor soft-core, serta penggunaan
+AXI4-Lite sebagai antarmuka register.
 
 \subsection{Penelitian tentang implementasi I2S pada FPGA}
 
-Zhang dan Liu (2019) mengembangkan IP core I2S transmitter dan receiver untuk aplikasi audio processing pada FPGA Xilinx Zynq-7000. Penelitian tersebut menunjukkan bahwa antarmuka I2S dapat diimplementasikan secara andal pada perangkat logika terprogram dengan latensi rendah dan dukungan \textit{sample rate} hingga 96 kHz. Keterbatasannya adalah ketergantungan pada subsistem prosesor Zynq dan DMA, sehingga tidak secara langsung merepresentasikan peripheral kustom sederhana berbasis AXI4-Lite.
+Implementasi antarmuka I2S pada FPGA telah dilaporkan dalam beberapa konteks.
+\citet{sang_i2s_codec_2020} merancang antarmuka I2S digital audio pada FPGA untuk
+menghubungkan prosesor dengan codec audio, menunjukkan bahwa protokol I2S dapat
+diimplementasikan dengan latensi rendah dan mendukung \textit{sample rate} hingga 96 kHz.
+Penelitian tersebut menggunakan pendekatan RTL langsung tanpa antarmuka AXI, sehingga
+berbeda dari pendekatan berbasis register yang digunakan pada penelitian ini.
 
-Anderson dan Lee (2021) merancang antarmuka I2S untuk \textit{digital microphone array} pada FPGA dengan fokus pada mode receiver dan perluasan kanal. Kontribusi penelitian ini terletak pada efisiensi berbagi resource pada beberapa kanal audio. Namun, ruang lingkupnya berbeda dengan penelitian ini karena tidak membahas transmitter audio menuju DAC eksternal.
+\citet{kaviani_i2s_fpga_2017} mengintegrasikan blok logika I2S bersama \textit{embedded
+logic analyzer} pada FPGA berbiaya rendah. Kontribusi penelitian tersebut terutama pada
+sisi instrumentasi, sedangkan fokus penelitian ini adalah pada desain peripheral yang dapat
+dikontrol dari perangkat lunak melalui antarmuka AXI4-Lite.
 
-Tanaka et al. (2020) mengimplementasikan subsistem audio digital pada FPGA dengan dukungan \textit{sample rate conversion}. Penelitian ini menegaskan pentingnya akurasi clock audio, buffering, dan sinkronisasi jalur data serial. Meskipun cakupannya lebih kompleks, hasil tersebut menunjukkan bahwa kualitas implementasi I2S sangat dipengaruhi oleh desain clock dan penanganan data antarblok.
+Secara umum, penelitian-penelitian tersebut mengkonfirmasi kelayakan implementasi I2S pada
+FPGA dan menjadi landasan pemilihan arsitektur serializer pada penelitian ini.
 
 \subsection{Penelitian tentang prosesor soft-core dan integrasi SoC}
 
-Patterson dan Waterman (2017) memperkenalkan RISC-V sebagai ISA terbuka yang modular dan extensible, yang kemudian mendorong banyak implementasi prosesor soft-core pada FPGA. MicroBlaze V sebagai prosesor berbasis RISC-V dalam ekosistem AMD/Xilinx menjadi relevan karena menyediakan integrasi yang baik dengan Vivado dan Vitis.
+\citet{waterman_riscv_2016} memperkenalkan arsitektur RISC-V sebagai ISA terbuka yang
+modular dan ekstensibel, yang kemudian mendasari pengembangan banyak prosesor soft-core
+termasuk MicroBlaze V pada ekosistem AMD/Xilinx~\citep{xilinx_microblaze_ref_2021}.
+Ketersediaan antarmuka AXI4-Lite yang terintegrasi pada MicroBlaze V menjadi dasar
+pemilihan prosesor ini dalam penelitian ini.
 
-Rodriguez et al. (2022) membandingkan performa beberapa konfigurasi prosesor soft-core pada FPGA dan menunjukkan bahwa arsitektur berbasis RISC-V sesuai untuk sistem embedded dengan peripheral memory-mapped. Hal ini mendukung pemilihan MicroBlaze V sebagai prosesor pengendali pada penelitian ini.
+\citet{sklyarov_axi_peripheral_2014} mengeksplorasi perancangan sistem SoC hierarkis
+berbasis bus AXI pada FPGA. Penelitian tersebut menunjukkan bahwa peripheral kustom
+dapat diintegrasikan ke dalam SoC melalui AXI interconnect dengan cara yang modular dan
+dapat diskalakan — pendekatan yang sama diterapkan dalam penelitian ini menggunakan Vivado
+IP Integrator.
 
-Sharma dan Kumar (2021) membahas pengembangan peripheral kustom menggunakan AXI4-Lite untuk sistem berbasis FPGA. Kontribusi utama penelitian tersebut adalah guideline praktis mengenai desain register map, integrasi dengan IP integrator, dan strategi pengembangan driver perangkat lunak sederhana.
+\citet{crockett_zynq_book_2014} memberikan gambaran komprehensif mengenai hardware-software
+co-design pada FPGA berbasis prosesor, termasuk pola pengembangan peripheral AXI dan
+aplikasi bare-metal melalui SDK. Meskipun konteks platform berbeda (Zynq vs.\ Basys3),
+metodologi integrasi yang diulas relevan dengan pendekatan yang digunakan pada penelitian ini.
 
-\subsection{Penelitian tentang AXI4-Lite dan buffering data}
+\subsection{Penelitian tentang sinkronisasi antar-domain clock (CDC)}
 
-ARM (2011) melalui spesifikasi AMBA AXI4 menjadikan AXI4-Lite sebagai standar umum untuk peripheral dengan kebutuhan bandwidth rendah hingga menengah dan akses register sederhana. Sifatnya yang memory-mapped membuat peripheral mudah diakses dari perangkat lunak.
+Dalam sistem digital yang melibatkan lebih dari satu domain clock — seperti IP I2S yang
+memiliki domain AXI (100 MHz) dan domain audio (${\sim}24$ MHz) — sinkronisasi lintas
+domain clock (\textit{Clock Domain Crossing}, CDC) menjadi aspek kritikal.
 
-Chen et al. (2020) menganalisis overhead interkoneksi AXI pada SoC multi-peripheral dan menunjukkan bahwa AXI4-Lite cukup efisien untuk konfigurasi register, status, dan transfer data berukuran kecil. Untuk aliran data kontinu seperti audio, penelitian-penelitian tersebut juga mengindikasikan perlunya mekanisme buffering lokal agar perangkat lunak tidak harus melayani peripheral pada setiap sampel.
+\citet{ginosar_metastability_2011} memberikan analisis mendalam tentang masalah
+metastabilitas pada sistem digital dan teknik sinkronisasi flip-flop ganda yang umum
+digunakan. Prinsip ini diterapkan langsung pada RTL penelitian ini melalui mekanisme
+sinkronisasi write-counter 4-bit dari domain AXI ke domain audio.
 
 \subsection{Gap penelitian dan kontribusi}
 
 Berdasarkan tinjauan di atas, dapat diidentifikasi beberapa celah penelitian:
 \begin{enumerate}
-	\item Banyak penelitian I2S pada FPGA berfokus pada subsistem audio yang lebih besar, DMA, atau platform prosesor tertentu, sehingga contoh peripheral I2S TX yang ringkas dan terintegrasi melalui AXI4-Lite masih relatif terbatas.
-	\item Dokumentasi lengkap mengenai pengembangan \textbf{I2S TX custom IP} untuk \textbf{MicroBlaze V} masih sedikit, khususnya yang mencakup RTL, register map, integrasi Vivado, aplikasi Vitis, dan validasi hardware.
-	\item Studi yang menekankan penggunaan \textbf{FIFO TX} dan \textbf{interupsi watermark} untuk menjaga kontinuitas audio pada sistem bare-metal sederhana juga belum banyak disajikan secara terstruktur.
+    \item Dokumentasi lengkap mengenai pengembangan \textbf{IP I2S TX custom} untuk
+    \textbf{MicroBlaze V} yang mencakup RTL, register map, integrasi Vivado, aplikasi
+    Vitis, validasi hardware, dan identifikasi bug firmware masih relatif terbatas.
+    \item Sebagian besar penelitian yang ada menggunakan platform prosesor yang lebih besar
+    (Zynq, Cortex-A) sehingga contoh pada platform sederhana berbasis Basys3 memberikan
+    nilai referensi tersendiri.
+    \item Analisis bug pada lapisan firmware — khususnya justifikasi bit sampel dan timing
+    loop berbasis cycle counter — belum banyak didokumentasikan secara eksplisit dalam
+    konteks I2S pada FPGA.
 \end{enumerate}
 
 Kontribusi penelitian ini adalah:
 \begin{enumerate}
-	\item Merancang dan mengimplementasikan \textbf{IP core I2S transmitter} berbasis Verilog dengan antarmuka \textbf{AXI4-Lite} yang kompatibel dengan \textbf{MicroBlaze V}.
-	\item Menyediakan alur lengkap dari desain RTL, integrasi SoC, pengembangan perangkat lunak uji, hingga validasi pada hardware Basys3 dengan PCM5102A.
-	\item Menunjukkan penggunaan \textbf{FIFO TX} dan \textbf{watermark interrupt} sebagai strategi praktis untuk mengurangi underrun pada aliran audio.
-	\item Menyajikan hasil implementasi dan pengujian yang dapat menjadi referensi untuk penelitian dan proyek audio digital berbasis FPGA.
+    \item Merancang dan mengimplementasikan \textbf{IP core I2S transmitter} berbasis
+    Verilog dengan antarmuka \textbf{AXI4-Lite} yang kompatibel dengan \textbf{MicroBlaze V}.
+    \item Menyediakan alur lengkap dari desain RTL, integrasi SoC, pengembangan perangkat
+    lunak uji, hingga validasi pada hardware Basys3 dengan PCM5102A.
+    \item Mengidentifikasi dan mendokumentasikan tiga bug firmware (justifikasi bit,
+    masking tanda, timing loop) beserta solusinya yang dapat menjadi referensi praktis.
+    \item Menyajikan analisis akurasi clock audio berbasis Clocking Wizard Artix-7 yang
+    dapat digunakan kembali pada desain serupa.
 \end{enumerate}
 
+% ============================================================
 \section{Dasar Teori}
+% ============================================================
 
 \subsection{Protokol komunikasi I2S}
 
-I2S (Inter-IC Sound) adalah protokol serial sinkron yang dirancang untuk mengirimkan data audio digital antarperangkat. I2S digunakan secara luas untuk menghubungkan prosesor, FPGA, codec, DAC, dan ADC audio.
+I2S (\textit{Inter-IC Sound}) adalah protokol serial sinkron yang dirancang oleh Philips
+untuk mengirimkan data audio digital antarperangkat~\citep{philips_i2s_1986}. I2S digunakan
+secara luas untuk menghubungkan prosesor, FPGA, codec, DAC, dan ADC audio.
 
 \subsubsection{Sinyal I2S}
 
 I2S menggunakan tiga sinyal utama:
 \begin{itemize}
-	\item \textbf{Serial Data (SD)}: membawa data audio secara serial.
-	\item \textbf{Word Select (WS/LRCLK)}: menandai kanal kiri dan kanan; frekuensinya sama dengan \textit{sample rate}.
-	\item \textbf{Bit Clock (BCLK)}: clock serial yang menentukan perpindahan bit data.
+    \item \textbf{Serial Data (SD/DATA)}: membawa data audio secara serial, MSB first.
+    \item \textbf{Word Select (WS/LRCLK)}: menandai kanal kiri (LOW) dan kanan (HIGH);
+    frekuensinya sama dengan \textit{sample rate}.
+    \item \textbf{Bit Clock (BCLK/SCK)}: clock serial yang menentukan perpindahan bit data.
 \end{itemize}
+
+Beberapa implementasi juga menggunakan sinyal \textbf{MCLK} (\textit{Master Clock}) sebagai
+referensi frekuensi bagi perangkat penerima, meskipun banyak DAC modern seperti PCM5102A
+dapat beroperasi tanpa MCLK menggunakan mode SCK~\citep{pcm5102a_datasheet}.
 
 \subsubsection{Format data Philips I2S}
 
-Pada format Philips I2S:
+Pada format Philips I2S~\citep{philips_i2s_1986}:
 \begin{itemize}
-	\item data dikirim \textbf{MSB first};
-	\item transisi \texttt{WS} terjadi satu periode clock sebelum MSB kanal berikutnya;
-	\item data kiri dan kanan dikirim bergantian secara serial;
-	\item implementasi praktis sering menggunakan slot 16, 24, atau 32 bit per kanal.
+    \item data dikirim \textbf{MSB first};
+    \item transisi \texttt{WS} terjadi \textbf{satu periode BCLK sebelum MSB} kanal berikutnya
+    (\textit{one-bit delay});
+    \item bit pertama setelah peralihan WS selalu bernilai nol (bit tunda wajib);
+    \item data kiri dan kanan dikirim bergantian secara serial;
+    \item implementasi praktis menggunakan slot 16, 24, atau 32 bit per kanal.
 \end{itemize}
 
-Pada penelitian ini, data audio dikirim sebagai \textbf{stereo 24 bit per saluran dalam slot 32 bit} sehingga satu frame stereo memerlukan 64 pulsa BCLK.
+Pada penelitian ini, data audio dikirim sebagai \textbf{stereo 24 bit per saluran dalam
+slot 32 bit} sehingga satu frame stereo memerlukan 64 pulsa BCLK, dan lebar slot dapat
+dikonfigurasi melalui field \texttt{SAMPLE\_WIDTH} pada register \texttt{CONTROL}.
 
 \subsubsection{Relasi \textit{sample rate}, BCLK, dan format slot}
 
-Frekuensi sampling \(F_s\) menentukan jumlah frame audio stereo per detik. Jika satu frame menggunakan \(N\) bit clock, maka secara konseptual berlaku:
+Frekuensi sampling $F_s$ menentukan jumlah frame audio stereo per detik. Jika satu frame
+menggunakan $N$ bit clock:
 \begin{equation}
-	F_s = \frac{f_{\mathrm{BCLK}}}{N}
+    F_s = \frac{f_{\mathrm{BCLK}}}{N}
+    \label{eq:fs}
 \end{equation}
 
-Untuk format stereo 32-bit per kanal, \(N = 64\). Karena itu, pengaturan BCLK dan pembagi clock internal sangat menentukan nilai \(F_s\) aktual.
+Untuk format stereo 32-bit per kanal, $N = 64$. Hubungan antara clock master dan BCLK
+dinyatakan sebagai:
+\begin{equation}
+    f_{\mathrm{BCLK}} = \frac{f_{\mathrm{MCLK}}}{\mathrm{divider}}
+    \label{eq:bclk}
+\end{equation}
 
-\subsection{Audio digital, bit depth, dan DAC PCM5102A}
+Dengan $f_{\mathrm{MCLK}} = 24{,}576$ MHz dan divider 8, diperoleh
+$f_{\mathrm{BCLK}} = 3{,}072$ MHz dan $F_s = 48$ kHz.
 
-\textit{Sample rate} yang umum digunakan dalam sistem audio meliputi 44,1 kHz, 48 kHz, dan 96 kHz. Sementara itu, \textit{bit depth} menentukan resolusi amplitudo audio, misalnya 16 bit untuk audio konsumen dan 24 bit untuk audio berkualitas lebih tinggi.
+\subsection{DAC audio PCM5102A}
 
-PCM5102A adalah DAC audio stereo yang menerima data digital melalui antarmuka audio serial seperti I2S. Dalam konteks penelitian ini, PCM5102A berperan sebagai perangkat penerima data I2S dari FPGA. Keberhasilan sistem sangat bergantung pada ketepatan timing BCLK, WS, DATA, dan kesesuaian koneksi pin antara FPGA dan modul DAC.
+PCM5102A adalah DAC audio stereo yang menerima data digital melalui antarmuka audio serial
+I2S~\citep{pcm5102a_datasheet}. Spesifikasi utama yang relevan:
+\begin{itemize}
+    \item Mendukung \textit{sample rate} hingga 384 kHz dan resolusi hingga 32 bit.
+    \item Dapat beroperasi tanpa MCLK eksternal (mode SCK).
+    \item Kompatibel dengan tegangan logika 3,3 V, cocok untuk antarmuka PMOD Basys3.
+    \item Memiliki output analog stereo langsung tanpa filter eksternal tambahan.
+\end{itemize}
 
-\subsection{FIFO audio dan interupsi watermark}
+Dalam konteks penelitian ini, PCM5102A berperan sebagai perangkat penerima data I2S dari
+FPGA. Keberhasilan sistem bergantung pada ketepatan timing BCLK, WS, dan DATA.
 
-Pada sistem yang dikendalikan prosesor, aliran sampel audio tidak selalu dapat dikirim tepat satu per satu pada waktu yang sama dengan kebutuhan serializer. Karena itu digunakan \textbf{FIFO TX} sebagai buffer antara prosesor dan logika serial I2S.
+\subsection{FPGA dan Basys3}
 
-Jika level FIFO turun di bawah batas tertentu, peripheral dapat menghasilkan \textbf{interupsi watermark} agar prosesor segera mengisi ulang data. Pendekatan ini menurunkan frekuensi interupsi dibandingkan model satu interupsi per sampel dan membantu mencegah \textit{underrun}.
+FPGA (\textit{Field-Programmable Gate Array}) adalah perangkat semikonduktor yang logika
+internalnya dapat dikonfigurasi ulang setelah fabrikasi~\citep{trimberger_history_fpga_2018}.
+Keunggulan FPGA untuk sistem audio digital mencakup kemampuan mengimplementasikan logika
+serial waktu nyata dengan latensi deterministik, pembangkitan clock presisi melalui PLL/MMCM
+internal, serta integrasi antara perangkat keras dan perangkat lunak melalui prosesor
+soft-core~\citep{kuon_fpga_architecture_2008}.
 
-\subsection{Clocking Wizard dan frekuensi aktual}
-
-Pada FPGA Xilinx, Clocking Wizard digunakan untuk menghasilkan clock internal yang mendekati frekuensi target. Akan tetapi, nilai yang dihasilkan sering berupa \textit{actual frequency} yang sedikit berbeda dari nilai nominal. Selisih kecil ini berpengaruh langsung pada frekuensi sampling terukur dan perlu dicatat saat evaluasi hasil.
+Basys3 adalah board FPGA berbasis Xilinx Artix-7 (XC7A35T) yang digunakan sebagai platform
+implementasi utama pada penelitian ini~\citep{xilinx_basys3_ref}. Board ini menyediakan
+osilator 100 MHz, antarmuka USB-UART, dan header PMOD untuk koneksi ke perangkat eksternal.
 
 \subsection{MicroBlaze V dan memory-mapped I/O}
 
-MicroBlaze V adalah prosesor soft-core berbasis RISC-V yang terintegrasi dalam ekosistem Vivado dan Vitis. Peripheral kustom diakses melalui model \textbf{memory-mapped I/O}, yaitu register peripheral dipetakan ke alamat tertentu dalam ruang alamat prosesor.
+MicroBlaze V adalah prosesor soft-core berbasis RISC-V yang terintegrasi dalam ekosistem
+Vivado dan Vitis~\citep{xilinx_microblaze_ref_2021}. Peripheral kustom diakses melalui
+model \textbf{memory-mapped I/O}: register peripheral dipetakan ke alamat tertentu dalam
+ruang alamat prosesor, sehingga dapat dibaca dan ditulis menggunakan instruksi
+\texttt{load}/\texttt{store} biasa.
 
 Dengan pendekatan ini, perangkat lunak dapat:
 \begin{itemize}
-	\item menulis register kontrol untuk mengaktifkan peripheral;
-	\item mengisi register data atau FIFO;
-	\item membaca register status untuk memonitor kondisi sistem.
+    \item menulis register \texttt{CONTROL} untuk mengaktifkan peripheral dan mengatur mode;
+    \item mengisi register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT} dengan sampel audio;
+    \item membaca register untuk verifikasi \textit{readback}.
 \end{itemize}
 
-\subsection{AXI4-Lite}
+RISC-V menyediakan \textit{Control and Status Register} (CSR) \texttt{mcycle} yang merupakan
+counter siklus CPU 64-bit bebas-jalan (\textit{free-running})~\citep{riscv_isa_vol1_2019}.
+Register ini diakses melalui instruksi \texttt{rdcycle}/\texttt{rdcycleh} dan digunakan pada
+penelitian ini untuk implementasi timing loop dengan presisi 10 ns (pada clock 100 MHz).
 
-AXI4-Lite adalah subset sederhana dari protokol AXI4 yang ditujukan untuk peripheral berbasis register. AXI4-Lite memiliki kanal alamat, data, dan respons untuk operasi baca/tulis tanpa dukungan burst transfer. Sifatnya yang sederhana menjadikannya cocok untuk peripheral I2S TX pada penelitian ini.
+\subsection{Antarmuka AXI4-Lite}
+
+AXI4-Lite adalah subset sederhana dari protokol AMBA AXI4 yang ditujukan untuk peripheral
+berbasis register~\citep{arm_amba_axi_2010}. Karakteristik utama:
+\begin{itemize}
+    \item Lima kanal independen: Write Address (AW), Write Data (W), Write Response (B),
+    Read Address (AR), dan Read Data (R).
+    \item Protokol handshake \texttt{VALID}/\texttt{READY} pada setiap kanal memungkinkan
+    \textit{backpressure} tanpa kehilangan data.
+    \item Tidak mendukung \textit{burst transfer} — setiap transaksi membaca atau menulis
+    satu word 32-bit.
+    \item Cocok untuk konfigurasi register peripheral dengan kebutuhan bandwidth rendah.
+\end{itemize}
+
+Dokumentasi implementasi AXI4-Lite pada ekosistem Xilinx tersedia pada~\citet{xilinx_axi_ref_2017}.
+
+\subsection{Sinkronisasi lintas domain clock (CDC)}
+
+Sistem I2S melibatkan dua domain clock yang tidak sinkron: domain AXI (100 MHz) dan domain
+audio (${\approx}24$ MHz). Data yang melintas antara dua domain dapat mengalami metastabilitas
+jika tidak disinkronkan dengan benar~\citep{ginosar_metastability_2011}.
+
+Teknik umum yang digunakan adalah \textbf{sinkronisasi flip-flop ganda}: sinyal dari domain
+sumber disampling dua kali berurutan oleh clock domain tujuan sebelum digunakan. Hal ini
+memberikan waktu yang cukup bagi flip-flop untuk keluar dari kondisi metastabil.
+
+Pada penelitian ini, RTL menggunakan \textbf{write-counter 4-bit} yang bertambah pada setiap
+transaksi AXI write. Domain audio menyinkronkan counter ini dengan dua flip-flop dan mendeteksi
+setiap perubahan, sehingga setiap penulisan register dari CPU dijamin terdeteksi tanpa terlewat.
+Pemilihan clock audio melalui \texttt{BUFGMUX} juga disinkronkan terhadap domain AXI sebelum
+digunakan sebagai sinyal selektor.
+
+\subsection{Clocking Wizard dan frekuensi aktual}
+
+Pada FPGA Xilinx, \textit{Clocking Wizard} memanfaatkan MMCM (\textit{Mixed-Mode Clock Manager})
+untuk menghasilkan clock internal yang mendekati frekuensi target~\citep{xilinx_clocking_wizard_2021}.
+Nilai yang dihasilkan (\textit{actual frequency}) umumnya sedikit berbeda dari nilai nominal
+karena keterbatasan rasio frekuensi MMCM. Selisih ini berpengaruh langsung pada $F_s$ aktual
+dan perlu dicatat saat evaluasi hasil.
 
 \subsection{Verilog HDL dan perancangan RTL}
 
-Verilog digunakan untuk mendeskripsikan logika perangkat keras pada level RTL (\textit{Register Transfer Level}). Pada penelitian ini, Verilog digunakan untuk membangun:
+Verilog digunakan untuk mendeskripsikan logika perangkat keras pada level RTL~\citep{palnitkar_verilog_2003}.
+Pada penelitian ini, Verilog digunakan untuk membangun:
 \begin{itemize}
-	\item register interface AXI4-Lite;
-	\item logika pembagi clock;
-	\item FIFO TX;
-	\item serializer I2S;
-	\item logika status dan interupsi.
+    \item antarmuka slave AXI4-Lite dengan mesin state tulis dan baca;
+    \item mekanisme CDC berbasis write-counter;
+    \item logika pemilih clock (\texttt{BUFGMUX});
+    \item serializer I2S sesuai spesifikasi Philips;
+    \item logika \textit{power-on reset} domain audio.
 \end{itemize}
+
+Prinsip desain digital yang digunakan merujuk pada~\citet{harris_harris_digital_2022}
+dan~\citet{chu_fpga_prototyping_2011}.
 
 \subsection{Analisis pemilihan metode}
 
 Metode yang dipilih pada penelitian ini didasarkan pada beberapa pertimbangan:
 \begin{enumerate}
-	\item \textbf{MicroBlaze V} dipilih karena terintegrasi dengan baik pada ekosistem Vivado dan Vitis serta sesuai untuk sistem embedded bare-metal.
-	\item \textbf{AXI4-Lite} dipilih karena sesuai untuk peripheral berbasis register dengan konfigurasi sederhana.
-	\item \textbf{Verilog HDL} dipilih karena umum digunakan untuk desain RTL pada FPGA dan memiliki dukungan sintesis yang baik pada Vivado.
-	\item Pendekatan \textbf{hardware-software co-design} dipilih agar peripheral dapat divalidasi tidak hanya dari sisi RTL, tetapi juga dari sisi penggunaan nyata oleh perangkat lunak.
+    \item \textbf{MicroBlaze V} dipilih karena terintegrasi dengan baik pada ekosistem
+    Vivado dan Vitis serta sesuai untuk sistem embedded bare-metal~\citep{xilinx_microblaze_ref_2021}.
+    \item \textbf{AXI4-Lite} dipilih karena sesuai untuk peripheral berbasis register dengan
+    konfigurasi sederhana dan didukung penuh oleh IP Integrator~\citep{xilinx_axi_ref_2017}.
+    \item \textbf{Verilog HDL} dipilih karena umum digunakan untuk desain RTL pada FPGA dan
+    memiliki dukungan sintesis yang baik pada Vivado~\citep{palnitkar_verilog_2003}.
+    \item Pendekatan \textbf{hardware-software co-design} dipilih agar peripheral dapat
+    divalidasi tidak hanya dari sisi RTL, tetapi juga dari sisi penggunaan nyata oleh
+    perangkat lunak~\citep{crockett_zynq_book_2014}.
 \end{enumerate}
