@@ -20,9 +20,9 @@ const monoFont = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AXI I2S Thesis Atlas",
+  title: "I2S AXI4-Lite IP Interactive Guide",
   description:
-    "Interactive documentation for an AXI4-Lite I2S transmitter thesis built around the core IP, Vivado block design, and full thesis narrative.",
+    "Interactive documentation for an I2S AXI4-Lite IP core, covering clock generation, divider math, reset, CDC, register bits, frame timing, and live waveform behaviour.",
 };
 
 export default function RootLayout({
@@ -31,10 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}
-    >
+    <html lang="en" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}>
       <body>{children}</body>
     </html>
   );

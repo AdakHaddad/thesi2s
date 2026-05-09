@@ -1,800 +1,1049 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-type ClockLens = "mclk" | "counter" | "bclk";
-type SerializerWidth = 16 | 24 | 32;
-type AxiExample = "control" | "sample" | "strobes";
-type ExplanationLens = "beginner" | "rtl" | "math" | "timing";
+type FsFamily = 0 | 1;
+type FsMode = 0 | 1;
+type SampleWidth = 16 | 24 | 32;
+type FieldKey = "enable" | "mute" | "family" | "mode" | "width";
 
-const outlineItems = [
+type FrequencyFamily = {
+  value: FsFamily;
+  label: string;
+  sourceName: string;
+  sourceHz: number;
+  familyFsHz: number;
+  description: string;
+};
+
+type DividerMode = {
+  value: FsMode;
+  label: string;
+  divider: 2 | 4;
+  checkText: string;
+};
+
+type ControlField = {
+  key: FieldKey;
+  label: string;
+  range: string;
+  startBit: number;
+  endBit: number;
+  value: string;
+  description: string;
+  effect: string;
+  accent: string;
+};
+
+type SummaryCell = {
+  family: FsFamily;
+  mode: FsMode;
+  internalMclkHz: number;
+  divider: 2 | 4;
+  bclkEnableHz: number;
+  bclkHz: number;
+  wsHz: number;
+  fsHz: number;
+};
+
+type SignalTimelineProps = {
+  tick: number;
+  sampleWidth: SampleWidth;
+  enable: boolean;
+  mute: boolean;
+  leftBits: number[];
+  rightBits: number[];
+  title: string;
+  description: string;
+};
+
+const outlineSections = [
   { id: "hero", label: "Overview" },
-  { id: "architecture", label: "Signal flow" },
-  { id: "clock-generation", label: "Clock generation" },
-  { id: "axi-fundamentals", label: "AXI fundamentals" },
-  { id: "cdc-fundamentals", label: "CDC fundamentals" },
-  { id: "serializer", label: "Serializer" },
-  { id: "explanations", label: "Four lenses" },
-  { id: "full-story", label: "Full system story" },
+  { id: "clock-generation", label: "1. Clock generation" },
+  { id: "clock-divider", label: "2. Divider and BCLK enable" },
+  { id: "power-on-reset", label: "3. Power-on reset" },
+  { id: "cdc-synchroniser", label: "4. CDC synchroniser" },
+  { id: "control-register", label: "5. CONTROL bitfield" },
+  { id: "i2s-frame", label: "6. Philips I2S frame" },
+  { id: "ws-timing", label: "7. WS timing" },
+  { id: "enable-mute", label: "8. ENABLE and MUTE" },
+  { id: "formula-summary", label: "9. Full formula summary" },
 ];
 
-const architectureBlocks = [
+const familyOptions: FrequencyFamily[] = [
   {
-    id: "cpu",
-    title: "CPU / AXI side",
-    text: "MicroBlaze writes control and sample words as if the core were ordinary memory.",
+    value: 0,
+    label: "FS_FAMILY = 0",
+    sourceName: "audio_48_clk",
+    sourceHz: 24_576_000,
+    familyFsHz: 48_000,
+    description: "48 kHz family: 24.576 MHz master clock, then divide by 2 for MCLK.",
   },
   {
-    id: "registers",
-    title: "Register map",
-    text: "Hardware state appears as named addresses: control bits, sample data, status, and mode selection.",
-  },
-  {
-    id: "cdc",
-    title: "Clock domain crossing",
-    text: "A synchronizer moves intent from the CPU clocking world into the audio clock world safely.",
-  },
-  {
-    id: "audio-clock",
-    title: "Audio clock domain",
-    text: "Internal dividers and enables build the cadence that drives frame timing and bit timing.",
-  },
-  {
-    id: "serializer",
-    title: "I2S serializer",
-    text: "Parallel audio words are shifted out MSB-first one bit at a time.",
-  },
-  {
-    id: "pins",
-    title: "Output pins",
-    text: "The final signals leave on MCLK, BCLK, WS, and DATA.",
+    value: 1,
+    label: "FS_FAMILY = 1",
+    sourceName: "audio_44_clk",
+    sourceHz: 22_579_200,
+    familyFsHz: 44_100,
+    description: "44.1 kHz family: 22.5792 MHz master clock, then divide by 2 for MCLK.",
   },
 ];
 
-const architecturePlaceholders = [
-  "[Placeholder: AXI-to-I2S Architecture Diagram]",
-  "[Placeholder: CDC Synchronizer Visual]",
-  "[Placeholder: I2S Frame Timing Figure]",
-  "[Placeholder: BCLK Timing Animation]",
-];
-
-const clockViews: Record<ClockLens, { title: string; lead: string; focus: string; rows: Array<{ cycle: number; bits: string; q0: string; q1: string; q2: string; bclkEnable: string; wsSelect: string }> }> = {
-  mclk: {
-    title: "internal_mclk as the local rhythm",
-    lead:
-      "internal_mclk is the clock that exists inside the core before the rest of the logic starts dividing and gating it. When a flip-flop toggles on every active edge, the output needs two input cycles to complete one full waveform.",
-    focus: "A toggling flip-flop divides frequency by 2 because one output period now spans two input periods.",
-    rows: [
-      { cycle: 0, bits: "000", q0: "0", q1: "0", q2: "0", bclkEnable: "yes", wsSelect: "left" },
-      { cycle: 1, bits: "001", q0: "1", q1: "0", q2: "0", bclkEnable: "no", wsSelect: "left" },
-      { cycle: 2, bits: "010", q0: "0", q1: "1", q2: "0", bclkEnable: "no", wsSelect: "left" },
-      { cycle: 3, bits: "011", q0: "1", q1: "1", q2: "0", bclkEnable: "no", wsSelect: "left" },
-      { cycle: 4, bits: "100", q0: "0", q1: "0", q2: "1", bclkEnable: "yes", wsSelect: "right" },
-      { cycle: 5, bits: "101", q0: "1", q1: "0", q2: "1", bclkEnable: "no", wsSelect: "right" },
-      { cycle: 6, bits: "110", q0: "0", q1: "1", q2: "1", bclkEnable: "no", wsSelect: "right" },
-      { cycle: 7, bits: "111", q0: "1", q1: "1", q2: "1", bclkEnable: "no", wsSelect: "right" },
-    ],
-  },
-  counter: {
-    title: "clock_div_q as a binary counter",
-    lead:
-      "Because the divider is binary, every bit has a natural power-of-two rhythm. Bit 0 flips every 2 cycles, bit 1 flips every 4 cycles, and bit 2 flips every 8 cycles.",
-    focus: "Binary counters turn simple toggles into predictable timing surfaces.",
-    rows: [
-      { cycle: 0, bits: "000", q0: "0", q1: "0", q2: "0", bclkEnable: "yes", wsSelect: "left" },
-      { cycle: 1, bits: "001", q0: "1", q1: "0", q2: "0", bclkEnable: "no", wsSelect: "left" },
-      { cycle: 2, bits: "010", q0: "0", q1: "1", q2: "0", bclkEnable: "no", wsSelect: "left" },
-      { cycle: 3, bits: "011", q0: "1", q1: "1", q2: "0", bclkEnable: "no", wsSelect: "left" },
-      { cycle: 4, bits: "100", q0: "0", q1: "0", q2: "1", bclkEnable: "yes", wsSelect: "right" },
-      { cycle: 5, bits: "101", q0: "1", q1: "0", q2: "1", bclkEnable: "no", wsSelect: "right" },
-      { cycle: 6, bits: "110", q0: "0", q1: "1", q2: "1", bclkEnable: "no", wsSelect: "right" },
-      { cycle: 7, bits: "111", q0: "1", q1: "1", q2: "1", bclkEnable: "no", wsSelect: "right" },
-    ],
-  },
-  bclk: {
-    title: "BCLK enable derived from low bits",
-    lead:
-      "The condition clock_div_q[1:0] == 2'b00 goes true every four counts, so it creates a periodic enable that is slower than bit 0 but faster than bit 2.",
-    focus: "This is how divider logic becomes a bit-clock cadence.",
-    rows: [
-      { cycle: 0, bits: "000", q0: "0", q1: "0", q2: "0", bclkEnable: "yes", wsSelect: "left" },
-      { cycle: 1, bits: "001", q0: "1", q1: "0", q2: "0", bclkEnable: "no", wsSelect: "left" },
-      { cycle: 2, bits: "010", q0: "0", q1: "1", q2: "0", bclkEnable: "no", wsSelect: "left" },
-      { cycle: 3, bits: "011", q0: "1", q1: "1", q2: "0", bclkEnable: "no", wsSelect: "left" },
-      { cycle: 4, bits: "100", q0: "0", q1: "0", q2: "1", bclkEnable: "yes", wsSelect: "right" },
-      { cycle: 5, bits: "101", q0: "1", q1: "0", q2: "1", bclkEnable: "no", wsSelect: "right" },
-      { cycle: 6, bits: "110", q0: "0", q1: "1", q2: "1", bclkEnable: "no", wsSelect: "right" },
-      { cycle: 7, bits: "111", q0: "1", q1: "1", q2: "1", bclkEnable: "no", wsSelect: "right" },
-    ],
-  },
-};
-
-const binaryPatterns = [
-  { label: "clock_div_q[0]", pattern: "0 1 0 1 0 1 0 1", note: "toggles every 2 cycles" },
-  { label: "clock_div_q[1]", pattern: "0 0 1 1 0 0 1 1", note: "toggles every 4 cycles" },
-  { label: "clock_div_q[2]", pattern: "0 0 0 0 1 1 1 1", note: "toggles every 8 cycles" },
-];
-
-const axiExamples: Record<AxiExample, { title: string; address: string; wstrb: string; lead: string; steps: string[]; bytes: string[] }> = {
-  control: {
-    title: "Control register write",
-    address: "0x00",
-    wstrb: "1111",
-    lead:
-      "A control write shows the simplest AXI contract: the address lands, the write data lands, and the slave returns a response once both sides have handshaken.",
-    steps: ["AWVALID + AWREADY", "WVALID + WREADY", "BVALID + BREADY"],
-    bytes: ["byte 3", "byte 2", "byte 1", "byte 0"],
-  },
-  sample: {
-    title: "Sample data write",
-    address: "0x04",
-    wstrb: "1111",
-    lead:
-      "This is the path that turns a CPU register write into an audio payload. The peripheral can accept the word only when the address, data, and response channels all complete their handshake.",
-    steps: ["sample word staged", "sample latched", "ready for serializer"],
-    bytes: ["audio byte 3", "audio byte 2", "audio byte 1", "audio byte 0"],
-  },
-  strobes: {
-    title: "Byte-lane write using WSTRB",
-    address: "0x08",
-    wstrb: "1100",
-    lead:
-      "WSTRB is the byte-enable mask. Only the active byte lanes update, so partial register writes can preserve the untouched bytes in the same 32-bit location.",
-    steps: ["upper half enabled", "lower half held", "register preserves untouched bytes"],
-    bytes: ["active", "active", "masked", "masked"],
-  },
-};
-
-const serializerWidths: SerializerWidth[] = [16, 24, 32];
-
-const explanationTabs: Record<ExplanationLens, { title: string; summary: string; points: string[] }> = {
-  beginner: {
-    title: "Beginner explanation",
-    summary:
-      "Think of the core as a conveyor belt. The CPU loads the belt with audio words, the clocking logic decides when the belt moves, and the serializer turns each parallel sample into one bit at a time.",
-    points: [
-      "AXI registers are hardware exposed as memory.",
-      "A counter is fundamentally frequency division.",
-      "Serialization is time-multiplexing of parallel data.",
-    ],
-  },
-  rtl: {
-    title: "RTL explanation",
-    summary:
-      "The RTL separates concerns: address decoding and register writes on the AXI side, clock-domain synchronization in the middle, and a shift engine that emits the I2S framing signals on the output side.",
-    points: [
-      "The register map is the software-visible contract.",
-      "CDC logic isolates the asynchronous boundary.",
-      "Bit counters and shift registers implement the serializer.",
-    ],
-  },
-  math: {
-    title: "Mathematical explanation",
-    summary:
-      "Binary counters naturally produce powers of two. That is why divider bits land on clean ratios and why a condition like clock_div_q[1:0] == 2'b00 repeats every four cycles.",
-    points: [
-      "f_out = f_in / 2 for a toggle flip-flop.",
-      "2^5 = 32 explains the WS split in a 64-slot stereo frame.",
-      "bit_idx = width - pos counts down from MSB to LSB.",
-    ],
-  },
-  timing: {
-    title: "Timing explanation",
-    summary:
-      "The critical story is who changes when. AXI writes can happen in bursts, CDC captures those values safely, and the audio side advances only when the derived enables say the next bit slot is ready.",
-    points: [
-      "Metastability appears when a signal changes near a clock edge.",
-      "Two flip-flops give the first stage time to settle.",
-      "BCLK and WS only move in the audio clock domain.",
-    ],
-  },
-};
-
-const cdcBlocks = [
+const modeOptions: DividerMode[] = [
   {
-    title: "Why different clock domains are dangerous",
-    text:
-      "If a signal changes close to a destination clock edge, the receiving flip-flop can briefly enter metastability. The output is not a guaranteed 0 or 1 yet, so the next logic stage may see an unstable intermediate value.",
+    value: 0,
+    label: "FS_MODE = 0",
+    divider: 4,
+    checkText: "clock_div_q[1:0] == 2'b00",
   },
   {
-    title: "Why two flip-flops are used",
-    text:
-      "The first flop catches the crossing signal. The second flop gives that value another clock period to settle before the rest of the audio logic consumes it.",
-  },
-  {
-    title: "What the synchronizer buys you",
-    text:
-      "You do not eliminate metastability mathematically, but you reduce the probability that it propagates into the functional part of the design.",
+    value: 1,
+    label: "FS_MODE = 1",
+    divider: 2,
+    checkText: "clock_div_q[0] == 1'b0",
   },
 ];
 
-const fullStorySteps = [
+const controlFields: ControlField[] = [
   {
-    title: "CPU write",
-    text: "Software writes an audio sample or configuration word through the AXI4-Lite interface.",
+    key: "enable",
+    label: "ENABLE",
+    range: "bit 0",
+    startBit: 0,
+    endBit: 0,
+    value: "1",
+    description: "Turns the audio engine on or off.",
+    effect: "When 0, BCLK, WS, and DATA are held low and the bit counter is reset.",
+    accent: "field-enable",
   },
   {
-    title: "AXI register",
-    text: "The address decoder selects the correct register and WSTRB decides which byte lanes update.",
+    key: "mute",
+    label: "MUTE",
+    range: "bit 1",
+    startBit: 1,
+    endBit: 1,
+    value: "0",
+    description: "Silences the serial payload while leaving the clocks alive.",
+    effect: "When 1, the stream keeps running but DATA is forced to 0.",
+    accent: "field-mute",
   },
   {
-    title: "CDC capture",
-    text: "A two-flop synchronizer carries the control intent into the audio clock domain.",
+    key: "family",
+    label: "FS_FAMILY",
+    range: "bit 2",
+    startBit: 2,
+    endBit: 2,
+    value: "0",
+    description: "Selects the 48 kHz or 44.1 kHz clock family.",
+    effect: "Chooses audio_48_clk or audio_44_clk through the BUFGMUX.",
+    accent: "field-family",
   },
   {
-    title: "Sample latch",
-    text: "The sample is held steady so the serializer sees a complete word, not a moving target.",
+    key: "mode",
+    label: "FS_MODE",
+    range: "bit 3",
+    startBit: 3,
+    endBit: 3,
+    value: "0",
+    description: "Selects the divider used to derive the BCLK enable.",
+    effect: "0 checks clock_div_q[1:0], 1 checks clock_div_q[0].",
+    accent: "field-mode",
   },
   {
-    title: "Serializer",
-    text: "Bit counters and shift logic emit the sample MSB-first across the DATA pin.",
-  },
-  {
-    title: "I2S output pins",
-    text: "MCLK, BCLK, WS, and DATA now describe a frame that the DAC can reconstruct as analog audio.",
+    key: "width",
+    label: "SAMPLE_WIDTH",
+    range: "bits 12:8",
+    startBit: 8,
+    endBit: 12,
+    value: "24",
+    description: "Sets the payload width in the I2S frame.",
+    effect: "Controls how many serial cells are populated with sample bits before padding begins.",
+    accent: "field-width",
   },
 ];
 
-const placeholderCards = [
-  {
-    title: "Architecture sketch",
-    text: "[Placeholder: AXI-to-I2S Architecture Diagram]",
-  },
-  {
-    title: "Clock timing",
-    text: "[Placeholder: BCLK Timing Animation]",
-  },
-  {
-    title: "CDC view",
-    text: "[Placeholder: CDC Synchronizer Visual]",
-  },
-  {
-    title: "Frame figure",
-    text: "[Placeholder: I2S Frame Timing Figure]",
-  },
-];
+const defaultControlValue = 0x00001801;
+const leftSampleWord = 0xd4a5c3f0 >>> 0;
+const rightSampleWord = 0x6e35f0a5 >>> 0;
+const audioPorStates = ["1111", "1110", "1100", "1000", "0000"] as const;
 
-export default function Home() {
-  const [activeSection, setActiveSection] = useState(outlineItems[0].id);
-  const [clockLens, setClockLens] = useState<ClockLens>("mclk");
-  const [serializerWidth, setSerializerWidth] = useState<SerializerWidth>(32);
-  const [axiExample, setAxiExample] = useState<AxiExample>("sample");
-  const [explanationLens, setExplanationLens] = useState<ExplanationLens>("beginner");
+function useTicker(max: number, intervalMs: number) {
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    const sections = outlineItems
-      .map((item) => document.getElementById(item.id))
-      .filter((node): node is HTMLElement => node !== null);
+    const timer = window.setInterval(() => {
+      setTick((currentTick) => (currentTick + 1) % (max + 1));
+    }, intervalMs);
 
+    return () => window.clearInterval(timer);
+  }, [intervalMs, max]);
+
+  return [tick, setTick] as const;
+}
+
+function formatFrequency(hz: number) {
+  if (hz >= 1_000_000) {
+    return `${(hz / 1_000_000).toFixed(3)} MHz`;
+  }
+
+  if (hz >= 1_000) {
+    return `${(hz / 1_000).toFixed(3)} kHz`;
+  }
+
+  return `${hz.toFixed(0)} Hz`;
+}
+
+function formatFrequencyForTable(hz: number) {
+  if (hz >= 1_000_000) {
+    return `${(hz / 1_000_000).toFixed(3)} MHz`;
+  }
+
+  if (hz >= 1_000) {
+    return `${(hz / 1_000).toFixed(1)} kHz`;
+  }
+
+  return `${hz.toFixed(0)} Hz`;
+}
+
+function buildBits(word: number, width: SampleWidth) {
+  return Array.from({ length: width }, (_, index) => (word >>> (31 - index)) & 1);
+}
+
+function frameBitAt(position: number, width: SampleWidth, leftBits: number[], rightBits: number[]) {
+  if (position === 0 || position === 32) {
+    return 0;
+  }
+
+  if (position < 32) {
+    return position <= width ? leftBits[position - 1] ?? 0 : 0;
+  }
+
+  const rightPosition = position - 32;
+  return rightPosition <= width ? rightBits[rightPosition - 1] ?? 0 : 0;
+}
+
+function signalValueAt(position: number, enable: boolean, mute: boolean, width: SampleWidth, leftBits: number[], rightBits: number[]) {
+  if (!enable) {
+    return { bclk: 0, ws: 0, data: 0 };
+  }
+
+  const bclk = position % 2;
+  const ws = position < 32 ? 0 : 1;
+  const data = mute ? 0 : frameBitAt(position, width, leftBits, rightBits);
+
+  return { bclk, ws, data };
+}
+
+function SectionHeading({ eyebrow, title, lead }: { eyebrow: string; title: string; lead: string }) {
+  return (
+    <div className="section-heading">
+      <p className="eyebrow">{eyebrow}</p>
+      <h2>{title}</h2>
+      <p>{lead}</p>
+    </div>
+  );
+}
+
+function SignalTimeline({ tick, sampleWidth, enable, mute, leftBits, rightBits, title, description }: SignalTimelineProps) {
+  const start = (tick + 64 - 8) % 64;
+  const cells = Array.from({ length: 16 }, (_, index) => (start + index) % 64);
+  const current = enable ? tick : 0;
+
+  return (
+    <div className="timeline-shell frame-card">
+      <div className="timeline-shell-head">
+        <div>
+          <p className="eyebrow">{title}</p>
+          <h3>Live waveform preview</h3>
+          <p>{description}</p>
+        </div>
+        <div className="timeline-metric">
+          <span>Current bit_count_q</span>
+          <strong>{current}</strong>
+        </div>
+      </div>
+
+      <div className="timeline-grid" role="img" aria-label="Waveform preview for bit count, BCLK, WS, and DATA">
+        <div className="timeline-row timeline-row-labels">
+          <div className="timeline-label">bit_count</div>
+          {cells.map((position) => (
+            <div key={`count-${position}`} className={position === current ? "timeline-cell timeline-cell-count active" : "timeline-cell timeline-cell-count"}>
+              {position}
+            </div>
+          ))}
+        </div>
+
+        <div className="timeline-row">
+          <div className="timeline-label">BCLK</div>
+          {cells.map((position) => {
+            const values = signalValueAt(position, enable, mute, sampleWidth, leftBits, rightBits);
+
+            return (
+              <div key={`bclk-${position}`} className={position === current ? `timeline-cell signal-${values.bclk} active` : `timeline-cell signal-${values.bclk}`}>
+                {values.bclk}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="timeline-row">
+          <div className="timeline-label">WS</div>
+          {cells.map((position) => {
+            const values = signalValueAt(position, enable, mute, sampleWidth, leftBits, rightBits);
+
+            return (
+              <div key={`ws-${position}`} className={position === current ? `timeline-cell signal-${values.ws} active` : `timeline-cell signal-${values.ws}`}>
+                {values.ws}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="timeline-row">
+          <div className="timeline-label">DATA</div>
+          {cells.map((position) => {
+            const values = signalValueAt(position, enable, mute, sampleWidth, leftBits, rightBits);
+
+            return (
+              <div key={`data-${position}`} className={position === current ? `timeline-cell signal-${values.data} active` : `timeline-cell signal-${values.data}`}>
+                {values.data}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="timeline-footer">
+        <div>
+          <strong>What this shows</strong>
+          <p>{enable ? (mute ? "Clocks keep running while DATA is forced low." : "Normal I2S activity with BCLK, WS, and DATA all alive.") : "ENABLE = 0 holds the outputs low and resets the bit counter."}</p>
+        </div>
+        <div>
+          <strong>How to read it</strong>
+          <p>When the row is high, the signal is 1 for that slot. When it is low, the signal is 0. The current slot is highlighted so you can follow the moving bit position.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Home() {
+  const [activeSection, setActiveSection] = useState(outlineSections[0].id);
+  const [fsFamily, setFsFamily] = useState<FsFamily>(0);
+  const [fsMode, setFsMode] = useState<FsMode>(0);
+  const [sampleWidth, setSampleWidth] = useState<SampleWidth>(24);
+  const [selectedField, setSelectedField] = useState<FieldKey>("enable");
+  const [enable, setEnable] = useState(true);
+  const [mute, setMute] = useState(false);
+  const [clockTick] = useTicker(7, 900);
+  const [porTick, setPorTick] = useTicker(4, 1000);
+  const [cdcTick, setCdcTick] = useTicker(3, 1100);
+  const [frameTick] = useTicker(63, 120);
+
+  const selectedFamily = familyOptions[fsFamily];
+  const selectedMode = modeOptions[fsMode];
+  const internalMclkHz = selectedFamily.sourceHz;
+  const mclkHz = internalMclkHz / 2;
+  const bclkEnableHz = internalMclkHz / selectedMode.divider;
+  const bclkHz = bclkEnableHz / 2;
+  const wsHz = bclkHz / 64;
+  const fsHz = wsHz;
+  const mclkPhase = clockTick % 2;
+  const leftBits = useMemo(() => buildBits(leftSampleWord, sampleWidth), [sampleWidth]);
+  const rightBits = useMemo(() => buildBits(rightSampleWord, sampleWidth), [sampleWidth]);
+  const defaultBits = useMemo(
+    () => Array.from({ length: 32 }, (_, bitIndex) => (defaultControlValue >>> bitIndex) & 1),
+    [],
+  );
+
+  const summaryCells: SummaryCell[] = useMemo(
+    () =>
+      familyOptions.flatMap((family) =>
+        modeOptions.map((mode) => ({
+          family: family.value,
+          mode: mode.value,
+          internalMclkHz: family.sourceHz,
+          divider: mode.divider,
+          bclkEnableHz: family.sourceHz / mode.divider,
+          bclkHz: family.sourceHz / mode.divider / 2,
+          wsHz: family.sourceHz / mode.divider / 2 / 64,
+          fsHz: family.sourceHz / mode.divider / 2 / 64,
+        })),
+      ),
+    [],
+  );
+
+  const selectedFieldInfo = controlFields.find((field) => field.key === selectedField) ?? controlFields[0];
+
+  useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        const visibleEntries = entries
+        const visible = entries
           .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+          .sort((left, right) => right.intersectionRatio - left.intersectionRatio);
 
-        if (visibleEntries.length > 0) {
-          setActiveSection(visibleEntries[0].target.id);
+        if (visible.length > 0) {
+          setActiveSection(visible[0].target.id);
         }
       },
       {
-        rootMargin: "-20% 0px -55% 0px",
-        threshold: [0.2, 0.4, 0.6],
+        rootMargin: "-22% 0px -58% 0px",
+        threshold: [0.15, 0.35, 0.55],
       },
     );
 
-    sections.forEach((section) => observer.observe(section));
+    outlineSections.forEach((section) => {
+      const node = document.getElementById(section.id);
+      if (node) {
+        observer.observe(node);
+      }
+    });
 
     return () => observer.disconnect();
   }, []);
 
+  const registerBits = Array.from({ length: 32 }, (_, bitIndex) => (defaultControlValue >>> bitIndex) & 1);
+
+  const fieldByBit = (bitIndex: number) => {
+    const field = controlFields.find((entry) => bitIndex >= entry.startBit && bitIndex <= entry.endBit);
+    return field ?? controlFields[0];
+  };
+
+  const porState = audioPorStates[porTick];
+  const cdcStages = [
+    { title: "AXI domain src_in", value: cdcTick === 0 ? 0 : 1, note: "Value is generated in the AXI/register world." },
+    { title: "stage1_q", value: cdcTick >= 2 ? 1 : cdcTick >= 1 ? 0 : 0, note: "First flop captures the asynchronous transition." },
+    { title: "stage2_q = dest_out", value: cdcTick >= 3 ? 1 : 0, note: "Second flop exports a cleaner version into the destination domain." },
+  ];
+
+  const familyModeMatrix = [
+    {
+      family: familyOptions[0],
+      cells: [summaryCells[0], summaryCells[1]],
+    },
+    {
+      family: familyOptions[1],
+      cells: [summaryCells[2], summaryCells[3]],
+    },
+  ];
+
   return (
-    <main className="thesis-shell doc-shell">
-      <div className="page-grid">
-        <aside className="outline-rail">
-          <div className="outline-card frame-panel">
+    <main className="doc-shell">
+      <div className="layout-grid">
+        <aside className="sidebar" aria-label="Page outline">
+          <div className="outline-card frame-card">
             <p className="eyebrow">Outline</p>
-            <nav aria-label="Page outline">
-              {outlineItems.map((item) => (
+            <nav className="outline-nav">
+              {outlineSections.map((section) => (
                 <a
-                  key={item.id}
-                  href={`#${item.id}`}
-                  className={activeSection === item.id ? "outline-link active" : "outline-link"}
+                  key={section.id}
+                  href={`#${section.id}`}
+                  className={activeSection === section.id ? "outline-link active" : "outline-link"}
                 >
-                  {item.label}
+                  {section.label}
                 </a>
               ))}
             </nav>
           </div>
-          <div className="outline-card frame-panel outline-note-card">
-            <p className="eyebrow">Fundamental Insight</p>
-            <p className="outline-note-text">
-              AXI registers are hardware exposed as memory. That single idea is the bridge from software intent to physical timing.
+
+          <div className="outline-card frame-card">
+            <p className="eyebrow">Reader map</p>
+            <p className="outline-note">
+              This page starts with clocks, then divides them, resets them, synchronises them, frames the register bits, and finally turns the bits into a serial I2S stream.
             </p>
           </div>
         </aside>
 
-        <div className="page-content">
-          <section className="hero-band" id="hero">
+        <div className="content-column">
+          <section className="hero-section" id="hero">
             <div className="hero-copy">
-              <p className="eyebrow">Interactive FPGA learning platform</p>
-              <h1>
-                Understand the AXI4-Lite I2S core from
-                <span> first principles</span>
-              </h1>
+              <p className="eyebrow">Interactive documentation</p>
+              <h1>I2S AXI4-Lite IP, explained visually from clock source to serial data</h1>
               <p className="hero-lead">
-                This page is designed to build intuition before it explains RTL. It starts with the complete signal flow, then opens each block with timing, math, and register-level reasoning so the reader can feel how software becomes serial audio.
+                Use the controls to change the clock family, divider mode, sample width, and runtime behaviour. Every derived value updates live so the register map, timing math, and I2S waveform stay connected.
               </p>
-              <div className="hero-chip-row">
-                <span className="hero-chip">CPU / AXI side</span>
-                <span className="hero-chip">CDC</span>
-                <span className="hero-chip">Audio clock domain</span>
-                <span className="hero-chip">MCLK / BCLK / WS / DATA</span>
+              <div className="chip-row">
+                <span className="chip">single column</span>
+                <span className="chip">live derivations</span>
+                <span className="chip">waveform preview</span>
+                <span className="chip">hardware ready</span>
               </div>
             </div>
 
-            <div className="hero-visual frame-panel">
-              <div className="architecture-strip">
-                {architectureBlocks.map((block, index) => (
-                  <div key={block.id} className="architecture-chip">
-                    <div className="architecture-index">0{index + 1}</div>
-                    <strong>{block.title}</strong>
-                    <span>{block.text}</span>
-                  </div>
-                ))}
+            <div className="hero-panel frame-card">
+              <p className="eyebrow">What the core does</p>
+              <div className="hero-flow">
+                <span>FS_FAMILY</span>
+                <span>BUFGMUX</span>
+                <span>internal_mclk</span>
+                <span>divider</span>
+                <span>CDC</span>
+                <span>serializer</span>
+                <span>DATA</span>
               </div>
-              <div className="hero-flow-label">CPU → AXI registers → CDC → audio clocking → serializer → output pins</div>
+              <p className="hero-note">
+                The software-visible CONTROL register chooses the family, mode, sample width, and run state. The audio side uses that selection to create MCLK, BCLK, WS, and the serial payload.
+              </p>
             </div>
           </section>
 
-          <section className="architecture-band" id="architecture">
-            <div className="section-copy narrow">
-              <p className="eyebrow">High-level architecture</p>
-              <h2>Keep the whole path visible before zooming into any one block</h2>
-              <p>
-                The best mental model is a pipeline of responsibility. The CPU writes intent, the register map stores state, CDC moves that state safely, the audio clock domain times the frame, the serializer emits bits, and the pins turn that state into a DAC-ready stream.
-              </p>
-            </div>
+          <section className="section-card frame-card" id="clock-generation">
+            <SectionHeading
+              eyebrow="Section 1"
+              title="Clock generation"
+              lead="FS_FAMILY chooses the clock source before anything else happens. That source then feeds a toggle flop so the final MCLK is always exactly half of internal_mclk."
+            />
 
-            <div className="architecture-grid">
-              {architectureBlocks.map((block) => (
-                <article key={block.id} className="architecture-card frame-panel">
-                  <p className="story-index">{block.id}</p>
-                  <h3>{block.title}</h3>
-                  <p>{block.text}</p>
-                </article>
-              ))}
-            </div>
-
-            <div className="placeholder-grid">
-              {placeholderCards.map((placeholder) => (
-                <article key={placeholder.title} className="placeholder-card frame-panel">
-                  <p className="eyebrow">Visual placeholder</p>
-                  <h3>{placeholder.title}</h3>
-                  <p>{placeholder.text}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section className="clock-band" id="clock-generation">
-            <div className="section-copy">
-              <p className="eyebrow">Clock generation</p>
-              <h2>Why counters divide clocks and why powers of two appear everywhere</h2>
-              <p>
-                internal_mclk is the local clock that the core uses as a base rhythm. When a flip-flop toggles on each input edge, the output only completes one full cycle after two input cycles. That is why a toggling flip-flop divides frequency by 2 and why the formula is simply f_out = f_in / 2.
-              </p>
-            </div>
-
-            <div className="clock-tabs frame-panel">
-              <div className="toggle-row" role="tablist" aria-label="Clock explanation modes">
-                {Object.entries(clockViews).map(([key, value]) => (
-                  <button
-                    key={key}
-                    className={clockLens === key ? "toggle active" : "toggle"}
-                    onClick={() => setClockLens(key as ClockLens)}
-                    type="button"
-                  >
-                    {value.title}
-                  </button>
-                ))}
-              </div>
-
-              <div className="fundamental-callout">
-                <strong>Fundamental Insight</strong>
-                <p>{clockViews[clockLens].focus}</p>
-              </div>
-
-              <div className="clock-lens-grid">
-                <article className="clock-note-card">
-                  <h3>{clockViews[clockLens].title}</h3>
-                  <p>{clockViews[clockLens].lead}</p>
-                </article>
-
-                <article className="clock-note-card">
-                  <h3>Binary counter rhythms</h3>
-                  <div className="pattern-stack">
-                    {binaryPatterns.map((pattern) => (
-                      <div key={pattern.label} className="pattern-row">
-                        <div>
-                          <strong>{pattern.label}</strong>
-                          <p>{pattern.note}</p>
-                        </div>
-                        <pre aria-hidden="true">{pattern.pattern}</pre>
-                      </div>
-                    ))}
-                  </div>
-                </article>
-              </div>
-
-              <div className="counter-table-wrap">
-                <div className="table-lead">
-                  <p>
-                    clock_div_q behaves like a 3-bit binary counter. That means every bit has a power-of-two rhythm: q[0] changes every 2 cycles, q[1] every 4 cycles, and q[2] every 8 cycles.
-                  </p>
+            <div className="control-panel">
+              <div className="control-stack">
+                <label className="slider-label" htmlFor="family-slider">
+                  <span>FS_FAMILY</span>
+                  <strong>{selectedFamily.label}</strong>
+                </label>
+                <input
+                  id="family-slider"
+                  className="range-input"
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={1}
+                  value={fsFamily}
+                  aria-valuemin={0}
+                  aria-valuemax={1}
+                  aria-valuenow={fsFamily}
+                  aria-valuetext={selectedFamily.label}
+                  onChange={(event) => setFsFamily(Number(event.target.value) as FsFamily)}
+                />
+                <div className="slider-endpoints">
+                  <span>48 kHz family</span>
+                  <span>44.1 kHz family</span>
                 </div>
-                <table className="counter-table">
-                  <thead>
-                    <tr>
-                      <th>cycle</th>
-                      <th>clock_div_q</th>
-                      <th>q[0]</th>
-                      <th>q[1]</th>
-                      <th>q[2]</th>
-                      <th>clock_div_q[1:0] == 2'b00</th>
-                      <th>ws_q</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {clockViews[clockLens].rows.map((row) => (
-                      <tr key={row.cycle}>
-                        <td>{row.cycle}</td>
-                        <td>{row.bits}</td>
-                        <td>{row.q0}</td>
-                        <td>{row.q1}</td>
-                        <td>{row.q2}</td>
-                        <td>{row.bclkEnable}</td>
-                        <td>{row.wsSelect}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
 
-              <div className="clock-note-strip">
-                <article className="clock-note-card compact">
-                  <h3>Why clock_div_q[1:0] == 2'b00 matters</h3>
-                  <p>
-                    The lower two bits are zero only at counts 0 and 4. That creates an enable every 4 cycles, which is slower than q[0] but still faster than the next stage. This is the exact relationship between the divider logic and the generated BCLK frequency.
-                  </p>
-                </article>
-                <article className="clock-note-card compact">
-                  <h3>Why ws_q &lt;= bit_count_q[5]</h3>
-                  <p>
-                    2^5 = 32, so bit 5 flips after 32 counts. In a 64-slot stereo frame, that gives a clean left/right split: the first 32 serial slots belong to one channel, and the next 32 belong to the other.
-                  </p>
-                </article>
-              </div>
-
-              <div className="placeholder-banner frame-panel">
-                <strong>[Placeholder: BCLK Timing Animation]</strong>
-                <span>[Placeholder: I2S Frame Timing Figure]</span>
+              <div className="formula-steps">
+                <div className="formula-step">
+                  <strong>Step 1</strong>
+                  <p>FS_FAMILY = {fsFamily} selects {selectedFamily.sourceName} from the BUFGMUX.</p>
+                </div>
+                <div className="formula-step">
+                  <strong>Step 2</strong>
+                  <p>internal_mclk = {formatFrequency(internalMclkHz)}.</p>
+                </div>
+                <div className="formula-step">
+                  <strong>Step 3</strong>
+                  <p>mclk_q toggles every cycle, so MCLK = internal_mclk ÷ 2 = {formatFrequency(mclkHz)}.</p>
+                </div>
               </div>
             </div>
 
-            <div className="math-strip">
-              <article className="math-card frame-panel">
-                <p className="eyebrow">Mathematical intuition</p>
-                <h3>Binary counters make division feel inevitable</h3>
-                <p>
-                  A binary counter advances through states that are already aligned to powers of two. That is why divide-by-2, divide-by-4, and divide-by-8 signals fall out of the same register instead of requiring separate counters.
-                </p>
-              </article>
+            <div className="clock-visual-grid">
+              <div className="metric-card">
+                <span>Selected source</span>
+                <strong>{selectedFamily.sourceName}</strong>
+                <p>{selectedFamily.description}</p>
+              </div>
+              <div className="metric-card">
+                <span>internal_mclk</span>
+                <strong>{formatFrequency(internalMclkHz)}</strong>
+                <p>That is the clock before the toggle flop divides it down.</p>
+              </div>
+              <div className="metric-card phase-card">
+                <span>mclk_q phase</span>
+                <div className={mclkPhase === 0 ? "phase-pill low" : "phase-pill high"}>{mclkPhase === 0 ? "0" : "1"}</div>
+                <p>The flip-flop changes state on each edge, so the output period spans two input cycles.</p>
+              </div>
+              <div className="metric-card">
+                <span>MCLK</span>
+                <strong>{formatFrequency(mclkHz)}</strong>
+                <p>Exactly half of internal_mclk.</p>
+              </div>
+            </div>
+
+            <div className="mini-pulse-strip" aria-label="MCLK toggle animation">
+              <div className={mclkPhase === 0 ? "pulse-step active" : "pulse-step"}>mclk_q = 0</div>
+              <div className={mclkPhase === 1 ? "pulse-step active" : "pulse-step"}>mclk_q = 1</div>
+              <div className={mclkPhase === 0 ? "pulse-step active" : "pulse-step"}>MCLK low half</div>
+              <div className={mclkPhase === 1 ? "pulse-step active" : "pulse-step"}>MCLK high half</div>
             </div>
           </section>
 
-          <section className="axi-band" id="axi-fundamentals">
-            <div className="section-copy">
-              <p className="eyebrow">AXI fundamentals</p>
-              <h2>Make the memory map feel like hardware, not an abstraction</h2>
-              <p>
-                VALID/READY handshakes mean that a transfer only happens when both sides agree. Address decoding chooses which register responds, WSTRB selects which byte lanes update, and the address space advances in 4-byte steps because each register word is 32 bits wide.
-              </p>
-            </div>
+          <section className="section-card frame-card" id="clock-divider">
+            <SectionHeading
+              eyebrow="Section 2"
+              title="Clock divider and BCLK enable"
+              lead="FS_MODE changes which low bits are inspected. That changes how often bclk_en_w fires, and the divider math then produces BCLK, WS, and Fs."
+            />
 
-            <div className="toggle-row axi-toggle-row" role="tablist" aria-label="AXI walkthrough examples">
-              {Object.entries(axiExamples).map(([key, value]) => (
+            <div className="toggle-row">
+              {modeOptions.map((mode) => (
                 <button
-                  key={key}
-                  className={axiExample === key ? "toggle active" : "toggle"}
-                  onClick={() => setAxiExample(key as AxiExample)}
+                  key={mode.value}
+                  className={fsMode === mode.value ? "toggle-btn active" : "toggle-btn"}
                   type="button"
+                  onClick={() => setFsMode(mode.value)}
                 >
-                  {value.title}
+                  <span>{mode.label}</span>
+                  <small>{mode.checkText}</small>
                 </button>
               ))}
             </div>
 
-            <div className="axi-grid">
-              <article className="axi-card frame-panel">
-                <p className="eyebrow">Transaction walkthrough</p>
-                <h3>{axiExamples[axiExample].title}</h3>
-                <p>{axiExamples[axiExample].lead}</p>
-                <div className="axi-step-list">
-                  {axiExamples[axiExample].steps.map((step) => (
-                    <div key={step} className="axi-step">
-                      {step}
-                    </div>
-                  ))}
-                </div>
-              </article>
+            <div className="formula-steps">
+              <div className="formula-step">
+                <strong>Step 1</strong>
+                <p>FS_MODE = {fsMode} uses {selectedMode.checkText}, so the enable fires every {selectedMode.divider} cycles.</p>
+              </div>
+              <div className="formula-step">
+                <strong>Step 2</strong>
+                <p>bclk_en period = internal_mclk ÷ divider = {formatFrequency(bclkEnableHz)}.</p>
+              </div>
+              <div className="formula-step">
+                <strong>Step 3</strong>
+                <p>BCLK = bclk_en_rate ÷ 2 = {formatFrequency(bclkHz)} because one full clock needs both a rising and falling edge.</p>
+              </div>
+              <div className="formula-step">
+                <strong>Step 4</strong>
+                <p>WS = BCLK ÷ 64 = {formatFrequency(wsHz)} and Fs = WS = {formatFrequency(fsHz)}.</p>
+              </div>
+            </div>
 
-              <article className="axi-card frame-panel">
-                <p className="eyebrow">Register details</p>
-                <div className="axi-register-block">
-                  <div>
-                    <strong>Address</strong>
-                    <p>{axiExamples[axiExample].address}</p>
+            <div className="counter-strip">
+              {Array.from({ length: 8 }, (_, cycle) => {
+                const fire = cycle % selectedMode.divider === 0;
+                const active = cycle === clockTick;
+
+                return (
+                  <div key={cycle} className={active ? "counter-cell active" : fire ? "counter-cell fire" : "counter-cell"}>
+                    <span>q = {cycle.toString(2).padStart(3, "0")}</span>
+                    <strong>{cycle}</strong>
+                    <small>{fire ? "bclk_en_w fires" : "no fire"}</small>
                   </div>
-                  <div>
-                    <strong>WSTRB</strong>
-                    <p>{axiExamples[axiExample].wstrb}</p>
-                  </div>
-                </div>
-
-                <div className="byte-lane-grid" aria-label="Byte lane mask">
-                  {axiExamples[axiExample].bytes.map((byte, index) => (
-                    <div key={byte} className={axiExample === "strobes" && index > 1 ? "byte-lane masked" : "byte-lane"}>
-                      {byte}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="fundamental-callout subtle">
-                  <strong>Fundamental Insight</strong>
-                  <p>
-                    A register file is just a memory map with hardware behind it.
-                  </p>
-                </div>
-              </article>
+                );
+              })}
             </div>
 
-            <div className="placeholder-banner frame-panel">
-              <strong>[Placeholder: AXI handshake timing figure]</strong>
-              <span>VALID, READY, WSTRB, and address decode should all be visible in the eventual illustration.</span>
-            </div>
-          </section>
-
-          <section className="cdc-band" id="cdc-fundamentals">
-            <div className="section-copy">
-              <p className="eyebrow">CDC fundamentals</p>
-              <h2>Be careful when a signal moves between clock domains</h2>
-              <p>
-                Different clock domains are dangerous because the receiving flop may sample while the source is changing. Metastability is the unstable middle state that can appear when the setup and hold window is violated.
-              </p>
-            </div>
-
-            <div className="cdc-grid">
-              <article className="cdc-panel frame-panel">
-                <h3>Why a two-flop synchronizer exists</h3>
-                <p>
-                  The first flip-flop captures the asynchronous edge. The second flip-flop gives that captured value another cycle to settle so the rest of the audio logic sees a clean signal.
-                </p>
-                <div className="cdc-flow">
-                  <div className="cdc-node">source domain</div>
-                  <div className="cdc-arrow">→</div>
-                  <div className="cdc-node">flop 1</div>
-                  <div className="cdc-arrow">→</div>
-                  <div className="cdc-node">flop 2</div>
-                  <div className="cdc-arrow">→</div>
-                  <div className="cdc-node">audio domain</div>
-                </div>
-              </article>
-
-              <article className="cdc-panel frame-panel">
-                <p className="eyebrow">Visual placeholders</p>
-                <div className="placeholder-stack">
-                  <div className="placeholder-card compact frame-panel">
-                    <strong>[Placeholder: Simplified metastability illustration]</strong>
-                    <p>Show the input edge landing too close to the clock edge.</p>
-                  </div>
-                  <div className="placeholder-card compact frame-panel">
-                    <strong>[Placeholder: CDC Synchronizer Visual]</strong>
-                    <p>Show two flip-flops buffering the crossing signal.</p>
-                  </div>
-                </div>
-              </article>
-            </div>
-
-            <div className="cdc-notes-grid">
-              {cdcBlocks.map((block) => (
-                <article key={block.title} className="cdc-note frame-panel">
-                  <h3>{block.title}</h3>
-                  <p>{block.text}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section className="serializer-band" id="serializer">
-            <div className="section-copy">
-              <p className="eyebrow">Serializer</p>
-              <h2>Parallel audio becomes serial timing, one bit slot at a time</h2>
-              <p>
-                The serializer reads a full sample word and shifts it onto DATA MSB-first. The indexing rule bit_idx = width - pos gives the position of the next bit to send, where pos counts the serial slot and width is the word length.
-              </p>
-            </div>
-
-            <div className="toggle-row" role="tablist" aria-label="Sample width examples">
-              {serializerWidths.map((width) => (
-                <button
-                  key={width}
-                  className={serializerWidth === width ? "toggle active" : "toggle"}
-                  onClick={() => setSerializerWidth(width)}
-                  type="button"
-                >
-                  {width}-bit sample
-                </button>
-              ))}
-            </div>
-
-            <div className="serializer-grid">
-              <article className="serializer-card frame-panel">
-                <p className="eyebrow">Bit-level example</p>
-                <h3>MSB-first transmission for a {serializerWidth}-bit sample</h3>
-                <p>
-                  The first bit that leaves the core is sample[{serializerWidth - 1}]. The last bit is sample[0]. Every serial tick moves the read pointer one step lower.
-                </p>
-                <div className="bit-lane">
-                  <span>sample[{serializerWidth - 1}]</span>
-                  <span>sample[{serializerWidth - 2}]</span>
-                  <span>sample[{serializerWidth - 3}]</span>
-                  <span className="bit-lane-dots">...</span>
-                  <span>sample[2]</span>
-                  <span>sample[1]</span>
-                  <span>sample[0]</span>
-                </div>
-                <div className="bit-index-card">
-                  <strong>bit_idx = width - pos</strong>
-                  <p>pos = 1 maps to the MSB, pos = width maps to the LSB.</p>
-                </div>
-              </article>
-
-              <article className="serializer-card frame-panel">
-                <p className="eyebrow">Frame timing</p>
-                <h3>How the serializer places bits in time</h3>
-                <div className="serializer-timing-grid">
-                  <div className="timing-legend">
-                    <div><strong>16-bit</strong><span>shorter payload, same framing logic</span></div>
-                    <div><strong>24-bit</strong><span>common audio word length</span></div>
-                    <div><strong>32-bit</strong><span>full word alignment and padding are easiest to reason about</span></div>
-                  </div>
-                  <div className="placeholder-card frame-panel compact">
-                    <strong>[Placeholder: I2S Frame Timing Figure]</strong>
-                    <p>Show one stereo frame with left and right slots, MSB-first bits, and WS boundaries.</p>
-                  </div>
-                </div>
-                <div className="fundamental-callout subtle">
-                  <strong>Fundamental Insight</strong>
-                  <p>Serialization is time-multiplexing of parallel data.</p>
-                </div>
-              </article>
-            </div>
-
-            <div className="serializer-table-wrap">
-              <table className="counter-table">
+            <div className="result-table-wrap">
+              <table className="result-table">
                 <thead>
                   <tr>
-                    <th>Sample width</th>
-                    <th>First bit</th>
-                    <th>Last bit</th>
-                    <th>Why it matters</th>
+                    <th>FS_FAMILY</th>
+                    <th>FS_MODE</th>
+                    <th>internal_mclk</th>
+                    <th>divider</th>
+                    <th>bclk_en rate</th>
+                    <th>BCLK</th>
+                    <th>WS</th>
+                    <th>Fs</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>16-bit</td>
-                    <td>sample[15]</td>
-                    <td>sample[0]</td>
-                    <td>Fast to inspect, compact frame example.</td>
-                  </tr>
-                  <tr>
-                    <td>24-bit</td>
-                    <td>sample[23]</td>
-                    <td>sample[0]</td>
-                    <td>Matches a common PCM audio depth.</td>
-                  </tr>
-                  <tr>
-                    <td>32-bit</td>
-                    <td>sample[31]</td>
-                    <td>sample[0]</td>
-                    <td>Best for exact word alignment and a simple shift story.</td>
-                  </tr>
+                  {summaryCells.map((row) => {
+                    const isSelected = row.family === fsFamily && row.mode === fsMode;
+
+                    return (
+                      <tr key={`${row.family}-${row.mode}`} className={isSelected ? "selected-row" : undefined}>
+                        <td>{row.family}</td>
+                        <td>{row.mode}</td>
+                        <td>{formatFrequencyForTable(row.internalMclkHz)}</td>
+                        <td>{row.divider}</td>
+                        <td>{formatFrequencyForTable(row.bclkEnableHz)}</td>
+                        <td>{formatFrequencyForTable(row.bclkHz)}</td>
+                        <td>{formatFrequencyForTable(row.wsHz)}</td>
+                        <td>{formatFrequencyForTable(row.fsHz)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </section>
 
-          <section className="explanation-band" id="explanations">
-            <div className="section-copy narrow">
-              <p className="eyebrow">Expandable teaching lenses</p>
-              <h2>Switch between beginner, RTL, math, and timing explanations</h2>
-              <p>
-                These tabs are the page’s main teaching control. Each one keeps the same core idea in view, but changes the lens so the reader can match their current understanding level.
-              </p>
+          <section className="section-card frame-card" id="power-on-reset">
+            <SectionHeading
+              eyebrow="Section 3"
+              title="Power-on reset"
+              lead="audio_por_q starts at 1111 and shifts a 0 in from the right each cycle. That makes audio_rst stay high for four cycles and then drop low cleanly in the audio clock domain."
+            />
+
+            <div className="section-actions">
+              <button className="action-btn" type="button" onClick={() => setPorTick(0)}>
+                Replay POR
+              </button>
+              <div className="status-pill">
+                audio_rst = {porState[0]}
+              </div>
             </div>
 
-            <div className="toggle-row" role="tablist" aria-label="Explanation lenses">
-              {(Object.keys(explanationTabs) as ExplanationLens[]).map((lens) => (
-                <button
-                  key={lens}
-                  className={explanationLens === lens ? "toggle active" : "toggle"}
-                  onClick={() => setExplanationLens(lens)}
-                  type="button"
-                >
-                  {explanationTabs[lens].title}
-                </button>
+            <div className="shift-register frame-card subtle-card">
+              {porState.split("").map((bit, index) => (
+                <div key={`${bit}-${index}`} className={bit === "1" ? "shift-cell high" : "shift-cell low"}>
+                  <span>audio_por_q[{3 - index}]</span>
+                  <strong>{bit}</strong>
+                </div>
               ))}
             </div>
 
-            <div className="explanation-panel frame-panel">
-              <h3>{explanationTabs[explanationLens].title}</h3>
-              <p>{explanationTabs[explanationLens].summary}</p>
-              <div className="explanation-points">
-                {explanationTabs[explanationLens].points.map((point) => (
-                  <div key={point} className="explanation-point">
-                    {point}
+            <div className="formula-steps">
+              <div className="formula-step">
+                <strong>Why this works</strong>
+                <p>The reset must be generated inside the audio clock domain, not copied directly from S_AXI_ARESETN, because the AXI reset belongs to a different clock domain.</p>
+              </div>
+              <div className="formula-step">
+                <strong>Cycle count</strong>
+                <p>At cycle 0 the register is 1111. By cycle 4 it becomes 0000 and audio_rst drops to 0.</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="section-card frame-card" id="cdc-synchroniser">
+            <SectionHeading
+              eyebrow="Section 4"
+              title="CDC synchroniser"
+              lead="A two-stage synchroniser carries a value from the AXI domain into the destination domain. The first flop samples it, the second flop exports it one more cycle later, which improves MTBF and reduces the chance of metastability escaping into the core."
+            />
+
+            <div className="section-actions">
+              <button className="action-btn" type="button" onClick={() => setCdcTick(0)}>
+                Replay CDC
+              </button>
+              <div className="status-pill">2-cycle propagation</div>
+            </div>
+
+            <div className="cdc-grid">
+              {cdcStages.map((stage, index) => (
+                <div key={stage.title} className="cdc-stage frame-card subtle-card">
+                  <span>{index === 0 ? "AXI domain" : index === 1 ? "stage1_q" : "stage2_q / dest_out"}</span>
+                  <strong>{stage.value}</strong>
+                  <p>{stage.note}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="cdc-arrow-row" aria-hidden="true">
+              <span>src_in</span>
+              <span>→</span>
+              <span>stage1_q</span>
+              <span>→</span>
+              <span>stage2_q</span>
+            </div>
+
+            <div className="formula-steps">
+              <div className="formula-step">
+                <strong>Step 1</strong>
+                <p>The source value is launched in the AXI domain.</p>
+              </div>
+              <div className="formula-step">
+                <strong>Step 2</strong>
+                <p>stage1_q captures the transition first, then stage2_q follows one cycle later.</p>
+              </div>
+              <div className="formula-step">
+                <strong>Why ASYNC_REG matters</strong>
+                <p>Marking both flip-flops with ASYNC_REG=TRUE tells the tool to keep them adjacent so the routing is short and the synchroniser is more reliable.</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="section-card frame-card" id="control-register">
+            <SectionHeading
+              eyebrow="Section 5"
+              title="CONTROL register bitfield"
+              lead="The register is the software contract. Each field is clickable, and the default value 0x00001801 is annotated so you can see exactly which settings are active at reset."
+            />
+
+            <div className="register-summary frame-card subtle-card">
+              <div>
+                <span>Default value</span>
+                <strong>0x00001801</strong>
+              </div>
+              <div>
+                <span>Decoded default</span>
+                <strong>ENABLE = 1, SAMPLE_WIDTH = 24</strong>
+              </div>
+              <div>
+                <span>Current selection</span>
+                <strong>{selectedFieldInfo.label}</strong>
+              </div>
+            </div>
+
+            <div className="field-bar" role="tablist" aria-label="CONTROL register fields">
+              {controlFields.map((field) => {
+                const span = field.endBit - field.startBit + 1;
+                const gridColumnStart = 32 - field.endBit;
+
+                return (
+                  <button
+                    key={field.key}
+                    type="button"
+                    className={selectedField === field.key ? `field-chip ${field.accent} active` : `field-chip ${field.accent}`}
+                    style={{ gridColumn: `${gridColumnStart} / span ${span}` }}
+                    onClick={() => setSelectedField(field.key)}
+                  >
+                    <span>{field.label}</span>
+                    <small>{field.range}</small>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="bit-map frame-card subtle-card">
+              {Array.from({ length: 32 }, (_, index) => {
+                const bitIndex = 31 - index;
+                const field = controlFields.find((entry) => bitIndex >= entry.startBit && bitIndex <= entry.endBit) ?? controlFields[0];
+                const value = registerBits[bitIndex];
+                const isSelected = field.key === selectedField;
+
+                return (
+                  <button
+                    key={bitIndex}
+                    type="button"
+                    className={isSelected ? `bit-cell ${field.accent} active` : `bit-cell ${field.accent}`}
+                    onClick={() => setSelectedField(field.key)}
+                    title={`${field.label} bit ${bitIndex}`}
+                  >
+                    <span>{bitIndex}</span>
+                    <strong>{value}</strong>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="detail-card frame-card subtle-card">
+              <div>
+                <p className="eyebrow">Selected field</p>
+                <h3>{selectedFieldInfo.label}</h3>
+                <p>{selectedFieldInfo.description}</p>
+              </div>
+              <div>
+                <p className="eyebrow">Effect on the audio path</p>
+                <p>{selectedFieldInfo.effect}</p>
+              </div>
+              <div>
+                <p className="eyebrow">Range and value</p>
+                <p>{selectedFieldInfo.range} · default {selectedFieldInfo.value}</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="section-card frame-card" id="i2s-frame">
+            <SectionHeading
+              eyebrow="Section 6"
+              title="Philips I2S frame structure"
+              lead="This is one full 64-bit stereo frame. The left channel occupies cells 0–31, the right channel occupies cells 32–63, and the sample width slider changes where payload ends and padding begins."
+            />
+
+            <div className="control-panel compact">
+              <div className="control-stack">
+                <label className="slider-label" htmlFor="width-slider">
+                  <span>SAMPLE_WIDTH</span>
+                  <strong>{sampleWidth}-bit</strong>
+                </label>
+                <input
+                  id="width-slider"
+                  className="range-input"
+                  type="range"
+                  min={16}
+                  max={32}
+                  step={8}
+                  value={sampleWidth}
+                  aria-valuemin={16}
+                  aria-valuemax={32}
+                  aria-valuenow={sampleWidth}
+                  aria-valuetext={`${sampleWidth}-bit`}
+                  onChange={(event) => setSampleWidth(Number(event.target.value) as SampleWidth)}
+                />
+                <div className="slider-endpoints">
+                  <span>16</span>
+                  <span>24</span>
+                  <span>32</span>
+                </div>
+              </div>
+
+              <div className="formula-steps">
+                <div className="formula-step">
+                  <strong>Cell rules</strong>
+                  <p>pos 0 and pos 32 are the always-zero delay cells. pos 1 is sample[width-1]. pos 2..width count down through the remaining payload bits. Everything after width is padding.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="frame-legend">
+              <span className="legend-item legend-left">Left slot</span>
+              <span className="legend-item legend-right">Right slot</span>
+              <span className="legend-item legend-delay">Delay bit</span>
+              <span className="legend-item legend-payload">Payload</span>
+              <span className="legend-item legend-padding">Padding</span>
+            </div>
+
+            <div className="frame-grid frame-card subtle-card" aria-label="64-cell I2S frame grid">
+              {Array.from({ length: 64 }, (_, position) => {
+                const isLeft = position < 32;
+                const isDelay = position === 0 || position === 32;
+                const localPosition = isLeft ? position : position - 32;
+                const bitValue = frameBitAt(position, sampleWidth, leftBits, rightBits);
+                const cellClass = isDelay
+                  ? "frame-cell delay"
+                  : localPosition <= sampleWidth
+                    ? isLeft
+                      ? "frame-cell payload left"
+                      : "frame-cell payload right"
+                    : isLeft
+                      ? "frame-cell padding left"
+                      : "frame-cell padding right";
+
+                return (
+                  <div key={position} className={cellClass}>
+                    <span>{position}</span>
+                    <strong>{bitValue}</strong>
                   </div>
-                ))}
+                );
+              })}
+            </div>
+
+            <div className="formula-steps">
+              <div className="formula-step">
+                <strong>pos 0</strong>
+                <p>Always 0, creating the 1 BCLK delay after the WS edge required by Philips I2S.</p>
               </div>
-              <div className="fundamental-callout">
-                <strong>Fundamental Insight</strong>
-                <p>
-                  Every good hardware explanation should connect the register map, the timing, and the physical pins in one story.
-                </p>
+              <div className="formula-step">
+                <strong>pos 1</strong>
+                <p>sample[width-1], the MSB of the selected sample word.</p>
+              </div>
+              <div className="formula-step">
+                <strong>pos 2..width</strong>
+                <p>sample[width-pos], continuing MSB-first until the payload is exhausted.</p>
+              </div>
+              <div className="formula-step">
+                <strong>pos &gt; width</strong>
+                <p>0, which is the padding region.</p>
+              </div>
+            </div>
+
+            <div className="placeholder-box frame-card subtle-card">
+              <p className="eyebrow">Placeholder</p>
+              <strong>[PHOTO: ILA capture showing BCLK, WS, DATA for one full 64-bit stereo frame at 48 kHz]</strong>
+              <p>Use this slot for a real capture when you want to prove the frame on hardware with the same timing shown above.</p>
+            </div>
+          </section>
+
+          <section className="section-card frame-card" id="ws-timing">
+            <SectionHeading
+              eyebrow="Section 7"
+              title="WS timing"
+              lead="bit_count_q[5] is the clean left/right split. It is 0 for bit_count 0..31 and 1 for bit_count 32..63, so WS changes once per half-frame while DATA changes on the falling BCLK edge."
+            />
+
+            <SignalTimeline
+              tick={frameTick}
+              sampleWidth={sampleWidth}
+              enable={enable}
+              mute={mute}
+              leftBits={leftBits}
+              rightBits={rightBits}
+              title="WS timing"
+              description="This preview tracks the 64-bit stereo frame and highlights the current bit_count_q slot."
+            />
+
+            <div className="formula-steps">
+              <div className="formula-step">
+                <strong>Left channel</strong>
+                <p>bit_count 0..31 means bit[5] = 0, so WS = LOW.</p>
+              </div>
+              <div className="formula-step">
+                <strong>Right channel</strong>
+                <p>bit_count 32..63 means bit[5] = 1, so WS = HIGH.</p>
               </div>
             </div>
           </section>
 
-          <section className="story-band" id="full-story">
-            <div className="section-copy">
-              <p className="eyebrow">Full system story</p>
-              <h2>Walk one sample all the way through the core</h2>
-              <p>
-                This is the final pass: CPU write to AXI register to CDC to sample latch to serializer to I2S output. If the reader can narrate this chain, they understand the design at the right level.
-              </p>
+          <section className="section-card frame-card" id="enable-mute">
+            <SectionHeading
+              eyebrow="Section 8"
+              title="ENABLE and MUTE behaviour"
+              lead="These toggles show what the output pins do in real time. ENABLE stops the whole audio engine, while MUTE keeps the clocks alive and only forces DATA low."
+            />
+
+            <div className="toggle-row runtime-toggle-row">
+              <button className={enable ? "toggle-btn active" : "toggle-btn"} type="button" onClick={() => setEnable((value) => !value)}>
+                <span>ENABLE</span>
+                <small>{enable ? "1" : "0"}</small>
+              </button>
+              <button className={mute ? "toggle-btn active" : "toggle-btn"} type="button" onClick={() => setMute((value) => !value)}>
+                <span>MUTE</span>
+                <small>{mute ? "1" : "0"}</small>
+              </button>
             </div>
 
-            <div className="story-flow-grid">
-              {fullStorySteps.map((step, index) => (
-                <article key={step.title} className="story-flow-card frame-panel">
-                  <p className="story-index">0{index + 1}</p>
-                  <h3>{step.title}</h3>
-                  <p>{step.text}</p>
-                </article>
+            <div className="state-grid">
+              <div className="state-card frame-card subtle-card">
+                <strong>ENABLE = 0</strong>
+                <p>BCLK, WS, and DATA all stay low and bit_count resets to 0.</p>
+              </div>
+              <div className="state-card frame-card subtle-card">
+                <strong>MUTE = 1</strong>
+                <p>BCLK and WS continue normally, but DATA is forced to 0.</p>
+              </div>
+              <div className="state-card frame-card subtle-card">
+                <strong>Both normal</strong>
+                <p>ENABLE = 1 and MUTE = 0 produce the full I2S stream.</p>
+              </div>
+            </div>
+
+            <SignalTimeline
+              tick={frameTick}
+              sampleWidth={sampleWidth}
+              enable={enable}
+              mute={mute}
+              leftBits={leftBits}
+              rightBits={rightBits}
+              title="Output behaviour"
+              description="Watch the same frame preview respond instantly to ENABLE and MUTE."
+            />
+          </section>
+
+          <section className="section-card frame-card" id="formula-summary">
+            <SectionHeading
+              eyebrow="Section 9"
+              title="Full formula summary"
+              lead="This card ties the whole chain together. Pick a family and mode anywhere on the page, then read the selected path all the way down to Fs."
+            />
+
+            <div className="summary-flow frame-card subtle-card">
+              <span>FS_FAMILY</span>
+              <span>→ internal_mclk</span>
+              <span>→ MCLK = internal_mclk ÷ 2</span>
+              <span>→ FS_MODE</span>
+              <span>→ divider</span>
+              <span>→ BCLK = internal_mclk ÷ divider ÷ 2</span>
+              <span>→ WS = BCLK ÷ 64</span>
+              <span>→ Fs = WS</span>
+            </div>
+
+            <div className="summary-matrix">
+              {familyModeMatrix.map((row) => (
+                <div key={row.family.value} className="summary-row">
+                  <div className="summary-family-label">
+                    <strong>{row.family.label}</strong>
+                    <span>{row.family.description}</span>
+                  </div>
+                  {row.cells.map((cell) => {
+                    const selected = cell.family === fsFamily && cell.mode === fsMode;
+
+                    return (
+                      <div key={`${cell.family}-${cell.mode}`} className={selected ? "summary-cell active" : "summary-cell"}>
+                        <strong>{modeOptions[cell.mode].label}</strong>
+                        <p>Fs = {formatFrequencyForTable(cell.fsHz)}</p>
+                        <span>divider {cell.divider} · BCLK {formatFrequencyForTable(cell.bclkHz)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               ))}
             </div>
 
-            <section className="closing-band frame-panel">
-              <p className="eyebrow">Final takeaway</p>
-              <h2>Use docpage/ as the visual front door to the whole I2S thesis</h2>
-              <p>
-                The page should feel like an interactive FPGA notebook: diagrams first, intuition second, RTL third, and only then the surrounding implementation details. That structure makes the core easier to teach, defend, and extend.
-              </p>
-            </section>
-          </section>
-
-          <section className="placeholder-summary">
-            <div className="placeholder-card frame-panel">
-              <strong>[Placeholder: AXI-to-I2S Architecture Diagram]</strong>
-              <p>Keep this near the top so the reader can anchor every later section to the same visual map.</p>
-            </div>
-            <div className="placeholder-card frame-panel">
-              <strong>[Placeholder: CDC Synchronizer Visual]</strong>
-              <p>Use this when the page explains metastability and the two-flop synchronizer.</p>
-            </div>
-            <div className="placeholder-card frame-panel">
-              <strong>[Placeholder: BCLK Timing Animation]</strong>
-              <p>Use this when the divider logic and enable cadence are being explained.</p>
+            <div className="placeholder-box frame-card subtle-card">
+              <p className="eyebrow">Placeholder</p>
+              <strong>[PHOTO: Oscilloscope capture showing MCLK, BCLK, WS, and DATA aligned for one complete stereo frame]</strong>
+              <p>Use a hardware image here when you want the visual summary to match a real board capture.</p>
             </div>
           </section>
         </div>
