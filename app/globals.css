@@ -653,6 +653,10 @@ main {
   border-color: rgba(220, 38, 38, 0.18);
 }
 
+.field-reserved {
+  border-color: rgba(82, 82, 91, 0.22);
+}
+
 .bit-map {
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
@@ -938,6 +942,12 @@ main {
 .bit-cell.field-width.active {
   background: rgba(220, 38, 38, 0.16);
   color: var(--accent-red);
+}
+
+.field-reserved.active,
+.bit-cell.field-reserved.active {
+  background: rgba(82, 82, 91, 0.16);
+  color: #3f3f46;
 }
 
 @media (max-width: 1120px) {

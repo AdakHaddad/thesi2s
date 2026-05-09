@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 type FsFamily = 0 | 1;
 type FsMode = 0 | 1;
 type SampleWidth = 16 | 24 | 32;
-type FieldKey = "enable" | "mute" | "family" | "mode" | "width";
+type FieldKey = "enable" | "mute" | "family" | "mode" | "width" | "reservedLo" | "reservedHi";
 
 type FrequencyFamily = {
   value: FsFamily;
@@ -106,6 +106,17 @@ const modeOptions: DividerMode[] = [
 
 const controlFields: ControlField[] = [
   {
+    key: "reservedHi",
+    label: "RESERVED",
+    range: "bits 31:13",
+    startBit: 13,
+    endBit: 31,
+    value: "0",
+    description: "Reserved bits in the upper register region.",
+    effect: "Must be written as 0 and ignored by the audio datapath.",
+    accent: "field-reserved",
+  },
+  {
     key: "enable",
     label: "ENABLE",
     range: "bit 0",
@@ -159,6 +170,17 @@ const controlFields: ControlField[] = [
     description: "Sets the payload width in the I2S frame.",
     effect: "Controls how many serial cells are populated with sample bits before padding begins.",
     accent: "field-width",
+  },
+  {
+    key: "reservedLo",
+    label: "RESERVED",
+    range: "bits 7:4",
+    startBit: 4,
+    endBit: 7,
+    value: "0",
+    description: "Reserved bits between FS_MODE and SAMPLE_WIDTH.",
+    effect: "Must be written as 0 and do not change output behaviour.",
+    accent: "field-reserved",
   },
 ];
 
@@ -374,6 +396,7 @@ export default function Home() {
   );
 
   const selectedFieldInfo = controlFields.find((field) => field.key === selectedField) ?? controlFields[0];
+  const reservedFieldFallback = controlFields.find((field) => field.key === "reservedLo") ?? controlFields[0];
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -406,7 +429,7 @@ export default function Home() {
 
   const fieldByBit = (bitIndex: number) => {
     const field = controlFields.find((entry) => bitIndex >= entry.startBit && bitIndex <= entry.endBit);
-    return field ?? controlFields[0];
+    return field ?? reservedFieldFallback;
   };
 
   const porState = audioPorStates[porTick];
@@ -747,7 +770,7 @@ export default function Home() {
             <SectionHeading
               eyebrow="Section 5"
               title="CONTROL register bitfield"
-              lead="The register is the software contract. Each field is clickable, and the default value 0x00001801 is annotated so you can see exactly which settings are active at reset."
+              lead="The register is the software contract. Each field is clickable, and the default value 0x00001801 is annotated so you can see exactly which settings are active at reset, including reserved bits that must stay 0."
             />
 
             <div className="register-summary frame-card subtle-card">
@@ -757,7 +780,7 @@ export default function Home() {
               </div>
               <div>
                 <span>Decoded default</span>
-                <strong>ENABLE = 1, SAMPLE_WIDTH = 24</strong>
+                <strong>ENABLE = 1, SAMPLE_WIDTH = 24, RESERVED = 0</strong>
               </div>
               <div>
                 <span>Current selection</span>
@@ -788,7 +811,7 @@ export default function Home() {
             <div className="bit-map frame-card subtle-card">
               {Array.from({ length: 32 }, (_, index) => {
                 const bitIndex = 31 - index;
-                const field = controlFields.find((entry) => bitIndex >= entry.startBit && bitIndex <= entry.endBit) ?? controlFields[0];
+                const field = fieldByBit(bitIndex);
                 const value = registerBits[bitIndex];
                 const isSelected = field.key === selectedField;
 
