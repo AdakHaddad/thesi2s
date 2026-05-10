@@ -34,7 +34,7 @@ pemilihan prosesor ini dalam penelitian ini.
 \citet{sklyarov_axi_peripheral_2014} mengeksplorasi perancangan sistem SoC hierarkis
 berbasis bus AXI pada FPGA. Penelitian tersebut menunjukkan bahwa peripheral kustom
 dapat diintegrasikan ke dalam SoC melalui AXI interconnect dengan cara yang modular dan
-dapat diskalakan — pendekatan yang sama diterapkan dalam penelitian ini menggunakan Vivado
+dapat diskalakan -- pendekatan yang sama diterapkan dalam penelitian ini menggunakan Vivado
 IP Integrator.
 
 \citet{crockett_zynq_book_2014} memberikan gambaran komprehensif mengenai hardware-software
@@ -44,8 +44,8 @@ metodologi integrasi yang diulas relevan dengan pendekatan yang digunakan pada p
 
 \subsection{Penelitian tentang sinkronisasi antar-domain clock (CDC)}
 
-Dalam sistem digital yang melibatkan lebih dari satu domain clock — seperti IP I2S yang
-memiliki domain AXI (100 MHz) dan domain audio (${\sim}24$ MHz) — sinkronisasi lintas
+Dalam sistem digital yang melibatkan lebih dari satu domain clock -- seperti IP I2S yang
+memiliki domain AXI (100 MHz) dan domain audio (${\sim}24$ MHz) -- sinkronisasi lintas
 domain clock (\textit{Clock Domain Crossing}, CDC) menjadi aspek kritikal.
 
 \citet{ginosar_metastability_2011} memberikan analisis mendalam tentang masalah
@@ -63,8 +63,8 @@ Berdasarkan tinjauan di atas, dapat diidentifikasi beberapa celah penelitian:
     \item Sebagian besar penelitian yang ada menggunakan platform prosesor yang lebih besar
     (Zynq, Cortex-A) sehingga contoh pada platform sederhana berbasis Basys3 memberikan
     nilai referensi tersendiri.
-    \item Analisis bug pada lapisan firmware — khususnya justifikasi bit sampel dan timing
-    loop berbasis cycle counter — belum banyak didokumentasikan secara eksplisit dalam
+    \item Analisis bug pada lapisan firmware -- khususnya justifikasi bit sampel dan timing
+    loop berbasis cycle counter -- belum banyak didokumentasikan secara eksplisit dalam
     konteks I2S pada FPGA.
 \end{enumerate}
 
@@ -195,7 +195,7 @@ berbasis register~\citep{arm_amba_axi_2010}. Karakteristik utama:
     Read Address (AR), dan Read Data (R).
     \item Protokol handshake \texttt{VALID}/\texttt{READY} pada setiap kanal memungkinkan
     \textit{backpressure} tanpa kehilangan data.
-    \item Tidak mendukung \textit{burst transfer} — setiap transaksi membaca atau menulis
+    \item Tidak mendukung \textit{burst transfer} -- setiap transaksi membaca atau menulis
     satu word 32-bit.
     \item Cocok untuk konfigurasi register peripheral dengan kebutuhan bandwidth rendah.
 \end{itemize}

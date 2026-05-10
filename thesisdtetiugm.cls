@@ -67,7 +67,7 @@
 \usepackage{tocloft}% edit font toc
 \usepackage{fancyhdr}% page number
 \usepackage[cmex10]{amsmath}
-\usepackage{cite}
+\usepackage[numbers,sort&compress]{natbib}
 \usepackage{multirow}
 \usepackage{titlesec}
 \usepackage{ragged2e}% text alignment
@@ -912,5 +912,5 @@
 %---------------
 
 \setlist[enumerate,1]{leftmargin=2em, label=\arabic*., topsep=0pt, itemsep=0pt, partopsep=1ex, parsep=1ex}
-\setlist[itemize,1]{align=parleft, left=0pt, label=•, itemsep=0pt, topsep=0pt, partopsep=1ex, parsep=1ex}
+\setlist[itemize,1]{align=parleft, left=0pt, label=\textbullet, itemsep=0pt, topsep=0pt, partopsep=1ex, parsep=1ex}
 

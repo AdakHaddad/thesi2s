@@ -99,7 +99,7 @@ Clocking Wizard~\citep{xilinx_clocking_wizard_2021} dikonfigurasi menghasilkan t
         \setlength{\fboxsep}{14pt}%
         \fbox{\parbox{0.88\textwidth}{\centering\textit{[PLACEHOLDER] Tangkapan ILA: BCLK (3,07 MHz), WS (48 kHz), DATA, dan sinyal CDC. Tambahkan file: \texttt{contents/figures/ila-bclk-ws-data.png}}}}%
     }
-    \caption{Tangkapan ILA: BCLK, WS, dan DATA — satu frame stereo 64 BCLK.}
+    \caption{Tangkapan ILA: BCLK, WS, dan DATA -- satu frame stereo 64 BCLK.}
     \label{fig:ch4-ila}
 \end{figure}
 
@@ -162,7 +162,7 @@ uint32_t mask = (1U << g_width) - 1U;   // untuk 24-bit: 0x00FFFFFF
 uint32_t samp = (uint32_t)s32 & mask;   // memotong bit [31:24]
 \end{verbatim}
 
-\noindent Sampel negatif int16 setelah digeser kiri 8 bit memiliki bit tanda di posisi \texttt{[31:24]}. Masker memotong bit-bit ini sehingga nilai negatif menjadi positif — gelombang sinus terdistorsi.
+\noindent Sampel negatif int16 setelah digeser kiri 8 bit memiliki bit tanda di posisi \texttt{[31:24]}. Masker memotong bit-bit ini sehingga nilai negatif menjadi positif -- gelombang sinus terdistorsi.
 
 \subsubsection{Solusi}
 
@@ -188,11 +188,11 @@ Saat \texttt{SAMPLE\_WIDTH=32}, amplitudo gelombang separuh dari yang diharapkan
 
 \subsubsection{Penyebab}
 
-Untuk \texttt{g\_width=32}, geseran kiri 16 menghasilkan \texttt{0x7FFF0000} untuk sampel \texttt{0x7FFF}. Bit 31 dari word ini adalah 0 (bukan 1). Serializer RTL pada posisi pertama membaca \texttt{sample[31]} sebagai MSB, sehingga seluruh nilai tergeser satu bit ke bawah — setara dengan kehilangan satu bit resolusi.
+Untuk \texttt{g\_width=32}, geseran kiri 16 menghasilkan \texttt{0x7FFF0000} untuk sampel \texttt{0x7FFF}. Bit 31 dari word ini adalah 0 (bukan 1). Serializer RTL pada posisi pertama membaca \texttt{sample[31]} sebagai MSB, sehingga seluruh nilai tergeser satu bit ke bawah -- setara dengan kehilangan satu bit resolusi.
 
 \subsubsection{Solusi}
 
-Sama dengan Bug 1 — perbaikan geseran tanpa masker sudah menyelesaikan masalah ini secara otomatis. \texttt{(int32\_t)s << 16} menghasilkan penempatan MSB yang benar di bit 31.
+Sama dengan Bug 1 -- perbaikan geseran tanpa masker sudah menyelesaikan masalah ini secara otomatis. \texttt{(int32\_t)s << 16} menghasilkan penempatan MSB yang benar di bit 31.
 
 % ------------------------------------------------------------
 \subsection{Bug 3: Kanal Kanan Mute saat Mode Right-Only}
