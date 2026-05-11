@@ -6,13 +6,13 @@ Dokumen ini merangkum **satu gambaran utuh** supaya kamu paham dari hulu ke hili
 
 ## 1. Tiga jalur yang sering dicampur (ini penting)
 
-| Jalur | Fungsi | “Kecepatannya” |
+| Jalur | Fungsi | "Kecepatannya" |
 |--------|--------|----------------|
 | **UART** | Debug, perintah dari PC, log, kadang transfer file kecil | **Baud** (mis. 9600, 115200) = bit per detik di kabel serial |
 | **AXI4-Lite** | CPU (MicroBlaze) baca/tulis **register** peripheral | Tergantung `S_AXI_ACLK` dan burst tidak ada (single transfer) |
 | **I2S** | Stream **sampel audio** ke DAC | Tergantung **BCLK** dan **LRCK (WS)**; **bukan baud** |
 
-**Kesalahan umum:** mengira “baud UART harus disamakan dengan DAC” atau “9600 harus sama dengan clock I2S”. Keduanya **domain berbeda**. Yang harus konsisten untuk audio adalah **LRCK = frekuensi sampling** dan **BCLK** yang memenuhi format slot bit, bukan baud UART.
+**Kesalahan umum:** mengira "baud UART harus disamakan dengan DAC" atau "9600 harus sama dengan clock I2S". Keduanya **domain berbeda**. Yang harus konsisten untuk audio adalah **LRCK = frekuensi sampling** dan **BCLK** yang memenuhi format slot bit, bukan baud UART.
 
 ---
 
@@ -27,7 +27,7 @@ I2S (Inter-IC Sound) memakai minimal:
 
 **Philips I2S (stereo, slot 32 bit per saluran):**
 
-- Satu saluran = **32 period BCLK** (satu “slot”).
+- Satu saluran = **32 period BCLK** (satu "slot").
 - Stereo = **64 BCLK per frame** (kiri 32, kanan 32).
 - Di dalam slot sering ada **1 bit delay** setelah tepi WS, lalu bit sampel (16/24 bit), sisanya padding `0`.
 
@@ -53,15 +53,15 @@ F_s = \frac{f_{\mathrm{BCLK}}}{64}
 
 ---
 
-## 4. Frekuensi sampling: 8 kHz, 44,1 kHz, 48 kHz, 96 kHz, “384 kHz”
+## 4. Frekuensi sampling: 8 kHz, 44,1 kHz, 48 kHz, 96 kHz, "384 kHz"
 
-- **8 kHz** — teleponi narrowband.
-- **44,1 kHz** — CD.
-- **48 kHz** — audio pro / video.
-- **96 / 192 kHz** — hi-res (jika DAC + clock + board mendukung).
-- **384 kHz** — muncul pada **beberapa** DAC/codec kelas tertentu; **tidak otomatis** didukung modul breakout atau konfigurasi clock kamu. **Selalu cek datasheet** dan ukur di osiloskop/ILA.
+- **8 kHz** -- teleponi narrowband.
+- **44,1 kHz** -- CD.
+- **48 kHz** -- audio pro / video.
+- **96 / 192 kHz** -- hi-res (jika DAC + clock + board mendukung).
+- **384 kHz** -- muncul pada **beberapa** DAC/codec kelas tertentu; **tidak otomatis** didukung modul breakout atau konfigurasi clock kamu. **Selalu cek datasheet** dan ukur di osiloskop/ILA.
 
-Di FPGA, \(F_s\) **efektif** ditentukan oleh **berapa kali LRCK berganti per detik** yang kamu bangkitkan dari **pembagi + osilator aktual** (MMCM sering tidak tepat 24,576 MHz → nilai “≈” wajar di skripsi).
+Di FPGA, \(F_s\) **efektif** ditentukan oleh **berapa kali LRCK berganti per detik** yang kamu bangkitkan dari **pembagi + osilator aktual** (MMCM sering tidak tepat 24,576 MHz -> nilai "≈" wajar di skripsi).
 
 ---
 
@@ -69,10 +69,10 @@ Di FPGA, \(F_s\) **efektif** ditentukan oleh **berapa kali LRCK berganti per det
 
 ### 5.1 Dua domain clock
 
-1. **`S_AXI_ACLK`** — domain **register AXI** (`slv_reg0..3`, FSM AXI).
-2. **`audio_clk`** — domain **serializer I2S** (BCLK/WS/DATA, counter bit).
+1. **`S_AXI_ACLK`** -- domain **register AXI** (`slv_reg0..3`, FSM AXI).
+2. **`audio_clk`** -- domain **serializer I2S** (BCLK/WS/DATA, counter bit).
 
-`slv_reg0` di-sampling ke `sample_q` di domain audio saat batas frame. Untuk desain v2 dengan FIFO cepat, nanti perlu **CDC** yang benar (async FIFO / gray pointer), bukan asumsi “selalu aman”.
+`slv_reg0` di-sampling ke `sample_q` di domain audio saat batas frame. Untuk desain v2 dengan FIFO cepat, nanti perlu **CDC** yang benar (async FIFO / gray pointer), bukan asumsi "selalu aman".
 
 ### 5.2 Register **v1** (kebenaran dari kode hari ini)
 
@@ -140,7 +140,7 @@ Dengan koreksi ini:
 
 ---
 
-## 6. Rencana **v2** (ringkas — supaya paham arah)
+## 6. Rencana **v2** (ringkas -- supaya paham arah)
 
 | Fitur | Manfaat |
 |--------|---------|
@@ -154,7 +154,7 @@ Detail implementasi ada di repo FPGA: `I2S_V2_IMPLEMENTATION_SPEC.md` dan `I2S_S
 
 ---
 
-## 7. DAC dan PCM5102A — “in” dari sisi sistem
+## 7. DAC dan PCM5102A -- "in" dari sisi sistem
 
 ### 7.1 Siapa master clock?
 
@@ -163,9 +163,9 @@ Pada skema kamu (FPGA → DAC), FPGA biasanya **master**:
 - FPGA menghasilkan **BCLK** dan **LRCK**.
 - DAC adalah **slave** pada jalur I2S: ia **mengikuti** clock yang kamu berikan.
 
-**Implikasi:** “mengatur frekuensi sampling” pada DAC = **mengatur LRCK** (dan BCLK konsisten) di FPGA, **bukan** memilih angka di register UART.
+**Implikasi:** "mengatur frekuensi sampling" pada DAC = **mengatur LRCK** (dan BCLK konsisten) di FPGA, **bukan** memilih angka di register UART.
 
-### 7.2 Apakah PCM5102A “programmable” seperti SPI?
+### 7.2 Apakah PCM5102A "programmable" seperti SPI?
 
 Secara umum **bukan** seperti codec dengan banyak register untuk memilih \(F_s\) lewat I2C. Yang utama:
 
@@ -190,19 +190,19 @@ Untuk **stereo 16-bit PCM** pada \(F_s = 44{,}1\) kHz:
 
 Itu **jauh di atas** ~11,5 kbyte/s dari 115200 8N1. Jadi:
 
-- **Salah:** “16-bit jadi baud dibagi 2”.
+- **Salah:** "16-bit jadi baud dibagi 2".
 - **Benar:** lebar sampel **naik** → butuh **lebih banyak** byte per detik → butuh **saluran lebih cepat** atau **bukan** streaming real-time lewat UART itu.
 
 UART tetap berguna untuk **kontrol** dan **transfer blok** (mis. chunk data ke buffer), bukan menggantikan I2S untuk audio CD-quality real-time.
 
 ---
 
-## 9. “Supaya clock I2S dan 9600 sama dengan data dari laptop”
+## 9. "Supaya clock I2S dan 9600 sama dengan data dari laptop"
 
 Artinya harus dipisah:
 
-- **9600 bps** — kecepatan **UART**.
-- **LRCK / BCLK** — **waktu sampling audio**.
+- **9600 bps** -- kecepatan **UART**.
+- **LRCK / BCLK** -- **waktu sampling audio**.
 
 Keduanya **tidak wajib sama**. Sinkronisasi **makna** (mis. perintah mulai/stop dari laptop vs pemutaran) dilakukan di **protokol aplikasi**: mis. PC kirim perintah lewat UART, lalu firmware memutar buffer yang sudah diisi.
 
@@ -234,7 +234,7 @@ Kamu bisa mengganti `.pdf` dengan `.png` dengan mengedit path di LaTeX jika lebi
 
 ---
 
-## 12. Checklist “saya sudah paham in & out”
+## 12. Checklist "saya sudah paham in & out"
 
 - [ ] Bisa menjelaskan peran **BCLK**, **WS**, **DATA**, **MCLK** tanpa mencampur UART.
 - [ ] Bisa menghitung \(F_s\) dari \(f_{\mathrm{BCLK}}\) untuk frame 64 BCLK.

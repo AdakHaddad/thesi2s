@@ -1,0 +1,37 @@
+\frametitle{Bug 3: Frekuensi Lebih Rendah dari Target}
+\textbf{Penyebab:} \texttt{usleep(periode - 2)} tidak akumulatif dan tidak presisi.
+
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+      \textbf{\bad{Kode lama:}}
+\begin{lstlisting}[language=C]
+uint32_t period_us =
+  (1000000U + sr/2U) / sr;
+usleep(period_us - 2);
+// -2 adalah tebakan
+// error terakumulasi tiap iterasi
+// di 96kHz: 10us - 2 = 8us → 20% off
+\end{lstlisting}
+
+    \column{0.52\textwidth}
+      \textbf{\good{Kode baru (deadline absolut):}}
+\begin{lstlisting}[language=C]
+// rdcycle64(): baca CSR mcycle RISC-V
+// resolusi 10 ns pada 100 MHz CPU
+uint64_t deadline = rdcycle64();
+while (1) {
+  uint64_t period =
+    100000000ULL / current_sample_rate();
+  stream_sample();
+  poll_uart();
+  deadline += period; // maju tepat 1 periode
+  while (rdcycle64() < deadline) {}
+}
+\end{lstlisting}
+  \end{columns}
+
+  \vspace{0.3em}
+  \begin{block}{Keunggulan deadline-based}
+    \small Overhead loop (AXI write, UART poll) dikompensasi otomatis.
+    Presisi setara osilator 100 MHz board -- tidak ada drift kumulatif.
+  \end{block}

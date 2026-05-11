@@ -68,6 +68,7 @@
 \usepackage{fancyhdr}% page number
 \usepackage[cmex10]{amsmath}
 \usepackage[numbers,sort&compress]{natbib}
+\usepackage{amssymb}
 \usepackage{multirow}
 \usepackage{titlesec}
 \usepackage{ragged2e}% text alignment

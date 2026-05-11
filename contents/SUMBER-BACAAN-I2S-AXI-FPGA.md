@@ -53,7 +53,7 @@ Daftar ini disusun untuk skripsi **I2S TX + AXI4-Lite + MicroBlaze/Vitis + PCM51
 
 ## Protokol I2S dan visualisasi alur data (in and out)
 
-Bagian ini merangkum **apa yang lewat di mana**: dari file/sampel di CPU sampai bit di kabel, tanpa mencampur UART sebagai “jalur audio”.
+Bagian ini merangkum **apa yang lewat di mana**: dari file/sampel di CPU sampai bit di kabel, tanpa mencampur UART sebagai "jalur audio".
 
 ### Tiga sinyal serial (plus MCLK opsional)
 
@@ -151,7 +151,7 @@ sequenceDiagram
 
 Read channel: `AR*` → `R*` dengan pola VALID/READY serupa.
 
-### Apa yang harus kamu “lihat” di ILA / osiloskop
+### Apa yang harus kamu "lihat" di ILA / osiloskop
 
 1. **64 BCLK** per satu naik/turun penuh WS (atau setengah period WS tergantung definisi gambar—yang penting konsisten dengan serializer kamu).  
 2. **DATA** berubah pada posisi bit yang sesuai fungsi `i2s_next_serial_bit` (atau setara).  
@@ -161,7 +161,7 @@ Read channel: `AR*` → `R*` dengan pola VALID/READY serupa.
 
 | File (disarankan) | Isi visual |
 |---------------------|------------|
-| `diagram-aliran-audio-datapath.pdf` | Versi “tinggi” alur host → AXI → FIFO → I2S → DAC (sudah direferensikan di Bab II). |
+| `diagram-aliran-audio-datapath.pdf` | Versi "tinggi" alur host -> AXI -> FIFO -> I2S -> DAC (sudah direferensikan di Bab II). |
 | `diagram-sinyal-i2s-philips.pdf` | Satu frame: BCLK, WS, DATA dengan anotasi bit 0…31 per saluran. |
 | `flowchart-fifo-refill-isr.pdf` | ISR + watermark + W1C status. |
 

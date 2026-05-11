@@ -97,7 +97,7 @@
 \section{Dasar Teori}
 %==============================================================
 
-\begin{frame}{Protokol I2S — Philips Standard}
+\begin{frame}{Protokol I2S -- Philips Standard}
   \begin{columns}[T]
     \column{0.55\textwidth}
       \begin{itemize}
@@ -149,7 +149,7 @@
 \section{Perancangan Sistem}
 %==============================================================
 
-\begin{frame}{Arsitektur Sistem — Block Design}
+\begin{frame}{Arsitektur Sistem -- Block Design}
   \begin{columns}[T]
     \column{0.50\textwidth}
       \begin{itemize}
@@ -175,11 +175,11 @@
     \column{0.50\textwidth}
       \textbf{5 bagian utama RTL:}
       \begin{enumerate}\small
-        \item \textbf{AXI4-Lite slave} — register write/read state machine.
-        \item \textbf{CDC write-counter} — sinkronisasi 2-FF dari domain AXI ke domain audio.
-        \item \textbf{BUFGMUX} — pilih \texttt{audio\_48\_clk} atau \texttt{audio\_44\_clk}.
-        \item \textbf{Clock divider} — \texttt{bclk\_en\_w} setiap 4 atau 8 siklus MCLK.
-        \item \textbf{Serializer} — Philips I2S, delay-bit, MSB-first, lebar variabel.
+        \item \textbf{AXI4-Lite slave} -- register write/read state machine.
+        \item \textbf{CDC write-counter} -- sinkronisasi 2-FF dari domain AXI ke domain audio.
+        \item \textbf{BUFGMUX} -- pilih \texttt{audio\_48\_clk} atau \texttt{audio\_44\_clk}.
+        \item \textbf{Clock divider} -- \texttt{bclk\_en\_w} setiap 4 atau 8 siklus MCLK.
+        \item \textbf{Serializer} -- Philips I2S, delay-bit, MSB-first, lebar variabel.
       \end{enumerate}
     \column{0.50\textwidth}
       \IfFileExists{contents/figures/block-diagram-ip-i2s-tx-intern.pdf}{%
@@ -256,7 +256,7 @@
 \section{Implementasi Firmware}
 %==============================================================
 
-\begin{frame}{Aplikasi Vitis — Alur Utama}
+\begin{frame}{Aplikasi Vitis -- Alur Utama}
   \begin{enumerate}
     \item Tulis register \texttt{CONTROL} (ENABLE=1, SAMPLE\_WIDTH=24, mode clock).
     \item Loop utama: hitung sampel sinus $\rightarrow$ tulis \texttt{DATA\_LEFT} \&
@@ -386,7 +386,7 @@ while (1) {
   \vspace{0.3em}
   \begin{block}{Keunggulan deadline-based}
     \small Overhead loop (AXI write, UART poll) dikompensasi otomatis.
-    Presisi setara osilator 100 MHz board — tidak ada drift kumulatif.
+    Presisi setara osilator 100 MHz board -- tidak ada drift kumulatif.
   \end{block}
 \end{frame}
 
@@ -418,7 +418,7 @@ while (1) {
 \section{Hasil Pengujian}
 %==============================================================
 
-\begin{frame}{Hasil ILA — Verifikasi Timing I2S}
+\begin{frame}{Hasil ILA -- Verifikasi Timing I2S}
   \begin{columns}[T]
     \column{0.50\textwidth}
       \textbf{Yang dikonfirmasi:}
@@ -499,7 +499,7 @@ while (1) {
 
   \vspace{0.4em}
   \begin{itemize}\small
-    \item Selisih $<$0,1\% — berasal dari keterbatasan rasio MMCM Artix-7,
+    \item Selisih $<$0,1\% -- berasal dari keterbatasan rasio MMCM Artix-7,
           bukan dari bug.
     \item Kedua mode $F_s$ tervalidasi setelah bug firmware timing diperbaiki.
   \end{itemize}
@@ -522,7 +522,7 @@ while (1) {
           wajib, WS sesuai spesifikasi Philips.
 
     \item \textbf{Tiga bug firmware} ditemukan dan diperbaiki \textit{sepenuhnya
-          di sisi software} — RTL tidak dimodifikasi:
+          di sisi software} -- RTL tidak dimodifikasi:
           \begin{itemize}\small
             \item Masker merusak bit tanda sampel negatif.
             \item Justifikasi sampel 32-bit tidak tepat (MSB salah posisi).

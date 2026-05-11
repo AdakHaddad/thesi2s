@@ -11,10 +11,10 @@ Template [main.tex](../main.tex) memuat `\include{contents/chapter-1/chapter-1}`
 | Outline (konsep) | File LaTeX | Keterangan |
 |-------------------|------------|------------|
 | **Bab I** Pendahuluan | [contents/chapter-1/chapter-1.tex](chapter-1/chapter-1.tex) | Sesuaikan judul/rumusan dengan fokus **I2S AXI**; bagian I2C bisa dipangkas atau dipindah lampiran jika judul final hanya I2S. |
-| **Bab II** Tinjauan pustaka / landasan teori | [contents/chapter-2/chapter-2.tex](chapter-2/chapter-2.tex) | Tambah/subbab FIFO, watermark, MMCM sesuai outline 2.4–2.6; sudah ada subbab integrasi DAC/UART. |
-| **Bab III** Perancangan sistem | [contents/chapter-3/chapter-3.tex](chapter-3/chapter-3.tex) | Saat ini judul bab template: *Metode Penelitian* — isi bisa diarahkan ke **spesifikasi + arsitektur + register map**; bagian “alat bahan” bisa diringkas atau diletakkan di awal Bab IV. |
+| **Bab II** Tinjauan pustaka / landasan teori | [contents/chapter-2/chapter-2.tex](chapter-2/chapter-2.tex) | Tambah/subbab FIFO, watermark, MMCM sesuai outline 2.4-2.6; sudah ada subbab integrasi DAC/UART. |
+| **Bab III** Perancangan sistem | [contents/chapter-3/chapter-3.tex](chapter-3/chapter-3.tex) | Saat ini judul bab template: *Metode Penelitian* -- isi bisa diarahkan ke **spesifikasi + arsitektur + register map**; bagian "alat bahan" bisa diringkas atau diletakkan di awal Bab IV. |
 | **Bab IV** Implementasi dan pengujian | [contents/chapter-4/chapter-4.tex](chapter-4/chapter-4.tex) | Ganti placeholder template dengan RTL, Vivado, ILA, PCM5102, tabel ukur. |
-| *(opsional)* Diskusi tambahan / perbandingan | [contents/chapter-5/chapter-5.tex](chapter-5/chapter-5.tex) | Template “Tambahan (Opsional)”; isi jika perlu memisahkan pembahasan panjang. |
+| *(opsional)* Diskusi tambahan / perbandingan | [contents/chapter-5/chapter-5.tex](chapter-5/chapter-5.tex) | Template "Tambahan (Opsional)"; isi jika perlu memisahkan pembahasan panjang. |
 | **Bab V** Kesimpulan dan saran | [contents/chapter-6/chapter-6.tex](chapter-6/chapter-6.tex) | Sudah berjudul *Kesimpulan dan Saran*. |
 
 ---
@@ -44,10 +44,10 @@ Template [main.tex](../main.tex) memuat `\include{contents/chapter-1/chapter-1}`
 ### 1.3 Tujuan penelitian
 
 - Merancang peripheral **I2S TX** dengan antarmuka **AXI4-Lite** dan register map terdefinisi.
-- Mengimplementasikan **dua mode sampling** (nilai nominal vs hasil ukur “actual”).
+- Mengimplementasikan **dua mode sampling** (nilai nominal vs hasil ukur "actual").
 - Mengimplementasikan **FIFO + IRQ watermark** + penanganan underrun; verifikasi dengan **Vitis**, **PCM5102A**, dan **ILA**.
 
-**Checklist isi minimal:** satu poin per rumusan utama; verba yang dapat dicek (mis. “terverifikasi di hardware”).
+**Checklist isi minimal:** satu poin per rumusan utama; verba yang dapat dicek (mis. "terverifikasi di hardware").
 
 ### 1.4 Batasan masalah
 
@@ -106,12 +106,12 @@ Template [main.tex](../main.tex) memuat `\include{contents/chapter-1/chapter-1}`
 - `audio_clk` *requested* vs *actual*; efek pada \(f_{\mathrm{BCLK}}\), \(f_{\mathrm{WS}}\).
 - Contoh numerik untuk mode pembagi /8 vs /4 (sesuai desain RTL kamu).
 
-**Checklist:** satu tabel “target vs terukur”.
+**Checklist:** satu tabel "target vs terukur".
 
 ### 2.6 PCM5102A
 
 - Pinout modul; peran BCLK/WS/DIN; variasi board (MCLK tidak terhubung jika tidak dipakai).
-- Batasan “programmable” vs **master clock digital dari FPGA**.
+- Batasan "programmable" vs **master clock digital dari FPGA**.
 
 **Checklist:** foto/skema wiring; rujuk datasheet.
 
@@ -136,7 +136,7 @@ Template [main.tex](../main.tex) memuat `\include{contents/chapter-1/chapter-1}`
 ### 3.4 Perancangan pembagi clock dan mode \(F_s\)
 
 - Logika div /8 vs /4 dari `audio_clk`; rumus \(F_s\) dengan 64 BCLK per frame.
-- Tabel “target vs actual” untuk kedua mode.
+- Tabel "target vs actual" untuk kedua mode.
 
 ### 3.5 Format frame: I2S 24-bit pada slot 32-bit
 

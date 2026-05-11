@@ -11,7 +11,7 @@ Implementasi IP I2S TX pada skripsi ini menggunakan model *register-driven*:
 FIFO TX sebenarnya sangat berguna untuk menjaga kontinuitas audio, tetapi pada versi skripsi ini FIFO sengaja tidak diimplementasikan karena:
 
 1. **Ruang lingkup dan fokus skripsi**: fokus utama adalah validasi timing Philips I2S (1-bit delay, 64 BCLK/frame stereo), integrasi AXI4-Lite, dan pembangkitan sinyal pada hardware (Basys3 + PCM5102A).
-2. **Kompleksitas desain naik signifikan**: FIFO yang “benar” membutuhkan pengelolaan pointer, status level, deteksi underrun/overflow, serta register status yang konsisten.
+2. **Kompleksitas desain naik signifikan**: FIFO yang "benar" membutuhkan pengelolaan pointer, status level, deteksi underrun/overflow, serta register status yang konsisten.
 3. **Risiko CDC (Clock Domain Crossing)**: data biasanya ditulis dari domain `S_AXI_ACLK` dan dibaca pada domain `audio_clk`. FIFO yang aman untuk dua domain memerlukan sinkronisasi Gray-code pointer atau IP FIFO vendor, serta verifikasi tambahan.
 4. **Beban verifikasi bertambah**: selain timing I2S, perlu diuji juga kasus corner seperti underrun, refill burst, dan latensi interrupt.
 
