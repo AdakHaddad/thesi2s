@@ -9,13 +9,13 @@ AXI4-Lite sebagai antarmuka register.
 \subsection{Penelitian tentang implementasi I2S pada FPGA}
 
 Implementasi antarmuka I2S pada FPGA telah dilaporkan dalam beberapa konteks.
-\citet{sang_i2s_codec_2020} merancang antarmuka I2S digital audio pada FPGA untuk
+\citep{sang_i2s_codec_2020} merancang antarmuka I2S digital audio pada FPGA untuk
 menghubungkan prosesor dengan codec audio, menunjukkan bahwa protokol I2S dapat
 diimplementasikan dengan latensi rendah dan mendukung \textit{sample rate} hingga 96 kHz.
 Penelitian tersebut menggunakan pendekatan RTL langsung tanpa antarmuka AXI, sehingga
 berbeda dari pendekatan berbasis register yang digunakan pada penelitian ini.
 
-\citet{kaviani_i2s_fpga_2017} mengintegrasikan blok logika I2S bersama \textit{embedded
+\citep{kaviani_i2s_fpga_2017} mengintegrasikan blok logika I2S bersama \textit{embedded
 logic analyzer} pada FPGA berbiaya rendah. Kontribusi penelitian tersebut terutama pada
 sisi instrumentasi, sedangkan fokus penelitian ini adalah pada desain peripheral yang dapat
 dikontrol dari perangkat lunak melalui antarmuka AXI4-Lite.
@@ -25,19 +25,19 @@ FPGA dan menjadi landasan pemilihan arsitektur serializer pada penelitian ini.
 
 \subsection{Penelitian tentang prosesor soft-core dan integrasi SoC}
 
-\citet{waterman_riscv_2016} memperkenalkan arsitektur RISC-V sebagai ISA terbuka yang
+\citep{waterman_riscv_2016} memperkenalkan arsitektur RISC-V sebagai ISA terbuka yang
 modular dan ekstensibel, yang kemudian mendasari pengembangan banyak prosesor soft-core
 termasuk MicroBlaze V pada ekosistem AMD/Xilinx~\citep{xilinx_microblaze_ref_2021}.
 Ketersediaan antarmuka AXI4-Lite yang terintegrasi pada MicroBlaze V menjadi dasar
 pemilihan prosesor ini dalam penelitian ini.
 
-\citet{sklyarov_axi_peripheral_2014} mengeksplorasi perancangan sistem SoC hierarkis
+\citep{sklyarov_axi_peripheral_2014} mengeksplorasi perancangan sistem SoC hierarkis
 berbasis bus AXI pada FPGA. Penelitian tersebut menunjukkan bahwa peripheral kustom
 dapat diintegrasikan ke dalam SoC melalui AXI interconnect dengan cara yang modular dan
 dapat diskalakan -- pendekatan yang sama diterapkan dalam penelitian ini menggunakan Vivado
 IP Integrator.
 
-\citet{crockett_zynq_book_2014} memberikan gambaran komprehensif mengenai hardware-software
+\citep{crockett_zynq_book_2014} memberikan gambaran komprehensif mengenai hardware-software
 co-design pada FPGA berbasis prosesor, termasuk pola pengembangan peripheral AXI dan
 aplikasi bare-metal melalui SDK. Meskipun konteks platform berbeda (Zynq vs.\ Basys3),
 metodologi integrasi yang diulas relevan dengan pendekatan yang digunakan pada penelitian ini.
@@ -48,7 +48,7 @@ Dalam sistem digital yang melibatkan lebih dari satu domain clock -- seperti IP 
 memiliki domain AXI (100 MHz) dan domain audio (${\sim}24$ MHz) -- sinkronisasi lintas
 domain clock (\textit{Clock Domain Crossing}, CDC) menjadi aspek kritikal.
 
-\citet{ginosar_metastability_2011} memberikan analisis mendalam tentang masalah
+\citep{ginosar_metastability_2011} memberikan analisis mendalam tentang masalah
 metastabilitas pada sistem digital dan teknik sinkronisasi flip-flop ganda yang umum
 digunakan. Prinsip ini diterapkan langsung pada RTL penelitian ini melalui mekanisme
 sinkronisasi write-counter 4-bit dari domain AXI ke domain audio.
@@ -200,7 +200,7 @@ berbasis register~\citep{arm_amba_axi_2010}. Karakteristik utama:
     \item Cocok untuk konfigurasi register peripheral dengan kebutuhan bandwidth rendah.
 \end{itemize}
 
-Dokumentasi implementasi AXI4-Lite pada ekosistem Xilinx tersedia pada~\citet{xilinx_axi_ref_2017}.
+Dokumentasi implementasi AXI4-Lite pada ekosistem Xilinx tersedia pada~\citep{xilinx_axi_ref_2017}.
 
 \subsection{Sinkronisasi lintas domain clock (CDC)}
 
@@ -238,8 +238,8 @@ Pada penelitian ini, Verilog digunakan untuk membangun:
     \item logika \textit{power-on reset} domain audio.
 \end{itemize}
 
-Prinsip desain digital yang digunakan merujuk pada~\citet{harris_harris_digital_2022}
-dan~\citet{chu_fpga_prototyping_2011}.
+Prinsip desain digital yang digunakan merujuk pada~\citep{harris_harris_digital_2022}
+dan~\citep{chu_fpga_prototyping_2011}.
 
 \subsection{Analisis pemilihan metode}
 
