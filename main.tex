@@ -14,18 +14,14 @@
 
 %% Use option "bahasa" or "english" 
 %%    to change the basic language used
-%% User option "bachelor", "master", or "doctoral"
-%% 	  to change the degree
-% \documentclass[<bachelor/master/doctoral>,<bahasa/english>]{thesisdtetiugm}
 \documentclass[bachelor,bahasa]{thesisdtetiugm}
-%\documentclass[bachelor,english]{thesisdtetiugm}
 %======================================
 % Information Input
 %======================================
 % Input author's name and ID number
 \author{Muhammad Muqtada Alhaddad}{22/500341/TK/54841}
 % Input the thesis' title
-\title{Implementasi IP I2S TX AXI4-Lite pada FPGA}
+\title{Perancangan Peripheral I2S dengan AXI4-Lite Interface menggunakan Verilog}
 % Program and the head of the program
 \program{Teknologi Informasi}{}{ }
 % Name of department head and NIP
@@ -36,27 +32,8 @@
 % Name of thesis supervisors/promotors
 \addsupervisor{Ir. Agus Bejo, S.T., M.Eng., D.Eng., IPM.}{}
 \addsupervisor{Ir. Wahyu Dewanto, M.T.}{}
-%\addsupervisor{<<Supervisor 3>>}{<<NIP>>}
-% Name of examiners
-%\addexaminer{<<Examiner 1>>}{<<NIP 1>>}
-%\addexaminer{<<Examiner 2>>}{<<NIP 2>>}
-%\addexaminer{<<Examiner 3>>}{<<NIP 3>>}
-%\addexaminer{<<Examiner 4>>}{<<NIP 4>>}
-%\addexaminer{<<Examiner 5>>}{<<NIP 5>>}
-%\addexaminer{<<Examiner 6>>}{<<NIP 6>>}
-%\addexaminer{<<Examiner 7>>}{<<NIP 7>>}
-%\addexaminer{<<Examiner 8>>}{<<NIP 8>>}
-%\addexaminer{<<Examiner 9>>}{<<NIP 9>>}
 
 %======================================
-
-% correct bad hyphenation here [example]
-% \babelhyphenation[<<english/bahasa>>]{op-tical net-works semi-conduc-tor}
-%% Uncomment block of code below to disable hyphenation
-%\tolerance=1
-%\emergencystretch=\maxdimen
-%\hyphenpenalty=10000
-%\hbadness=10000
 
 \begin{document}
 %======================================
@@ -64,35 +41,18 @@
 %======================================
 
 %---- COVER ----
-%\printcover{sample/logougm.png}{Pendadaran/Tesis/Ringkasan Tesis*}
 \printcover{sample/logougm.png}{Bachelor}
-% *Choose one
 
 %---- ENDORSEMENT PAGE ----
-% Select endorsement page type. If you want to use your own PDF file,  
-% 	use \printendorsementpdf, or if you want to use JPG file, use 
-% 	\printendorsementjpg. Otherwise, use \printendorsement.
-% 	Choose one only. Comment out unused command(s).
-%
 \cleardoublepage \phantomsection
 \printendorsement
-%\printendorsementpdf
-%\printendorsementjpg{sample/scanned-endorsement.jpg}
 
 %---- DEDICATION PAGE ----
 \cleardoublepage \phantomsection
 \chapterstatement{contents/statement/statement}
-%\chapterstatementjpg{sample/scanned-statement.jpg}
 
 \cleardoublepage \phantomsection
 \chapterdedication{contents/dedication/dedication}
-
-%---- STATEMENT PAGE ----
-% Select statement page type. If you want to use your own JPG file,  
-%	use \chapterstatementjpg{<your *.jpg file path>}. Otherwise, 
-%	use \chapterstatement{contents/statement/statement}.
-%	Choose one only. Comment out unused command(s).
-%
 
 
 %---- PREFACE PAGE ----
@@ -101,7 +61,6 @@
 
 %======================================
 % Create Table of Contents, List of Figures, List of Tables
-% <Do not change this part>
 %======================================
 \cleardoublepage \phantomsection
 \thetoc
@@ -138,8 +97,7 @@
 %  MAIN TEXT
 %======================================
 \startmain
-% You can change 
-%    the filename and location of the files inputted
+
 \cleardoublepage \phantomsection
 \include{contents/chapter-1/chapter-1}
 \cleardoublepage \phantomsection
@@ -167,10 +125,6 @@
 %======================================
 %  Appendix
 %======================================
-% You can change 
-%    the filename and location of the files inputted
-%    use \chapterappendix for the first page of the appendix
-%    use \chapterappendixadd for the next page
 
 \appendix
 \appendixtables

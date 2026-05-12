@@ -117,3 +117,105 @@ Vivado IP Integrator Block Design terdiri dari komponen berikut:
 \item Sinyal eksternal utama adalah I2S: BCLK, LRCLK/WS, DATA, dan opsional MCLK.
 \item UART digunakan untuk debug dan logging dari aplikasi Vitis (tidak memengaruhi laju sampel I2S).
 \end{itemize}
+
+\section{Hasil pengujian i2s transmitter - capture ILA}
+
+Bagian ini menampilkan hasil pengujian dan verifikasi I2S Transmitter melalui Internal Logic Analyzer (ILA) terintegrasi di Vivado.
+
+\subsection{Test Frekuensi Audio}
+
+Pengujian dengan berbagai frekuensi gelombang sinus untuk verifikasi laju sampling dan integritas I2S:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/1khz.jpeg}
+\caption{Hasil capture ILA: Audio tone 1 kHz - menunjukkan periodisitas sinyal I2S pada frekuensi 1 kHz}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/2khz.jpeg}
+\caption{Hasil capture ILA: Audio tone 2 kHz - verifikasi laju sampling pada frekuensi 2 kHz}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/5khz.jpeg}
+\caption{Hasil capture ILA: Audio tone 5 kHz - menunjukkan frekuensi lebih tinggi untuk batasan hearing range}
+\end{figure}
+
+\subsection{Test Kontrol Enable}
+
+Pengujian sinyal kontrol enable untuk aktivasi/deaktivasi I2S transmitter:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/enable0.jpeg}
+\caption{Hasil capture ILA: Enable=0 (disabled) - I2S transmitter off}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/enable1.jpeg}
+\caption{Hasil capture ILA: Enable=1 (enabled) - I2S transmitter aktif mengoutput audio}
+\end{figure}
+
+\subsection{Test Kontrol Mute}
+
+Pengujian fungsi mute untuk menghentikan keluaran audio sambil mempertahankan sinyal I2S:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/mute0.jpeg}
+\caption{Hasil capture ILA: Mute=0 (unmuted) - audio normal dioutput}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/mute1.jpeg}
+\caption{Hasil capture ILA: Mute=1 (muted) - output bernilai nol}
+\end{figure}
+
+\subsection{Test Routing Stereo}
+
+Pengujian routing kanal stereo untuk verifikasi pemisahan left dan right channel:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/left-channel-only.jpeg}
+\caption{Hasil capture ILA: Left channel only - hanya kanal left dioutput}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/right-channel-only.jpeg}
+\caption{Hasil capture ILA: Right channel only - hanya kanal right dioutput}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/both-channel.jpeg}
+\caption{Hasil capture ILA: Both channels - kedua kanal left dan right aktif simultan}
+\end{figure}
+
+\subsection{Test Lebar Sample (Sample Width)}
+
+Pengujian dengan berbagai lebar bit untuk verifikasi format audio dan slot frame I2S:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/sample-width-16.jpeg}
+\caption{Hasil capture ILA: Sample width 16-bit - format audio PCM 16-bit}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/sample-width-24.jpeg}
+\caption{Hasil capture ILA: Sample width 24-bit - format audio PCM 24-bit pada slot 32-bit}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/sample-width-32.jpeg}
+\caption{Hasil capture ILA: Sample width 32-bit - full 32-bit slot I2S frame}
+\end{figure}
