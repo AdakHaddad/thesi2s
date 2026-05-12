@@ -118,9 +118,9 @@ Vivado IP Integrator Block Design terdiri dari komponen berikut:
 \item UART digunakan untuk debug dan logging dari aplikasi Vitis (tidak memengaruhi laju sampel I2S).
 \end{itemize}
 
-\section{Hasil pengujian i2s transmitter - capture ILA}
+\section{Hasil pengujian i2s transmitter - capture osiloskop}
 
-Bagian ini menampilkan hasil pengujian dan verifikasi I2S Transmitter melalui Internal Logic Analyzer (ILA) terintegrasi di Vivado.
+Bagian ini menampilkan hasil pengujian dan verifikasi I2S Transmitter melalui pengambilan sinyal menggunakan osiloskop (oscilloscope). Gambar-gambar berikut adalah capture dari osiloskop yang menunjukkan bentuk gelombang BCLK, LRCLK/WS, dan DATA pada berbagai kondisi uji.
 
 \subsection{Test Frekuensi Audio}
 
@@ -129,19 +129,19 @@ Pengujian dengan berbagai frekuensi gelombang sinus untuk verifikasi laju sampli
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/1khz.jpeg}
-\caption{Hasil capture ILA: Audio tone 1 kHz - menunjukkan periodisitas sinyal I2S pada frekuensi 1 kHz}
+\caption{Hasil capture osiloskop: Audio tone 1 kHz - menunjukkan periodisitas sinyal I2S pada frekuensi 1 kHz}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/2khz.jpeg}
-\caption{Hasil capture ILA: Audio tone 2 kHz - verifikasi laju sampling pada frekuensi 2 kHz}
+\caption{Hasil capture osiloskop: Audio tone 2 kHz - verifikasi laju sampling pada frekuensi 2 kHz}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/5khz.jpeg}
-\caption{Hasil capture ILA: Audio tone 5 kHz - menunjukkan frekuensi lebih tinggi untuk batasan hearing range}
+\caption{Hasil capture osiloskop: Audio tone 5 kHz - menunjukkan frekuensi lebih tinggi untuk batasan hearing range}
 \end{figure}
 
 \subsection{Test Kontrol Enable}
@@ -151,13 +151,13 @@ Pengujian sinyal kontrol enable untuk aktivasi/deaktivasi I2S transmitter:
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/enable0.jpeg}
-\caption{Hasil capture ILA: Enable=0 (disabled) - I2S transmitter off}
+\caption{Hasil capture osiloskop: Enable=0 (disabled) - I2S transmitter off}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/enable1.jpeg}
-\caption{Hasil capture ILA: Enable=1 (enabled) - I2S transmitter aktif mengoutput audio}
+\caption{Hasil capture osiloskop: Enable=1 (enabled) - I2S transmitter aktif mengoutput audio}
 \end{figure}
 
 \subsection{Test Kontrol Mute}
@@ -167,13 +167,13 @@ Pengujian fungsi mute untuk menghentikan keluaran audio sambil mempertahankan si
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/mute0.jpeg}
-\caption{Hasil capture ILA: Mute=0 (unmuted) - audio normal dioutput}
+\caption{Hasil capture osiloskop: Mute=0 (unmuted) - audio normal dioutput}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/mute1.jpeg}
-\caption{Hasil capture ILA: Mute=1 (muted) - output bernilai nol}
+\caption{Hasil capture osiloskop: Mute=1 (muted) - output bernilai nol}
 \end{figure}
 
 \subsection{Test Routing Stereo}
@@ -183,19 +183,19 @@ Pengujian routing kanal stereo untuk verifikasi pemisahan left dan right channel
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/left-channel-only.jpeg}
-\caption{Hasil capture ILA: Left channel only - hanya kanal left dioutput}
+\caption{Hasil capture osiloskop: Left channel only - hanya kanal left dioutput}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/right-channel-only.jpeg}
-\caption{Hasil capture ILA: Right channel only - hanya kanal right dioutput}
+\caption{Hasil capture osiloskop: Right channel only - hanya kanal right dioutput}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/both-channel.jpeg}
-\caption{Hasil capture ILA: Both channels - kedua kanal left dan right aktif simultan}
+\caption{Hasil capture osiloskop: Both channels - kedua kanal left dan right aktif simultan}
 \end{figure}
 
 \subsection{Test Lebar Sample (Sample Width)}
@@ -205,17 +205,37 @@ Pengujian dengan berbagai lebar bit untuk verifikasi format audio dan slot frame
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/sample-width-16.jpeg}
-\caption{Hasil capture ILA: Sample width 16-bit - format audio PCM 16-bit}
+\caption{Hasil capture osiloskop: Sample width 16-bit - format audio PCM 16-bit}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/sample-width-24.jpeg}
-\caption{Hasil capture ILA: Sample width 24-bit - format audio PCM 24-bit pada slot 32-bit}
+\caption{Hasil capture osiloskop: Sample width 24-bit - format audio PCM 24-bit pada slot 32-bit}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/sample-width-32.jpeg}
-\caption{Hasil capture ILA: Sample width 32-bit - full 32-bit slot I2S frame}
+\caption{Hasil capture osiloskop: Sample width 32-bit - full 32-bit slot I2S frame}
+\end{figure}
+
+\section{Design Timing Summary}
+
+Laporan timing summary dari hasil implementasi Vivado menunjukkan performa timing keseluruhan desain:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{contents/figures/design-timing-summary.png}
+\caption{Design timing summary report - Worst Negative Slack (WNS), Total Negative Slack (TNS), dan status timing closure}
+\end{figure}
+
+\section{Power Summary}
+
+Laporan analisis power dari post-implementation desain menunjukkan konsumsi daya dinamis dan statis:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{contents/figures/power-summary.png}
+\caption{Power summary report - total on-chip power consumption, breakdown per resource (MMCM, Block RAM, Slice Logic), dan power supply margins}
 \end{figure}
