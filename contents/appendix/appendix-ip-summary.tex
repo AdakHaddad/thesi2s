@@ -2,92 +2,92 @@
 \chapter*{Block Design IP Summaries}
 \addcontentsline{toc}{chapter}{Block Design IP Summaries}
 
-This appendix lists the main IP blocks present in the Vivado Block Design `design_1` and summarizes their primary interfaces and key parameters. XML metadata files for each IP are located under `i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/`.
+This appendix lists the main IP blocks present in the Vivado Block Design \texttt{design\_1} and summarizes their primary interfaces and key parameters. XML metadata files for each IP are located under \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/}.
 
 \section*{design\_1\_clk\_wiz\_0\_0}
 Purpose: Clocking Wizard that provides generated clocks and an AXI-lite control interface.
 Main interfaces:
-- `s_axi_lite` (AXI4, control)
-- `s_axi_aclk` (clock)
-Key parameters: `DATA_WIDTH=32`, `FREQ_HZ=100000000`, `ADDR_WIDTH=32`
-XML: i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_clk_wiz_0_0/design_1_clk_wiz_0_0.xml
+- \texttt{s\_axi\_lite} (AXI4, control)
+- \texttt{s\_axi\_aclk} (clock)
+Key parameters: \texttt{DATA\_WIDTH=32}, \texttt{FREQ\_HZ=100000000}, \texttt{ADDR\_WIDTH=32}
+XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_clk\_wiz\_0\_0/design\_1\_clk\_wiz\_0\_0.xml}
 
 \section*{design\_1\_microblaze\_riscv\_0\_0}
 Purpose: MicroBlaze RISC-V soft processor for embedded software control.
 Main interfaces:
-- Clock/Reset signals (clock domain `/clk_wiz_0_clk_out1`)
-- `INTERRUPT` / `MON_INTERRUPT` (interrupt inputs)
-- Multiple AXI/monitor interfaces referenced in `ASSOCIATED_BUSIF`
-Key parameters: `FREQ_HZ=100000000`, `CLK_DOMAIN=/clk_wiz_0_clk_out1`
-XML: i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_microblaze_riscv_0_0/design_1_microblaze_riscv_0_0.xml
+- Clock/Reset signals (clock domain \texttt{/clk\_wiz\_0\_clk\_out1})
+- \texttt{INTERRUPT} / \texttt{MON\_INTERRUPT} (interrupt inputs)
+- Multiple AXI/monitor interfaces referenced in \texttt{ASSOCIATED\_BUSIF}
+Key parameters: \texttt{FREQ\_HZ=100000000}, \texttt{CLK\_DOMAIN=/clk\_wiz\_0\_clk\_out1}
+XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_microblaze\_riscv\_0\_0/design\_1\_microblaze\_riscv\_0\_0.xml}
 
 \section*{design\_1\_dlmb\_v10\_0}
 Purpose: Data Local Memory Bus (DLMB) slave interfaces for processor local memory access.
 Main interfaces:
-- `LMB_Sl_0`, `LMB_Sl_1`, ... (LMB mirrored slave ports)
-Key parameters: `ADDR_WIDTH=32`, `DATA_WIDTH=32`, `READ_WRITE_MODE=READ_WRITE`
-XML: i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_dlmb_v10_0/design_1_dlmb_v10_0.xml
+- \texttt{LMB\_Sl\_0}, \texttt{LMB\_Sl\_1}, ... (LMB mirrored slave ports)
+Key parameters: \texttt{ADDR\_WIDTH=32}, \texttt{DATA\_WIDTH=32}, \texttt{READ\_WRITE\_MODE=READ\_WRITE}
+XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_dlmb\_v10\_0/design\_1\_dlmb\_v10\_0.xml}
 
 \section*{design\_1\_ilmb\_v10\_0}
 Purpose: Instruction Local Memory Bus (ILMB) slave interfaces for instruction fetch.
 Main interfaces:
-- `LMB_Sl_0`, `LMB_Sl_1`, ... (LMB mirrored slave ports)
-Key parameters: `ADDR_WIDTH=32`, `DATA_WIDTH=32`, `READ_WRITE_MODE=READ_WRITE`
-XML: i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_ilmb_v10_0/design_1_ilmb_v10_0.xml
+- \texttt{LMB\_Sl\_0}, \texttt{LMB\_Sl\_1}, ... (LMB mirrored slave ports)
+Key parameters: \texttt{ADDR\_WIDTH=32}, \texttt{DATA\_WIDTH=32}, \texttt{READ\_WRITE\_MODE=READ\_WRITE}
+XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_ilmb\_v10\_0/design\_1\_ilmb\_v10\_0.xml}
 
 \section*{design\_1\_dlmb\_bram\_if\_cntlr\_0}
 Purpose: BRAM interface controller connected to DLMB (data-side local memory controller).
 Main interfaces:
-- `INTERRUPT` (interrupt output)
-- `SLMB`, `SLMB1`, ... (LMB slave interfaces)
-Key parameters: provides memory map refs `SLMB`, data/addr widths 32-bit
-XML: i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_dlmb_bram_if_cntlr_0/design_1_dlmb_bram_if_cntlr_0.xml
+- \texttt{INTERRUPT} (interrupt output)
+- \texttt{SLMB}, \texttt{SLMB1}, ... (LMB slave interfaces)
+Key parameters: provides memory map refs \texttt{SLMB}, data/addr widths 32-bit
+XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_dlmb\_bram\_if\_cntlr\_0/design\_1\_dlmb\_bram\_if\_cntlr\_0.xml}
 
 \section*{design\_1\_ilmb\_bram\_if\_cntlr\_0}
 Purpose: BRAM interface controller connected to ILMB (instruction-side local memory controller).
 Main interfaces:
 - LMB slave interfaces (instruction path)
 Key parameters: standard BRAM/LMB glue with 32-bit widths
-XML: i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_ilmb_bram_if_cntlr_0/design_1_ilmb_bram_if_cntlr_0.xml
+XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_ilmb\_bram\_if\_cntlr\_0/design\_1\_ilmb\_bram\_if\_cntlr\_0.xml}
 
 \section*{design\_1\_lmb\_bram\_0}
 Purpose: BRAM block exposed as LMB/AXI memory.
 Main interfaces:
-- Clock/Reset (`ACLK`, `ARESETN`)
-- `AXI_SLAVE_S_AXI` (AXI interface to access BRAM)
-Key parameters: `FREQ_HZ=100000000`, AXI slave memory map `S_1`
-XML: i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_lmb_bram_0/design_1_lmb_bram_0.xml
+- Clock/Reset (\texttt{ACLK}, \texttt{ARESETN})
+- \texttt{AXI\_SLAVE\_S\_AXI} (AXI interface to access BRAM)
+Key parameters: \texttt{FREQ\_HZ=100000000}, AXI slave memory map \texttt{S\_1}
+XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_lmb\_bram\_0/design\_1\_lmb\_bram\_0.xml}
 
 \section*{design\_1\_mdm\_1\_0}
 Purpose: Microprocessor Debug Module (MDM) providing debug access (AXI-Lite) and control/monitoring.
 Main interfaces:
-- `S_AXI` (AXI4-Lite)
-Key parameters: `DATA_WIDTH=32`, `ADDR_WIDTH=32`
-XML: i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_mdm_1_0/design_1_mdm_1_0.xml
+- \texttt{S\_AXI} (AXI4-Lite)
+Key parameters: \texttt{DATA\_WIDTH=32}, \texttt{ADDR\_WIDTH=32}
+XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_mdm\_1\_0/design\_1\_mdm\_1\_0.xml}
 
 \section*{design\_1\_rst\_clk\_wiz\_0\_100M\_0}
 Purpose: Reset controller synchronizer associated with the clock wizard (generates resets for bus/processor domains).
 Main interfaces:
-- `clock` (slowest_sync_clk)
-- `ext_reset`, `aux_reset`, `dbg_reset` (external reset inputs)
-Key parameters: `FREQ_HZ=100000000`, associated resets `mb_reset:bus_struct_reset:interconnect_aresetn:peripheral_aresetn`
-XML: i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_rst_clk_wiz_0_100M_0/design_1_rst_clk_wiz_0_100M_0.xml
+- \texttt{clock} (slowest\_sync\_clk)
+- \texttt{ext\_reset}, \texttt{aux\_reset}, \texttt{dbg\_reset} (external reset inputs)
+Key parameters: \texttt{FREQ\_HZ=100000000}, associated resets \texttt{mb\_reset:bus\_struct\_reset:interconnect\_aresetn:peripheral\_aresetn}
+XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_rst\_clk\_wiz\_0\_100M\_0/design\_1\_rst\_clk\_wiz\_0\_100M\_0.xml}
 
 \section*{design\_1\_axi\_smc\_0}
 Purpose: AXI SmartConnect / interconnect for routing AXI masters to AXI slaves (protocol conversion, sizing, etc.).
 Main interfaces:
-- `CLK.aclk` (clock)
-- `RST.aresetn` (reset)
-- `S00_AXI` (AXI slave port)
-- `M00_AXI`, `M01_AXI` (AXI master ports) -- routing targets
-Key parameters: `FREQ_HZ=100000000`, `ASSOCIATED_BUSIF=M00_AXI:M01_AXI:S00_AXI`
-XML: i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_axi_smc_0/design_1_axi_smc_0.xml
+- \texttt{CLK.aclk} (clock)
+- \texttt{RST.aresetn} (reset)
+- \texttt{S00\_AXI} (AXI slave port)
+- \texttt{M00\_AXI}, \texttt{M01\_AXI} (AXI master ports) -- routing targets
+Key parameters: \texttt{FREQ\_HZ=100000000}, \texttt{ASSOCIATED\_BUSIF=M00\_AXI:M01\_AXI:S00\_AXI}
+XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_axi\_smc\_0/design\_1\_axi\_smc\_0.xml}
 
 \section*{design\_1\_i2s\_0\_0}
 Purpose: Custom/third-party I2S transmitter IP wrapped as AXI slave (control via AXI4-Lite).
 Main interfaces:
-- `S00_AXI` (AXI4-Lite control interface, `ADDR_WIDTH=4`, `DATA_WIDTH=32`, `PROTOCOL=AXI4LITE`)
-Key parameters: `WIZ_DATA_WIDTH=32`, `WIZ_NUM_REG=4`, `ADDR_WIDTH=4`
-XML: i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_i2s_0_0/design_1_i2s_0_0.xml
+- \texttt{S00\_AXI} (AXI4-Lite control interface, \texttt{ADDR\_WIDTH=4}, \texttt{DATA\_WIDTH=32}, \texttt{PROTOCOL=AXI4LITE})
+Key parameters: \texttt{WIZ\_DATA\_WIDTH=32}, \texttt{WIZ\_NUM\_REG=4}, \texttt{ADDR\_WIDTH=4}
+XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_i2s\_0\_0/design\_1\_i2s\_0\_0.xml}
 
 % End of appendix file

@@ -113,95 +113,96 @@ Vivado IP Integrator Block Design terdiri dari komponen berikut:
 \textbf{Koneksi utama:}
 \begin{itemize}
 \item Semua slave AXI4-Lite terhubung melalui AXI Interconnect.
-\item Peripheral I2S menerima \texttt{audio\_clk} sebagai sumber pembangkitan \texttt{mclk/bclk/ws} dan \texttt{s00\_axi\_aclk} untuk antarmuka register AXI.
+\item Peripheral I2S memakai \texttt{audio\_clk} untuk membangkitkan \texttt{mclk/bclk/ws}.
+\item Jalur AXI register memakai \texttt{s00\_axi\_aclk}.
 \item Sinyal eksternal utama adalah I2S: BCLK, LRCLK/WS, DATA, dan opsional MCLK.
 \item UART digunakan untuk debug dan logging dari aplikasi Vitis (tidak memengaruhi laju sampel I2S).
 \end{itemize}
 
 \subsection{Diagram Block (Color-coded)}
 
-Gambar~\ref{fig:color-block} menunjukkan diagram block warna-warni dari desain SoC yang memperjelas domain-clock, prosesor, interconnect, dan peripheral kunci termasuk IP I2S.
+Gambar~\ref{fig:color-block} menampilkan diagram block warna-warni desain SoC, termasuk domain clock, prosesor, interconnect, dan IP I2S.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{contents/figures/color-coded-block-diagram.png}
-\caption{Diagram block warna-warni: arsitektur SoC beserta peripheral utama dan domain clock.}
+\caption{Diagram block warna-warni arsitektur SoC.}
 \label{fig:color-block}
 \end{figure}
 
 \subsection{I2S IP Block (Standalone)}
 
-Gambar~\ref{fig:i2s-ip-block} memperlihatkan blok I2S IP secara terpisah, termasuk port audio clock, sinyal I2S (MCLK/BCLK/WS/DATA), dan antarmuka AXI4-Lite untuk register control.
+Gambar~\ref{fig:i2s-ip-block} memperlihatkan blok I2S IP terpisah beserta port audio clock, sinyal I2S, dan antarmuka AXI4-Lite.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.75\textwidth]{contents/figures/i2s-ip-block.png}
-\caption{Blok IP I2S (standalone): port dan sinyal utama.}
+\caption{Blok IP I2S standalone.}
 \label{fig:i2s-ip-block}
 \end{figure}
 
 \subsection{Clocking View}
 
-Clocking view menunjukkan bagaimana Clocking Wizard (MMCM/PLL) menghasilkan keluaran frekuensi audio dan bagaimana BUFGMUX memilih antara keluarga 48 kHz dan 44.1 kHz.
+Clocking view menunjukkan Clocking Wizard dan BUFGMUX untuk memilih keluarga 48 kHz atau 44.1 kHz.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{contents/figures/clocking-view-block-diagram.png}
-\caption{Clocking view: MMCM/Clocking Wizard dan jalur pemilihan clock ke domain audio (BUFGMUX).}
+\caption{Clocking view dan jalur pemilihan clock audio.}
 \label{fig:clocking-view}
 \end{figure}
 
 \subsection{Interface View}
 
-Interface view merinci koneksi pin dan antarmuka fisik pada board (PMOD header, sinyal I2S, dan jalur UART untuk debug).
+Interface view merinci koneksi pin PMOD, sinyal I2S, dan UART debug.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{contents/figures/interface-view-lock-diagram.png}
-\caption{Interface view: pemetaan pin PMOD, sinyal I2S (BCLK/WS/DATA/MCLK) dan antarmuka debug UART.}
+\caption{Interface view pemetaan pin dan jalur debug.}
 \label{fig:interface-view}
 \end{figure}
 
 \section{Hasil pengujian i2s transmitter - capture osiloskop}
 
-Bagian ini menampilkan hasil pengujian dan verifikasi I2S Transmitter melalui pengambilan sinyal menggunakan osiloskop (oscilloscope). Gambar-gambar berikut adalah capture dari osiloskop yang menunjukkan bentuk gelombang BCLK, LRCLK/WS, dan DATA pada berbagai kondisi uji.
+Bagian ini menampilkan hasil pengujian I2S Transmitter melalui capture osiloskop. Gambar berikut memperlihatkan BCLK, LRCLK/WS, dan DATA pada beberapa kondisi uji.
 
 \subsection{Test Frekuensi Audio}
 
-Pengujian dengan berbagai frekuensi gelombang sinus untuk verifikasi laju sampling dan integritas I2S:
+Pengujian frekuensi sinus untuk verifikasi laju sampling dan integritas I2S:
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/1khz.jpeg}
-\caption{Hasil capture osiloskop: Audio tone 1 kHz - menunjukkan periodisitas sinyal I2S pada frekuensi 1 kHz}
+\caption{Capture osiloskop: audio tone 1 kHz.}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/2khz.jpeg}
-\caption{Hasil capture osiloskop: Audio tone 2 kHz - verifikasi laju sampling pada frekuensi 2 kHz}
+\caption{Capture osiloskop: audio tone 2 kHz.}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/5khz.jpeg}
-\caption{Hasil capture osiloskop: Audio tone 5 kHz - menunjukkan frekuensi lebih tinggi untuk batasan hearing range}
+\caption{Capture osiloskop: audio tone 5 kHz.}
 \end{figure}
 
 \subsection{Test Kontrol Enable}
 
-Pengujian sinyal kontrol enable untuk aktivasi/deaktivasi I2S transmitter:
+Pengujian sinyal enable untuk aktivasi dan deaktivasi I2S transmitter:
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/enable0.jpeg}
-\caption{Hasil capture osiloskop: Enable=0 (disabled) - I2S transmitter off}
+\caption{Capture osiloskop: enable=0.}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/enable1.jpeg}
-\caption{Hasil capture osiloskop: Enable=1 (enabled) - I2S transmitter aktif mengoutput audio}
+\caption{Capture osiloskop: enable=1.}
 \end{figure}
 
 \subsection{Test Kontrol Mute}
@@ -211,13 +212,13 @@ Pengujian fungsi mute untuk menghentikan keluaran audio sambil mempertahankan si
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/mute0.jpeg}
-\caption{Hasil capture osiloskop: Mute=0 (unmuted) - audio normal dioutput}
+\caption{Capture osiloskop: mute=0.}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{contents/figures/mute1.jpeg}
-\caption{Hasil capture osiloskop: Mute=1 (muted) - output bernilai nol}
+\caption{Capture osiloskop: mute=1.}
 \end{figure}
 
 \subsection{Test Routing Stereo}
