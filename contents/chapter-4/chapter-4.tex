@@ -315,13 +315,22 @@ Setelah ketiga bug diperbaiki dan firmware baru diprogram ke FPGA, pengujian ula
 
 \begin{figure}[htbp]
     \centering
-    \IfFileExists{contents/figures/scope-freq-1k-2k-5k.png}{%
-        \includegraphics[width=0.88\textwidth]{contents/figures/scope-freq-1k-2k-5k.png}%
-    }{%
-        \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Spektrum atau osiloskop: frekuensi 1 kHz, 2 kHz, 5 kHz setelah perbaikan. Tambahkan file: \texttt{contents/figures/scope-freq-1k-2k-5k.png}}}}%
-    }
-    \caption{Verifikasi frekuensi 1 kHz, 2 kHz, dan 5 kHz setelah loop timing diperbaiki.}
+    \begin{minipage}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{contents/figures/1khz.jpeg}
+        \caption*{(a) 1 kHz}
+    \end{minipage}\hfill
+    \begin{minipage}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{contents/figures/2khz.jpeg}
+        \caption*{(b) 2 kHz}
+    \end{minipage}\hfill
+    \begin{minipage}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{contents/figures/5khz.jpeg}
+        \caption*{(c) 5 kHz}
+    \end{minipage}
+    \caption{Verifikasi frekuensi: osiloskop/ILA tangkapan pada 1 kHz, 2 kHz, dan 5 kHz setelah perbaikan.}
     \label{fig:ch4-fixed-freq}
 \end{figure}
 

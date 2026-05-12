@@ -118,6 +118,50 @@ Vivado IP Integrator Block Design terdiri dari komponen berikut:
 \item UART digunakan untuk debug dan logging dari aplikasi Vitis (tidak memengaruhi laju sampel I2S).
 \end{itemize}
 
+\subsection{Diagram Block (Color-coded)}
+
+Gambar~\ref{fig:color-block} menunjukkan diagram block warna-warni dari desain SoC yang memperjelas domain-clock, prosesor, interconnect, dan peripheral kunci termasuk IP I2S.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{contents/figures/color-coded-block-diagram.png}
+\caption{Diagram block warna-warni: arsitektur SoC beserta peripheral utama dan domain clock.}
+\label{fig:color-block}
+\end{figure}
+
+\subsection{I2S IP Block (Standalone)}
+
+Gambar~\ref{fig:i2s-ip-block} memperlihatkan blok I2S IP secara terpisah, termasuk port audio clock, sinyal I2S (MCLK/BCLK/WS/DATA), dan antarmuka AXI4-Lite untuk register control.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{contents/figures/i2s-ip-block.png}
+\caption{Blok IP I2S (standalone): port dan sinyal utama.}
+\label{fig:i2s-ip-block}
+\end{figure}
+
+\subsection{Clocking View}
+
+Clocking view menunjukkan bagaimana Clocking Wizard (MMCM/PLL) menghasilkan keluaran frekuensi audio dan bagaimana BUFGMUX memilih antara keluarga 48 kHz dan 44.1 kHz.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{contents/figures/clocking-view-block-diagram.png}
+\caption{Clocking view: MMCM/Clocking Wizard dan jalur pemilihan clock ke domain audio (BUFGMUX).}
+\label{fig:clocking-view}
+\end{figure}
+
+\subsection{Interface View}
+
+Interface view merinci koneksi pin dan antarmuka fisik pada board (PMOD header, sinyal I2S, dan jalur UART untuk debug).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{contents/figures/interface-view-lock-diagram.png}
+\caption{Interface view: pemetaan pin PMOD, sinyal I2S (BCLK/WS/DATA/MCLK) dan antarmuka debug UART.}
+\label{fig:interface-view}
+\end{figure}
+
 \section{Hasil pengujian i2s transmitter - capture osiloskop}
 
 Bagian ini menampilkan hasil pengujian dan verifikasi I2S Transmitter melalui pengambilan sinyal menggunakan osiloskop (oscilloscope). Gambar-gambar berikut adalah capture dari osiloskop yang menunjukkan bentuk gelombang BCLK, LRCLK/WS, dan DATA pada berbagai kondisi uji.
