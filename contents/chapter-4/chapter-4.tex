@@ -85,36 +85,24 @@ Modul DAC PCM5102A yang digunakan pada pengembangan sistem ditunjukkan pada doku
 Clocking Wizard~\citep{xilinx_clocking_wizard_2021} dikonfigurasi menghasilkan tiga keluaran dari satu osilator 100 MHz:
 \begin{enumerate}
     \item \texttt{clk\_out1} = 100 MHz, digunakan sebagai AXI ACLK dan clock CPU MicroBlaze V.
-    \item \texttt{clk\_out2} = 24,576 MHz (aktual 24,597 MHz), digunakan sebagai \texttt{audio\_48\_clk} untuk keluarga 48/96 kHz.
-    \item \texttt{clk\_out3} = 22,579 MHz (aktual 22,426 MHz), digunakan sebagai \texttt{audio\_44\_clk} untuk keluarga 44,1/88,2 kHz.
+    \item \texttt{clk\_out2} = 24,576 MHz (aktual 24,59677 MHz), digunakan sebagai \texttt{audio\_48\_clk} untuk keluarga 48/96 kHz.
+    \item \texttt{clk\_out3} = 22,579 MHz (aktual 22,42647 MHz), digunakan sebagai \texttt{audio\_44\_clk} untuk keluarga 44,1/88,2 kHz.
 \end{enumerate}
 
 \begin{table}[htbp]
     \centering
     \caption{Konfigurasi clock hasil Clocking Wizard.}
     \label{tab:ch4-clk-aktual}
-    \begin{tabular}{|l|c|c|}
+    \begin{tabular}{|l|l|c|c|}
         \hline
-        \textbf{Clock} & \textbf{Requested} & \textbf{Actual} \\
+        \textbf{Output Clock} & \textbf{Port Name} & \textbf{Requested (MHz)} & \textbf{Actual (MHz)} \\
         \hline
-        AXI ACLK / CPU & 100 MHz & 100 MHz \\
-        \texttt{audio\_48\_clk} (keluarga 48 kHz) & 24,576 MHz & 24,597 MHz \\
-        \texttt{audio\_44\_clk} (keluarga 44,1 kHz) & 22,579 MHz & 22,426 MHz \\
+        \texttt{clk\_out1} & AXI ACLK / CPU & 100,000 & 100,00000 \\
+        \texttt{clk\_out2} & \texttt{audio\_48\_clk} & 24,576 & 24,59677 \\
+        \texttt{clk\_out3} & \texttt{audio\_44\_clk} & 22,579 & 22,42647 \\
         \hline
     \end{tabular}
 \end{table}
-
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/clocking-wizard-requested-vs-actual.png}{%
-        \includegraphics[width=0.88\textwidth]{contents/figures/clocking-wizard-requested-vs-actual.png}%
-    }{%
-        \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Screenshot Clocking Wizard: kolom Requested vs Actual. Tambahkan file: \texttt{contents/figures/clocking-wizard-requested-vs-actual.png}}}}%
-    }
-    \caption{Screenshot Clocking Wizard menunjukkan frekuensi aktual hasil MMCM.}
-    \label{fig:ch4-clk-wizard}
-\end{figure}
 
 \noindent IP memilih antara kedua clock audio menggunakan primitif \texttt{BUFGMUX} di dalam RTL, dikontrol oleh bit \texttt{FS\_FAMILY} pada register \texttt{CONTROL} melalui sinkronisasi dua-flip-flop~\citep{ginosar_metastability_2011}.
 
