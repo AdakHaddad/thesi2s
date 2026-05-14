@@ -10,11 +10,11 @@ RTL direalisasikan dalam dua berkas Verilog: \texttt{i2s.v} sebagai \textit{top-
 
 \begin{figure}[htbp]
     \centering
-    \IfFileExists{contents/figures/block-design-vivado-i2s-screenshot.png}{%
-        \includegraphics[width=0.95\textwidth]{contents/figures/block-design-vivado-i2s-screenshot.png}%
+    \IfFileExists{contents/figures/interface-view-lock-diagram.png}{%
+        \includegraphics[width=0.95\textwidth]{contents/figures/interface-view-lock-diagram.png}%
     }{%
         \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.88\textwidth}{\centering\textit{[PLACEHOLDER] Screenshot Block Design Vivado: MicroBlaze V --- AXI SmartConnect --- IP I2S (i2s\_0) --- Clocking Wizard. Tambahkan file: \texttt{contents/figures/block-design-vivado-i2s-screenshot.png}}}}%
+        \fbox{\parbox{0.88\textwidth}{\centering\textit{[PLACEHOLDER] Screenshot Block Design Vivado: MicroBlaze V --- AXI SmartConnect --- IP I2S (i2s\_0) --- Clocking Wizard. Tambahkan file: \texttt{contents/figures/interface-view-lock-diagram.png}}}}%
     }
     \caption{Block Design Vivado: MicroBlaze V terhubung ke IP I2S melalui AXI SmartConnect.}
     \label{fig:ch4-bd-vivado}
@@ -51,8 +51,12 @@ Modul DAC PCM5102A yang digunakan pada pengembangan sistem ditunjukkan pada doku
 
 \begin{figure}[htbp]
     \centering
-    \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Sisipkan gambar modul PCM5102A dari dokumentasi Texas Instruments di sini secara manual. Gunakan gambar resmi dari datasheet dan pertahankan sitasinya.}}}
-    \caption{Placeholder diagram modul PCM5102A dari dokumentasi Texas Instruments.}
+    \IfFileExists{contents/figures/pcm5102-functional-block-diagram.png}{%
+        \includegraphics[width=0.82\textwidth]{contents/figures/pcm5102-functional-block-diagram.png}%
+    }{%
+        \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Sisipkan gambar modul PCM5102A dari dokumentasi Texas Instruments di sini secara manual. Gunakan gambar resmi dari datasheet dan pertahankan sitasinya.}}}
+    }
+    \caption{Diagram blok fungsional PCM5102A dari dokumentasi Texas Instruments.}
     \label{fig:ch4-pcm5102a-module}
 \end{figure}
 
@@ -104,11 +108,11 @@ Clocking Wizard~\citep{xilinx_clocking_wizard_2021} dikonfigurasi menghasilkan t
 
 \begin{figure}[htbp]
     \centering
-    \IfFileExists{contents/figures/ila-bclk-ws-data.png}{%
-        \includegraphics[width=0.95\textwidth]{contents/figures/ila-bclk-ws-data.png}%
+    \IfFileExists{contents/figures/sample-latching-leftright-waveform.png}{%
+        \includegraphics[width=0.95\textwidth]{contents/figures/sample-latching-leftright-waveform.png}%
     }{%
         \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.88\textwidth}{\centering\textit{[PLACEHOLDER] Tangkapan ILA: BCLK (3,07 MHz), WS (48 kHz), DATA, dan sinyal CDC. Tambahkan file: \texttt{contents/figures/ila-bclk-ws-data.png}}}}%
+        \fbox{\parbox{0.88\textwidth}{\centering\textit{[PLACEHOLDER] Tangkapan ILA: BCLK (3,07 MHz), WS (48 kHz), DATA, dan sinyal CDC. Tambahkan file: \texttt{contents/figures/sample-latching-leftright-waveform.png}}}}%
     }
     \caption{Tangkapan ILA: BCLK, WS, dan DATA -- satu frame stereo 64 BCLK.}
     \label{fig:ch4-ila}
@@ -302,11 +306,11 @@ Setelah ketiga bug diperbaiki dan firmware baru diprogram ke FPGA, pengujian ula
 
 \begin{figure}[htbp]
     \centering
-    \IfFileExists{contents/figures/scope-sine-both-ch-fixed.png}{%
-        \includegraphics[width=0.88\textwidth]{contents/figures/scope-sine-both-ch-fixed.png}%
+    \IfFileExists{contents/figures/both-channel.jpeg}{%
+        \includegraphics[width=0.88\textwidth]{contents/figures/both-channel.jpeg}%
     }{%
         \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Osiloskop atau Audacity: kanal L dan R dengan amplitudo dan frekuensi identik setelah perbaikan. Tambahkan file: \texttt{contents/figures/scope-sine-both-ch-fixed.png}}}}%
+        \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Osiloskop atau Audacity: kanal L dan R dengan amplitudo dan frekuensi identik setelah perbaikan. Tambahkan file: \texttt{contents/figures/both-channel.jpeg}}}}%
     }
     \caption{Keluaran audio setelah perbaikan: kanal L dan R memiliki amplitudo dan frekuensi identik.}
     \label{fig:ch4-fixed-both}
@@ -314,11 +318,11 @@ Setelah ketiga bug diperbaiki dan firmware baru diprogram ke FPGA, pengujian ula
 
 \begin{figure}[htbp]
     \centering
-    \IfFileExists{contents/figures/scope-right-only-fixed.png}{%
-        \includegraphics[width=0.88\textwidth]{contents/figures/scope-right-only-fixed.png}%
+    \IfFileExists{contents/figures/right-channel-only.jpeg}{%
+        \includegraphics[width=0.88\textwidth]{contents/figures/right-channel-only.jpeg}%
     }{%
         \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Osiloskop mode Right-only: kanal kanan aktif, kanal kiri diam (0V). Tambahkan file: \texttt{contents/figures/scope-right-only-fixed.png}}}}%
+        \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Osiloskop mode Right-only: kanal kanan aktif, kanal kiri diam (0V). Tambahkan file: \texttt{contents/figures/right-channel-only.jpeg}}}}%
     }
     \caption{Mode Right-only setelah perbaikan: kanal kanan aktif, kanal kiri = 0.}
     \label{fig:ch4-fixed-right}

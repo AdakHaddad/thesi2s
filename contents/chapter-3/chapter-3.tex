@@ -16,11 +16,11 @@ Bagian ini merangkum \textbf{perancangan fungsional} IP yang menjadi inti skrips
 \subsection{Blok diagram perancangan IP}
 \begin{figure}[htbp]
     \centering
-    \IfFileExists{contents/figures/block-diagram-ip-i2s-tx-intern.pdf}{%
-        \includegraphics[width=0.92\textwidth]{contents/figures/block-diagram-ip-i2s-tx-intern.pdf}%
+    \IfFileExists{contents/figures/i2s-ip-block.png}{%
+        \includegraphics[width=0.92\textwidth]{contents/figures/i2s-ip-block.png}%
     }{%
         \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/block-diagram-ip-i2s-tx-intern.pdf} (AXI regs, buffer/register, clkgen, serializer).}}}%
+        \fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/i2s-ip-block.png} (AXI regs, buffer/register, clkgen, serializer).}}}%
     }
     \caption{Blok diagram internal IP I2S TX.}
     \label{fig:ch3-block-ip-intern}
@@ -106,11 +106,11 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
 \subsection{Integrasi Vivado Block Design}
 \begin{figure}[htbp]
     \centering
-    \IfFileExists{contents/figures/block-design-vivado-i2s-screenshot.png}{%
-        \includegraphics[width=0.95\textwidth]{contents/figures/block-design-vivado-i2s-screenshot.png}%
+    \IfFileExists{contents/figures/interface-view-lock-diagram.png}{%
+        \includegraphics[width=0.95\textwidth]{contents/figures/interface-view-lock-diagram.png}%
     }{%
         \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/block-design-vivado-i2s-screenshot.png} (screenshot BD Vivado).}}}%
+        \fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/interface-view-lock-diagram.png} (screenshot BD Vivado).}}}%
     }
     \caption{Integrasi IP I2S pada Block Design.}
     \label{fig:ch3-bd-vivado}

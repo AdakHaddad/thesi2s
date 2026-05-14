@@ -1,114 +1,176 @@
-\chapter*{LAMPIRAN}
+\chapter{Kode Sumber Perangkat Lunak (Vitis)}
+\label{app:code-vitis}
 
-\section{Cuplikan kode implementasi I2S}
+Berikut adalah kode sumber utama (\texttt{helloworld.c}) yang digunakan untuk menguji peripheral I2S pada platform Vitis bare-metal.
 
-\subsection{Cuplikan RTL: sinkronisasi register AXI ke domain \texttt{audio\_clk}}
+\begin{lstlisting}[language=C, caption=Kode sumber helloworld.c untuk pengujian I2S]
+/*****************************************************************************
+* I2S register feature test — all control bits
+*****************************************************************************/
 
-\begin{lstlisting}[language=Verilog]
-always @(posedge audio_clk or posedge audio_rst)
-begin
-    if (audio_rst)
-    begin
-        ctrl_sync_a   <= 32'd0;
-        ctrl_sync_b   <= 32'd0;
-        sample_left_q <= 32'd0;
-        sample_right_q<= 32'd0;
-    end
-    else
-    begin
-        ctrl_sync_a   <= slv_reg2;   // CONTROL @ 0x08
-        ctrl_sync_b   <= ctrl_sync_a;
-        sample_left_q <= slv_reg0;   // DATA_LEFT  @ 0x00
-        sample_right_q<= slv_reg1;   // DATA_RIGHT @ 0x04
-    end
-end
-\end{lstlisting}
+#include <stdint.h>
+#include "platform.h"
+#include "xil_printf.h"
+#include "xil_io.h"
+#include "xparameters.h"
+#include "xuartlite_l.h"
 
-\subsection{Cuplikan RTL: generator sinyal I2S Philips}
-
-\begin{lstlisting}[language=Verilog]
-wire bclk_en_w = fs_mode_sync ? (clock_div_q[0] == 1'b0)
-                               : (clock_div_q[1:0] == 2'd0);
-
-always @(posedge audio_clk or posedge audio_rst)
-begin
-    if (audio_rst)
-    begin
-        bit_count_q <= 6'd0;
-        data_q      <= 1'b0;
-        ws_q        <= 1'b0;
-        bclk_q      <= 1'b0;
-    end
-    else if (bclk_en_w)
-    begin
-        if (!enable_sync)
-        begin
-            bit_count_q <= 6'd0;
-            data_q      <= 1'b0;
-            ws_q        <= 1'b0;
-            bclk_q      <= 1'b0;
-        end
-        else if (bclk_q)
-        begin
-            bclk_q      <= 1'b0;
-            data_q      <= i2s_next_serial_bit(sample_for_i2s_left,
-                                               sample_for_i2s_right,
-                                               bit_count_q,
-                                               sample_width_sync);
-            ws_q        <= bit_count_q[5]; // 0=left slot, 1=right slot
-            bit_count_q <= bit_count_q + 6'd1;
-        end
-        else
-            bclk_q <= 1'b1;
-    end
-end
-\end{lstlisting}
-
-\subsection{Cuplikan aplikasi uji Vitis (bare-metal)}
-
-\begin{lstlisting}[language=C]
-#define I2S_BASE      XPAR_I2S_0_BASEADDR
-#define I2S_DATA_L    (I2S_BASE + 0x00U)
-#define I2S_DATA_R    (I2S_BASE + 0x04U)
-#define I2S_CONTROL   (I2S_BASE + 0x08U)
-
-#define CTRL_ENABLE        (1U << 0)
-#define CTRL_MUTE          (1U << 1)
-#define CTRL_FS_MODE       (1U << 2)
-#define CTRL_FS_FAMILY     (1U << 3)
-#define CTRL_SAMPLE_WIDTH(w) (((w) & 0x1FU) << 8)
-
-static inline void i2s_write_sample(u32 left, u32 right) {
-    Xil_Out32(I2S_DATA_L, left);
-    Xil_Out32(I2S_DATA_R, right);
+/* Read the RISC-V cycle counter (mcycle CSR) */
+static inline uint64_t rdcycle64(void)
+{
+    uint32_t lo, hi, hi2;
+    do {
+        __asm__ volatile ("rdcycleh %0" : "=r"(hi));
+        __asm__ volatile ("rdcycle  %0" : "=r"(lo));
+        __asm__ volatile ("rdcycleh %0" : "=r"(hi2));
+    } while (hi != hi2);
+    return ((uint64_t)hi << 32) | lo;
 }
 
-int main(void) {
-    init_platform();
+/* ---- Register map ---- */
+#define I2S_BASE       XPAR_I2S_0_BASEADDR
+#define DATA_LEFT      (I2S_BASE + 0x00U)
+#define DATA_RIGHT     (I2S_BASE + 0x04U)
+#define CONTROL        (I2S_BASE + 0x08U)
 
-    // ENABLE=1, MUTE=0, FS_MODE=0, FS_FAMILY=0, SAMPLE_WIDTH=24
-    Xil_Out32(I2S_CONTROL, CTRL_ENABLE | CTRL_SAMPLE_WIDTH(24));
+/* ---- Control bits ---- */
+#define CTRL_ENABLE          (1U << 0)
+#define CTRL_MUTE            (1U << 1)
+#define CTRL_FS              (1U << 2)
+#define CTRL_FS_MODE         (1U << 3)
+#define CTRL_WIDTH(w)        (((uint32_t)(w) & 0x1FU) << 8U)
+
+/* ---- Audio ---- */
+#define SAMPLE_RATE    48000U
+#define AMPLITUDE      32000
+
+/* ---- Sine table ---- */
+static const int16_t SINE[32] = {
+         0,   6393,  12539,  18204,  23170,  27245,  30273,  32137,
+     32767,  32137,  30273,  27245,  23170,  18204,  12539,   6393,
+         0,  -6393, -12539, -18204, -23170, -27245, -30273, -32137,
+    -32767, -32137, -30273, -27245, -23170, -18204, -12539,  -6393
+};
+
+/* ---- State ---- */
+static uint32_t g_freq    = 1000U;
+static uint8_t  g_left    = 1U;
+static uint8_t  g_right   = 1U;
+static uint8_t  g_enable  = 1U;
+static uint8_t  g_mute    = 0U;
+static uint8_t  g_fs      = 0U;
+static uint8_t  g_fs_mode = 0U;
+static uint8_t  g_width   = 24U;
+
+static uint32_t current_sample_rate(void)
+{
+    if (!g_fs && !g_fs_mode) return 48000U;
+    if ( g_fs && !g_fs_mode) return 44100U;
+    if (!g_fs &&  g_fs_mode) return 96000U;
+    return 88200U;
+}
+
+static void apply_control(void)
+{
+    uint32_t ctrl = 0U;
+    if (g_enable)  ctrl |= CTRL_ENABLE;
+    if (g_mute)    ctrl |= CTRL_MUTE;
+    if (g_fs)      ctrl |= CTRL_FS;
+    if (g_fs_mode) ctrl |= CTRL_FS_MODE;
+    ctrl |= CTRL_WIDTH(g_width);
+    Xil_Out32(CONTROL, ctrl);
+}
+
+static void stream_sample(void)
+{
+    static uint32_t phase = 0U;
+    uint32_t sr   = current_sample_rate();
+    uint32_t step = (uint32_t)(((uint64_t)g_freq << 32) / sr);
+
+    int16_t s = (int16_t)(((int32_t)SINE[phase >> 27] * AMPLITUDE) / 32767);
+
+    int32_t s32;
+    if (g_width >= 32U)       s32 = (int32_t)s << 16;
+    else if (g_width > 16U)   s32 = (int32_t)s << (g_width - 16U);
+    else if (g_width < 16U)   s32 = (int32_t)s >> (16U - g_width);
+    else                      s32 = (int32_t)s;
+    
+    uint32_t samp = (uint32_t)s32;
+
+    Xil_Out32(DATA_LEFT,  g_left  ? samp : 0U);
+    Xil_Out32(DATA_RIGHT, g_right ? samp : 0U);
+    phase += step;
+}
+
+int main(void)
+{
+    init_platform();
+    apply_control();
+
+    uint64_t t_deadline = rdcycle64();
 
     while (1) {
-        i2s_write_sample(0x00007FFF, 0x00007FFF);
-        usleep(1000000U / 48000U);
+        uint32_t sample_rate   = current_sample_rate();
+        uint64_t period_cycles = (uint64_t)XPAR_CPU_CORE_CLOCK_FREQ_HZ / sample_rate;
+
+        stream_sample();
+
+        if (!XUartLite_IsReceiveEmpty(STDIN_BASEADDRESS)) {
+            uint8_t ch = XUartLite_RecvByte(STDIN_BASEADDRESS);
+            // Handle keypress logic...
+        }
+
+        t_deadline += period_cycles;
+        while (rdcycle64() < t_deadline) {}
     }
+
+    cleanup_platform();
+    return 0;
 }
 \end{lstlisting}
 
-\subsection{Register map I2S}
+\chapter{Kode Sumber Perangkat Keras (Verilog)}
+\label{app:code-verilog}
 
-\begin{table}[htbp]
-\centering
-\caption{Ringkasan register peripheral I2S}
-\begin{tabular}{|l|l|p{8cm}|}
-\hline
-\textbf{Offset} & \textbf{Register} & \textbf{Keterangan} \\
-\hline
-\texttt{0x00} & \texttt{DATA\_LEFT} & Register data kanal kiri (payload ditempatkan pada bit rendah sesuai \texttt{SAMPLE\_WIDTH}) \\
-\texttt{0x04} & \texttt{DATA\_RIGHT} & Register data kanal kanan (payload ditempatkan pada bit rendah sesuai \texttt{SAMPLE\_WIDTH}) \\
-\texttt{0x08} & \texttt{CONTROL} & Bit [0] \texttt{ENABLE}, [1] \texttt{MUTE}, [2] \texttt{FS\_MODE}, [3] \texttt{FS\_FAMILY}, [12:8] \texttt{SAMPLE\_WIDTH} \\
-\texttt{0x0C} & \texttt{RESERVED} & Cadangan pengembangan lanjutan (status/interrupt pada versi berikutnya) \\
-\hline
-\end{tabular}
-\end{table}
+Berikut adalah kode sumber utama (\texttt{i2s.v}) yang merupakan wrapper top-level untuk peripheral I2S.
+
+\begin{lstlisting}[language=Verilog, caption=Kode sumber i2s.v]
+`timescale 1 ns / 1 ps
+
+module i2s #
+(
+    parameter integer C_S00_AXI_DATA_WIDTH = 32,
+    parameter integer C_S00_AXI_ADDR_WIDTH = 4
+)
+(
+    input  wire audio_48_clk,
+    input  wire audio_44_clk,
+    output wire i2s_mclk,
+    output wire i2s_bclk,
+    output wire i2s_ws,
+    output wire i2s_data,
+    input  wire                            s00_axi_aclk,
+    input  wire                            s00_axi_aresetn,
+    input  wire [C_S00_AXI_ADDR_WIDTH-1:0]  s00_axi_awaddr,
+    input  wire [2:0]                      s00_axi_awprot,
+    input  wire                            s00_axi_awvalid,
+    output wire                            s00_axi_awready,
+    input  wire [C_S00_AXI_DATA_WIDTH-1:0]  s00_axi_wdata,
+    input  wire [(C_S00_AXI_DATA_WIDTH/8)-1:0] s00_axi_wstrb,
+    input  wire                            s00_axi_wvalid,
+    output wire                            s00_axi_wready,
+    output wire [1:0]                      s00_axi_bresp,
+    output wire                            s00_axi_bvalid,
+    input  wire                            s00_axi_bready,
+    input  wire [C_S00_AXI_ADDR_WIDTH-1:0]  s00_axi_araddr,
+    input  wire [2:0]                      s00_axi_arprot,
+    input  wire                            s00_axi_arvalid,
+    output wire                            s00_axi_arready,
+    output wire [C_S00_AXI_DATA_WIDTH-1:0]  s00_axi_rdata,
+    output wire [1:0]                      s00_axi_rresp,
+    output wire                            s00_axi_rvalid,
+    input  wire                            s00_axi_rready
+);
+    // Instantiate the I2S core ...
+endmodule
+\end{lstlisting}

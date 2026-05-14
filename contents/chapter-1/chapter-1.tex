@@ -12,15 +12,15 @@
 
 \hspace{1cm}Dalam praktik implementasi audio pada FPGA, permasalahan tidak hanya terletak pada pembangkitan sinyal I2S, tetapi juga pada kestabilan aliran data. Jika sampel audio tidak tersedia tepat saat serializer membutuhkan data baru, maka akan terjadi \textit{underrun} yang menghasilkan gangguan audio. Oleh karena itu, sistem membutuhkan strategi buffering yang memadai, misalnya FIFO TX dan interupsi \textit{watermark}, sehingga prosesor dapat mengisi ulang data sebelum buffer kosong. Selain itu, akurasi frekuensi clock hasil Clocking Wizard~\citep{xilinx_clocking_wizard_2021} dan kesesuaian pinout ke modul DAC eksternal~\citep{pcm5102a_datasheet} juga menjadi faktor penting yang memengaruhi keberhasilan sistem secara keseluruhan.
 
-\hspace{1cm}Berdasarkan kebutuhan tersebut, skripsi ini berfokus pada perancangan \textbf{IP core transmitter I2S berbasis Verilog} dengan antarmuka \textbf{AXI4-Lite} yang dapat diintegrasikan ke dalam SoC \textbf{MicroBlaze V} pada board \textbf{Basys3}~\citep{xilinx_basys3_ref}. Target keluaran audio adalah modul \textbf{PCM5102A} sebagai DAC eksternal. Desain difokuskan pada mode \textbf{TX-only}, format \textbf{Philips I2S}, stereo, dengan \textbf{24 bit per saluran} dalam \textbf{slot 32 bit}, serta dua mode frekuensi sampling nominal sekitar 48 kHz dan 96 kHz. Penelitian ini mencakup perancangan RTL, integrasi Vivado Block Design~\citep{xilinx_vivado_design_suite_2021}, pengembangan perangkat lunak uji di Vitis~\citep{xilinx_vitis_embedded_2021}, serta validasi melalui ILA~\citep{xilinx_ila_pg2021}, pengukuran sinyal, dan bukti keluaran audio.
+\hspace{1cm}Berdasarkan kebutuhan tersebut, skripsi ini berfokus pada perancangan \textbf{IP core transmitter I2S berbasis Verilog} dengan antarmuka \textbf{AXI4-Lite} yang dapat diintegrasikan ke dalam SoC \textbf{MicroBlaze V} pada board \textbf{Basys3}~\citep{xilinx_basys3_ref}. Kode sumber dan dokumentasi proyek ini tersedia secara terbuka pada repositori GitHub\footnote{\url{https://github.com/adakhaddad/thes2is}}. Target keluaran audio adalah modul \textbf{PCM5102A} sebagai DAC eksternal. Desain difokuskan pada mode \textbf{TX-only}, format \textbf{Philips I2S}, stereo, dengan \textbf{24 bit per saluran} dalam \textbf{slot 32 bit}, serta dua mode frekuensi sampling nominal sekitar 48 kHz dan 96 kHz. Penelitian ini mencakup perancangan RTL, integrasi Vivado Block Design~\citep{xilinx_vivado_design_suite_2021}, pengembangan perangkat lunak uji di Vitis~\citep{xilinx_vitis_embedded_2021}, serta validasi melalui ILA~\citep{xilinx_ila_pg2021}, pengukuran sinyal, dan bukti keluaran audio.
 
 \begin{figure}[htbp]
 	\centering
-	\IfFileExists{contents/figures/block-diagram-sistem-i2s-axi.pdf}{%
-		\includegraphics[width=0.92\textwidth]{contents/figures/block-diagram-sistem-i2s-axi.pdf}%
+	\IfFileExists{contents/figures/color-coded-block-diagram.png}{%
+		\includegraphics[width=0.92\textwidth]{contents/figures/color-coded-block-diagram.png}%
 	}{%
 		\setlength{\fboxsep}{16pt}%
-		\fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/block-diagram-sistem-i2s-axi.pdf} (MicroBlaze, AXI, IP I2S, Clocking Wizard, INTC opsional, PCM5102A).}}}%
+		\fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/color-coded-block-diagram.png} (MicroBlaze, AXI, IP I2S, Clocking Wizard, INTC opsional, PCM5102A).}}}%
 	}
 	\caption{Ringkasan arsitektur sistem SoC dengan IP I2S TX AXI4-Lite dan DAC PCM5102A.}
 	\label{fig:ch1-block-sistem-i2s}
