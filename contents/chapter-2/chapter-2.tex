@@ -25,19 +25,19 @@ FPGA dan menjadi landasan pemilihan arsitektur serializer pada penelitian ini.
 
 \subsection{Penelitian tentang prosesor soft-core dan integrasi SoC}
 
-\citep{waterman_riscv_2016} memperkenalkan arsitektur RISC-V sebagai ISA terbuka yang
+\citet{waterman_riscv_2016} memperkenalkan arsitektur RISC-V sebagai ISA terbuka yang
 modular dan ekstensibel, yang kemudian mendasari pengembangan banyak prosesor soft-core
 termasuk MicroBlaze V pada ekosistem AMD/Xilinx~\citep{xilinx_microblaze_ref_2021}.
 Ketersediaan antarmuka AXI4-Lite yang terintegrasi pada MicroBlaze V menjadi dasar
 pemilihan prosesor ini dalam penelitian ini.
 
-\citep{sklyarov_axi_peripheral_2014} mengeksplorasi perancangan sistem SoC hierarkis
+\citet{sklyarov_axi_peripheral_2014} mengeksplorasi perancangan sistem SoC hierarkis
 berbasis bus AXI pada FPGA. Penelitian tersebut menunjukkan bahwa peripheral kustom
 dapat diintegrasikan ke dalam SoC melalui AXI interconnect dengan cara yang modular dan
 dapat diskalakan -- pendekatan yang sama diterapkan dalam penelitian ini menggunakan Vivado
 IP Integrator.
 
-\citep{crockett_zynq_book_2014} memberikan gambaran komprehensif mengenai hardware-software
+\citet{crockett_zynq_book_2014} memberikan gambaran komprehensif mengenai hardware-software
 co-design pada FPGA berbasis prosesor, termasuk pola pengembangan peripheral AXI dan
 aplikasi bare-metal melalui SDK. Meskipun konteks platform berbeda (Zynq vs.\ Basys3),
 metodologi integrasi yang diulas relevan dengan pendekatan yang digunakan pada penelitian ini.
@@ -48,7 +48,7 @@ Dalam sistem digital yang melibatkan lebih dari satu domain clock -- seperti IP 
 memiliki domain AXI (100 MHz) dan domain audio (${\sim}24$ MHz) -- sinkronisasi lintas
 domain clock (\textit{Clock Domain Crossing}, CDC) menjadi aspek kritikal.
 
-\citep{ginosar_metastability_2011} memberikan analisis mendalam tentang masalah
+\citet{ginosar_metastability_2011} memberikan analisis mendalam tentang masalah
 metastabilitas pada sistem digital dan teknik sinkronisasi flip-flop ganda yang umum
 digunakan. Prinsip ini diterapkan langsung pada RTL penelitian ini melalui mekanisme
 sinkronisasi write-counter 4-bit dari domain AXI ke domain audio.

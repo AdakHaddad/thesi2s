@@ -132,7 +132,7 @@ int main(void)
 \chapter{Kode Sumber Perangkat Keras (Verilog)}
 \label{app:code-verilog}
 
-Berikut adalah kode sumber utama (\texttt{i2s.v}) yang merupakan wrapper top-level untuk peripheral I2S.
+\section{Top-level Wrapper (\texttt{i2s.v})}
 
 \begin{lstlisting}[language=Verilog, caption=Kode sumber i2s.v]
 `timescale 1 ns / 1 ps
@@ -171,6 +171,133 @@ module i2s #
     output wire                            s00_axi_rvalid,
     input  wire                            s00_axi_rready
 );
-    // Instantiate the I2S core ...
+
+    i2s_slave_lite_v1_0_S00_AXI #(
+        .C_S_AXI_DATA_WIDTH(C_S00_AXI_DATA_WIDTH),
+        .C_S_AXI_ADDR_WIDTH(C_S00_AXI_ADDR_WIDTH)
+    ) i2s_slave_lite_v1_0_S00_AXI_inst (
+        .audio_48_clk      (audio_48_clk),
+        .audio_44_clk      (audio_44_clk),
+        .i2s_mclk          (i2s_mclk),
+        .i2s_bclk          (i2s_bclk),
+        .i2s_ws            (i2s_ws),
+        .i2s_data          (i2s_data),
+        .S_AXI_ACLK        (s00_axi_aclk),
+        .S_AXI_ARESETN     (s00_axi_aresetn),
+        .S_AXI_AWADDR      (s00_axi_awaddr),
+        .S_AXI_AWPROT      (s00_axi_awprot),
+        .S_AXI_AWVALID     (s00_axi_awvalid),
+        .S_AXI_AWREADY     (s00_axi_awready),
+        .S_AXI_WDATA       (s00_axi_wdata),
+        .S_AXI_WSTRB       (s00_axi_wstrb),
+        .S_AXI_WVALID      (s00_axi_wvalid),
+        .S_AXI_WREADY      (s00_axi_wready),
+        .S_AXI_BRESP       (s00_axi_bresp),
+        .S_AXI_BVALID      (s00_axi_bvalid),
+        .S_AXI_BREADY      (s00_axi_bready),
+        .S_AXI_ARADDR      (s00_axi_araddr),
+        .S_AXI_ARPROT      (s00_axi_arprot),
+        .S_AXI_ARVALID     (s00_axi_arvalid),
+        .S_AXI_ARREADY     (s00_axi_arready),
+        .S_AXI_RDATA       (s00_axi_rdata),
+        .S_AXI_RRESP       (s00_axi_rresp),
+        .S_AXI_RVALID      (s00_axi_rvalid),
+        .S_AXI_RREADY      (s00_axi_rready)
+    );
+
 endmodule
+\end{lstlisting}
+
+\section{Modul AXI4-Lite Slave dan Serializer (\texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v})}
+
+\begin{lstlisting}[language=Verilog, caption=Potongan kode i2s\_slave\_lite\_v1\_0\_S00\_AXI.v]
+// Glitch-free clock multiplexer
+module clk_mux (
+    input  wire clk0, clk1, sel,
+    output wire clk_o
+);
+    reg q0_d1, q0_d2, q1_d1, q1_d2;
+    always @(negedge clk0) begin
+        q0_d1 <= !sel & !q1_d2;
+        q0_d2 <= q0_d1;
+    end
+    always @(negedge clk1) begin
+        q1_d1 <= sel & !q0_d2;
+        q1_d2 <= q1_d1;
+    end
+    assign clk_o = (q0_d2 & clk0) | (q1_d2 & clk1);
+endmodule
+
+// Clock Selection Logic
+    wire reg_fs_family  = slv_reg2[2];
+    wire internal_mclk;
+
+    clk_mux mclk_mux_inst (
+        .clk0  (audio_48_clk),
+        .clk1  (audio_44_clk),
+        .sel   (reg_fs_family),
+        .clk_o (internal_mclk)
+    );
+
+// CDC Sync
+    cdc_sync #(.WIDTH(32)) cdc_ctrl_inst (
+        .dest_clk (internal_mclk),
+        .src_in   (slv_reg2),
+        .dest_out (ctrl_cdc_w)
+    );
+
+// Serializer function
+    function i2s_next_serial_bit;
+        input [31:0] left_samp;
+        input [31:0] right_samp;
+        input [5:0]  bc;
+        input [5:0]  width;
+        reg          in_left;
+        reg  [4:0]   pos;
+        reg  [5:0]   bit_idx;
+        begin
+            in_left = (bc < 6'd32);
+            pos     = bc[4:0];
+            if (width == 6'd0)
+                i2s_next_serial_bit = 1'b0;
+            else if (pos == 5'd0)
+                i2s_next_serial_bit = 1'b0;
+            else if (pos <= width) begin
+                bit_idx = width - {1'b0, pos};
+                i2s_next_serial_bit = in_left ? left_samp[bit_idx[4:0]]
+                                              : right_samp[bit_idx[4:0]];
+            end else
+                i2s_next_serial_bit = 1'b0;
+        end
+    endfunction
+
+// I2S output generator
+    always @(posedge internal_mclk or posedge audio_rst) begin
+        if (audio_rst) begin
+            bit_count_q  <= 6'd0;
+            data_q       <= 1'b0;
+            ws_q         <= 1'b0;
+            bclk_q       <= 1'b0;
+        end else if (bclk_en_w) begin
+            if (!enable_sync) begin
+                bit_count_q  <= 6'd0;
+                data_q       <= 1'b0;
+                ws_q         <= 1'b0;
+                bclk_q       <= 1'b0;
+            end else begin
+                if (bclk_q) begin
+                    bclk_q      <= 1'b0;
+                    data_q      <= i2s_next_serial_bit(
+                                       sample_for_i2s_left,
+                                       sample_for_i2s_right,
+                                       bit_count_q,
+                                       sample_width_sync);
+                    ws_q        <= bit_count_q[5];
+                    bit_count_q <= bit_count_q + 6'd1;
+                end else begin
+                    bclk_q <= 1'b1;
+                end
+            end
+        end
+    end
 \end{lstlisting}

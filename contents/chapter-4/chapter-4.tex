@@ -45,6 +45,24 @@ set_property -dict {PACKAGE_PIN G2 IOSTANDARD LVCMOS33} [get_ports i2s_data_0]
     \label{fig:ch4-wiring}
 \end{figure}
 
+\subsection{Detail logika RTL (serializer dan CDC)}
+
+Logika internal IP I2S TX dirancang untuk menangani dua domain clock yang berbeda secara aman. Bagian ini merinci mekanisme tersebut.
+
+\subsubsection{Mekanisme Clock Domain Crossing (CDC)}
+
+Data audio ditulis oleh MicroBlaze V pada domain \texttt{S_AXI_ACLK} (100 MHz), sementara serializer beroperasi pada domain \texttt{internal_mclk} (${\sim}24$ MHz). Untuk mencegah metastabilitas, register \texttt{CONTROL}, \texttt{DATA_LEFT}, dan \texttt{DATA_RIGHT} dilewatkan melalui modul \texttt{cdc_sync} yang mengimplementasikan sinkronisasi flip-flop ganda (\textit{two-stage synchronizer})~\citep{ginosar_metastability_2011}. Selain itu, latching sampel ke register bayangan (\textit{shadow register}) dilakukan tepat pada batas frame stereo (saat \texttt{bit_count} kembali ke nol) untuk menjamin integritas data antar kanal.
+
+\subsubsection{Logika serializer Philips I2S}
+
+Serializer diimplementasikan sebagai mesin state sederhana yang dipicu oleh \texttt{bclk_en_w}. Fungsi \texttt{i2s_next_serial_bit} menentukan bit mana yang harus dikirim berdasarkan nilai \texttt{bit_count_q} (0--63):
+\begin{itemize}
+    \item \textbf{Bit 0 dan 32}: Merupakan bit tunda (\textit{one-bit delay}) sesuai standar Philips; output dipaksa nol.
+    \item \textbf{Bit 1--31 dan 33--63}: Mengirimkan bit sampel dari MSB ke LSB. Jika \texttt{SAMPLE_WIDTH} kurang dari 32, sisa bit dalam slot akan diisi nol (\textit{zero padding}).
+\end{itemize}
+
+\noindent Sinyal \texttt{WS} (Word Select) diturunkan langsung dari bit ke-6 dari \texttt{bit_count_q}, sehingga otomatis bernilai rendah untuk 32 bit pertama (kiri) dan tinggi untuk 32 bit berikutnya (kanan). Data diperbarui pada tepi turun BCLK dan dipertahankan stabil saat tepi naik BCLK untuk menjamin waktu \textit{setup} dan \textit{hold} pada sisi DAC.
+
 \subsection{Diagram modul PCM5102A}
 
 Modul DAC PCM5102A yang digunakan pada pengembangan sistem ditunjukkan pada dokumentasi Texas Instruments\citep{pcm5102a_datasheet}. Gambar resmi dari datasheet dapat dimasukkan secara manual pada bagian ini sesuai kebutuhan penulisan akhir.
