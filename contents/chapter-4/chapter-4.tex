@@ -25,10 +25,14 @@ RTL direalisasikan dalam dua berkas Verilog: \texttt{i2s.v} sebagai \textit{top-
 Pin I2S dihubungkan ke header PMOD JA pada Basys3 melalui file \texttt{cnstr.xdc} sebagai berikut:
 
 \begin{verbatim}
-set_property -dict {PACKAGE_PIN J1 IOSTANDARD LVCMOS33} [get_ports i2s_mclk_0]
-set_property -dict {PACKAGE_PIN L2 IOSTANDARD LVCMOS33} [get_ports i2s_bclk_0]
-set_property -dict {PACKAGE_PIN J2 IOSTANDARD LVCMOS33} [get_ports i2s_ws_0]
-set_property -dict {PACKAGE_PIN G2 IOSTANDARD LVCMOS33} [get_ports i2s_data_0]
+set_property -dict {PACKAGE_PIN J1 IOSTANDARD LVCMOS33} \
+    [get_ports i2s_mclk_0]
+set_property -dict {PACKAGE_PIN L2 IOSTANDARD LVCMOS33} \
+    [get_ports i2s_bclk_0]
+set_property -dict {PACKAGE_PIN J2 IOSTANDARD LVCMOS33} \
+    [get_ports i2s_ws_0]
+set_property -dict {PACKAGE_PIN G2 IOSTANDARD LVCMOS33} \
+    [get_ports i2s_data_0]
 \end{verbatim}
 
 \noindent Ketiga sinyal utama I2S (BCLK, WS/LRCK, DATA) dan MCLK terhubung langsung ke PMOD JA pin 1--4, yang kemudian disambungkan ke modul PCM5102A menggunakan kabel jumper.
@@ -275,16 +279,15 @@ static inline uint64_t rdcycle64(void)
 \begin{verbatim}
 uint64_t t_deadline = rdcycle64();
 while (1) {
-    uint64_t period_cycles = (uint64_t)XPAR_CPU_CORE_CLOCK_FREQ_HZ
+    uint64_t period_cycles = (uint64_t)XPAR_CPU_CORE_CLOCK_FREQ_HZ 
                              / current_sample_rate();
     stream_sample();
     if (!XUartLite_IsReceiveEmpty(STDIN_BASEADDRESS))
         handle_key((uint8_t)XUartLite_RecvByte(STDIN_BASEADDRESS));
 
-    t_deadline += period_cycles;           // maju tepat satu periode
+    t_deadline += period_cycles;           // maju satu periode
     while (rdcycle64() < t_deadline) {}   // busy-wait
-}
-\end{verbatim}
+}\end{verbatim}
 
 \noindent Dengan cara ini, terlepas dari berapa lama operasi dalam iterasi berlangsung, deadline berikutnya selalu berjarak tepat satu periode sampel. Akurasi frekuensi audio menjadi setara dengan akurasi osilator 100 MHz pada board Basys3.
 

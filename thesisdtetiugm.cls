@@ -76,6 +76,15 @@
 \usepackage{algcompatible}
 \usepackage{algpseudocode}
 \usepackage{listings}
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    breakatwhitespace=true,
+    columns=fullflexible,
+    frame=single,
+    showstringspaces=false,
+    commentstyle=\color{gray}
+}
 \usepackage{color}
 \usepackage{url}
 \usepackage{ifthen}

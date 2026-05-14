@@ -34,13 +34,13 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
 \caption{Register map IP I2S AXI4-Lite.}
 \label{tab:ch3-regmap}
 % Kolom Fungsi dikecilkan menjadi 4.5cm, kolom Catatan dibesarkan menjadi 5.0cm
-\begin{tabular}{|l|l|p{4.5cm}|p{5.0cm}|}
+\begin{tabular}{|l|l|p{4.0cm}|p{5.5cm}|}
 \hline
 \textbf{Offset} & \textbf{Nama Register} & \textbf{Fungsi} & \textbf{Packing / Catatan} \\
 \hline
-\texttt{0x00} & \texttt{DATA\_LEFT} & Sampel audio kanal kiri & \texttt{[SAMPLE\_WIDTH-1:0]} berisi data kiri \\
-\texttt{0x04} & \texttt{DATA\_RIGHT} & Sampel audio kanal kanan & \texttt{[SAMPLE\_WIDTH-1:0]} berisi data kanan \\
-\texttt{0x08} & \texttt{CONTROL} & Enable, mute, mode sampling, dan lebar sampel & Lihat Tabel \ref{tab:ch3-control-bits} \\
+\texttt{0x00} & \texttt{DATA\_LEFT} & Sampel kanal kiri & MSB di bit \texttt{[SAMPLE\_WIDTH-1]} \\
+\texttt{0x04} & \texttt{DATA\_RIGHT} & Sampel kanal kanan & MSB di bit \texttt{[SAMPLE\_WIDTH-1]} \\
+\texttt{0x08} & \texttt{CONTROL} & Konfigurasi peripheral & Lihat Tabel \ref{tab:ch3-control-bits} \\
 \hline
 \end{tabular}
 \end{table}
