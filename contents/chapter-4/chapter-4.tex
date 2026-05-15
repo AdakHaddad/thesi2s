@@ -12,10 +12,7 @@ RTL direalisasikan dalam dua berkas Verilog: \texttt{i2s.v} sebagai \textit{top-
     \centering
     \IfFileExists{contents/figures/interface-view-lock-diagram.png}{%
         \includegraphics[width=0.95\textwidth]{contents/figures/interface-view-lock-diagram.png}%
-    }{%
-        \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.88\textwidth}{\centering\textit{[PLACEHOLDER] Screenshot Block Design Vivado: MicroBlaze V --- AXI SmartConnect --- IP I2S (i2s\_0) --- Clocking Wizard. Tambahkan file: \texttt{contents/figures/interface-view-lock-diagram.png}}}}%
-    }
+    }{}
     \caption{Block Design Vivado: MicroBlaze V terhubung ke IP I2S melalui AXI SmartConnect.}
     \label{fig:ch4-bd-vivado}
 \end{figure}
@@ -62,10 +59,7 @@ set_false_path -from [get_cells -hierarchical *slv_reg2_reg[2]] \
     \centering
     \IfFileExists{contents/figures/wiring-pcm5102a-basys3.jpg}{%
         \includegraphics[width=0.75\textwidth]{contents/figures/wiring-pcm5102a-basys3.jpg}%
-    }{%
-        \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.78\textwidth}{\centering\textit{[PLACEHOLDER] Foto fisik wiring Basys3 PMOD JA ke modul PCM5102A. Tambahkan file: \texttt{contents/figures/wiring-pcm5102a-basys3.jpg}}}}%
-    }
+    }{}
     \caption{Wiring Basys3 (PMOD JA) ke modul PCM5102A.}
     \label{fig:ch4-wiring}
 \end{figure}
@@ -96,9 +90,7 @@ Modul DAC PCM5102A yang digunakan pada pengembangan sistem ditunjukkan pada doku
     \centering
     \IfFileExists{contents/figures/pcm5102-functional-block-diagram.png}{%
         \includegraphics[width=0.82\textwidth]{contents/figures/pcm5102-functional-block-diagram.png}%
-    }{%
-        \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Sisipkan gambar modul PCM5102A dari dokumentasi Texas Instruments di sini secara manual. Gunakan gambar resmi dari datasheet dan pertahankan sitasinya.}}}
-    }
+    }{}
     \caption{Diagram blok fungsional PCM5102A dari dokumentasi Texas Instruments.}
     \label{fig:ch4-pcm5102a-module}
 \end{figure}
@@ -141,10 +133,7 @@ Clocking Wizard~\citep{xilinx_clocking_wizard_2021} dikonfigurasi menghasilkan t
     \centering
     \IfFileExists{contents/figures/sample-latching-leftright-waveform.png}{%
         \includegraphics[width=0.95\textwidth]{contents/figures/sample-latching-leftright-waveform.png}%
-    }{%
-        \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.88\textwidth}{\centering\textit{[PLACEHOLDER] Tangkapan ILA: BCLK (3,07 MHz), WS (48 kHz), DATA, dan sinyal CDC. Tambahkan file: \texttt{contents/figures/sample-latching-leftright-waveform.png}}}}%
-    }
+    }{}
     \caption{Tangkapan ILA: BCLK, WS, dan DATA -- satu frame stereo 64 BCLK.}
     \label{fig:ch4-ila}
 \end{figure}
@@ -338,10 +327,7 @@ Setelah ketiga bug diperbaiki dan firmware baru diprogram ke FPGA, pengujian ula
     \centering
     \IfFileExists{contents/figures/both-channel.jpeg}{%
         \includegraphics[width=0.88\textwidth]{contents/figures/both-channel.jpeg}%
-    }{%
-        \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Osiloskop atau Audacity: kanal L dan R dengan amplitudo dan frekuensi identik setelah perbaikan. Tambahkan file: \texttt{contents/figures/both-channel.jpeg}}}}%
-    }
+    }{}
     \caption{Keluaran audio setelah perbaikan: kanal L dan R memiliki amplitudo dan frekuensi identik.}
     \label{fig:ch4-fixed-both}
 \end{figure}
@@ -350,10 +336,7 @@ Setelah ketiga bug diperbaiki dan firmware baru diprogram ke FPGA, pengujian ula
     \centering
     \IfFileExists{contents/figures/right-channel-only.jpeg}{%
         \includegraphics[width=0.88\textwidth]{contents/figures/right-channel-only.jpeg}%
-    }{%
-        \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.82\textwidth}{\centering\textit{[PLACEHOLDER] Osiloskop mode Right-only: kanal kanan aktif, kanal kiri diam (0V). Tambahkan file: \texttt{contents/figures/right-channel-only.jpeg}}}}%
-    }
+    }{}
     \caption{Mode Right-only setelah perbaikan: kanal kanan aktif, kanal kiri = 0.}
     \label{fig:ch4-fixed-right}
 \end{figure}

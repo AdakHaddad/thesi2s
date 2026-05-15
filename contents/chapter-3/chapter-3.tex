@@ -18,10 +18,7 @@ Bagian ini merangkum \textbf{perancangan fungsional} IP yang menjadi inti skrips
     \centering
     \IfFileExists{contents/figures/i2s-ip-block.png}{%
         \includegraphics[width=0.92\textwidth]{contents/figures/i2s-ip-block.png}%
-    }{%
-        \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.88\textwidth}{\centering\textit{Placeholder: impor manual \texttt{contents/figures/i2s-ip-block.png} (AXI regs, buffer/register, clkgen, serializer).}}}%
-    }
+    }{}
     \caption{Blok diagram internal IP I2S TX.}
     \label{fig:ch3-block-ip-intern}
 \end{figure}
@@ -108,10 +105,7 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
     \centering
     \IfFileExists{contents/figures/interface-view-lock-diagram.png}{%
         \includegraphics[width=0.95\textwidth]{contents/figures/interface-view-lock-diagram.png}%
-    }{%
-        \setlength{\fboxsep}{14pt}%
-        \fbox{\parbox{0.88\textwidth}{\centering\textit{[PLACEHOLDER] Tambahkan file: \texttt{contents/figures/interface-view-lock-diagram.png}}}}%
-    }
+    }{}
     \caption{Integrasi IP I2S pada Block Design.}
     \label{fig:ch3-bd-vivado}
 \end{figure}
