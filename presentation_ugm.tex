@@ -1,0 +1,91 @@
+\documentclass[aspectratio=169]{beamer}
+
+% UGM Presentation Theme-like setup
+\usetheme{Madrid}
+\usecolortheme{dolphin}
+\usefonttheme{professionalfonts}
+
+% Custom Colors (UGM Gold/Blue inspiration)
+\definecolor{ugmblue}{RGB}{0, 50, 100}
+\setbeamercolor{structure}{fg=ugmblue}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[indonesian]{babel}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{listings}
+
+% Style for code blocks
+\lstset{
+  basicstyle=\ttfamily\scriptsize,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!10},
+  keywordstyle=\color{ugmblue},
+  commentstyle=\color{green!50!black},
+  stringstyle=\color{red!70!black},
+}
+
+\title{Perancangan IP I2S TX AXI4-Lite\\pada SoC MicroBlaze V}
+\subtitle{Implementasi pada FPGA Basys3 dengan DAC PCM5102A}
+\author{Nama Mahasiswa}
+\institute{Departemen Teknik Elektro dan Teknologi Informasi\\Universitas Gadjah Mada}
+\date{Mei 2026}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+\section{Pendahuluan}
+\begin{frame}{Latar Belakang}
+  \begin{itemize}
+    \item Kebutuhan sistem audio digital yang stabil dan presisi.
+    \item Standardisasi antarmuka audio: I2S (Inter-IC Sound).
+    \item Integrasi dengan SoC MicroBlaze V menggunakan AXI4-Lite.
+    \item Validasi hardware dan perbaikan bug firmware.
+  \end{itemize}
+\end{frame}
+
+\section{Dasar Teori}
+\begin{frame}{Protokol I2S Philips Standard}
+  \begin{itemize}
+    \item Komunikasi tiga jalur: BCLK, WS (LRCK), DATA.
+    \item Format frame stereo: 64 BCLK per frame.
+    \item Data berubah pada tepi turun, dibaca pada tepi naik.
+  \end{itemize}
+\end{frame}
+
+\section{Perancangan Sistem}
+\begin{frame}{Arsitektur IP I2S TX}
+  \begin{itemize}
+    \item Integrasi AXI4-Lite Slave.
+    \item Pengendali clock (audio\_clk) dengan divisor.
+    \item Serializer data MSB-first.
+  \end{itemize}
+\end{frame}
+
+\section{Implementasi Firmware}
+\begin{frame}{Perbaikan Bug Firmware}
+  \begin{itemize}
+    \item Koreksi masker bit sampel pada C.
+    \item Perbaikan presisi timing loop menggunakan \texttt{rdcycle64()}.
+  \end{itemize}
+\end{frame}
+
+\section{Penutup}
+\begin{frame}{Kesimpulan}
+  \begin{itemize}
+    \item IP I2S TX berhasil diimplementasikan.
+    \item Bug firmware berhasil diidentifikasi dan diperbaiki tanpa mengubah RTL.
+  \end{itemize}
+\end{frame}
+
+\end{document}

@@ -22,22 +22,32 @@ dikontrol dari perangkat lunak melalui antarmuka AXI4-Lite.
 
 Secara umum, penelitian-penelitian tersebut mengkonfirmasi kelayakan implementasi I2S pada
 FPGA dan menjadi landasan pemilihan arsitektur serializer pada penelitian ini.
+Namun demikian, sebagian besar publikasi tersebut berhenti pada pembuktian bahwa sinyal I2S
+dapat dibangkitkan secara benar pada level RTL atau pada pengujian modul terisolasi. Penelitian
+ini mengambil lingkup yang lebih sistemik, yakni mengkaji bagaimana blok I2S yang sama dapat
+dikemas sebagai peripheral yang dapat diprogram, diintegrasikan ke lingkungan SoC, dan
+divalidasi melalui perangkat lunak nyata yang berjalan pada prosesor soft-core. Dengan demikian,
+perbedaan utama penelitian ini bukan hanya pada implementasi protokol, melainkan pada
+pendekatan \textit{hardware-software co-design} yang menyatukan register map, integrasi bus, dan
+validasi end-to-end. Perspektif sistem semacam ini juga sejalan dengan pendekatan
+desain \textit{embedded FPGA} yang menempatkan integrasi IP, perangkat lunak,
+dan alur toolchain sebagai satu kesatuan proses pengembangan~\citep{lafosse_embedded_2018}.
 
 \subsection{Penelitian tentang prosesor soft-core dan integrasi SoC}
 
-\citet{waterman_riscv_2016} memperkenalkan arsitektur RISC-V sebagai ISA terbuka yang
+Waterman dkk.~\citep{waterman_riscv_2016} memperkenalkan arsitektur RISC-V sebagai ISA terbuka yang
 modular dan ekstensibel, yang kemudian mendasari pengembangan banyak prosesor soft-core
 termasuk MicroBlaze V pada ekosistem AMD/Xilinx~\citep{xilinx_microblaze_ref_2021}.
 Ketersediaan antarmuka AXI4-Lite yang terintegrasi pada MicroBlaze V menjadi dasar
 pemilihan prosesor ini dalam penelitian ini.
 
-\citet{sklyarov_axi_peripheral_2014} mengeksplorasi perancangan sistem SoC hierarkis
+Sklyarov dkk.~\citep{sklyarov_axi_peripheral_2014} mengeksplorasi perancangan sistem SoC hierarkis
 berbasis bus AXI pada FPGA. Penelitian tersebut menunjukkan bahwa peripheral kustom
 dapat diintegrasikan ke dalam SoC melalui AXI interconnect dengan cara yang modular dan
 dapat diskalakan -- pendekatan yang sama diterapkan dalam penelitian ini menggunakan Vivado
 IP Integrator.
 
-\citet{crockett_zynq_book_2014} memberikan gambaran komprehensif mengenai hardware-software
+Crockett dkk.~\citep{crockett_zynq_book_2014} memberikan gambaran komprehensif mengenai hardware-software
 co-design pada FPGA berbasis prosesor, termasuk pola pengembangan peripheral AXI dan
 aplikasi bare-metal melalui SDK. Meskipun konteks platform berbeda (Zynq vs.\ Basys3),
 metodologi integrasi yang diulas relevan dengan pendekatan yang digunakan pada penelitian ini.
@@ -48,7 +58,7 @@ Dalam sistem digital yang melibatkan lebih dari satu domain clock -- seperti IP 
 memiliki domain AXI (100 MHz) dan domain audio (${\sim}24$ MHz) -- sinkronisasi lintas
 domain clock (\textit{Clock Domain Crossing}, CDC) menjadi aspek kritikal.
 
-\citet{ginosar_metastability_2011} memberikan analisis mendalam tentang masalah
+Ginosar~\citep{ginosar_metastability_2011} memberikan analisis mendalam tentang masalah
 metastabilitas pada sistem digital dan teknik sinkronisasi flip-flop ganda yang umum
 digunakan. Prinsip ini diterapkan langsung pada RTL penelitian ini melalui mekanisme
 sinkronisasi write-counter 4-bit dari domain AXI ke domain audio.
@@ -67,6 +77,13 @@ Berdasarkan tinjauan di atas, dapat diidentifikasi beberapa celah penelitian:
     loop berbasis cycle counter -- belum banyak didokumentasikan secara eksplisit dalam
     konteks I2S pada FPGA.
 \end{enumerate}
+
+\noindent Jika diringkas, penelitian terdahulu telah menunjukkan tiga hal penting: I2S dapat
+diimplementasikan secara andal pada FPGA, peripheral kustom dapat dihubungkan ke SoC berbasis
+AXI, dan CDC merupakan aspek kritis pada sistem multi-clock. Akan tetapi, dokumentasi yang
+menyatukan ketiganya pada satu alur yang lengkap masih terbatas. Keterbatasan inilah yang
+menjadi dasar penyusunan penelitian ini, sehingga hasil yang diharapkan bukan hanya berupa IP
+yang berfungsi, tetapi juga uraian langkah integrasi dan validasi yang dapat direplikasi.
 
 Kontribusi penelitian ini adalah:
 \begin{enumerate}
@@ -119,6 +136,11 @@ Pada format Philips I2S~\citep{philips_i2s_1986}:
 Pada penelitian ini, data audio dikirim sebagai \textbf{stereo 24 bit per saluran dalam
 slot 32 bit} sehingga satu frame stereo memerlukan 64 pulsa BCLK, dan lebar slot dapat
 dikonfigurasi melalui field \texttt{SAMPLE\_WIDTH} pada register \texttt{CONTROL}.
+\noindent Pemilihan format 24-bit dalam slot 32-bit memberikan dua keuntungan praktis. Pertama,
+format ini umum dipakai oleh DAC audio modern sehingga kompatibilitas perangkat lebih mudah
+dipenuhi. Kedua, slot 32-bit menyederhanakan logika serializer dan pemetaan register 32-bit
+pada AXI4-Lite, karena satu transaksi tulis dapat langsung memuat satu sampel kanal tanpa
+perlu pemadatan bit tambahan di sisi perangkat lunak.
 
 \subsubsection{Relasi \textit{sample rate}, BCLK, dan format slot}
 
@@ -181,6 +203,13 @@ Dengan pendekatan ini, perangkat lunak dapat:
     \item membaca register untuk verifikasi \textit{readback}.
 \end{itemize}
 
+\noindent Pada penelitian ini, keberadaan prosesor soft-core tidak hanya berfungsi sebagai
+penghasil sampel audio, tetapi juga sebagai sarana untuk mengevaluasi apakah peripheral benar-
+benar mudah dikendalikan dari perangkat lunak. Dengan kata lain, keberhasilan desain tidak cukup
+diukur dari sinyal I2S yang benar di simulator, tetapi juga dari kemampuan sistem untuk menerima
+konfigurasi, memproses perubahan mode, dan mempertahankan keluaran audio yang stabil saat
+dikendalikan melalui \textit{memory-mapped I/O}.
+
 RISC-V menyediakan \textit{Control and Status Register} (CSR) \texttt{mcycle} yang merupakan
 counter siklus CPU 64-bit bebas-jalan (\textit{free-running})~\citep{riscv_isa_vol1_2019}.
 Register ini diakses melalui instruksi \texttt{rdcycle}/\texttt{rdcycleh} dan digunakan pada
@@ -201,6 +230,13 @@ berbasis register~\citep{arm_amba_axi_2010}. Karakteristik utama:
 \end{itemize}
 
 Dokumentasi implementasi AXI4-Lite pada ekosistem Xilinx tersedia pada~\citep{xilinx_axi_ref_2017}.
+\noindent AXI4-Lite dipilih dalam penelitian ini karena karakter peripheral yang dirancang lebih
+dekat ke pola konfigurasi register dibanding \textit{streaming} berkecepatan tinggi. Register
+\texttt{CONTROL} digunakan untuk mengubah mode kerja, sedangkan \texttt{DATA\_LEFT} dan
+\texttt{DATA\_RIGHT} digunakan untuk memuat sampel saat validasi. Pendekatan ini menyederhanakan
+integrasi pada Vivado IP Integrator dan memudahkan penelusuran bug, meskipun konsekuensinya
+adalah throughput sistem tetap bergantung pada kecepatan CPU saat menulis sampel secara
+\textit{programmed I/O}.
 
 \subsection{Sinkronisasi lintas domain clock (CDC)}
 
@@ -217,6 +253,11 @@ transaksi AXI write. Domain audio menyinkronkan counter ini dengan dua flip-flop
 setiap perubahan, sehingga setiap penulisan register dari CPU dijamin terdeteksi tanpa terlewat.
 Pemilihan clock audio melalui \texttt{BUFGMUX} juga disinkronkan terhadap domain AXI sebelum
 digunakan sebagai sinyal selektor.
+\noindent Pendekatan ini dipilih karena yang perlu dipindahkan antar-domain pada penelitian ini
+bukan aliran data lebar berkecepatan tinggi, melainkan peristiwa pembaruan register yang relatif
+jarang dan terstruktur. Oleh sebab itu, kombinasi write-counter, sinkronisasi dua flip-flop, dan
+\textit{shadow register} pada batas frame sudah memadai untuk menjaga koherensi data tanpa
+kompleksitas FIFO asinkron penuh.
 
 \subsection{Clocking Wizard dan frekuensi aktual}
 
@@ -255,3 +296,13 @@ Metode yang dipilih pada penelitian ini didasarkan pada beberapa pertimbangan:
     divalidasi tidak hanya dari sisi RTL, tetapi juga dari sisi penggunaan nyata oleh
     perangkat lunak~\citep{crockett_zynq_book_2014}.
 \end{enumerate}
+
+\noindent Selain pertimbangan di atas, lingkup penelitian sengaja dibatasi pada jalur
+\textbf{TX-only} tanpa FIFO dan tanpa DMA. Pembatasan ini dilakukan agar fokus penelitian tetap
+berada pada ketepatan protokol I2S, keamanan CDC, dan integrasi peripheral kustom ke SoC
+berbasis MicroBlaze V. Konsekuensinya, sistem yang dihasilkan belum ditujukan untuk playback
+audio berdurasi panjang dengan throughput tinggi, melainkan sebagai platform validasi yang
+menekankan kejelasan arsitektur, kemudahan pengendalian, dan keterlacakan bug. Pertimbangan
+ini konsisten dengan literatur desain sistem FPGA embedded yang menekankan pentingnya
+memilih arsitektur yang cukup sederhana untuk divalidasi menyeluruh sebelum diperluas
+ke fitur throughput yang lebih tinggi~\citep{lafosse_embedded_2018}.

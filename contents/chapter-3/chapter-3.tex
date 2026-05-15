@@ -23,6 +23,95 @@ Bagian ini merangkum \textbf{perancangan fungsional} IP yang menjadi inti skrips
     \label{fig:ch3-block-ip-intern}
 \end{figure}
 
+\noindent Alur kerja IP dimulai ketika perangkat lunak pada MicroBlaze V menulis register
+\texttt{DATA\_LEFT}, \texttt{DATA\_RIGHT}, dan \texttt{CONTROL} melalui transaksi AXI4-Lite.
+Nilai-nilai tersebut mula-mula disimpan pada domain \texttt{S\_AXI\_ACLK}, kemudian informasi
+pembaruan register dilewatkan ke domain audio melalui mekanisme CDC berbasis write-counter.
+Pada domain audio, sampel yang telah tersinkron diambil ke \textit{shadow register} hanya saat
+batas frame stereo tercapai, sehingga data kanal kiri dan kanan selalu berubah secara serempak.
+Tahap terakhir adalah serializer yang mengubah sampel paralel menjadi urutan bit I2S lengkap
+dengan BCLK, WS, dan \textit{delay bit} sesuai spesifikasi Philips.
+
+Listing~\ref{lst:ch3-wrapper} menampilkan modul \texttt{i2s.v} secara utuh sampai
+\texttt{endmodule}. Penyajian penuh dipilih karena ukuran berkas ini masih ringkas
+dan seluruh isinya relevan untuk menunjukkan peran \textit{wrapper} pada arsitektur
+IP yang diusulkan.
+
+\begin{lstlisting}[language=Verilog, caption={Kode lengkap modul wrapper \texttt{i2s.v}.}, label={lst:ch3-wrapper}]
+module i2s #(
+    parameter integer C_S00_AXI_DATA_WIDTH = 32,
+    parameter integer C_S00_AXI_ADDR_WIDTH = 4
+) (
+    input  wire audio_48_clk,
+    input  wire audio_44_clk,
+    output wire i2s_mclk,
+    output wire i2s_bclk,
+    output wire i2s_ws,
+    output wire i2s_data,
+    input  wire s00_axi_aclk,
+    input  wire s00_axi_aresetn,
+    input  wire [C_S00_AXI_ADDR_WIDTH-1:0]  s00_axi_awaddr,
+    input  wire [2:0]                       s00_axi_awprot,
+    input  wire                             s00_axi_awvalid,
+    output wire                             s00_axi_awready,
+    input  wire [C_S00_AXI_DATA_WIDTH-1:0]  s00_axi_wdata,
+    input  wire [(C_S00_AXI_DATA_WIDTH/8)-1:0] s00_axi_wstrb,
+    input  wire                             s00_axi_wvalid,
+    output wire                             s00_axi_wready,
+    output wire [1:0]                       s00_axi_bresp,
+    output wire                             s00_axi_bvalid,
+    input  wire                             s00_axi_bready,
+    input  wire [C_S00_AXI_ADDR_WIDTH-1:0]  s00_axi_araddr,
+    input  wire [2:0]                       s00_axi_arprot,
+    input  wire                             s00_axi_arvalid,
+    output wire                             s00_axi_arready,
+    output wire [C_S00_AXI_DATA_WIDTH-1:0]  s00_axi_rdata,
+    output wire [1:0]                       s00_axi_rresp,
+    output wire                             s00_axi_rvalid,
+    input  wire                             s00_axi_rready
+);
+
+    i2s_slave_lite_v1_0_S00_AXI #(
+        .C_S_AXI_DATA_WIDTH(C_S00_AXI_DATA_WIDTH),
+        .C_S_AXI_ADDR_WIDTH(C_S00_AXI_ADDR_WIDTH)
+    ) i2s_slave_lite_v1_0_S00_AXI_inst (
+        .audio_48_clk  (audio_48_clk),
+        .audio_44_clk  (audio_44_clk),
+        .i2s_mclk      (i2s_mclk),
+        .i2s_bclk      (i2s_bclk),
+        .i2s_ws        (i2s_ws),
+        .i2s_data      (i2s_data),
+        .S_AXI_ACLK    (s00_axi_aclk),
+        .S_AXI_ARESETN (s00_axi_aresetn),
+        .S_AXI_AWADDR  (s00_axi_awaddr),
+        .S_AXI_AWPROT  (s00_axi_awprot),
+        .S_AXI_AWVALID (s00_axi_awvalid),
+        .S_AXI_AWREADY (s00_axi_awready),
+        .S_AXI_WDATA   (s00_axi_wdata),
+        .S_AXI_WSTRB   (s00_axi_wstrb),
+        .S_AXI_WVALID  (s00_axi_wvalid),
+        .S_AXI_WREADY  (s00_axi_wready),
+        .S_AXI_BRESP   (s00_axi_bresp),
+        .S_AXI_BVALID  (s00_axi_bvalid),
+        .S_AXI_BREADY  (s00_axi_bready),
+        .S_AXI_ARADDR  (s00_axi_araddr),
+        .S_AXI_ARPROT  (s00_axi_arprot),
+        .S_AXI_ARVALID (s00_axi_arvalid),
+        .S_AXI_ARREADY (s00_axi_arready),
+        .S_AXI_RDATA   (s00_axi_rdata),
+        .S_AXI_RRESP   (s00_axi_rresp),
+        .S_AXI_RVALID  (s00_axi_rvalid),
+        .S_AXI_RREADY  (s00_axi_rready)
+    );
+endmodule
+\end{lstlisting}
+
+\noindent Dari listing lengkap tersebut terlihat bahwa \texttt{i2s.v} tidak memuat logika
+serializer ataupun register map secara langsung. Seluruh perilaku inti ditempatkan
+pada modul \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v}. Pemisahan ini bermanfaat
+karena perubahan pada port tingkat atas atau integrasi IP tidak akan mengganggu
+logika internal yang menangani register, CDC, dan pembangkitan sinyal I2S.
+
 \subsection{Register map}
 Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada implementasi final.
 
@@ -67,17 +156,6 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
 \begin{figure}[htbp]
   \centering
   \begin{bytefield}[endianness=big]{32}
-    % Header disesuaikan untuk total 32 bit
-% Membuat baris kotak tanpa garis (none) untuk menaruh angka bit secara manual
-    \bitbox[none]{19}{\scriptsize 31 \hfill 13~}
-    \bitbox[none]{5}{\scriptsize ~12 \hfill 8~}
-    \bitbox[none]{4}{\scriptsize ~7 \hfill 4~}
-    \bitbox[none]{1}{\scriptsize 3}
-    \bitbox[none]{1}{\scriptsize 2}
-    \bitbox[none]{1}{\scriptsize 1}
-    \bitbox[none]{1}{\scriptsize 0} \\ % Jangan lupa '\\' untuk turun baris
-    % Field dari kiri (MSB) ke kanan (LSB)
-    % Total = 19 + 5 + 4 + 1 + 1 + 1 + 1 = 32 bits
     \bitbox{19}{RESERVED}
     \bitbox{5}{\shortstack{\scriptsize SAMPLE\\ \scriptsize WIDTH}}
     \bitbox{4}{\tiny RESV}
@@ -86,7 +164,7 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
     \bitbox{1}{\tiny M}
     \bitbox{1}{\tiny EN}
   \end{bytefield}
-  \caption{Bit diagram register \texttt{CONTROL} (Versi 32-bit).}
+  \caption{Bit diagram register \texttt{CONTROL} (bit 31..13 RESERVED, 12..8 SAMPLE\_WIDTH, 7..4 RESERVED, 3 FS\_MODE, 2 FS\_FAMILY, 1 MUTE, 0 ENABLE).}
   \label{fig:ch3-control-reg-diagram-32}
 \end{figure}
 
@@ -99,6 +177,45 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
 \item Contoh konversi untuk sampel int16: geser kiri sebesar \texttt{(SAMPLE\_WIDTH - 16)} bit sehingga MSB tepat di bit \texttt{[SAMPLE\_WIDTH-1]}, \textbf{tanpa masker tambahan}.
 \item Jika \texttt{MUTE=1}, serializer memaksa keluaran DATA ke nol tanpa mengubah isi register sampel.
 \end{itemize}
+
+\noindent Sebagai contoh, jika firmware menghasilkan sampel bertipe \texttt{int16\_t} bernilai
+\texttt{-32768} dan sistem dikonfigurasi dengan \texttt{SAMPLE\_WIDTH=24}, maka sampel tersebut
+harus digeser ke kiri 8 bit agar bit tanda berada tepat pada posisi \texttt{[23]}. Dengan
+demikian, RTL dapat langsung mengambil bit \texttt{[23:0]} sebagai data valid untuk slot I2S,
+sedangkan bit di atasnya diabaikan. Penjelasan ini penting karena kesalahan kecil pada posisi
+MSB atau penggunaan masker yang tidak tepat dapat mengubah arti data bertanda, meskipun format
+register pada sisi AXI tetap tampak benar.
+
+Strategi pembentukan \texttt{CONTROL} dari sisi perangkat lunak ditunjukkan pada
+Listing~\ref{lst:ch3-apply-control}. Cuplikan ini penting karena memperlihatkan
+hubungan langsung antara variabel state firmware dan bitfield yang telah
+didefinisikan pada register \texttt{CONTROL}.
+
+\begin{lstlisting}[language=C, caption={Cuplikan fungsi \texttt{apply\_control()} pada firmware.}, label={lst:ch3-apply-control}]
+#define CTRL_ENABLE   (1U << 0)
+#define CTRL_MUTE     (1U << 1)
+#define CTRL_FS       (1U << 2)
+#define CTRL_FS_MODE  (1U << 3)
+#define CTRL_WIDTH(w) (((uint32_t)(w) & 0x1FU) << 8U)
+
+static void apply_control(void)
+{
+    uint32_t ctrl = 0U;
+    if (g_enable)  ctrl |= CTRL_ENABLE;
+    if (g_mute)    ctrl |= CTRL_MUTE;
+    if (g_fs)      ctrl |= CTRL_FS;
+    if (g_fs_mode) ctrl |= CTRL_FS_MODE;
+    ctrl |= CTRL_WIDTH(g_width);
+    Xil_Out32(CONTROL, ctrl);
+}
+\end{lstlisting}
+
+\noindent Fungsi tersebut menunjukkan bahwa model kendali peripheral benar-benar
+bersifat \textit{register-based}. Firmware tidak perlu memanggil prosedur kompleks
+untuk mengganti mode operasi; cukup menyusun word kontrol 32-bit lalu menuliskannya
+ke alamat \texttt{CONTROL}. Pendekatan ini membuat perilaku sistem lebih mudah
+ditelusuri saat validasi, karena setiap perubahan mode dapat dipetakan langsung ke
+bit tertentu pada register.
 
 \subsection{Integrasi Vivado Block Design}
 \begin{figure}[htbp]
@@ -142,17 +259,22 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
 Perancangan perangkat keras dilakukan dengan tahapan berikut:
 \begin{enumerate}
     \item Menentukan spesifikasi I2S TX meliputi format data~\citep{philips_i2s_1986}, lebar sampel, mode frekuensi sampling, dan pemetaan register.
-    \item Mendesain arsitektur modul yang mencakup AXI4-Lite slave~\citep{arm_amba_axi_2010}, register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT} dan \texttt{CONTROL}, pembagi clock, serta serializer I2S.
+    \item Mendesain arsitektur modul yang mencakup AXI4-Lite slave~\citep{arm_amba_axi_2010}, register data dan kontrol, pembagi clock, serta serializer I2S.
     \item Mengimplementasikan RTL dalam Verilog~\citep{palnitkar_verilog_2003} dengan pemisahan blok sekuensial dan kombinasional secara jelas.
     \item Mengintegrasikan peripheral ke dalam Vivado IP Integrator~\citep{xilinx_vivado_design_suite_2021} bersama MicroBlaze V, BRAM, clocking, dan peripheral pendukung.
 \end{enumerate}
+
+\noindent Alur tersebut sejalan dengan pendekatan pengembangan sistem FPGA embedded
+yang menempatkan definisi spesifikasi, implementasi RTL, integrasi IP, dan
+validasi perangkat lunak sebagai tahapan yang saling terkait, bukan pekerjaan
+yang berdiri sendiri~\citep{lafosse_embedded_2018}.
 
 \subsection{Metode verifikasi dan simulasi}
 
 Verifikasi dilakukan pada dua level:
 \begin{enumerate}
-    \item \textbf{Verifikasi fungsional RTL}, untuk memastikan pembangkitan sinyal I2S, urutan bit, dan logika \texttt{DATA}/\texttt{CONTROL} berjalan sesuai spesifikasi.
-    \item \textbf{Validasi hardware}, untuk memastikan desain tetap bekerja setelah synthesis dan implementation pada FPGA nyata.
+    \item \textbf{Validasi hardware}, untuk memastikan desain tetap bekerja setelah \textit{synthesis} dan \textit{implementation} pada FPGA nyata.
+    \item \textbf{Verifikasi fungsional RTL}, untuk mereproduksi perilaku sinyal I2S, urutan bit, dan logika \texttt{DATA}/\texttt{CONTROL} secara terkontrol melalui simulasi.
 \end{enumerate}
 
 Parameter yang diamati meliputi:
@@ -163,15 +285,69 @@ Parameter yang diamati meliputi:
     \item keberhasilan keluaran audio pada DAC.
 \end{itemize}
 
+\noindent Suatu pengujian dinyatakan lulus apabila empat syarat utama terpenuhi, yaitu:
+struktur frame terdiri dari 64 pulsa BCLK per sampel stereo, transisi \texttt{WS} terjadi satu
+BCLK sebelum MSB kanal berikutnya, bit tunda setelah transisi \texttt{WS} bernilai nol, dan
+DAC mampu menghasilkan audio yang konsisten dengan mode kanal serta frekuensi yang dipilih.
+Dengan definisi ini, verifikasi tidak berhenti pada kecocokan waveform semata, tetapi juga
+menilai apakah perilaku sistem sudah sesuai dengan tujuan operasional peripheral.
+
+\noindent Pada alur kerja aktual penelitian ini, verifikasi perilaku dasar terlebih dahulu
+dilakukan melalui \textit{bitstream bring-up}, pengamatan ILA, dan pengukuran pada perangkat
+keras. Setelah hubungan timing utama telah teridentifikasi pada FPGA nyata, dibuat
+\textit{testbench} Vivado/XSim pada proyek \texttt{C:\textbackslash tesi2s\textbackslash testblock}
+untuk mereproduksi kondisi \texttt{enable}, \texttt{mute}, pemilihan \texttt{fs\_mode}, dan
+serialisasi sampel kiri-kanan secara lebih formal. Dengan demikian, simulasi pada penelitian ini
+berfungsi sebagai verifikasi pelengkap yang mendokumentasikan ulang perilaku yang telah diamati
+pada perangkat keras, bukan sebagai satu-satunya sumber validasi.
+
+Di sisi firmware, pembangkitan sampel uji sekaligus penulisan ke register data
+ditunjukkan pada Listing~\ref{lst:ch3-stream-sample}. Cuplikan ini menjadi
+penghubung penting antara teori packing data dan cara perangkat lunak benar-benar
+memasukkan sampel ke peripheral.
+
+\begin{lstlisting}[language=C, caption={Cuplikan fungsi \texttt{stream\_sample()} untuk packing dan penulisan sampel.}, label={lst:ch3-stream-sample}]
+int32_t s32;
+if (g_width >= 32U) {
+    s32 = (int32_t)s << 16;
+} else if (g_width > 16U) {
+    s32 = (int32_t)s << (g_width - 16U);
+} else if (g_width < 16U) {
+    s32 = (int32_t)s >> (16U - g_width);
+} else {
+    s32 = (int32_t)s;
+}
+uint32_t samp = (uint32_t)s32;
+
+Xil_Out32(DATA_LEFT,  g_left  ? samp : 0U);
+Xil_Out32(DATA_RIGHT, g_right ? samp : 0U);
+\end{lstlisting}
+
+\noindent Dua hal dapat diamati dari listing tersebut. Pertama, posisi MSB sampel
+selalu disesuaikan terhadap \texttt{g\_width}, sehingga format data pada sisi
+firmware konsisten dengan ekspektasi serializer RTL. Kedua, kedua register
+\texttt{DATA\_LEFT} dan \texttt{DATA\_RIGHT} selalu ditulis pada setiap iterasi,
+termasuk ketika salah satu kanal di-nol-kan. Keputusan ini sesuai dengan rancangan
+CDC pada hardware yang melatch pasangan sampel kiri-kanan secara bersamaan pada
+batas frame.
+
 \subsection{Metode integrasi SoC}
 
 Integrasi peripheral ke dalam SoC dilakukan melalui alur berikut:
 \begin{enumerate}
-    \item \textbf{IP Packaging}: mengemas modul I2S sebagai custom IP menggunakan Vivado IP Integrator~\citep{xilinx_vivado_design_suite_2021}.
+    \item \textbf{IP Packaging}: mengemas modul I2S sebagai custom IP menggunakan Vivado IP Integrator~\citep{xilinx_vivado_design_suite_2021,custom_ip_design}.
     \item \textbf{Block Design}: menghubungkan MicroBlaze V~\citep{xilinx_microblaze_ref_2021}, AXI interconnect~\citep{xilinx_axi_ref_2017}, BRAM, Clocking Wizard~\citep{xilinx_clocking_wizard_2021}, UART, dan IP I2S.
     \item \textbf{Address Allocation}: menetapkan base address peripheral agar dapat diakses dari Vitis~\citep{xilinx_vitis_embedded_2021}.
     \item \textbf{Constraint Management}: memetakan pin I2S ke konektor board sesuai file \texttt{.xdc}~\citep{xilinx_basys3_ref}.
 \end{enumerate}
+
+\noindent Referensi mengenai \textit{custom IP} penting pada tahap ini karena
+integrasi peripheral pada Vivado tidak hanya memerlukan RTL yang berfungsi, tetapi
+juga metadata IP, antarmuka bus yang dikenali tool, dan kompatibilitas dengan
+mekanisme packaging pada IP Integrator~\citep{custom_ip_design}. Oleh sebab itu,
+keberhasilan integrasi SoC pada penelitian ini bergantung pada dua aspek sekaligus,
+yaitu kebenaran logika internal peripheral dan ketepatan pengemasannya sebagai IP
+yang dapat dikonsumsi oleh Block Design.
 
 \subsection{Metode pengembangan software}
 
@@ -195,6 +371,13 @@ Pengujian hardware dilakukan dengan langkah berikut:
     \item Memverifikasi keluaran audio melalui speaker/headphone.
 \end{enumerate}
 
+\noindent Skenario uji perangkat keras disusun agar mencakup fungsi-fungsi utama peripheral,
+yakni pengaktifan dan penonaktifan output, pengujian mode \texttt{MUTE}, pemisahan kanal kiri
+dan kanan, perubahan \texttt{SAMPLE\_WIDTH}, serta pemilihan keluarga frekuensi sampling.
+Setiap skenario diamati pada dua level sekaligus: level sinyal digital menggunakan ILA atau
+osiloskop untuk memverifikasi ketepatan protokol, dan level audio analog untuk memastikan bahwa
+konfigurasi register benar-benar menghasilkan perilaku yang diharapkan pada DAC.
+
 \subsection{Pengukuran dan evaluasi}
 
 Metode evaluasi meliputi:
@@ -217,28 +400,34 @@ Penelitian ini mengikuti tahapan berikut:
     \item Analisis hasil, penyusunan dokumen, dan penarikan kesimpulan.
 \end{enumerate}
 
-\begin{table}[h]
+\noindent Agar alur kerja lebih mudah dipahami daripada tabel durasi mingguan, tahapan penelitian
+dirangkum kembali dalam bentuk diagram alir pada Gambar~\ref{fig:ch3-flow-ta}. Bentuk ini lebih
+sesuai untuk menunjukkan hubungan logis antar-tahap, termasuk fakta bahwa testbench disusun
+setelah verifikasi dasar pada perangkat keras telah dilakukan.
+
+\begin{figure}[htbp]
 \centering
-\caption{Timeline penelitian tugas akhir}
-\begin{tabular}{|l|l|c|}
-\hline
-\textbf{Fase} & \textbf{Aktivitas} & \textbf{Durasi (Minggu)} \\
-\hline
-1 & Analisis kebutuhan dan studi pustaka & 2 \\
-\hline
-2 & Perancangan RTL I2S TX & 4 \\
-\hline
-3 & Verifikasi dan simulasi & 3 \\
-\hline
-4 & Integrasi SoC di Vivado & 2 \\
-\hline
-5 & Pengembangan software uji di Vitis & 3 \\
-\hline
-6 & Pengujian hardware dan validasi audio & 2 \\
-\hline
-7 & Analisis hasil dan penulisan skripsi & 2 \\
-\hline
-\textbf{Total} & & \textbf{18 Minggu} \\
-\hline
-\end{tabular}
-\end{table}
+\begin{tikzpicture}[x=1cm,y=1cm]
+    \tikzstyle{stepbox}=[draw, rounded corners=2pt, align=center, minimum width=10.8cm, minimum height=0.95cm]
+    \tikzstyle{arrowline}=[->, thick]
+
+    \node[stepbox] (s1) at (0,0) {Analisis kebutuhan sistem dan studi literatur\\I2S, AXI4-Lite, MicroBlaze V};
+    \node[stepbox] (s2) at (0,-1.8) {Perancangan spesifikasi peripheral I2S TX\\register map, mode frekuensi, dan format data};
+    \node[stepbox] (s3) at (0,-3.6) {Implementasi RTL Verilog\\wrapper, AXI slave, CDC, dan serializer};
+    \node[stepbox] (s4) at (0,-5.4) {Integrasi custom IP ke SoC Vivado\\MicroBlaze V, BRAM, clocking, UART, dan constraint};
+    \node[stepbox] (s5) at (0,-7.2) {Pengembangan firmware uji di Vitis\\konfigurasi register dan pembangkitan sampel};
+    \node[stepbox] (s6) at (0,-9.0) {Bring-up bitstream dan verifikasi perangkat keras\\ILA, osiloskop, dan validasi audio};
+    \node[stepbox] (s7) at (0,-10.8) {Penyusunan testbench untuk verifikasi pelengkap\\reproduksi \texttt{enable}, \texttt{mute}, \texttt{fs\_mode}, dan serialisasi data};
+    \node[stepbox] (s8) at (0,-12.6) {Analisis hasil, penulisan skripsi,\\dan penarikan kesimpulan};
+
+    \draw[arrowline] (s1) -- (s2);
+    \draw[arrowline] (s2) -- (s3);
+    \draw[arrowline] (s3) -- (s4);
+    \draw[arrowline] (s4) -- (s5);
+    \draw[arrowline] (s5) -- (s6);
+    \draw[arrowline] (s6) -- (s7);
+    \draw[arrowline] (s7) -- (s8);
+\end{tikzpicture}
+\caption{Diagram alir tahapan penelitian tugas akhir.}
+\label{fig:ch3-flow-ta}
+\end{figure}
