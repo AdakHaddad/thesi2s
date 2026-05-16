@@ -106,11 +106,11 @@ module i2s #(
 endmodule
 \end{lstlisting}
 
-\noindent Dari listing lengkap tersebut terlihat bahwa \texttt{i2s.v} tidak memuat logika
-serializer ataupun register map secara langsung. Seluruh perilaku inti ditempatkan
-pada modul \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v}. Pemisahan ini bermanfaat
-karena perubahan pada port tingkat atas atau integrasi IP tidak akan mengganggu
-logika internal yang menangani register, CDC, dan pembangkitan sinyal I2S.
+\noindent Dari listing lengkap tersebut terlihat bahwa \texttt{i2s.v} tidak memuat
+logika serializer maupun \textit{register map} secara langsung. Seluruh perilaku
+inti ditempatkan pada modul AXI inti. Pemisahan ini bermanfaat karena perubahan
+pada port tingkat atas atau integrasi IP tidak akan mengganggu logika internal
+yang menangani register, CDC, dan pembangkitan sinyal I2S.
 
 \subsection{Register map}
 Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada implementasi final.

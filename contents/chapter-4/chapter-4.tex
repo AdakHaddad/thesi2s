@@ -294,14 +294,14 @@ melainkan untuk mereproduksi ulang urutan sinyal pada lingkungan yang terkontrol
 perubahan status \texttt{enable}, \texttt{mute}, dan \texttt{fs\_mode} dapat diamati ulang
 tanpa memerlukan pemrograman ulang FPGA setiap kali pengujian.
 
-\noindent Secara fungsional, testbench memberikan stimulus sederhana berupa sampel kiri
-\texttt{0x0000AAAA}, sampel kanan \texttt{0x00005555}, aktivasi \texttt{enable} setelah jeda
-awal, pengaktifan dan penonaktifan \texttt{mute}, serta perubahan \texttt{fs\_mode} dari mode
-rendah ke mode tinggi. Rangkaian stimulus tersebut cukup untuk mengonfirmasi bahwa pola
-serialisasi, perubahan laju BCLK, dan relasi antara kanal kiri-kanan yang terlihat pada simulasi
-konsisten dengan hasil pengamatan ILA pada FPGA. Dengan demikian, testbench berperan sebagai
-alat dokumentasi dan konfirmasi formal terhadap perilaku yang sebelumnya telah dibuktikan pada
-level implementasi nyata.
+\noindent Secara fungsional, testbench memberi stimulus sederhana: sampel kiri
+\texttt{0x0000AAAA}, sampel kanan \texttt{0x00005555}, aktivasi \texttt{enable}
+setelah jeda awal, pengaktifan dan penonaktifan \texttt{mute}, serta perubahan
+\texttt{fs\_mode} dari mode rendah ke mode tinggi. Rangkaian ini cukup untuk
+mengonfirmasi bahwa pola serialisasi, perubahan laju BCLK, dan relasi kanal
+kiri-kanan pada simulasi konsisten dengan hasil pengamatan ILA pada FPGA.
+Dengan demikian, testbench berperan sebagai alat dokumentasi dan konfirmasi
+formal terhadap perilaku yang sebelumnya telah dibuktikan pada implementasi nyata.
 
 % ============================================================
 \section{Analisis Frekuensi Sampling}
@@ -338,13 +338,13 @@ untuk masing-masing mode ditunjukkan pada Tabel~\ref{tab:ch4-ukur}.
     \caption{Hasil pengujian clock I2S pada keluarga frekuensi 48 kHz.}
     \label{tab:ch4-ukur}
     \renewcommand{\arraystretch}{1.3}
-    \begin{tabular}{|c|c|c|c|c|}
+    \begin{tabular}{|p{2.3cm}|p{2.8cm}|c|c|c|}
         \hline
-        \textbf{Mode} &
-        \textbf{Master Clock (MCLK)} &
-        \textbf{Divider} &
-        \textbf{BCLK Hasil} &
-        \textbf{Frekuensi Sampling ($F_s$)} \\
+        \centering\textbf{Mode} &
+        \centering\textbf{MCLK} &
+        \centering\textbf{Divider} &
+        \centering\textbf{BCLK} &
+        \centering\textbf{$F_s$} \tabularnewline
         \hline
         \texttt{FS\_MODE = 0} & 24,597 MHz & $\div 8$ & 3,0746 MHz & 48,03 kHz \\
         \hline
@@ -465,7 +465,12 @@ Menekan \texttt{R} (Right only): kedua kanal menjadi mute atau tidak terdengar s
 
 \subsubsection{Penyebab}
 
-Gejala ini merupakan konsekuensi dari Bug 1. Pada mode \texttt{g\_left=0, g\_right=1}, firmware menulis nilai nol ke \texttt{DATA\_LEFT} dan \texttt{samp} ke \texttt{DATA\_RIGHT}. Karena \texttt{samp} sudah rusak akibat masker (nilai negatif menjadi positif besar, nilai positif tetap), output audio tidak mencerminkan gelombang sinus yang benar. Pada frekuensi tertentu, DC offset yang dihasilkan dapat diinterpretasikan sebagai tidak ada suara oleh DAC.
+Gejala ini merupakan konsekuensi dari Bug 1. Pada mode
+\texttt{g\_left=0, g\_right=1}, firmware menulis nol ke \texttt{DATA\_LEFT} dan
+\texttt{samp} ke \texttt{DATA\_RIGHT}. Karena \texttt{samp} sudah rusak akibat
+masker, output audio tidak lagi mencerminkan gelombang sinus yang benar. Pada
+frekuensi tertentu, \textit{DC offset} yang terbentuk bahkan dapat diinterpretasikan
+sebagai tidak ada suara oleh DAC.
 
 \subsubsection{Solusi}
 
