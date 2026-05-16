@@ -282,6 +282,12 @@ Pada penelitian ini, Verilog digunakan untuk membangun:
 Prinsip desain digital yang digunakan merujuk pada~\citep{harris_harris_digital_2022}
 dan~\citep{chu_fpga_prototyping_2011}.
 
+\subsection{Perbandingan dengan IP I2S bawaan AMD/Xilinx}
+
+Sebagai pembanding, AMD menyediakan \textit{LogiCORE} I2S Transmitter dan Receiver untuk integrasi cepat di Vivado~\citep{amd_pg308_i2s_logicore}. IP bawaan ini mendukung antarmuka AXI4-Stream, hingga empat kanal I2S, lebar data 16/24-bit, mode master, kedalaman FIFO yang dapat dikonfigurasi, ekstraksi dan penyisipan status kanal AES, format left/right justified, serta opsi LRCLK 32-bit. Secara umum, fitur tersebut ditujukan untuk aplikasi audio yang berorientasi aliran data dan integrasi sistem yang luas.
+
+Ruang lingkup penelitian ini berbeda karena IP yang dikembangkan berfokus pada \textbf{TX-only} dengan antarmuka \textbf{AXI4-Lite} berbasis register memory-mapped. Pendekatan ini dipilih agar pengendalian dari MicroBlaze V tetap sederhana tanpa DMA, sekaligus membuat mekanisme CDC, pembagian clock, dan pembentukan frame I2S lebih transparan pada level RTL. Dengan demikian, tujuan penelitian bukan menggantikan IP bawaan AMD/Xilinx, melainkan menyediakan alternatif yang lebih kecil, terukur, dan sesuai untuk validasi akademik.
+
 \subsection{Analisis pemilihan metode}
 
 Metode yang dipilih pada penelitian ini didasarkan pada beberapa pertimbangan:
