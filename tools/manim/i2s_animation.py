@@ -26,6 +26,13 @@ class SystemTopology(Scene):
         self.play(GrowArrow(arrow2), Write(arrow2_label))
         self.wait(2)
 
+        # ----- Parameters (match firmware defaults where possible) -----
+        # Default firmware values (see helloworld.c)
+        SAMPLE_WIDTH_DEFAULT = 24  # g_width default in firmware
+        FS_DEFAULT = 48000         # default family/mode -> 48 kHz
+        # Slot width used for I2S slots (bits per channel in slot). Research uses 32.
+        SLOT_WIDTH = 32
+
 
 class RegisterMapScene(Scene):
     def construct(self):
@@ -131,21 +138,35 @@ class SerializationScene(Scene):
         self.play(Create(ws_line), Write(ws_label))
         self.play(Create(data_line), Write(data_label))
 
+
+
+        # compute BCLK frequency from sample rate and slot width
+        sample_rate = FS_DEFAULT
+        slot_width = SLOT_WIDTH
+        # stereo frame bits = 2 * slot_width
+        bclk_freq = sample_rate * 2 * slot_width
+
+        # Map real period to animation period using a scale, but keep a minimum
+        real_period = 1.0 / bclk_freq if bclk_freq > 0 else 1.0
+        anim_scale = 0.02  # adjust for faster/slower animation
+        anim_period = max(real_period * anim_scale, 0.06)
+
         # draw a short bit stream as boxes shifting right
-        bits = VGroup(*[Square(side_length=0.35, fill_opacity=1, color=GREEN) for _ in range(8)])
-        bits.arrange(RIGHT, buff=0.15).move_to(LEFT * 4 + UP * 0.2)
-        bit_labels = VGroup(*[Text(str(i), font_size=16).move_to(b.get_center()) for i, b in enumerate(bits)])
+        bits = VGroup(*[Square(side_length=0.35, fill_opacity=1, color=GREEN) for _ in range(12)])
+        bits.arrange(RIGHT, buff=0.12).move_to(LEFT * 4 + UP * 0.2)
+        bit_labels = VGroup(*[Text("", font_size=12).move_to(b.get_center()) for b in bits])
         for b, l in zip(bits, bit_labels):
-            self.play(FadeIn(b), Write(l), run_time=0.12)
+            self.add(b, l)
 
-        # animate bits shifting under DATA line
-        for _ in range(10):
-            self.play(bits.animate.shift(RIGHT * 0.6), run_time=0.4)
-            # simulate WS toggle by flashing the WS line
-            self.play(bits.animate.set_color(BLUE), run_time=0.05)
-            self.play(bits.animate.set_color(GREEN), run_time=0.05)
+        # animate bits shifting under DATA line driven by computed anim_period
+        iterations = 16
+        for i in range(iterations):
+            self.play(bits.animate.shift(RIGHT * 0.6), run_time=anim_period)
+            # toggle WS visual every slot_width*2 shifts (simulate LRCLK)
+            if (i % (slot_width // 8 if slot_width>=8 else 1)) == 0:
+                self.play(Indicate(ws_line, color=YELLOW), run_time=anim_period * 0.1)
 
-        self.wait(1.0)
+        self.wait(0.6)
 
 
 class I2SAnimation(Scene):
@@ -157,7 +178,7 @@ class I2SAnimation(Scene):
         # We call other scenes by manually creating simplified elements here
         topo = SystemTopology()
         # Note: manim doesn't allow calling construct of other Scene objects
-        # from a Scene in a simple way; export separate scenes or render
-        # them individually. This class serves as a placeholder run target.
+        # from a Scene in a simple way; render scenes individually. This
+        # class is a placeholder if you want one-shot composition.
         self.play(FadeOut(*self.mobjects))
         self.wait(0.2)
