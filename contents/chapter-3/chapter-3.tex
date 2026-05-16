@@ -1,232 +1,5 @@
 \chapter{Metode Penelitian}
 
-\section{Spesifikasi dan arsitektur IP I2S TX}
-
-Bagian ini merangkum \textbf{perancangan fungsional} IP yang menjadi inti skripsi. Implementasi difokuskan pada peripheral \textbf{I2S transmitter} dengan antarmuka \textbf{AXI4-Lite} agar dapat dikontrol oleh program C pada MicroBlaze V~\citep{xilinx_microblaze_ref_2021}.
-
-\subsection{Daftar fitur IP}
-\begin{itemize}
-    \item Antarmuka \textbf{AXI4-Lite} 32 bit untuk konfigurasi dan pengisian data audio~\citep{arm_amba_axi_2010}.
-    \item Mode \textbf{TX-only}, stereo, format \textbf{Philips I2S}~\citep{philips_i2s_1986}, \textbf{24 bit} per saluran dalam \textbf{slot 32 bit}.
-    \item Dukungan dua keluarga frekuensi sampling nominal (\textbf{48/96 kHz} dan \textbf{44,1/88,2 kHz}), melalui pembagi clock internal dan \texttt{BUFGMUX}~\citep{xilinx_clocking_wizard_2021}.
-    \item \textbf{Jalur data} lewat register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT} dan \texttt{CONTROL}, \textbf{tanpa FIFO} internal.
-    \item Keluaran menuju modul \textbf{PCM5102A}~\citep{pcm5102a_datasheet}: BCLK, LRCK/WS, DATA, dan MCLK bila digunakan.
-\end{itemize}
-
-\subsection{Blok diagram perancangan IP}
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/i2s-ip-block.png}{%
-        \includegraphics[width=0.92\textwidth]{contents/figures/i2s-ip-block.png}%
-    }{}
-    \caption{Blok diagram internal IP I2S TX.}
-    \label{fig:ch3-block-ip-intern}
-\end{figure}
-
-\noindent Alur kerja IP dimulai ketika perangkat lunak pada MicroBlaze V menulis register
-\texttt{DATA\_LEFT}, \texttt{DATA\_RIGHT}, dan \texttt{CONTROL} melalui transaksi AXI4-Lite.
-Nilai-nilai tersebut mula-mula disimpan pada domain \texttt{S\_AXI\_ACLK}, kemudian informasi
-pembaruan register dilewatkan ke domain audio melalui mekanisme CDC berbasis write-counter.
-Pada domain audio, sampel yang telah tersinkron diambil ke \textit{shadow register} hanya saat
-batas frame stereo tercapai, sehingga data kanal kiri dan kanan selalu berubah secara serempak.
-Tahap terakhir adalah serializer yang mengubah sampel paralel menjadi urutan bit I2S lengkap
-dengan BCLK, WS, dan \textit{delay bit} sesuai spesifikasi Philips.
-
-Listing~\ref{lst:ch3-wrapper} menampilkan modul \texttt{i2s.v} secara utuh sampai
-\texttt{endmodule}. Penyajian penuh dipilih karena ukuran berkas ini masih ringkas
-dan seluruh isinya relevan untuk menunjukkan peran \textit{wrapper} pada arsitektur
-IP yang diusulkan.
-
-\begin{lstlisting}[language=Verilog, caption={Kode lengkap modul wrapper \texttt{i2s.v}.}, label={lst:ch3-wrapper}]
-module i2s #(
-    parameter integer C_S00_AXI_DATA_WIDTH = 32,
-    parameter integer C_S00_AXI_ADDR_WIDTH = 4
-) (
-    input  wire audio_48_clk,
-    input  wire audio_44_clk,
-    output wire i2s_mclk,
-    output wire i2s_bclk,
-    output wire i2s_ws,
-    output wire i2s_data,
-    input  wire s00_axi_aclk,
-    input  wire s00_axi_aresetn,
-    input  wire [C_S00_AXI_ADDR_WIDTH-1:0]  s00_axi_awaddr,
-    input  wire [2:0]                       s00_axi_awprot,
-    input  wire                             s00_axi_awvalid,
-    output wire                             s00_axi_awready,
-    input  wire [C_S00_AXI_DATA_WIDTH-1:0]  s00_axi_wdata,
-    input  wire [(C_S00_AXI_DATA_WIDTH/8)-1:0] s00_axi_wstrb,
-    input  wire                             s00_axi_wvalid,
-    output wire                             s00_axi_wready,
-    output wire [1:0]                       s00_axi_bresp,
-    output wire                             s00_axi_bvalid,
-    input  wire                             s00_axi_bready,
-    input  wire [C_S00_AXI_ADDR_WIDTH-1:0]  s00_axi_araddr,
-    input  wire [2:0]                       s00_axi_arprot,
-    input  wire                             s00_axi_arvalid,
-    output wire                             s00_axi_arready,
-    output wire [C_S00_AXI_DATA_WIDTH-1:0]  s00_axi_rdata,
-    output wire [1:0]                       s00_axi_rresp,
-    output wire                             s00_axi_rvalid,
-    input  wire                             s00_axi_rready
-);
-
-    i2s_slave_lite_v1_0_S00_AXI #(
-        .C_S_AXI_DATA_WIDTH(C_S00_AXI_DATA_WIDTH),
-        .C_S_AXI_ADDR_WIDTH(C_S00_AXI_ADDR_WIDTH)
-    ) i2s_slave_lite_v1_0_S00_AXI_inst (
-        .audio_48_clk  (audio_48_clk),
-        .audio_44_clk  (audio_44_clk),
-        .i2s_mclk      (i2s_mclk),
-        .i2s_bclk      (i2s_bclk),
-        .i2s_ws        (i2s_ws),
-        .i2s_data      (i2s_data),
-        .S_AXI_ACLK    (s00_axi_aclk),
-        .S_AXI_ARESETN (s00_axi_aresetn),
-        .S_AXI_AWADDR  (s00_axi_awaddr),
-        .S_AXI_AWPROT  (s00_axi_awprot),
-        .S_AXI_AWVALID (s00_axi_awvalid),
-        .S_AXI_AWREADY (s00_axi_awready),
-        .S_AXI_WDATA   (s00_axi_wdata),
-        .S_AXI_WSTRB   (s00_axi_wstrb),
-        .S_AXI_WVALID  (s00_axi_wvalid),
-        .S_AXI_WREADY  (s00_axi_wready),
-        .S_AXI_BRESP   (s00_axi_bresp),
-        .S_AXI_BVALID  (s00_axi_bvalid),
-        .S_AXI_BREADY  (s00_axi_bready),
-        .S_AXI_ARADDR  (s00_axi_araddr),
-        .S_AXI_ARPROT  (s00_axi_arprot),
-        .S_AXI_ARVALID (s00_axi_arvalid),
-        .S_AXI_ARREADY (s00_axi_arready),
-        .S_AXI_RDATA   (s00_axi_rdata),
-        .S_AXI_RRESP   (s00_axi_rresp),
-        .S_AXI_RVALID  (s00_axi_rvalid),
-        .S_AXI_RREADY  (s00_axi_rready)
-    );
-endmodule
-\end{lstlisting}
-
-\noindent Dari listing lengkap tersebut terlihat bahwa \texttt{i2s.v} tidak memuat
-logika serializer maupun \textit{register map} secara langsung. Seluruh perilaku
-inti ditempatkan pada modul AXI inti. Pemisahan ini bermanfaat karena perubahan
-pada port tingkat atas atau integrasi IP tidak akan mengganggu logika internal
-yang menangani register, CDC, dan pembangkitan sinyal I2S.
-
-\subsection{Register map}
-Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada implementasi final.
-
-\begin{table}[htbp]
-\centering
-\caption{Register map IP I2S AXI4-Lite.}
-\label{tab:ch3-regmap}
-% Kolom Fungsi dikecilkan menjadi 4.5cm, kolom Catatan dibesarkan menjadi 5.0cm
-\begin{tabular}{|l|l|p{4.0cm}|p{5.5cm}|}
-\hline
-\textbf{Offset} & \textbf{Nama Register} & \textbf{Fungsi} & \textbf{Packing / Catatan} \\
-\hline
-\texttt{0x00} & \texttt{DATA\_LEFT} & Sampel kanal kiri & MSB di bit \texttt{[SAMPLE\_WIDTH-1]} \\
-\texttt{0x04} & \texttt{DATA\_RIGHT} & Sampel kanal kanan & MSB di bit \texttt{[SAMPLE\_WIDTH-1]} \\
-\texttt{0x08} & \texttt{CONTROL} & Konfigurasi peripheral & Lihat Tabel \ref{tab:ch3-control-bits} \\
-\hline
-\end{tabular}
-\end{table}
-
-\begin{table}[htbp]
-\centering
-\caption{Bitfield register \texttt{CONTROL}.}
-\label{tab:ch3-control-bits}
-\begin{tabular}{|c|l|c|p{8.0cm}|}
-\hline
-\textbf{Bit(s)} & \textbf{Field} & \textbf{Default} & \textbf{Fungsi / Keterangan} \\
-\hline
-\texttt{0} & \texttt{ENABLE} & 0 & 1 = output audio aktif, 0 = output nonaktif \\
-\texttt{1} & \texttt{MUTE} & 0 & 1 = data audio dipaksa nol, clock tetap berjalan \\
-\texttt{2} & \texttt{FS\_FAMILY} & 0 & 0 = keluarga 48/96 kHz, 1 = keluarga 44,1/88,2 kHz \\
-\texttt{3} & \texttt{FS\_MODE} & 0 & 0 = Fs rendah (48/44,1 kHz); 1 = Fs tinggi (96/88,2 kHz) \\
-\texttt{7:4} & \texttt{RESERVED} & 0 & Cadangan untuk ekstensi di masa depan \\
-\texttt{12:8} & \texttt{SAMPLE\_WIDTH} & 32 & Lebar bit sampel per kanal (1--32); nilai 0 diinterpretasikan sebagai 32 \\
-\texttt{31:13} & \texttt{RESERVED} & 0 & Cadangan \\
-\hline
-\end{tabular}
-\end{table}
-
-% taruh sebelum figure (boleh di preamble juga)
-\bytefieldsetup{bitwidth=1.2em}
-
-\begin{figure}[htbp]
-  \centering
-  \begin{bytefield}[endianness=big]{32}
-    \bitbox{19}{RESERVED}
-    \bitbox{5}{\shortstack{\scriptsize SAMPLE\\ \scriptsize WIDTH}}
-    \bitbox{4}{\tiny RESV}
-    \bitbox{1}{\tiny FSM}
-    \bitbox{1}{\tiny FSF}
-    \bitbox{1}{\tiny M}
-    \bitbox{1}{\tiny EN}
-  \end{bytefield}
-  \caption{Bit diagram register \texttt{CONTROL} (bit 31..13 RESERVED, 12..8 SAMPLE\_WIDTH, 7..4 RESERVED, 3 FS\_MODE, 2 FS\_FAMILY, 1 MUTE, 0 ENABLE).}
-  \label{fig:ch3-control-reg-diagram-32}
-\end{figure}
-
-
-\subsection{Aturan packing data}
-\begin{itemize}
-\item \texttt{DATA\_LEFT}: sampel kanal kiri ditulis dengan \textbf{MSB di bit \texttt{[SAMPLE\_WIDTH-1]}} dari word 32-bit. Bit di atas \texttt{SAMPLE\_WIDTH-1} diabaikan oleh RTL.
-\item \texttt{DATA\_RIGHT}: aturan packing sama dengan \texttt{DATA\_LEFT}, untuk sampel kanal kanan.
-\item Firmware harus selalu menulis \textbf{kedua} register setiap periode sampel agar counter CDC RTL bertambah secara konsisten untuk kedua kanal.
-\item Contoh konversi untuk sampel int16: geser kiri sebesar \texttt{(SAMPLE\_WIDTH - 16)} bit sehingga MSB tepat di bit \texttt{[SAMPLE\_WIDTH-1]}, \textbf{tanpa masker tambahan}.
-\item Jika \texttt{MUTE=1}, serializer memaksa keluaran DATA ke nol tanpa mengubah isi register sampel.
-\end{itemize}
-
-\noindent Sebagai contoh, jika firmware menghasilkan sampel bertipe \texttt{int16\_t} bernilai
-\texttt{-32768} dan sistem dikonfigurasi dengan \texttt{SAMPLE\_WIDTH=24}, maka sampel tersebut
-harus digeser ke kiri 8 bit agar bit tanda berada tepat pada posisi \texttt{[23]}. Dengan
-demikian, RTL dapat langsung mengambil bit \texttt{[23:0]} sebagai data valid untuk slot I2S,
-sedangkan bit di atasnya diabaikan. Penjelasan ini penting karena kesalahan kecil pada posisi
-MSB atau penggunaan masker yang tidak tepat dapat mengubah arti data bertanda, meskipun format
-register pada sisi AXI tetap tampak benar.
-
-Strategi pembentukan \texttt{CONTROL} dari sisi perangkat lunak ditunjukkan pada
-Listing~\ref{lst:ch3-apply-control}. Cuplikan ini penting karena memperlihatkan
-hubungan langsung antara variabel state firmware dan bitfield yang telah
-didefinisikan pada register \texttt{CONTROL}.
-
-\begin{lstlisting}[language=C, caption={Cuplikan fungsi \texttt{apply\_control()} pada firmware.}, label={lst:ch3-apply-control}]
-#define CTRL_ENABLE   (1U << 0)
-#define CTRL_MUTE     (1U << 1)
-#define CTRL_FS       (1U << 2)
-#define CTRL_FS_MODE  (1U << 3)
-#define CTRL_WIDTH(w) (((uint32_t)(w) & 0x1FU) << 8U)
-
-static void apply_control(void)
-{
-    uint32_t ctrl = 0U;
-    if (g_enable)  ctrl |= CTRL_ENABLE;
-    if (g_mute)    ctrl |= CTRL_MUTE;
-    if (g_fs)      ctrl |= CTRL_FS;
-    if (g_fs_mode) ctrl |= CTRL_FS_MODE;
-    ctrl |= CTRL_WIDTH(g_width);
-    Xil_Out32(CONTROL, ctrl);
-}
-\end{lstlisting}
-
-\noindent Fungsi tersebut menunjukkan bahwa model kendali peripheral benar-benar
-bersifat \textit{register-based}. Firmware tidak perlu memanggil prosedur kompleks
-untuk mengganti mode operasi; cukup menyusun word kontrol 32-bit lalu menuliskannya
-ke alamat \texttt{CONTROL}. Pendekatan ini membuat perilaku sistem lebih mudah
-ditelusuri saat validasi, karena setiap perubahan mode dapat dipetakan langsung ke
-bit tertentu pada register.
-
-\subsection{Integrasi Vivado Block Design}
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/interface-view-lock-diagram.png}{%
-        \includegraphics[width=0.95\textwidth]{contents/figures/interface-view-lock-diagram.png}%
-    }{}
-    \caption{Integrasi IP I2S pada Block Design.}
-    \label{fig:ch3-bd-vivado}
-\end{figure}
-
 \section{Alat dan Bahan}
 
 \subsection{Perangkat keras}
@@ -301,36 +74,6 @@ serialisasi sampel kiri-kanan secara lebih formal. Dengan demikian, simulasi pad
 berfungsi sebagai verifikasi pelengkap yang mendokumentasikan ulang perilaku yang telah diamati
 pada perangkat keras, bukan sebagai satu-satunya sumber validasi.
 
-Di sisi firmware, pembangkitan sampel uji sekaligus penulisan ke register data
-ditunjukkan pada Listing~\ref{lst:ch3-stream-sample}. Cuplikan ini menjadi
-penghubung penting antara teori packing data dan cara perangkat lunak benar-benar
-memasukkan sampel ke peripheral.
-
-\begin{lstlisting}[language=C, caption={Cuplikan fungsi \texttt{stream\_sample()} untuk packing dan penulisan sampel.}, label={lst:ch3-stream-sample}]
-int32_t s32;
-if (g_width >= 32U) {
-    s32 = (int32_t)s << 16;
-} else if (g_width > 16U) {
-    s32 = (int32_t)s << (g_width - 16U);
-} else if (g_width < 16U) {
-    s32 = (int32_t)s >> (16U - g_width);
-} else {
-    s32 = (int32_t)s;
-}
-uint32_t samp = (uint32_t)s32;
-
-Xil_Out32(DATA_LEFT,  g_left  ? samp : 0U);
-Xil_Out32(DATA_RIGHT, g_right ? samp : 0U);
-\end{lstlisting}
-
-\noindent Dua hal dapat diamati dari listing tersebut. Pertama, posisi MSB sampel
-selalu disesuaikan terhadap \texttt{g\_width}, sehingga format data pada sisi
-firmware konsisten dengan ekspektasi serializer RTL. Kedua, kedua register
-\texttt{DATA\_LEFT} dan \texttt{DATA\_RIGHT} selalu ditulis pada setiap iterasi,
-termasuk ketika salah satu kanal di-nol-kan. Keputusan ini sesuai dengan rancangan
-CDC pada hardware yang melatch pasangan sampel kiri-kanan secara bersamaan pada
-batas frame.
-
 \subsection{Metode integrasi SoC}
 
 Integrasi peripheral ke dalam SoC dilakukan melalui alur berikut:
@@ -341,14 +84,6 @@ Integrasi peripheral ke dalam SoC dilakukan melalui alur berikut:
     \item \textbf{Constraint Management}: memetakan pin I2S ke konektor board sesuai file \texttt{.xdc}~\citep{xilinx_basys3_ref}.
 \end{enumerate}
 
-\noindent Referensi mengenai \textit{custom IP} penting pada tahap ini karena
-integrasi peripheral pada Vivado tidak hanya memerlukan RTL yang berfungsi, tetapi
-juga metadata IP, antarmuka bus yang dikenali tool, dan kompatibilitas dengan
- mekanisme packaging pada IP Integrator~\citep{xilinx_vivado_design_suite_2021}. Oleh sebab itu,
-keberhasilan integrasi SoC pada penelitian ini bergantung pada dua aspek sekaligus,
-yaitu kebenaran logika internal peripheral dan ketepatan pengemasannya sebagai IP
-yang dapat dikonsumsi oleh Block Design.
-
 \subsection{Metode pengembangan software}
 
 Perangkat lunak uji dikembangkan dalam bahasa C pada Vitis dengan fungsi utama:
@@ -358,33 +93,6 @@ Perangkat lunak uji dikembangkan dalam bahasa C pada Vitis dengan fungsi utama:
     \item mengaktifkan mode operasi dan memilih frekuensi sampling;
     \item menyinkronkan waktu penulisan data ke dalam register secara langsung (\textit{programmed I/O});
     \item menghasilkan sinyal uji sederhana seperti gelombang sinus atau \textit{square wave}.
-\end{itemize}
-
-\subsection{Metode pengujian hardware}
-
-Pengujian hardware dilakukan dengan langkah berikut:
-\begin{enumerate}
-    \item Memprogram FPGA dengan bitstream hasil implementasi.
-    \item Menghubungkan Basys3 ke PCM5102A.
-    \item Menjalankan aplikasi Vitis untuk mengirim sampel audio.
-    \item Mengamati sinyal I2S menggunakan ILA atau osiloskop.
-    \item Memverifikasi keluaran audio melalui speaker/headphone.
-\end{enumerate}
-
-\noindent Skenario uji perangkat keras disusun agar mencakup fungsi-fungsi utama peripheral,
-yakni pengaktifan dan penonaktifan output, pengujian mode \texttt{MUTE}, pemisahan kanal kiri
-dan kanan, perubahan \texttt{SAMPLE\_WIDTH}, serta pemilihan keluarga frekuensi sampling.
-Setiap skenario diamati pada dua level sekaligus: level sinyal digital menggunakan ILA atau
-osiloskop untuk memverifikasi ketepatan protokol, dan level audio analog untuk memastikan bahwa
-konfigurasi register benar-benar menghasilkan perilaku yang diharapkan pada DAC.
-
-\subsection{Pengukuran dan evaluasi}
-
-Metode evaluasi meliputi:
-\begin{itemize}
-    \item \textbf{Resource utilization}: LUT, FF, dan BRAM dari laporan implementasi.
-    \item \textbf{Clock accuracy}: frekuensi aktual hasil Clocking Wizard dan frekuensi terukur sinyal I2S.
-    \item \textbf{Fungsionalitas audio}: keberhasilan playback dan kontinuitas sampel yang memadai pada skenario uji utama.
 \end{itemize}
 
 \section{Alur Tugas Akhir}
@@ -399,11 +107,6 @@ Penelitian ini mengikuti tahapan berikut:
     \item Pengujian hardware dengan ILA, pengukuran sinyal, dan validasi audio.
     \item Analisis hasil, penyusunan dokumen, dan penarikan kesimpulan.
 \end{enumerate}
-
-\noindent Agar alur kerja lebih mudah dipahami daripada tabel durasi mingguan, tahapan penelitian
-dirangkum kembali dalam bentuk diagram alir pada Gambar~\ref{fig:ch3-flow-ta}. Bentuk ini lebih
-sesuai untuk menunjukkan hubungan logis antar-tahap, termasuk fakta bahwa testbench disusun
-setelah verifikasi dasar pada perangkat keras telah dilakukan.
 
 \begin{figure}[htbp]
 \centering

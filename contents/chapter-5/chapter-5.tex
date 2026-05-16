@@ -1,6 +1,84 @@
-\chapter{Tambahan (Opsional)}
+\chapter{Hasil dan Pembahasan}
 
-Bab ini dapat diisi pembahasan yang memanjang di luar Bab IV, misalnya: perbandingan dengan penelitian terdahulu, atau studi kasus batas frekuensi DAC. Jika tidak diperlukan, subbab berikut dapat dihapus atau diringkas setelah pembimbing menyetujui.
+Bab ini menyajikan hasil pengujian sinyal, analisis frekuensi sampling, serta identifikasi dan perbaikan bug firmware yang ditemukan selama validasi perangkat keras.
+
+\section{Pengujian Sinyal}
+
+Pengamatan sinyal pada \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data} dilakukan menggunakan alat ukur digital (osiloskop/logic analyzer) untuk memverifikasi timing Philips I2S~\citep{philips_i2s_1986}.
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/sample-latching-leftright-waveform.png}{%
+        \includegraphics[width=0.95\textwidth]{contents/figures/sample-latching-leftright-waveform.png}%
+    }{}
+    \caption{Tangkapan waveform: BCLK, WS, dan DATA -- satu frame stereo 64 BCLK.}
+    \label{fig:ch5-ila}
+\end{figure}
+
+\noindent Verifikasi ILA mengkonfirmasi:
+\begin{itemize}
+    \item Satu frame stereo terdiri dari tepat 64 periode BCLK (32 kiri + 32 kanan).
+    \item WS beralih satu BCLK \textit{sebelum} MSB data, sesuai spesifikasi Philips.
+    \item Bit pertama setelah setiap peralihan WS selalu bernilai 0.
+\end{itemize}
+
+\section{Analisis Frekuensi Sampling}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Hasil pengujian clock I2S pada keluarga frekuensi 48 kHz.}
+    \label{tab:ch5-ukur}
+    \begin{tabular}{|l|l|c|c|c|}
+        \hline
+        \textbf{Mode} & \textbf{MCLK} & \textbf{Divider} & \textbf{BCLK} & \textbf{$F_s$} \\
+        \hline
+        \texttt{FS\_MODE = 0} & 24,597 MHz & $\div 8$ & 3,0746 MHz & 48,03 kHz \\
+        \texttt{FS\_MODE = 1} & 24,597 MHz & $\div 4$ & 6,1493 MHz & 96,08 kHz \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\section{Identifikasi dan Perbaikan Bug Firmware}
+
+Selama validasi perangkat keras ditemukan beberapa bug yang bersumber dari \textbf{kode firmware} (\texttt{helloworld.c}), bukan dari RTL.
+
+\subsection{Bug 1: Masker Merusak Bit Tanda Sampel}
+\textbf{Gejala}: Amplitudo gelombang tidak seimbang, waveform terdistorsi.
+\textbf{Solusi}: Menghapus penggunaan masker bit dan menyesuaikan geseran agar MSB int16 tepat di bit \texttt{[g\_width-1]}.
+
+\subsection{Bug 2: Timing Loop Berbasis usleep()}
+\textbf{Gejala}: Frekuensi audio terukur lebih rendah dari target.
+\textbf{Solusi}: Mengganti \texttt{usleep()} dengan loop berbasis \textit{deadline} menggunakan CSR \texttt{mcycle} RISC-V untuk presisi 10 ns.
+
+\section{Verifikasi Setelah Perbaikan}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/both-channel.jpeg}{%
+        \includegraphics[width=0.88\textwidth]{contents/figures/both-channel.jpeg}%
+    }{}
+    \caption{Keluaran audio setelah perbaikan: kanal L dan R identik.}
+    \label{fig:ch5-fixed-both}
+\end{figure}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Hasil verifikasi firmware setelah perbaikan bug.}
+    \label{tab:ch5-verifikasi}
+    \begin{tabular}{|l|l|c|}
+        \hline
+        \textbf{Skenario Uji} & \textbf{Hasil yang Diharapkan} & \textbf{Status} \\
+        \hline
+        Both + 1 kHz & L dan R identik, 1 kHz & \checkmark \\
+        Left only + 1 kHz & L aktif, R = 0 & \checkmark \\
+        MUTE aktif & Kedua kanal = 0, clock tetap & \checkmark \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\section{Pembahasan terhadap Tujuan Penelitian}
+
+Hasil penelitian menunjukkan bahwa pendekatan register-mapped AXI4-Lite efektif untuk membangun peripheral I2S TX. Seluruh perbaikan bug dilakukan pada lapisan firmware, yang mengonfirmasi bahwa desain RTL sudah stabil dan benar sejak awal.
 
 \section{Perbandingan dengan referensi desain}
 

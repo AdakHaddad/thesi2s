@@ -101,6 +101,37 @@ Kontribusi penelitian ini adalah:
 \section{Dasar Teori}
 % ============================================================
 
+\subsection{Arsitektur RISC-V dan MicroBlaze V}
+
+RISC-V adalah instruksi set arsitektur (ISA) terbuka berbasis prinsip \textit{Reduced Instruction Set Computer} (RISC) yang bersifat modular~\citep{waterman_riscv_2016}. MicroBlaze V adalah implementasi prosesor soft-core dari AMD/Xilinx yang mengadopsi ISA RISC-V (RV32I) untuk dijalankan di atas fabrik FPGA~\citep{xilinx_microblaze_ref_2021}.
+
+\subsubsection{Model Memory-Mapped I/O (MMIO)}
+
+Dalam arsitektur RISC-V, komunikasi dengan peripheral dilakukan melalui mekanisme \textit{Memory-Mapped I/O} (MMIO). Pada model ini, register internal peripheral dipetakan ke dalam ruang alamat memori prosesor. Instruksi akses memori standar seperti \texttt{sw} (\textit{store word}) dan \texttt{lw} (\textit{load word}) digunakan untuk menulis dan membaca register peripheral tersebut. Keuntungan utama dari pendekatan ini adalah keseragaman akses antara memori data dan peripheral, sehingga tidak diperlukan instruksi khusus I/O.
+
+\subsubsection{Register Kontrol dan Status (CSR)}
+
+RISC-V menyediakan kumpulan \textit{Control and Status Registers} (CSR) untuk manajemen sistem dan telemetri. Salah satu CSR yang penting dalam penelitian ini adalah \texttt{mcycle}, yang merupakan counter 64-bit yang menghitung jumlah siklus detak (\textit{clock cycles}) sejak prosesor diaktifkan~\citep{riscv_isa_vol1_2019}. Register ini digunakan untuk mengimplementasikan \textit{timing loop} presisi tinggi pada aplikasi perangkat lunak bare-metal.
+
+\subsection{Protokol Komunikasi AXI4-Lite}
+
+AXI4-Lite adalah varian sederhana dari protokol \textit{Advanced eXtensible Interface} (AXI) yang dioptimalkan untuk komunikasi dengan peripheral berbasis register~\citep{arm_amba_axi_2010}.
+
+\subsubsection{Kanal dan Sinyal AXI4-Lite}
+
+Protokol ini terdiri dari lima kanal transaksi independen:
+\begin{enumerate}
+    \item \textbf{Write Address Channel (AW)}: Mengirimkan alamat tujuan penulisan.
+    \item \textbf{Write Data Channel (W)}: Mengirimkan data yang akan ditulis.
+    \item \textbf{Write Response Channel (B)}: Memberikan status penyelesaian transaksi tulis.
+    \item \textbf{Read Address Channel (AR)}: Mengirimkan alamat data yang akan dibaca.
+    \item \textbf{Read Data Channel (R)}: Mengirimkan data yang dibaca beserta statusnya.
+\end{enumerate}
+
+\subsubsection{Mekanisme Handshake VALID/READY}
+
+Setiap transaksi pada AXI4-Lite diatur oleh mekanisme \textit{handshake} dua arah menggunakan sinyal \texttt{VALID} dan \texttt{READY}. Sinyal \texttt{VALID} dibangkitkan oleh sumber (\textit{source}) untuk menandakan bahwa informasi alamat atau data sudah valid. Sinyal \texttt{READY} dibangkitkan oleh tujuan (\textit{destination}) untuk menandakan kesiapan menerima informasi tersebut. Transaksi dianggap terjadi secara tepat pada siklus detak di mana kedua sinyal \texttt{VALID} dan \texttt{READY} bernilai tinggi (logika 1). Mekanisme ini memungkinkan terjadinya \textit{backpressure} jika peripheral sedang sibuk, sehingga mencegah hilangnya data selama proses komunikasi.
+
 \subsection{Protokol komunikasi I2S}
 
 I2S (\textit{Inter-IC Sound}) adalah protokol serial sinkron yang dirancang oleh Philips

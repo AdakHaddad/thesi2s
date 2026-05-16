@@ -1,20 +1,65 @@
-\chapter{Hasil dan Pembahasan}
+\chapter{Perancangan dan Implementasi}
 
-Bab ini menyajikan \textbf{implementasi} IP I2S TX AXI4-Lite, integrasi pada Basys3, hasil pengujian sinyal dan audio, serta analisis dan perbaikan bug yang ditemukan selama validasi perangkat keras.
+\section{Spesifikasi dan arsitektur IP I2S TX}
 
-% ============================================================
+Bagian ini merangkum \textbf{perancangan fungsional} IP yang menjadi inti skripsi. Implementasi difokuskan pada peripheral \textbf{I2S transmitter} dengan antarmuka \textbf{AXI4-Lite} agar dapat dikontrol oleh program C pada MicroBlaze V~\citep{xilinx_microblaze_ref_2021}.
+
+\subsection{Daftar fitur IP}
+\begin{itemize}
+    \item Antarmuka \textbf{AXI4-Lite} 32 bit untuk konfigurasi dan pengisian data audio~\citep{arm_amba_axi_2010}.
+    \item Mode \textbf{TX-only}, stereo, format \textbf{Philips I2S}~\citep{philips_i2s_1986}, \textbf{24 bit} per saluran dalam \textbf{slot 32 bit}.
+    \item Dukungan dua keluarga frekuensi sampling nominal (\textbf{48/96 kHz} dan \textbf{44,1/88,2 kHz}), melalui pembagi clock internal dan \texttt{BUFGMUX}~\citep{xilinx_clocking_wizard_2021}.
+    \item \textbf{Jalur data} lewat register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT} dan \texttt{CONTROL}, \textbf{tanpa FIFO} internal.
+\end{itemize}
+
+\subsection{Blok diagram perancangan IP}
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/i2s-ip-block.png}{%
+        \includegraphics[width=0.92\textwidth]{contents/figures/i2s-ip-block.png}%
+    }{}
+    \caption{Blok diagram internal IP I2S TX.}
+    \label{fig:ch3-block-ip-intern}
+\end{figure}
+
+\subsection{Register map}
+Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada implementasi final.
+
+\begin{table}[htbp]
+\centering
+\caption{Register map IP I2S AXI4-Lite.}
+\label{tab:ch3-regmap}
+\begin{tabular}{|l|l|p{4.0cm}|p{5.5cm}|}
+\hline
+\textbf{Offset} & \textbf{Nama Register} & \textbf{Fungsi} & \textbf{Packing / Catatan} \\
+\hline
+\texttt{0x00} & \texttt{DATA\_LEFT} & Sampel kanal kiri & MSB di bit \texttt{[SAMPLE\_WIDTH-1]} \\
+\texttt{0x04} & \texttt{DATA\_RIGHT} & Sampel kanal kanan & MSB di bit \texttt{[SAMPLE\_WIDTH-1]} \\
+\texttt{0x08} & \texttt{CONTROL} & Konfigurasi peripheral & Lihat Tabel \ref{tab:ch3-control-bits} \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Bitfield register \texttt{CONTROL}.}
+\label{tab:ch3-control-bits}
+\begin{tabular}{|c|l|c|p{8.0cm}|}
+\hline
+\textbf{Bit(s)} & \textbf{Field} & \textbf{Default} & \textbf{Fungsi / Keterangan} \\
+\hline
+\texttt{0} & \texttt{ENABLE} & 0 & 1 = output audio aktif, 0 = output nonaktif \\
+\texttt{1} & \texttt{MUTE} & 0 & 1 = data audio dipaksa nol, clock tetap berjalan \\
+\texttt{2} & \texttt{FS\_FAMILY} & 0 & 0 = keluarga 48/96 kHz, 1 = keluarga 44,1/88,2 kHz \\
+\texttt{3} & \texttt{FS\_MODE} & 0 & 0 = Fs rendah (48/44,1 kHz); 1 = Fs tinggi (96/88,2 kHz) \\
+\texttt{12:8} & \texttt{SAMPLE\_WIDTH} & 32 & Lebar bit sampel per kanal (1--32) \\
+\hline
+\end{tabular}
+\end{table}
+
 \section{Implementasi RTL dan Integrasi Vivado}
-% ============================================================
 
-RTL direalisasikan dalam dua berkas Verilog: \texttt{i2s.v} sebagai \textit{top-level wrapper} dan \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v} sebagai modul utama yang mencakup seluruh logika AXI4-Lite, CDC, dan serializer I2S sesuai spesifikasi Philips~\citep{philips_i2s_1986}. Integrasi dilakukan melalui Vivado IP Integrator (\textit{Block Design})~\citep{xilinx_vivado_design_suite_2021}; pin I2S dipetakan pada file \texttt{.xdc}.
-
-\noindent Pemisahan antara \texttt{i2s.v} dan \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v}
-dilakukan untuk menjaga tanggung jawab modul tetap jelas. Berkas \texttt{i2s.v} berfungsi
-sebagai pembungkus antarmuka tingkat atas dan penghubung ke sistem Vivado, sedangkan berkas
-utama menangani detail perilaku peripheral seperti transaksi AXI, sinkronisasi antar-domain
-clock, pemilihan clock audio, dan pembangkitan data serial I2S. Pemisahan ini memudahkan proses
-debugging karena permasalahan integrasi sistem dapat dibedakan dari permasalahan logika internal
-peripheral.
+RTL direalisasikan dalam dua berkas Verilog: \texttt{i2s.v} sebagai \textit{top-level wrapper} dan \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v} sebagai modul utama yang mencakup seluruh logika AXI4-Lite, CDC, dan serializer I2S.
 
 \begin{figure}[htbp]
     \centering
@@ -30,624 +75,56 @@ peripheral.
 Pin I2S dihubungkan ke header PMOD JA pada Basys3 melalui file \texttt{cnstr.xdc} sebagai berikut:
 
 \begin{verbatim}
-set_property -dict {PACKAGE_PIN J1 IOSTANDARD LVCMOS33} \
-    [get_ports i2s_mclk_0]
-set_property -dict {PACKAGE_PIN L2 IOSTANDARD LVCMOS33} \
-    [get_ports i2s_bclk_0]
-set_property -dict {PACKAGE_PIN J2 IOSTANDARD LVCMOS33} \
-    [get_ports i2s_ws_0]
-set_property -dict {PACKAGE_PIN G2 IOSTANDARD LVCMOS33} \
-    [get_ports i2s_data_0]
-
-## Configuration options for Basys3
-set_property CONFIG_VOLTAGE 3.3 [current_design]
-set_property CFGBVS VCCO [current_design]
-set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
-set_property BITSTREAM.CONFIG.CONFIGRATE 33 [current_design]
-set_property CONFIG_MODE SPIx4 [current_design]
+set_property -dict {PACKAGE_PIN J1 IOSTANDARD LVCMOS33} [get_ports i2s_mclk_0]
+set_property -dict {PACKAGE_PIN L2 IOSTANDARD LVCMOS33} [get_ports i2s_bclk_0]
+set_property -dict {PACKAGE_PIN J2 IOSTANDARD LVCMOS33} [get_ports i2s_ws_0]
+set_property -dict {PACKAGE_PIN G2 IOSTANDARD LVCMOS33} [get_ports i2s_data_0]
 \end{verbatim}
-
-\noindent Selain pemetaan pin, file constraint juga mendefinisikan hubungan asinkron antara domain clock AXI (100 MHz) dan domain clock audio (~24 MHz) untuk memastikan analisis timing yang benar:
-
-\begin{verbatim}
-set_clock_groups -asynchronous \
-    -group [get_clocks clk_out1_bdesign_clock_core_clk_wiz_0_0] \
-    -group [get_clocks clk_out2_bdesign_clock_core_clk_wiz_0_0] \
-    -group [get_clocks clk_out3_bdesign_clock_core_clk_wiz_0_0] \
-    -group [get_clocks -quiet internal_mclk_from_48] \
-    -group [get_clocks -quiet internal_mclk_from_44]
-
-set_false_path -from [get_cells -hierarchical *slv_reg2_reg[2]] \
-               -to [get_cells -hierarchical *mclk_mux_inst/q*_d1_reg*]
-\end{verbatim}
-
-\noindent Ketiga sinyal utama I2S (BCLK, WS/LRCK, DATA) dan MCLK terhubung langsung ke PMOD JA pin 1--4, yang kemudian disambungkan ke modul PCM5102A menggunakan kabel jumper.
-
-\noindent Tahap pemetaan pin mempunyai peran penting karena kesalahan kecil pada penugasan pin
-atau standar I/O dapat menghasilkan gejala yang mirip dengan kegagalan RTL, misalnya tidak
-adanya keluaran audio atau bentuk gelombang yang tampak salah. Oleh sebab itu, validasi pin,
-tegangan LVCMOS33, dan hubungan antar-domain clock pada file constraint merupakan bagian
-integral dari keberhasilan implementasi, bukan sekadar konfigurasi administratif.
-
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/pmod-pcm-wiring-diagram.png}{%
-        \includegraphics[width=0.75\textwidth]{contents/figures/pmod-pcm-wiring-diagram.png}%
-    }{}
-    \caption{Wiring PMOD JA ke modul PCM5102A.}
-    \label{fig:ch4-wiring}
-\end{figure}
 
 \subsection{Detail logika RTL (serializer dan CDC)}
 
-Logika internal IP I2S TX dirancang untuk menangani dua domain clock yang berbeda secara aman. Bagian ini merinci mekanisme tersebut.
+\subsubsection{Mekanisme Clock Domain Crossing (CDC)}
 
-Sebelum data mencapai serializer, register sampel dan kontrol terlebih dahulu
-diisi melalui jalur AXI4-Lite. Cuplikan logika tulis register ditunjukkan pada
-Listing~\ref{lst:ch4-axi-write}. Listing ini penting karena menunjukkan bahwa
-alamat word-aligned \texttt{0x00}, \texttt{0x04}, dan \texttt{0x08} benar-benar
-dipetakan ke \texttt{slv\_reg0}, \texttt{slv\_reg1}, dan \texttt{slv\_reg2}.
+Data audio ditulis oleh MicroBlaze V pada domain \texttt{S\_AXI\_ACLK} (100 MHz), sementara serializer beroperasi pada domain \texttt{internal\_mclk} (${\sim}24$ MHz). Sinkronisasi dilakukan menggunakan flip-flop ganda dan latching pada batas frame stereo.
 
-\begin{lstlisting}[language=Verilog, caption={Cuplikan logika write register AXI4-Lite.}, label={lst:ch4-axi-write}]
-always @(posedge S_AXI_ACLK) begin
-    if (S_AXI_ARESETN == 1'b0) begin
-        slv_reg0 <= 0;
-        slv_reg1 <= 0;
-        slv_reg2 <= 0;
-        slv_reg3 <= 0;
-    end else begin
-        if (S_AXI_WVALID) begin
-            case ((S_AXI_AWVALID) ?
-                    S_AXI_AWADDR[ADDR_LSB+OPT_MEM_ADDR_BITS:ADDR_LSB] :
-                    axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS:ADDR_LSB])
-                REG_DATA_LEFT:
-                    ...
-                REG_DATA_RIGHT:
-                    ...
-                REG_CONTROL:
-                    ...
-                REG_RESERVED:
-                    ...
-            endcase
-        end
-    end
+\begin{lstlisting}[language=Verilog, caption={Cuplikan modul \texttt{cdc\_sync} pada RTL.}, label={lst:ch4-cdc-sync}]
+always @(posedge dest_clk) begin
+    stage1_q <= src_in;
+    stage2_q <= stage1_q;
 end
 \end{lstlisting}
 
-\noindent Meskipun sebagian rincian byte-enable disingkat dengan elipsis pada
-listing, struktur utamanya tetap terlihat jelas. Setiap transaksi tulis yang
-valid akan memilih salah satu register berdasarkan alamat AXI, lalu hanya byte
-yang ditandai oleh \texttt{WSTRB} yang diperbarui. Dengan cara ini, peripheral
-bersifat kompatibel dengan semantik standar AXI4-Lite dan dapat diakses dari
-perangkat lunak menggunakan operasi \texttt{Xil\_Out32()} biasa tanpa memerlukan
-protokol tambahan di luar register map.
-
-\subsubsection{Mekanisme Clock Domain Crossing (CDC)}
-
-Data audio ditulis oleh MicroBlaze V pada domain \texttt{S\_AXI\_ACLK} (100 MHz), sementara serializer beroperasi pada domain \texttt{internal\_mclk} (${\sim}24$ MHz). Untuk mencegah metastabilitas, register \texttt{CONTROL}, \texttt{DATA\_LEFT}, dan \texttt{DATA\_RIGHT} dilewatkan melalui modul \texttt{cdc\_sync} yang mengimplementasikan sinkronisasi flip-flop ganda (\textit{two-stage synchronizer})~\citep{ginosar_metastability_2011}. Selain itu, latching sampel ke register bayangan (\textit{shadow register}) dilakukan tepat pada batas frame stereo (saat \texttt{bit\_count} kembali ke nol) untuk menjamin integritas data antar kanal.
-
-Implementasi sinkronisasi tersebut ditunjukkan secara ringkas pada
-Listing~\ref{lst:ch4-cdc-sync}. Cuplikan ini memperlihatkan bahwa bus multi-bit
-tidak digunakan secara langsung pada domain tujuan, tetapi dilewatkan melalui dua
-tahap register berurutan.
-
-\begin{lstlisting}[language=Verilog, caption={Cuplikan modul \texttt{cdc\_sync} pada RTL.}, label={lst:ch4-cdc-sync}]
-module cdc_sync #(
-    parameter integer WIDTH = 32
-) (
-    input  wire             dest_clk,
-    input  wire [WIDTH-1:0] src_in,
-    output wire [WIDTH-1:0] dest_out
-);
-    (* ASYNC_REG = "TRUE" *) reg [WIDTH-1:0] stage1_q;
-    (* ASYNC_REG = "TRUE" *) reg [WIDTH-1:0] stage2_q;
-
-    always @(posedge dest_clk) begin
-        stage1_q <= src_in;
-        stage2_q <= stage1_q;
-    end
-
-    assign dest_out = stage2_q;
-endmodule
-\end{lstlisting}
-
-\noindent Secara praktis, dua tahap register tersebut memberi waktu agar sinyal
-yang mungkin metastabil pada tahap pertama menjadi stabil sebelum digunakan pada
-logika domain audio. Pada desain ini, sinkronisasi semacam itu cukup memadai karena
-yang dipindahkan antar-domain bukan \textit{stream} kontinu berkecepatan tinggi,
-melainkan status kontrol dan data register yang diperbarui secara diskrit oleh CPU.
-
 \subsubsection{Logika serializer Philips I2S}
-
-Serializer diimplementasikan sebagai mesin state sederhana yang dipicu oleh \texttt{bclk\_en\_w}. Fungsi \texttt{i2s\_next\_serial\_bit} menentukan bit mana yang harus dikirim berdasarkan nilai \texttt{bit\_count\_q} (0--63):
-\begin{itemize}
-    \item \textbf{Bit 0 dan 32}: Merupakan bit tunda (\textit{one-bit delay}) sesuai standar Philips; output dipaksa nol.
-    \item \textbf{Bit 1--31 dan 33--63}: Mengirimkan bit sampel dari MSB ke LSB. Jika \texttt{SAMPLE\_WIDTH} kurang dari 32, sisa bit dalam slot akan diisi nol (\textit{zero padding}).
-\end{itemize}
-
-\noindent Sinyal \texttt{WS} (Word Select) diturunkan langsung dari bit ke-6 dari \texttt{bit\_count\_q}, sehingga otomatis bernilai rendah untuk 32 bit pertama (kiri) dan tinggi untuk 32 bit berikutnya (kanan). Data diperbarui pada tepi turun BCLK dan dipertahankan stabil saat tepi naik BCLK untuk menjamin waktu \textit{setup} dan \textit{hold} pada sisi DAC.
-\noindent Cuplikan logika pemilihan bit serial ditunjukkan pada
-Listing~\ref{lst:ch4-serializer}. Struktur ini menjelaskan secara eksplisit
-bagaimana aturan \textit{one-bit delay}, pengiriman MSB lebih dulu, dan
-\textit{zero padding} direalisasikan pada RTL.
 
 \begin{lstlisting}[language=Verilog, caption={Cuplikan logika serializer I2S.}, label={lst:ch4-serializer}]
 case (bit_count_q)
-    6'd0, 6'd32: begin
-        i2s_next_serial_bit = 1'b0;
-    end
+    6'd0, 6'd32: i2s_next_serial_bit = 1'b0; // delay bit
     default: begin
-        if (bit_count_q < 6'd32) begin
-            if ((bit_count_q - 1) < sample_width_q)
-                i2s_next_serial_bit = sample_left_q[sample_width_q - bit_count_q];
-            else
-                i2s_next_serial_bit = 1'b0;
-        end else begin
-            if ((bit_count_q - 6'd33) < sample_width_q)
-                i2s_next_serial_bit = sample_right_q[sample_width_q - (bit_count_q - 6'd32)];
-            else
-                i2s_next_serial_bit = 1'b0;
-        end
+        // Serialisasi MSB first
     end
 endcase
 \end{lstlisting}
 
-\noindent Pada bit ke-0 dan ke-32, keluaran dipaksa nol untuk memenuhi
-\textit{delay bit} setelah transisi \texttt{WS}. Setelah itu, indeks bit sampel
-dihitung mundur dari MSB menuju LSB. Jika \texttt{sample\_width\_q} lebih kecil
-dari panjang slot 32-bit, logika secara otomatis mengisi sisa slot dengan nol.
-Dengan demikian, satu blok serializer yang sama dapat melayani mode 16, 24, maupun
-32 bit tanpa mengubah struktur frame stereo.
-\noindent Dengan mekanisme tersebut, perilaku serializer dapat dipandang sebagai rantai proses
-yang deterministik: sampel baru dari domain AXI tidak langsung dikirim ke jalur serial, tetapi
-ditahan hingga frame yang sedang berjalan selesai. Strategi ini mencegah terjadinya pergantian
-nilai di tengah slot yang dapat menyebabkan sebagian bit kanal kiri berasal dari sampel lama dan
-sebagian bit berikutnya berasal dari sampel baru. Selain itu, kombinasi \texttt{ENABLE},
-\texttt{MUTE}, dan \texttt{SAMPLE\_WIDTH} memungkinkan satu arsitektur serializer yang sama
-dipakai untuk beberapa mode operasi tanpa perlu mengubah struktur dasar frame 64-bit.
-
-\subsection{Diagram modul PCM5102A}
-
-Modul DAC PCM5102A yang digunakan pada pengembangan sistem ditunjukkan pada dokumentasi Texas Instruments\citep{pcm5102a_datasheet}. Gambar resmi dari datasheet dapat dimasukkan secara manual pada bagian ini sesuai kebutuhan penulisan akhir.
-
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/pcm5102-functional-block-diagram.png}{%
-        \includegraphics[width=0.82\textwidth]{contents/figures/pcm5102-functional-block-diagram.png}%
-    }{}
-    \caption{Diagram blok fungsional PCM5102A dari dokumentasi Texas Instruments.}
-    \label{fig:ch4-pcm5102a-module}
-\end{figure}
-
-% ============================================================
 \section{Konfigurasi Clocking Wizard}
-% ============================================================
 
 Clocking Wizard~\citep{xilinx_clocking_wizard_2021} dikonfigurasi menghasilkan tiga keluaran dari satu osilator 100 MHz:
 \begin{enumerate}
-    \item \texttt{clk\_out1} = 100 MHz, digunakan sebagai AXI ACLK dan clock CPU MicroBlaze V.
-    \item \texttt{clk\_out2} = 24,576 MHz (aktual 24,59677 MHz), digunakan sebagai \texttt{audio\_48\_clk} untuk keluarga 48/96 kHz.
-    \item \texttt{clk\_out3} = 22,579 MHz (aktual 22,42647 MHz), digunakan sebagai \texttt{audio\_44\_clk} untuk keluarga 44,1/88,2 kHz.
+    \item \texttt{clk\_out1} = 100 MHz (AXI ACLK).
+    \item \texttt{clk\_out2} = 24,576 MHz (\texttt{audio\_48\_clk}).
+    \item \texttt{clk\_out3} = 22,579 MHz (\texttt{audio\_44\_clk}).
 \end{enumerate}
 
 \begin{table}[htbp]
     \centering
     \caption{Konfigurasi clock hasil Clocking Wizard.}
     \label{tab:ch4-clk-aktual}
-    \renewcommand{\arraystretch}{1.2}
-    \begin{tabular}{|p{2.3cm}|p{3.4cm}|c|c|}
-        \hline
-        \centering\textbf{Clock} & \centering\textbf{Fungsi / Port} & \centering\textbf{Target} & \centering\textbf{Aktual} \tabularnewline
-        \hline
-        \texttt{clk\_out1} & AXI ACLK / CPU & 100,000 MHz & 100,00000 MHz \\
-        \texttt{clk\_out2} & \texttt{audio\_48\_clk} & 24,576 MHz & 24,59677 MHz \\
-        \texttt{clk\_out3} & \texttt{audio\_44\_clk} & 22,579 MHz & 22,42647 MHz \\
-        \hline
-    \end{tabular}
-\end{table}
-
-\noindent IP memilih antara kedua clock audio menggunakan primitif \texttt{BUFGMUX} di dalam RTL, dikontrol oleh bit \texttt{FS\_FAMILY} pada register \texttt{CONTROL} melalui sinkronisasi dua-flip-flop~\citep{ginosar_metastability_2011}.
-\noindent Perbedaan antara frekuensi \textit{requested} dan \textit{actual} merupakan konsekuensi
-alami dari keterbatasan rasio pembangkitan MMCM pada FPGA, sehingga tidak dapat dianggap sebagai
-kesalahan implementasi. Bagi penelitian ini, yang lebih penting adalah apakah selisih tersebut
-masih cukup kecil sehingga keluaran audio tetap berada pada rentang yang dapat diterima untuk
-validasi fungsional. Karena penyimpangannya hanya sebagian kecil persen, clock hasil Clocking
-Wizard masih memadai untuk membuktikan ketepatan arsitektur peripheral dan logika pembagi BCLK.
-
-% ============================================================
-\section{Pengujian Sinyal}
-% ============================================================
-
-Pengamatan sinyal pada \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data} dilakukan menggunakan alat ukur digital (osiloskop/logic analyzer) untuk memverifikasi timing Philips I2S~\citep{philips_i2s_1986}.
-
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/sample-latching-leftright-waveform.png}{%
-        \includegraphics[width=0.95\textwidth]{contents/figures/sample-latching-leftright-waveform.png}%
-    }{}
-    \caption{Tangkapan waveform: BCLK, WS, dan DATA -- satu frame stereo 64 BCLK.}
-    \label{fig:ch4-ila}
-\end{figure}
-
-\noindent Verifikasi ILA mengkonfirmasi:
-\begin{itemize}
-    \item Satu frame stereo terdiri dari tepat 64 periode BCLK (32 kiri + 32 kanan).
-    \item WS beralih satu BCLK \textit{sebelum} MSB data, sesuai spesifikasi Philips.
-    \item Bit pertama setelah setiap peralihan WS selalu bernilai 0 (\textit{delay bit} wajib).
-    \item BCLK = 3,0746 MHz dan WS = 48,03 kHz (konsisten dengan clock aktual 24,597 MHz dan divider 8).
-\end{itemize}
-
-\noindent Temuan ini penting karena setiap butir di atas memverifikasi aspek yang berbeda dari
-desain. Jumlah 64 periode BCLK membuktikan struktur slot 32-bit per kanal, transisi \texttt{WS}
-memastikan kompatibilitas terhadap format Philips I2S, sedangkan keberadaan \textit{delay bit}
-menunjukkan bahwa serializer tidak sekadar menggeser data mentah, tetapi benar-benar mengikuti
-aturan protokol. Kesesuaian antara hasil pengukuran dan perhitungan teoritis juga memperkuat
-kesimpulan bahwa jalur clock, divider, dan logika frame bekerja secara konsisten.
-
-\subsection{Verifikasi tambahan menggunakan testbench}
-
-Setelah perilaku dasar IP terverifikasi pada perangkat keras nyata, dilakukan verifikasi
-tambahan menggunakan \textit{testbench} pada proyek
-\texttt{C:\textbackslash tesi2s\textbackslash testblock}, khususnya berkas
-\texttt{i2s\_tb.v}. Testbench ini tidak dimaksudkan untuk menggantikan validasi hardware,
-melainkan untuk mereproduksi ulang urutan sinyal pada lingkungan yang terkontrol sehingga
-perubahan status \texttt{enable}, \texttt{mute}, dan \texttt{fs\_mode} dapat diamati ulang
-tanpa memerlukan pemrograman ulang FPGA setiap kali pengujian.
-
-\noindent Secara fungsional, testbench memberi stimulus sederhana: sampel kiri
-\texttt{0x0000AAAA}, sampel kanan \texttt{0x00005555}, aktivasi \texttt{enable}
-setelah jeda awal, pengaktifan dan penonaktifan \texttt{mute}, serta perubahan
-\texttt{fs\_mode} dari mode rendah ke mode tinggi. Rangkaian ini cukup untuk
-mengonfirmasi bahwa pola serialisasi, perubahan laju BCLK, dan relasi kanal
-kiri-kanan pada simulasi konsisten dengan hasil pengamatan ILA pada FPGA.
-Dengan demikian, testbench berperan sebagai alat dokumentasi dan konfirmasi
-formal terhadap perilaku yang sebelumnya telah dibuktikan pada implementasi nyata.
-
-% ============================================================
-\section{Analisis Frekuensi Sampling}
-% ============================================================
-
-Bagian ini menganalisis bagaimana frekuensi sampling terbentuk dari clock audio yang
-dihasilkan \textit{Clocking Wizard}. Alurnya dapat dibaca secara berurutan sebagai
-\texttt{audio\_clk} $\rightarrow$ pembagi internal $\rightarrow$ BCLK $\rightarrow F_s$.
-Dengan cara pandang ini, pembaca dapat melihat bahwa frekuensi sampling bukan nilai
-yang muncul secara terpisah, melainkan konsekuensi langsung dari clock sumber dan
-konfigurasi divider pada IP.
-
-Pada implementasi ini, BCLK dibangkitkan dari \texttt{audio\_clk} melalui pembagi
-internal. Hubungannya dinyatakan sebagai berikut:
-
-\begin{equation}
-\mathrm{BCLK} = \frac{\mathrm{MCLK}}{\mathrm{Divider}}
-\end{equation}
-
-\noindent Setelah BCLK diperoleh, frekuensi sampling dihitung dari jumlah bit dalam
-satu frame stereo. Karena format yang digunakan adalah 32 bit per kanal untuk dua
-kanal, maka satu frame berisi 64 siklus BCLK. Oleh sebab itu:
-
-\begin{equation}
-F_s = \frac{\mathrm{BCLK}}{64}
-\end{equation}
-
-\noindent Untuk keluarga frekuensi 48 kHz, clock audio aktual yang digunakan pada
-pengujian adalah sekitar 24,597 MHz. Berdasarkan relasi tersebut, hasil perhitungan
-untuk masing-masing mode ditunjukkan pada Tabel~\ref{tab:ch4-ukur}.
-
-\begin{table}[H]
-    \centering
-    \caption{Hasil pengujian clock I2S pada keluarga frekuensi 48 kHz.}
-    \label{tab:ch4-ukur}
-    \renewcommand{\arraystretch}{1.3}
-    \begin{tabular}{|p{2.3cm}|p{2.8cm}|c|c|c|}
-        \hline
-        \centering\textbf{Mode} &
-        \centering\textbf{MCLK} &
-        \centering\textbf{Divider} &
-        \centering\textbf{BCLK} &
-        \centering\textbf{$F_s$} \tabularnewline
-        \hline
-        \texttt{FS\_MODE = 0} & 24,597 MHz & $\div 8$ & 3,0746 MHz & 48,03 kHz \\
-        \hline
-        \texttt{FS\_MODE = 1} & 24,597 MHz & $\div 4$ & 6,1493 MHz & 96,08 kHz \\
-        \hline
-    \end{tabular}
-\end{table}
-
-\noindent Tabel~\ref{tab:ch4-ukur} memperlihatkan hubungan yang intuitif. Ketika
-\texttt{FS\_MODE = 0}, divider bernilai 8 sehingga BCLK turun menjadi sekitar
-3,0746 MHz. Karena satu sampel stereo membutuhkan 64 siklus BCLK, frekuensi sampling
-yang dihasilkan menjadi sekitar 48,03 kHz. Ketika \texttt{FS\_MODE = 1}, divider
-diperkecil menjadi 4, sehingga BCLK naik hampir dua kali lipat menjadi 6,1493 MHz.
-Akibatnya, $F_s$ juga meningkat hampir dua kali lipat menjadi 96,08 kHz.
-
-\noindent Dari hasil tersebut dapat dilihat bahwa perubahan \texttt{FS\_MODE} bekerja
-sesuai tujuan rancangan: mode pertama menghasilkan keluarga 48 kHz, sedangkan mode
-kedua menghasilkan keluarga 96 kHz. Selisih kecil terhadap nilai nominal berasal dari
-frekuensi clock aktual MMCM yang sedikit berbeda dari target ideal 24,576 MHz.
-Dengan kata lain, penyimpangan ini bersifat sistematis dan dapat diprediksi dari clock
-sumber, bukan disebabkan oleh kesalahan logika serializer atau bug pada RTL. Untuk
-tujuan validasi peripheral, hasil ini menunjukkan bahwa jalur clock dan mekanisme
-pembagi bekerja secara konsisten serta menghasilkan frekuensi sampling yang sangat
-dekat dengan target desain.
-
-Perbaikan dari sisi firmware yang memungkinkan akurasi ini dipertahankan pada saat
-streaming ditunjukkan pada Listing~\ref{lst:ch4-rdcycle}. Fungsi
-\texttt{rdcycle64()} digunakan untuk membentuk basis waktu absolut pada level siklus CPU.
-
-\begin{lstlisting}[language=C, caption={Cuplikan pembacaan \texttt{mcycle} 64-bit dan loop berbasis deadline.}, label={lst:ch4-rdcycle}]
-static inline uint64_t rdcycle64(void)
-{
-    uint32_t lo, hi, hi2;
-    do {
-        __asm__ volatile ("rdcycleh %0" : "=r"(hi));
-        __asm__ volatile ("rdcycle  %0" : "=r"(lo));
-        __asm__ volatile ("rdcycleh %0" : "=r"(hi2));
-    } while (hi != hi2);
-    return ((uint64_t)hi << 32) | lo;
-}
-
-uint64_t t_deadline = rdcycle64();
-while (1) {
-    uint64_t period_cycles =
-        (uint64_t)XPAR_CPU_CORE_CLOCK_FREQ_HZ / current_sample_rate();
-    stream_sample();
-    t_deadline += period_cycles;
-    while (rdcycle64() < t_deadline) {}
-}
-\end{lstlisting}
-
-\noindent Berbeda dari pendekatan \texttt{usleep()}, loop berbasis deadline tidak
-menebak overhead tiap iterasi. Waktu target selalu dimajukan satu periode sampel
-secara absolut, lalu CPU menunggu hingga counter mencapai nilai tersebut. Karena itu,
-error waktu tidak terakumulasi dari satu iterasi ke iterasi berikutnya. Inilah alasan
-utama mengapa frekuensi hasil perbaikan menjadi jauh lebih dekat dengan nilai teoritis.
-
-% ============================================================
-\section{Identifikasi dan Perbaikan Bug Firmware}
-% ============================================================
-
-Selama validasi perangkat keras ditemukan empat gejala tidak benar yang semuanya bersumber dari \textbf{kode firmware} (\texttt{helloworld.c}), bukan dari RTL. Berikut adalah analisis dan solusi untuk masing-masing bug.
-
-% ------------------------------------------------------------
-\subsection{Bug 1: Masker Merusak Bit Tanda Sampel}
-% ------------------------------------------------------------
-
-\subsubsection{Gejala}
-Amplitudo gelombang kanal kiri dan kanan tidak sama meskipun nilai yang dikirim identik. Waveform tampak seperti \textit{half-wave rectification} pada salah satu kanal.
-
-\subsubsection{Penyebab}
-
-RTL mengharapkan MSB sampel berada di bit \texttt{[sample\_width-1]} dari word 32-bit. Kode lama menerapkan masker setelah geseran:
-
-\begin{lstlisting}[language=C,basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible]
-uint32_t mask = (1U << g_width) - 1U;   // untuk 24-bit: 0x00FFFFFF
-uint32_t samp = (uint32_t)s32 & mask;   // memotong bit [31:24]
-\end{lstlisting}
-
-\noindent Sampel negatif int16 setelah digeser kiri 8 bit memiliki bit tanda di posisi \texttt{[31:24]}. Masker memotong bit-bit ini sehingga nilai negatif menjadi positif -- gelombang sinus terdistorsi.
-
-\subsubsection{Solusi}
-
-Masker dihapus. Geseran disesuaikan agar MSB int16 tepat di bit \texttt{[g\_width-1]}:
-
-\begin{lstlisting}[language=C,basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible]
-int32_t s32;
-if      (g_width >= 32U)  s32 = (int32_t)s << 16;
-else if (g_width >  16U)  s32 = (int32_t)s << (g_width - 16U);
-else if (g_width <  16U)  s32 = (int32_t)s >> (16U - g_width);
-else                       s32 = (int32_t)s;
-uint32_t samp = (uint32_t)s32;   // tanpa mask
-\end{lstlisting}
-
-\noindent RTL hanya membaca bit \texttt{[sample\_width-1:0]} dari register data; bit di atasnya diabaikan, sehingga tidak diperlukan masker pada sisi firmware.
-
-% ------------------------------------------------------------
-\subsection{Bug 2: Mode 32-bit Kehilangan 1 Bit Resolusi}
-% ------------------------------------------------------------
-
-\subsubsection{Gejala}
-Saat \texttt{SAMPLE\_WIDTH=32}, amplitudo gelombang separuh dari yang diharapkan; sampel full-scale positif ($32767$) tidak menghasilkan output maksimum.
-
-\subsubsection{Penyebab}
-
-Untuk \texttt{g\_width=32}, geseran kiri 16 menghasilkan \texttt{0x7FFF0000} untuk sampel \texttt{0x7FFF}. Bit 31 dari word ini adalah 0 (bukan 1). Serializer RTL pada posisi pertama membaca \texttt{sample[31]} sebagai MSB, sehingga seluruh nilai tergeser satu bit ke bawah -- setara dengan kehilangan satu bit resolusi.
-
-\subsubsection{Solusi}
-
-Sama dengan Bug 1 -- perbaikan geseran tanpa masker sudah menyelesaikan masalah ini secara otomatis. \texttt{(int32\_t)s << 16} menghasilkan penempatan MSB yang benar di bit 31.
-
-% ------------------------------------------------------------
-\subsection{Bug 3: Kanal Kanan Mute saat Mode Right-Only}
-% ------------------------------------------------------------
-
-\subsubsection{Gejala}
-Menekan \texttt{R} (Right only): kedua kanal menjadi mute atau tidak terdengar sama sekali.
-
-\subsubsection{Penyebab}
-
-Gejala ini merupakan konsekuensi dari Bug 1. Pada mode
-\texttt{g\_left=0, g\_right=1}, firmware menulis nol ke \texttt{DATA\_LEFT} dan
-\texttt{samp} ke \texttt{DATA\_RIGHT}. Karena \texttt{samp} sudah rusak akibat
-masker, output audio tidak lagi mencerminkan gelombang sinus yang benar. Pada
-frekuensi tertentu, \textit{DC offset} yang terbentuk bahkan dapat diinterpretasikan
-sebagai tidak ada suara oleh DAC.
-
-\subsubsection{Solusi}
-
-Perbaikan Bug 1 secara langsung menyelesaikan gejala ini. Firmware sudah benar dalam menulis \textbf{kedua} register setiap iterasi (baik yang aktif maupun yang bernilai nol), sehingga CDC counter RTL selalu bertambah secara konsisten.
-
-% ------------------------------------------------------------
-\subsection{Bug 4: Frekuensi Audio Lebih Rendah dari Target}
-% ------------------------------------------------------------
-
-\subsubsection{Gejala}
-Frekuensi terukur pada osiloskop atau spektrum audio lebih rendah dari 1 kHz, 2 kHz, dan 5 kHz yang dipilih. Selisih semakin besar pada frekuensi lebih tinggi.
-
-\subsubsection{Penyebab}
-
-Loop utama menggunakan \texttt{usleep(periode - 2)} untuk mengatur laju sampel:
-
-\begin{lstlisting}[language=C,basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible]
-uint32_t sample_period_us = (1000000U + (sample_rate / 2U)) / sample_rate;
-if (sample_period_us > 2) usleep(sample_period_us - 2);
-\end{lstlisting}
-
-\noindent Terdapat tiga masalah fundamental:
-\begin{enumerate}
-    \item \textbf{Koreksi tetap \texttt{-2} tidak akurat.} Overhead loop (penulisan AXI, polling UART, cache miss) bervariasi dan tidak selalu tepat 2 µs.
-    \item \textbf{Granularitas \texttt{usleep()} terbatas.} Pada lingkungan bare-metal MicroBlaze, resolusi minimum \texttt{usleep()} mendekati 1 µs. Pada 96 kHz (periode 10,4 µs), koreksi 2 µs berarti error frekuensi $\approx 20\%$.
-    \item \textbf{Tidak ada akumulasi waktu.} Setiap iterasi mengukur waktu dari nol baru; error per iterasi tidak saling mengkompensasi, melainkan terakumulasi menjadi error frekuensi sistematis.
-\end{enumerate}
-
-\subsubsection{Solusi}
-
-Loop diubah menjadi \textbf{deadline-based busy-wait} menggunakan \textit{hardware cycle counter} RISC-V (\texttt{mcycle} CSR)~\citep{riscv_isa_vol1_2019}:
-
-\begin{lstlisting}[language=C,basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible]
-static inline uint64_t rdcycle64(void)
-{
-    uint32_t lo, hi, hi2;
-    do {
-        __asm__ volatile ("rdcycleh %0" : "=r"(hi));
-        __asm__ volatile ("rdcycle  %0" : "=r"(lo));
-        __asm__ volatile ("rdcycleh %0" : "=r"(hi2));
-    } while (hi != hi2);
-    return ((uint64_t)hi << 32) | lo;
-}
-\end{lstlisting}
-
-\noindent Counter ini berjalan pada frekuensi CPU (100 MHz), memberikan resolusi 10 ns. Loop utama menggunakan deadline absolut:
-
-\begin{lstlisting}[language=C,basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible]
-uint64_t t_deadline = rdcycle64();
-while (1) {
-    uint64_t period_cycles = (uint64_t)XPAR_CPU_CORE_CLOCK_FREQ_HZ 
-                             / current_sample_rate();
-    stream_sample();
-    if (!XUartLite_IsReceiveEmpty(STDIN_BASEADDRESS))
-        handle_key((uint8_t)XUartLite_RecvByte(STDIN_BASEADDRESS));
-
-    t_deadline += period_cycles;           // maju satu periode
-    while (rdcycle64() < t_deadline) {}   // busy-wait
-}
-\end{lstlisting}
-
-\noindent Dengan cara ini, terlepas dari berapa lama operasi dalam iterasi berlangsung, deadline berikutnya selalu berjarak tepat satu periode sampel. Akurasi frekuensi audio menjadi setara dengan akurasi osilator 100 MHz pada board Basys3.
-
-\begin{table}[htbp]
-    \centering
-    \caption{Perbandingan akurasi timing loop sebelum dan sesudah perbaikan.}
-    \label{tab:ch4-timing-compare}
     \begin{tabular}{|l|c|c|}
         \hline
-        \textbf{Properti} & \textbf{usleep() lama} & \textbf{rdcycle64() baru} \\
+        \textbf{Clock} & \textbf{Target} & \textbf{Aktual} \\
         \hline
-        Resolusi waktu & $\approx$1 µs & 10 ns \\
-        Kompensasi overhead loop & Tebakan tetap (-2) & Otomatis (deadline absolut) \\
-        Akumulasi error & Ya & Tidak \\
-        Bekerja di 96 kHz & Tidak ($\approx$20\% error) & Ya \\
-        \hline
-    \end{tabular}
-\end{table}
-
-% ============================================================
-\section{Verifikasi Setelah Perbaikan}
-% ============================================================
-
-Setelah keempat bug diperbaiki dan firmware baru diprogram ke FPGA, pengujian ulang dilakukan:
-
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/both-channel.jpeg}{%
-        \includegraphics[width=0.88\textwidth]{contents/figures/both-channel.jpeg}%
-    }{}
-    \caption{Keluaran audio setelah perbaikan: kanal L dan R memiliki amplitudo dan frekuensi identik.}
-    \label{fig:ch4-fixed-both}
-\end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/right-channel-only.jpeg}{%
-        \includegraphics[width=0.88\textwidth]{contents/figures/right-channel-only.jpeg}%
-    }{}
-    \caption{Mode Right-only setelah perbaikan: kanal kanan aktif, kanal kiri = 0.}
-    \label{fig:ch4-fixed-right}
-\end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    \begin{minipage}[b]{0.32\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{contents/figures/1khz.jpeg}
-        \caption*{(a) 1 kHz}
-    \end{minipage}\hfill
-    \begin{minipage}[b]{0.32\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{contents/figures/2khz.jpeg}
-        \caption*{(b) 2 kHz}
-    \end{minipage}\hfill
-    \begin{minipage}[b]{0.32\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{contents/figures/5khz.jpeg}
-        \caption*{(c) 5 kHz}
-    \end{minipage}
-    \caption{Verifikasi frekuensi: osiloskop/ILA tangkapan pada 1 kHz, 2 kHz, dan 5 kHz setelah perbaikan.}
-    \label{fig:ch4-fixed-freq}
-\end{figure}
-
-\noindent Hasil verifikasi setelah perbaikan dirangkum pada Tabel~\ref{tab:ch4-verifikasi}.
-
-\begin{table}[htbp]
-    \centering
-    \caption{Hasil verifikasi firmware setelah perbaikan bug.}
-    \label{tab:ch4-verifikasi}
-    \begin{tabular}{|l|l|c|}
-        \hline
-            \textbf{Skenario Uji} & \textbf{Hasil yang Diharapkan} & \textbf{Status} \\
-        \hline
-        Both + 1 kHz & L dan R identik, 1 kHz & \checkmark \\
-        Left only + 1 kHz & L aktif, R = 0 & \checkmark \\
-        Right only + 1 kHz & R aktif, L = 0 & \checkmark \\
-        Both + 2 kHz & L dan R identik, 2 kHz & \checkmark \\
-        Both + 5 kHz & L dan R identik, 5 kHz & \checkmark \\
-        MUTE aktif & Kedua kanal = 0, BCLK/WS tetap & \checkmark \\
-        SAMPLE\_WIDTH = 16 & Amplitudo benar, bentuk sinus & \checkmark \\
-        SAMPLE\_WIDTH = 32 & Amplitudo penuh, bentuk sinus & \checkmark \\
+        \texttt{clk\_out1} & 100,000 MHz & 100,00000 MHz \\
+        \texttt{clk\_out2} & 24,576 MHz & 24,59677 MHz \\
+        \texttt{clk\_out3} & 22,579 MHz & 22,42647 MHz \\
         \hline
     \end{tabular}
 \end{table}
-
-\noindent Tabel~\ref{tab:ch4-verifikasi} menunjukkan bahwa setelah koreksi firmware, seluruh
-skenario utama dapat dijalankan tanpa gejala yang sebelumnya muncul. Hal ini memiliki dua makna.
-Pertama, peripheral telah memenuhi fungsi dasarnya sebagai pemancar I2S yang dapat dikendalikan
-oleh perangkat lunak. Kedua, proses validasi berhasil memisahkan sumber masalah antara lapisan
-RTL dan lapisan firmware, sehingga kesimpulan akhir mengenai kualitas desain dapat diberikan
-dengan keyakinan yang lebih tinggi.
-
-% ============================================================
-\section{Pembahasan terhadap Tujuan Penelitian}
-% ============================================================
-
-\begin{enumerate}
-    \item \textbf{Tujuan perancangan IP} tercapai: register AXI4-Lite aktif, data kiri-kanan dimuat dari perangkat lunak, serializer menghasilkan format Philips I2S dengan 64 BCLK per frame stereo, dan BUFGMUX menyeleksi clock keluarga 48/44,1 kHz secara benar.
-
-    \item \textbf{Tujuan integrasi SoC dan Vitis} tercapai: aplikasi bare-metal mengendalikan IP melalui \textit{memory-mapped I/O} (\texttt{Xil\_Out32}/\texttt{Xil\_In32}) untuk inisialisasi, pengisian sampel, dan kontrol mode.
-
-    \item \textbf{Tujuan verifikasi frekuensi dan audio} tercapai setelah perbaikan empat bug firmware:
-    \begin{itemize}
-        \item Bug justifikasi bit (masker merusak tanda) diselesaikan dengan menggeser sampel tanpa masker.
-        \item Bug mode 32-bit (MSB salah posisi) diselesaikan dengan formula geseran yang diperbaiki.
-        \item Bug kanal kanan pada mode \textit{right-only} terselesaikan setelah representasi sampel kembali benar.
-        \item Bug timing loop (\texttt{usleep} tidak akumulatif) diselesaikan dengan \textit{deadline-based busy-wait} berbasis \texttt{rdcycle64()}.
-    \end{itemize}
-
-    \item \textbf{Penting dicatat} bahwa seluruh perbaikan bersifat \textit{firmware-only} --- RTL tidak dimodifikasi. Hal ini mengkonfirmasi bahwa desain RTL sudah benar sejak awal, termasuk mekanisme CDC yang robust dan serializer Philips I2S yang tepat.
-\end{enumerate}
-
-\noindent Secara keseluruhan, hasil penelitian menunjukkan bahwa pendekatan register-based
-AXI4-Lite cukup efektif untuk membangun peripheral I2S TX yang sederhana, mudah diintegrasikan,
-dan mudah dianalisis. Keterbatasan utama sistem ini terletak pada tidak adanya FIFO atau DMA,
-sehingga kontinuitas sampel masih bergantung pada kemampuan perangkat lunak mempertahankan laju
-tulis. Meski demikian, untuk tujuan tugas akhir yang menekankan ketepatan protokol, integrasi
-SoC, dan keterlacakan proses debugging, arsitektur yang dihasilkan sudah memadai dan sesuai
-dengan sasaran penelitian.
