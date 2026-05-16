@@ -335,7 +335,7 @@ batas frame.
 
 Integrasi peripheral ke dalam SoC dilakukan melalui alur berikut:
 \begin{enumerate}
-    \item \textbf{IP Packaging}: mengemas modul I2S sebagai custom IP menggunakan Vivado IP Integrator~\citep{xilinx_vivado_design_suite_2021,custom_ip_design}.
+    \item \textbf{IP Packaging}: mengemas modul I2S sebagai custom IP menggunakan Vivado IP Integrator~\citep{xilinx_vivado_design_suite_2021}.
     \item \textbf{Block Design}: menghubungkan MicroBlaze V~\citep{xilinx_microblaze_ref_2021}, AXI interconnect~\citep{xilinx_axi_ref_2017}, BRAM, Clocking Wizard~\citep{xilinx_clocking_wizard_2021}, UART, dan IP I2S.
     \item \textbf{Address Allocation}: menetapkan base address peripheral agar dapat diakses dari Vitis~\citep{xilinx_vitis_embedded_2021}.
     \item \textbf{Constraint Management}: memetakan pin I2S ke konektor board sesuai file \texttt{.xdc}~\citep{xilinx_basys3_ref}.
@@ -344,7 +344,7 @@ Integrasi peripheral ke dalam SoC dilakukan melalui alur berikut:
 \noindent Referensi mengenai \textit{custom IP} penting pada tahap ini karena
 integrasi peripheral pada Vivado tidak hanya memerlukan RTL yang berfungsi, tetapi
 juga metadata IP, antarmuka bus yang dikenali tool, dan kompatibilitas dengan
-mekanisme packaging pada IP Integrator~\citep{custom_ip_design}. Oleh sebab itu,
+ mekanisme packaging pada IP Integrator~\citep{xilinx_vivado_design_suite_2021}. Oleh sebab itu,
 keberhasilan integrasi SoC pada penelitian ini bergantung pada dua aspek sekaligus,
 yaitu kebenaran logika internal peripheral dan ketepatan pengemasannya sebagai IP
 yang dapat dikonsumsi oleh Block Design.

@@ -255,17 +255,17 @@ validasi fungsional. Karena penyimpangannya hanya sebagian kecil persen, clock h
 Wizard masih memadai untuk membuktikan ketepatan arsitektur peripheral dan logika pembagi BCLK.
 
 % ============================================================
-\section{Pengujian Sinyal dengan ILA}
+\section{Pengujian Sinyal}
 % ============================================================
 
-\textit{Integrated Logic Analyzer} (ILA)~\citep{xilinx_ila_pg2021} dipasang pada sinyal \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data} untuk memverifikasi timing Philips I2S~\citep{philips_i2s_1986}. Trigger ditempatkan pada tepi turun \texttt{i2s\_ws} untuk menangkap awal frame.
+Pengamatan sinyal pada \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data} dilakukan menggunakan alat ukur digital (osiloskop/logic analyzer) untuk memverifikasi timing Philips I2S~\citep{philips_i2s_1986}.
 
 \begin{figure}[htbp]
     \centering
     \IfFileExists{contents/figures/sample-latching-leftright-waveform.png}{%
         \includegraphics[width=0.95\textwidth]{contents/figures/sample-latching-leftright-waveform.png}%
     }{}
-    \caption{Tangkapan ILA: BCLK, WS, dan DATA -- satu frame stereo 64 BCLK.}
+    \caption{Tangkapan waveform: BCLK, WS, dan DATA -- satu frame stereo 64 BCLK.}
     \label{fig:ch4-ila}
 \end{figure}
 

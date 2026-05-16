@@ -14,7 +14,7 @@ Penelitian ini merancang dan mengimplementasikan \textbf{IP core transmitter I2S
     \textit{memory-mapped I/O} (\texttt{Xil\_Out32}/\texttt{Xil\_In32}) untuk inisialisasi
     register CONTROL, pengisian sampel kanal kiri-kanan, dan verifikasi \textit{readback}.
 
-    \item Pengujian ILA~\citep{xilinx_ila_pg2021} mengkonfirmasi sinyal \texttt{BCLK} (3,07 MHz), \texttt{WS} (48,03 kHz),
+    \item Pengujian sinyal mengkonfirmasi sinyal \texttt{BCLK} (3,07 MHz), \texttt{WS} (48,03 kHz),
     dan \texttt{DATA} mengikuti mekanisme \textbf{Philips I2S}~\citep{philips_i2s_1986}: 1-bit delay setelah setiap
     peralihan WS, 64 BCLK per frame stereo, dan MSB-first per kanal. Nilai aktual
     sesuai dengan analisis clock Clocking Wizard~\citep{xilinx_clocking_wizard_2021} (24,597 MHz).
