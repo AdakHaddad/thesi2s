@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import FullFlow from "./FullFlow";
 
 type FsFamily = 0 | 1;
 type FsMode = 0 | 1;
@@ -59,6 +60,7 @@ type SignalTimelineProps = {
 
 const outlineSections = [
   { id: "hero", label: "Overview" },
+  { id: "full-flow", label: "0. Full Whole Flow" },
   { id: "clock-generation", label: "1. Clock generation" },
   { id: "clock-divider", label: "2. Divider and BCLK enable" },
   { id: "power-on-reset", label: "3. Power-on reset" },
@@ -373,10 +375,6 @@ export default function Home() {
   const mclkPhase = clockTick % 2;
   const leftBits = useMemo(() => buildBits(leftSampleWord, sampleWidth), [sampleWidth]);
   const rightBits = useMemo(() => buildBits(rightSampleWord, sampleWidth), [sampleWidth]);
-  const defaultBits = useMemo(
-    () => Array.from({ length: 32 }, (_, bitIndex) => (defaultControlValue >>> bitIndex) & 1),
-    [],
-  );
 
   const summaryCells: SummaryCell[] = useMemo(
     () =>
@@ -491,6 +489,11 @@ export default function Home() {
                 <span className="chip">waveform preview</span>
                 <span className="chip">hardware ready</span>
               </div>
+              <div className="mt-8">
+                <a href="#full-flow" className="action-btn inline-block">
+                  View Full Datapath Animation →
+                </a>
+              </div>
             </div>
 
             <div className="hero-panel frame-card">
@@ -509,6 +512,8 @@ export default function Home() {
               </p>
             </div>
           </section>
+
+          <FullFlow />
 
           <section className="section-card frame-card" id="clock-generation">
             <SectionHeading
