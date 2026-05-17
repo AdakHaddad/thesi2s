@@ -32,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}>
-      <body>{children}</body>
+      <body className="bg-background text-foreground antialiased">{children}</body>
     </html>
   );
 }
