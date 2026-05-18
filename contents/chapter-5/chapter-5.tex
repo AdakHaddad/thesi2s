@@ -194,7 +194,25 @@ Fitur kontrol diuji dengan mengubah bit pada register \texttt{CONTROL}. Gambar \
 
 \section{Analisis Penggunaan Sumber Daya dan Daya}
 
-Implementasi IP I2S pada FPGA Artix-7 (Basys3) menghasilkan penggunaan sumber daya yang sangat efisien. Tabel \ref{tab:ch5-resource} dan Gambar \ref{fig:ch5-utilization} merangkum hasil *utilization* dan estimasi konsumsi daya dari Vivado.
+Implementasi IP I2S pada FPGA Artix-7 (Basys3) menghasilkan penggunaan sumber daya yang efisien untuk logika kontrol dan serializer. Tabel \ref{tab:ch5-resource} dan Gambar \ref{fig:ch5-utilization} merangkum hasil \textit{utilization} dan estimasi konsumsi daya dari Vivado.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Ringkasan penggunaan sumber daya FPGA.}
+    \label{tab:ch5-resource}
+    \begin{tabular}{|l|r|r|r|}
+        \hline
+        \textbf{Resource} & \textbf{Utilization} & \textbf{Available} & \textbf{Utilization \%} \\
+        \hline
+        LUT & 2363 & 20800 & 11,36 \\
+        LUTRAM & 108 & 9600 & 1,13 \\
+        FF & 2412 & 41600 & 5,80 \\
+        BRAM & 32 & 50 & 64,00 \\
+        IO & 8 & 106 & 7,55 \\
+        MMCM & 1 & 5 & 20,00 \\
+        \hline
+    \end{tabular}
+\end{table}
 
 \begin{figure}[htbp]
     \centering

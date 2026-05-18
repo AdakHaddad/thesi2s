@@ -1,303 +1,113 @@
-\chapter{Kode Sumber Perangkat Lunak (Vitis)}
-\label{app:code-vitis}
+\chapter{Ringkasan Kode Sumber}
+\label{app:code-summary}
 
-Berikut adalah kode sumber utama (\texttt{helloworld.c}) yang digunakan untuk menguji peripheral I2S pada platform Vitis bare-metal.
+Lampiran ini merangkum kode sumber yang digunakan pada penelitian. Penjelasan
+lengkap potongan kode utama disajikan pada Bab IV, sedangkan lampiran ini
+berfungsi sebagai peta berkas agar pembaca dapat menelusuri implementasi asli
+secara langsung.
 
-\begin{lstlisting}[language=C, caption=Kode sumber helloworld.c untuk pengujian I2S]
-/*****************************************************************************
-* I2S register feature test - all control bits
-*****************************************************************************/
+\section{Kode RTL IP I2S}
 
-#include <stdint.h>
-#include "platform.h"
-#include "xil_printf.h"
-#include "xil_io.h"
-#include "xparameters.h"
-#include "xuartlite_l.h"
+\begin{table}[htbp]
+\centering
+\caption{Berkas RTL pada \texttt{ip\_repo/i2s\_1\_0/hdl}.}
+\label{tab:app-rtl-files}
+\begin{tabular}{|p{5.0cm}|p{9.0cm}|}
+\hline
+\textbf{Berkas} & \textbf{Isi utama} \\
+\hline
+\texttt{i2s.v} & Wrapper IP untuk Vivado IP Packager. Berkas ini meneruskan port clock audio, port output I2S, dan port AXI4-Lite ke modul utama tanpa menambah logika baru. \\
+\hline
+\texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v} & Modul utama IP. Berisi state machine AXI4-Lite, register file, pemilih clock audio, sinkronisasi clock domain, latch sampel, pembagi BCLK, dan serializer Philips I2S. \\
+\hline
+\end{tabular}
+\end{table}
 
-/* Read the RISC-V cycle counter (mcycle CSR) */
-static inline uint64_t rdcycle64(void)
-{
-    uint32_t lo, hi, hi2;
-    do {
-        __asm__ volatile ("rdcycleh %0" : "=r"(hi));
-        __asm__ volatile ("rdcycle  %0" : "=r"(lo));
-        __asm__ volatile ("rdcycleh %0" : "=r"(hi2));
-    } while (hi != hi2);
-    return ((uint64_t)hi << 32) | lo;
-}
+\subsection{Struktur modul utama}
 
-/* ---- Register map ---- */
-#define I2S_BASE       XPAR_I2S_0_BASEADDR
-#define DATA_LEFT      (I2S_BASE + 0x00U)
-#define DATA_RIGHT     (I2S_BASE + 0x04U)
-#define CONTROL        (I2S_BASE + 0x08U)
+\begin{enumerate}
+    \item \textbf{AXI4-Lite register file}: menerima transaksi tulis/baca dari MicroBlaze V dan menyimpan \texttt{DATA\_LEFT}, \texttt{DATA\_RIGHT}, \texttt{CONTROL}, serta \texttt{RESERVED}.
+    \item \textbf{Clock selection}: memilih \texttt{audio\_48\_clk} atau \texttt{audio\_44\_clk} berdasarkan bit \texttt{FS\_FAMILY}.
+    \item \textbf{CDC}: membawa register dari domain AXI 100 MHz ke domain audio menggunakan sinkronisasi dua tahap.
+    \item \textbf{Sample latch}: mengambil sampel kiri-kanan pada awal frame stereo agar data tidak berubah di tengah transmisi.
+    \item \textbf{Serializer}: mengubah sampel paralel menjadi aliran bit Philips I2S dengan satu bit delay, MSB-first, dan zero padding.
+    \item \textbf{Output register}: menggerakkan \texttt{i2s\_mclk}, \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data}.
+\end{enumerate}
 
-/* ---- Control bits ---- */
-#define CTRL_ENABLE          (1U << 0)
-#define CTRL_MUTE            (1U << 1)
-#define CTRL_FS              (1U << 2)
-#define CTRL_FS_MODE         (1U << 3)
-#define CTRL_WIDTH(w)        (((uint32_t)(w) & 0x1FU) << 8U)
+\section{Kode Aplikasi MicroBlaze}
 
-/* ---- Audio ---- */
-#define SAMPLE_RATE    48000U
-#define AMPLITUDE      32000
+Berkas aplikasi berada pada:
 
-/* ---- Sine table ---- */
-static const int16_t SINE[32] = {
-         0,   6393,  12539,  18204,  23170,  27245,  30273,  32137,
-     32767,  32137,  30273,  27245,  23170,  18204,  12539,   6393,
-         0,  -6393, -12539, -18204, -23170, -27245, -30273, -32137,
-    -32767, -32137, -30273, -27245, -23170, -18204, -12539,  -6393
-};
-
-/* ---- State ---- */
-static uint32_t g_freq    = 1000U;
-static uint8_t  g_left    = 1U;
-static uint8_t  g_right   = 1U;
-static uint8_t  g_enable  = 1U;
-static uint8_t  g_mute    = 0U;
-static uint8_t  g_fs      = 0U;
-static uint8_t  g_fs_mode = 0U;
-static uint8_t  g_width   = 24U;
-
-static uint32_t current_sample_rate(void)
-{
-    if (!g_fs && !g_fs_mode) return 48000U;
-    if ( g_fs && !g_fs_mode) return 44100U;
-    if (!g_fs &&  g_fs_mode) return 96000U;
-    return 88200U;
-}
-
-static void apply_control(void)
-{
-    uint32_t ctrl = 0U;
-    if (g_enable)  ctrl |= CTRL_ENABLE;
-    if (g_mute)    ctrl |= CTRL_MUTE;
-    if (g_fs)      ctrl |= CTRL_FS;
-    if (g_fs_mode) ctrl |= CTRL_FS_MODE;
-    ctrl |= CTRL_WIDTH(g_width);
-    Xil_Out32(CONTROL, ctrl);
-}
-
-static void stream_sample(void)
-{
-    static uint32_t phase = 0U;
-    uint32_t sr   = current_sample_rate();
-    uint32_t step = (uint32_t)(((uint64_t)g_freq << 32) / sr);
-
-    int16_t s = (int16_t)(((int32_t)SINE[phase >> 27] * AMPLITUDE) / 32767);
-
-    int32_t s32;
-    if (g_width >= 32U)       s32 = (int32_t)s << 16;
-    else if (g_width > 16U)   s32 = (int32_t)s << (g_width - 16U);
-    else if (g_width < 16U)   s32 = (int32_t)s >> (16U - g_width);
-    else                      s32 = (int32_t)s;
-    
-    uint32_t samp = (uint32_t)s32;
-
-    Xil_Out32(DATA_LEFT,  g_left  ? samp : 0U);
-    Xil_Out32(DATA_RIGHT, g_right ? samp : 0U);
-    phase += step;
-}
-
-int main(void)
-{
-    init_platform();
-    apply_control();
-
-    uint64_t t_deadline = rdcycle64();
-
-    while (1) {
-        uint32_t sample_rate   = current_sample_rate();
-        uint64_t period_cycles = (uint64_t)XPAR_CPU_CORE_CLOCK_FREQ_HZ / sample_rate;
-
-        stream_sample();
-
-        if (!XUartLite_IsReceiveEmpty(STDIN_BASEADDRESS)) {
-            uint8_t ch = XUartLite_RecvByte(STDIN_BASEADDRESS);
-            // Handle keypress logic...
-        }
-
-        t_deadline += period_cycles;
-        while (rdcycle64() < t_deadline) {}
-    }
-
-    cleanup_platform();
-    return 0;
-}
+\begin{lstlisting}[caption={Lokasi kode aplikasi Vitis.}]
+micblaze/ws/rtlfix/src/helloworld.c
 \end{lstlisting}
 
-\chapter{Kode Sumber Perangkat Keras (Verilog)}
-\label{app:code-verilog}
+Aplikasi ini menjalankan pengujian bare-metal terhadap IP I2S. Fungsi utamanya
+adalah melakukan \textit{readback test} AXI, mengatur register kontrol, menerima
+perintah dari UART, membangkitkan sampel sinus, dan menulis sampel ke register
+data dengan timing berbasis counter siklus CPU.
 
-\section{Top-level Wrapper (\texttt{i2s.v})}
+\begin{table}[htbp]
+\centering
+\caption{Ringkasan fungsi penting pada \texttt{helloworld.c}.}
+\label{tab:app-fw-func}
+\begin{tabular}{|p{4.2cm}|p{9.8cm}|}
+\hline
+\textbf{Fungsi / Bagian} & \textbf{Peran} \\
+\hline
+\texttt{rdcycle64()} & Membaca CSR \texttt{mcycle} 64 bit. Digunakan untuk membuat loop sampel berbasis deadline absolut. \\
+\hline
+\texttt{current\_sample\_rate()} & Mengubah kombinasi \texttt{FS\_FAMILY} dan \texttt{FS\_MODE} menjadi nilai Fs 48 kHz, 44,1 kHz, 96 kHz, atau 88,2 kHz. \\
+\hline
+\texttt{apply\_control()} & Menggabungkan state software menjadi word \texttt{CONTROL} lalu menulisnya ke IP dengan \texttt{Xil\_Out32}. \\
+\hline
+\texttt{stream\_sample()} & Menghasilkan sampel sinus, menyesuaikan posisi bit terhadap \texttt{SAMPLE\_WIDTH}, lalu menulis \texttt{DATA\_LEFT} dan \texttt{DATA\_RIGHT}. \\
+\hline
+\texttt{handle\_key()} & Memproses input UART untuk memilih frekuensi nada, kanal aktif, mute, enable, keluarga Fs, mode Fs, dan lebar sampel. \\
+\hline
+\texttt{main()} & Inisialisasi platform, validasi akses AXI, pencetakan menu, dan loop utama pengiriman sampel. \\
+\hline
+\end{tabular}
+\end{table}
 
-\begin{lstlisting}[language=Verilog, caption=Kode sumber i2s.v]
-`timescale 1 ns / 1 ps
+\section{Kode Testbench}
 
-module i2s #
-(
-    parameter integer C_S00_AXI_DATA_WIDTH = 32,
-    parameter integer C_S00_AXI_ADDR_WIDTH = 4
-)
-(
-    input  wire audio_48_clk,
-    input  wire audio_44_clk,
-    output wire i2s_mclk,
-    output wire i2s_bclk,
-    output wire i2s_ws,
-    output wire i2s_data,
-    input  wire                            s00_axi_aclk,
-    input  wire                            s00_axi_aresetn,
-    input  wire [C_S00_AXI_ADDR_WIDTH-1:0]  s00_axi_awaddr,
-    input  wire [2:0]                      s00_axi_awprot,
-    input  wire                            s00_axi_awvalid,
-    output wire                            s00_axi_awready,
-    input  wire [C_S00_AXI_DATA_WIDTH-1:0]  s00_axi_wdata,
-    input  wire [(C_S00_AXI_DATA_WIDTH/8)-1:0] s00_axi_wstrb,
-    input  wire                            s00_axi_wvalid,
-    output wire                            s00_axi_wready,
-    output wire [1:0]                      s00_axi_bresp,
-    output wire                            s00_axi_bvalid,
-    input  wire                            s00_axi_bready,
-    input  wire [C_S00_AXI_ADDR_WIDTH-1:0]  s00_axi_araddr,
-    input  wire [2:0]                      s00_axi_arprot,
-    input  wire                            s00_axi_arvalid,
-    output wire                            s00_axi_arready,
-    output wire [C_S00_AXI_DATA_WIDTH-1:0]  s00_axi_rdata,
-    output wire [1:0]                      s00_axi_rresp,
-    output wire                            s00_axi_rvalid,
-    input  wire                            s00_axi_rready
-);
+Kode testbench berada pada direktori:
 
-    i2s_slave_lite_v1_0_S00_AXI #(
-        .C_S_AXI_DATA_WIDTH(C_S00_AXI_DATA_WIDTH),
-        .C_S_AXI_ADDR_WIDTH(C_S00_AXI_ADDR_WIDTH)
-    ) i2s_slave_lite_v1_0_S00_AXI_inst (
-        .audio_48_clk      (audio_48_clk),
-        .audio_44_clk      (audio_44_clk),
-        .i2s_mclk          (i2s_mclk),
-        .i2s_bclk          (i2s_bclk),
-        .i2s_ws            (i2s_ws),
-        .i2s_data          (i2s_data),
-        .S_AXI_ACLK        (s00_axi_aclk),
-        .S_AXI_ARESETN     (s00_axi_aresetn),
-        .S_AXI_AWADDR      (s00_axi_awaddr),
-        .S_AXI_AWPROT      (s00_axi_awprot),
-        .S_AXI_AWVALID     (s00_axi_awvalid),
-        .S_AXI_AWREADY     (s00_axi_awready),
-        .S_AXI_WDATA       (s00_axi_wdata),
-        .S_AXI_WSTRB       (s00_axi_wstrb),
-        .S_AXI_WVALID      (s00_axi_wvalid),
-        .S_AXI_WREADY      (s00_axi_wready),
-        .S_AXI_BRESP       (s00_axi_bresp),
-        .S_AXI_BVALID      (s00_axi_bvalid),
-        .S_AXI_BREADY      (s00_axi_bready),
-        .S_AXI_ARADDR      (s00_axi_araddr),
-        .S_AXI_ARPROT      (s00_axi_arprot),
-        .S_AXI_ARVALID     (s00_axi_arvalid),
-        .S_AXI_ARREADY     (s00_axi_arready),
-        .S_AXI_RDATA       (s00_axi_rdata),
-        .S_AXI_RRESP       (s00_axi_rresp),
-        .S_AXI_RVALID      (s00_axi_rvalid),
-        .S_AXI_RREADY      (s00_axi_rready)
-    );
-
-endmodule
+\begin{lstlisting}[caption={Lokasi kode testbench.}]
+testblock/testblock.srcs/sources_1/new/i2s_ip.v
+testblock/testblock.srcs/sim_1/new/i2s_tb.v
 \end{lstlisting}
 
-\section{Modul AXI4-Lite Slave dan Serializer (\texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v})}
+\texttt{i2s\_ip.v} adalah model RTL ringkas yang mempertahankan perilaku utama
+serializer tanpa antarmuka AXI. \texttt{i2s\_tb.v} menghasilkan dua clock audio,
+memberi nilai sampel kiri-kanan, serta mengubah sinyal \texttt{enable},
+\texttt{mute}, dan \texttt{fs\_mode} untuk melihat respons output I2S.
 
-\begin{lstlisting}[language=Verilog, caption=Potongan kode i2s\_slave\_lite\_v1\_0\_S00\_AXI.v]
-// Glitch-free clock multiplexer
-module clk_mux (
-    input  wire clk0, clk1, sel,
-    output wire clk_o
-);
-    reg q0_d1, q0_d2, q1_d1, q1_d2;
-    always @(negedge clk0) begin
-        q0_d1 <= !sel & !q1_d2;
-        q0_d2 <= q0_d1;
-    end
-    always @(negedge clk1) begin
-        q1_d1 <= sel & !q0_d2;
-        q1_d2 <= q1_d1;
-    end
-    assign clk_o = (q0_d2 & clk0) | (q1_d2 & clk1);
-endmodule
+\begin{table}[htbp]
+\centering
+\caption{Skenario verifikasi pada testbench.}
+\label{tab:app-tb-scenario}
+\begin{tabular}{|p{3.2cm}|p{5.0cm}|p{5.8cm}|}
+\hline
+\textbf{Skenario} & \textbf{Stimulus} & \textbf{Tujuan pengamatan} \\
+\hline
+Idle & \texttt{enable=0} & Memastikan output ditahan rendah dan counter kembali ke awal frame. \\
+\hline
+Normal & \texttt{enable=1}, \texttt{mute=0} & Memastikan sampel \texttt{AAAA}/\texttt{5555} muncul sebagai data serial kiri-kanan. \\
+\hline
+Mute & \texttt{mute=1} & Memastikan \texttt{i2s\_data} nol sementara clock tetap berjalan. \\
+\hline
+Mode Fs tinggi & \texttt{fs\_mode=1} & Memastikan pembagi BCLK berubah sehingga frame berjalan lebih cepat. \\
+\hline
+\end{tabular}
+\end{table}
 
-// Clock Selection Logic
-    wire reg_fs_family  = slv_reg2[2];
-    wire internal_mclk;
+\section{Hubungan Kode dengan Bab Utama}
 
-    clk_mux mclk_mux_inst (
-        .clk0  (audio_48_clk),
-        .clk1  (audio_44_clk),
-        .sel   (reg_fs_family),
-        .clk_o (internal_mclk)
-    );
-
-// CDC Sync
-    cdc_sync #(.WIDTH(32)) cdc_ctrl_inst (
-        .dest_clk (internal_mclk),
-        .src_in   (slv_reg2),
-        .dest_out (ctrl_cdc_w)
-    );
-
-// Serializer function
-    function i2s_next_serial_bit;
-        input [31:0] left_samp;
-        input [31:0] right_samp;
-        input [5:0]  bc;
-        input [5:0]  width;
-        reg          in_left;
-        reg  [4:0]   pos;
-        reg  [5:0]   bit_idx;
-        begin
-            in_left = (bc < 6'd32);
-            pos     = bc[4:0];
-            if (width == 6'd0)
-                i2s_next_serial_bit = 1'b0;
-            else if (pos == 5'd0)
-                i2s_next_serial_bit = 1'b0;
-            else if (pos <= width) begin
-                bit_idx = width - {1'b0, pos};
-                i2s_next_serial_bit = in_left ? left_samp[bit_idx[4:0]]
-                                              : right_samp[bit_idx[4:0]];
-            end else
-                i2s_next_serial_bit = 1'b0;
-        end
-    endfunction
-
-// I2S output generator
-    always @(posedge internal_mclk or posedge audio_rst) begin
-        if (audio_rst) begin
-            bit_count_q  <= 6'd0;
-            data_q       <= 1'b0;
-            ws_q         <= 1'b0;
-            bclk_q       <= 1'b0;
-        end else if (bclk_en_w) begin
-            if (!enable_sync) begin
-                bit_count_q  <= 6'd0;
-                data_q       <= 1'b0;
-                ws_q         <= 1'b0;
-                bclk_q       <= 1'b0;
-            end else begin
-                if (bclk_q) begin
-                    bclk_q      <= 1'b0;
-                    data_q      <= i2s_next_serial_bit(
-                                       sample_for_i2s_left,
-                                       sample_for_i2s_right,
-                                       bit_count_q,
-                                       sample_width_sync);
-                    ws_q        <= bit_count_q[5];
-                    bit_count_q <= bit_count_q + 6'd1;
-                end else begin
-                    bclk_q <= 1'b1;
-                end
-            end
-        end
-    end
-\end{lstlisting}
+Bab III menjelaskan metode perancangan dan verifikasi. Bab IV menjelaskan
+arsitektur dan potongan kode inti dari RTL, firmware, dan testbench. Bab V
+menunjukkan hasil pengukuran sinyal serta validasi audio pada perangkat keras.
+Dengan pembagian ini, kode sumber tidak hanya disimpan sebagai lampiran, tetapi
+juga dikaitkan langsung dengan desain, metode pengujian, dan hasil akhir
+peripheral I2S.
