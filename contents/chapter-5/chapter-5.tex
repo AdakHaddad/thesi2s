@@ -165,43 +165,12 @@ Fitur kontrol diuji dengan mengubah bit pada register \texttt{CONTROL}. Gambar \
     \label{fig:ch5-control-test}
 \end{figure}
 
-\subsection{Verifikasi Lebar Sampel (Sample Width)}
-
-Pengujian lebar sampel dilakukan untuk memastikan data terpaket dengan benar dalam slot 32-bit. Hasil pengamatan pada Gambar \ref{fig:ch5-width-test} menunjukkan perbedaan visual pada kepadatan bit data saat lebar sampel diubah dari 16, 24, hingga 32 bit.
-
-\begin{figure}[htbp]
-    \centering
-    \begin{subfigure}[b]{0.32\textwidth}
-        \centering
-        \IfFileExists{contents/figures/sample-width-16.jpeg}{%
-            \includegraphics[width=\textwidth]{contents/figures/sample-width-16.jpeg}%
-        }{}
-        \caption{16-bit.}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.32\textwidth}
-        \centering
-        \IfFileExists{contents/figures/sample-width-24.jpeg}{%
-            \includegraphics[width=\textwidth]{contents/figures/sample-width-24.jpeg}%
-        }{}
-        \caption{24-bit.}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.32\textwidth}
-        \centering
-        \IfFileExists{contents/figures/sample-width-32.jpeg}{%
-            \includegraphics[width=\textwidth]{contents/figures/sample-width-32.jpeg}%
-        }{}
-        \caption{32-bit.}
-    \end{subfigure}
-    \caption{Hasil verifikasi variasi lebar sampel (\textit{sample width}).}
-    \label{fig:ch5-width-test}
-\end{figure}
-
+\subsection{Verifikasi Setelah Perbaikan Firmware}
+...
 \begin{figure}[htbp]
     \centering
     \IfFileExists{contents/figures/both-channel.jpeg}{%
-        \includegraphics[width=0.88\textwidth]{contents/figures/both-channel.jpeg}%
+        \includegraphics[width=0.95\textwidth]{contents/figures/both-channel.jpeg}%
     }{}
     \caption{Keluaran audio setelah perbaikan: kanal L dan R identik.}
     \label{fig:ch5-fixed-both}
