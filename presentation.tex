@@ -79,7 +79,7 @@
         \item Bagaimana mendukung dua mode $F_s$ (48/96 kHz) dari
               satu sumber \texttt{audio\_clk}?
         \item Bagaimana memverifikasi fungsionalitas dan timing
-              melalui ILA dan uji audio PCM5102A?
+              melalui simulasi dan uji audio PCM5102A?
       \end{enumerate}
     \column{0.5\textwidth}
       \textbf{Batasan Penelitian}
@@ -406,7 +406,7 @@ while (1) {
 \section{Hasil Pengujian}
 %==============================================================
 
-\begin{frame}{Hasil ILA -- Verifikasi Timing I2S}
+\begin{frame}{Hasil Verifikasi -- Osiloskop dan Waveform}
   \begin{columns}[T]
     \column{0.50\textwidth}
       \textbf{Yang dikonfirmasi:}
@@ -500,7 +500,7 @@ while (1) {
     \item \textbf{Dua mode $F_s$} (48,03 kHz dan 96,08 kHz) berhasil dihasilkan
           dari satu \texttt{audio\_48\_clk} (24,597 MHz) melalui divider 8 dan 4.
 
-    \item \textbf{Timing I2S} terverifikasi via ILA: 64 BCLK/frame, delay-bit
+    \item \textbf{Timing I2S} terverifikasi via osiloskop: 64 BCLK/frame, delay-bit
           wajib, WS sesuai spesifikasi Philips.
 
     \item \textbf{Tiga bug firmware} ditemukan dan diperbaiki \textit{sepenuhnya

@@ -1,4 +1,4 @@
-# Outline skripsi: IP I2S TX AXI4-Lite (Basys3, PCM5102A, 24-bit stereo, 2 mode Fs, FIFO, watermark IRQ, Vitis, ILA)
+# Outline skripsi: IP I2S TX AXI4-Lite (Basys3, PCM5102A, 24-bit stereo, 2 mode Fs, FIFO, watermark IRQ, Vitis, osiloskop/simulasi)
 
 Dokumen ini adalah **outline siap pakai** (Markdown) untuk mengisi skripsi berbasis template DTETI (`thesisdtetiugm`). Di akhir ada **pemetaan ke file `chapter-*.tex`**, **inventaris gambar/tabel**, **checklist isi minimal per subbab**, dan **rujukan** ke catatan teknis di repo.
 
@@ -13,7 +13,7 @@ Template [main.tex](../main.tex) memuat `\include{contents/chapter-1/chapter-1}`
 | **Bab I** Pendahuluan | [contents/chapter-1/chapter-1.tex](chapter-1/chapter-1.tex) | Sesuaikan judul/rumusan dengan fokus **I2S AXI**; bagian I2C bisa dipangkas atau dipindah lampiran jika judul final hanya I2S. |
 | **Bab II** Tinjauan pustaka / landasan teori | [contents/chapter-2/chapter-2.tex](chapter-2/chapter-2.tex) | Tambah/subbab FIFO, watermark, MMCM sesuai outline 2.4-2.6; sudah ada subbab integrasi DAC/UART. |
 | **Bab III** Perancangan sistem | [contents/chapter-3/chapter-3.tex](chapter-3/chapter-3.tex) | Saat ini judul bab template: *Metode Penelitian* -- isi bisa diarahkan ke **spesifikasi + arsitektur + register map**; bagian "alat bahan" bisa diringkas atau diletakkan di awal Bab IV. |
-| **Bab IV** Implementasi dan pengujian | [contents/chapter-4/chapter-4.tex](chapter-4/chapter-4.tex) | Ganti placeholder template dengan RTL, Vivado, ILA, PCM5102, tabel ukur. |
+| **Bab IV** Implementasi dan pengujian | [contents/chapter-4/chapter-4.tex](chapter-4/chapter-4.tex) | Ganti placeholder template dengan RTL, Vivado, osiloskop/simulasi, PCM5102, tabel ukur. |
 | *(opsional)* Diskusi tambahan / perbandingan | [contents/chapter-5/chapter-5.tex](chapter-5/chapter-5.tex) | Template "Tambahan (Opsional)"; isi jika perlu memisahkan pembahasan panjang. |
 | **Bab V** Kesimpulan dan saran | [contents/chapter-6/chapter-6.tex](chapter-6/chapter-6.tex) | Sudah berjudul *Kesimpulan dan Saran*. |
 
@@ -36,7 +36,7 @@ Template [main.tex](../main.tex) memuat `\include{contents/chapter-1/chapter-1}`
 - Bagaimana merancang **IP core I2S TX** yang dapat dikontrol melalui **AXI4-Lite**?
 - Bagaimana mendukung **peralihan / dua mode** \(F_s\) (≈48 kHz dan ≈96 kHz) dari satu sumber `audio_clk` (dengan pembagi berbeda)?
 - Bagaimana **menyangga data** dengan **FIFO** dan **interupsi watermark** agar pemutaran stabil dengan *programmed I/O*?
-- Bagaimana **menguji** fungsionalitas dan **timing** (simulasi opsional, **ILA** wajib, bukti audio)?
+- Bagaimana **menguji** fungsionalitas dan **timing** (simulasi opsional, **osiloskop/simulasi** wajib, bukti audio)?
 - *(Opsional)* Peluang lanjut: DMA, driver Linux / ASoC.
 
 **Checklist isi minimal:** 3–5 pertanyaan terukur; selaras dengan batasan Bab I.4.
@@ -45,7 +45,7 @@ Template [main.tex](../main.tex) memuat `\include{contents/chapter-1/chapter-1}`
 
 - Merancang peripheral **I2S TX** dengan antarmuka **AXI4-Lite** dan register map terdefinisi.
 - Mengimplementasikan **dua mode sampling** (nilai nominal vs hasil ukur "actual").
-- Mengimplementasikan **FIFO + IRQ watermark** + penanganan underrun; verifikasi dengan **Vitis**, **PCM5102A**, dan **ILA**.
+- Mengimplementasikan **FIFO + IRQ watermark** + penanganan underrun; verifikasi dengan **Vitis**, **PCM5102A**, dan **osiloskop/simulasi**.
 
 **Checklist isi minimal:** satu poin per rumusan utama; verba yang dapat dicek (mis. "terverifikasi di hardware").
 
@@ -171,7 +171,7 @@ Template [main.tex](../main.tex) memuat `\include{contents/chapter-1/chapter-1}`
 
 - Pola uji diketahui; verifikasi 64 BCLK per frame; urutan WS/DATA.
 
-### 4.4 Pengujian ILA
+### 4.4 Pengujian osiloskop/simulasi
 
 - Probe: BCLK, WS, DATA, level FIFO, underrun, irq.
 - Tangkapan satu frame penuh; *trigger* pada tepi WS.
@@ -197,7 +197,7 @@ Template [main.tex](../main.tex) memuat `\include{contents/chapter-1/chapter-1}`
 
 ### 5.1 Kesimpulan
 
-- Jawab tujuan: IP berfungsi, dua mode, stabilitas dengan FIFO+IRQ, bukti ILA/audio.
+- Jawab tujuan: IP berfungsi, dua mode, stabilitas dengan FIFO+IRQ, bukti osiloskop/simulasi/audio.
 
 ### 5.2 Saran pengembangan
 
@@ -224,7 +224,7 @@ Letakkan berkas di folder **`thesi2s/contents/figures/`** (buat folder jika belu
 | `tabel-divider-fs-actual-vs-target.pdf` | Bab III / IV | Angka terukur vs nominal |
 | `flowchart-fifo-refill-isr.pdf` | Bab III / IV | Alur ISR |
 | `clocking-wizard-requested-vs-actual.png` | Bab IV | Screenshot wizard |
-| `ila-bclk-ws-data.png` | Bab IV | Tangkapan ILA |
+| `ila-bclk-ws-data.png` | Bab IV | Tangkapan osiloskop/simulasi |
 | `wiring-pcm5102a-basys3.jpg` | Bab IV | Foto/skema kabel |
 | `audio-proof-scope-or-audacity.png` | Bab IV | Bukti dengar/ukur |
 
@@ -247,7 +247,7 @@ Letakkan berkas di folder **`thesi2s/contents/figures/`** (buat folder jika belu
 
 - [ ] Rumusan, tujuan, batasan, metode, hasil, kesimpulan **satu garis besar** konsisten.
 - [ ] Semua gambar di `contents/figures/` yang dipanggil dari LaTeX **ada** atau placeholder `\fbox` sengaja dibiarkan sementara.
-- [ ] Tabel **actual vs target** clock dan \(F_s\) diisi angka dari pengukuran (osiloskop / ILA / reported frequency Vivado).
+- [ ] Tabel **actual vs target** clock dan \(F_s\) diisi angka dari pengukuran (osiloskop / osiloskop/simulasi / reported frequency Vivado).
 - [ ] Bukti audio minimal: satu sinyal uji + satu rekaman/scope.
 
 ---

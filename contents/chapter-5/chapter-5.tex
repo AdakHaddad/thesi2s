@@ -6,16 +6,18 @@ Bab ini menyajikan hasil pengujian sinyal, analisis frekuensi sampling, serta id
 
 Pengamatan sinyal pada \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data} dilakukan menggunakan alat ukur digital (osiloskop/logic analyzer) untuk memverifikasi timing Philips I2S~\citep{philips_i2s_1986}.
 
+\begin{landscape}
 \begin{figure}[htbp]
     \centering
     \IfFileExists{contents/figures/sample-latching-leftright-waveform.png}{%
-        \includegraphics[width=0.95\textwidth]{contents/figures/sample-latching-leftright-waveform.png}%
+        \includegraphics[width=1.3\textwidth]{contents/figures/sample-latching-leftright-waveform.png}%
     }{}
     \caption{Tangkapan waveform: BCLK, WS, dan DATA -- satu frame stereo 64 BCLK.}
-    \label{fig:ch5-ila}
+    \label{fig:ch5-waveform}
 \end{figure}
+\end{landscape}
 
-\noindent Verifikasi ILA mengkonfirmasi:
+\noindent Verifikasi osiloskop mengkonfirmasi:
 \begin{itemize}
     \item Satu frame stereo terdiri dari tepat 64 periode BCLK (32 kiri + 32 kanan).
     \item WS beralih satu BCLK \textit{sebelum} MSB data, sesuai spesifikasi Philips.
@@ -48,9 +50,153 @@ Selama validasi perangkat keras ditemukan beberapa bug yang bersumber dari \text
 
 \subsection{Bug 2: Timing Loop Berbasis usleep()}
 \textbf{Gejala}: Frekuensi audio terukur lebih rendah dari target.
-\textbf{Solusi}: Mengganti \texttt{usleep()} dengan loop berbasis \textit{deadline} menggunakan CSR \texttt{mcycle} RISC-V untuk presisi 10 ns.
+\textbf{Penyebab}: Fungsi \texttt{usleep()} memiliki granularitas yang rendah dan tidak memperhitungkan waktu eksekusi instruksi di dalam loop, sehingga terjadi akumulasi keterlambatan (\textit{drift}).
+\textbf{Solusi}: Mengganti \texttt{usleep()} dengan loop berbasis \textit{deadline} menggunakan CSR \texttt{mcycle} RISC-V untuk presisi tinggi.
+
+\begin{lstlisting}[language=C, caption={Implementasi pembacaan CSR \texttt{mcycle} dan loop \textit{deadline}.}, label={lst:ch5-timing-fix}]
+// Membaca counter 64-bit pada MicroBlaze V
+static inline uint64_t rdcycle64(void) {
+    uint32_t lo, hi, hi2;
+    do {
+        __asm__ volatile ("rdcycleh %0" : "=r"(hi));
+        __asm__ volatile ("rdcycle  %0" : "=r"(lo));
+        __asm__ volatile ("rdcycleh %0" : "=r"(hi2));
+    } while (hi != hi2);
+    return ((uint64_t)hi << 32) | lo;
+}
+
+// Loop utama dengan target waktu absolut
+uint64_t t_deadline = rdcycle64();
+while (1) {
+    stream_sample();
+    t_deadline += period_cycles;
+    while (rdcycle64() < t_deadline) {} // Menunggu deadline
+}
+\end{lstlisting}
+
+Dengan menggunakan CSR \texttt{mcycle}, sistem memperoleh resolusi waktu sebesar 10 ns pada clock 100 MHz. Penggunaan target waktu absolut (\texttt{t\_deadline}) memastikan bahwa setiap sampel dikirim pada interval yang tepat, sehingga mengeliminasi \textit{drift} dan menghasilkan frekuensi audio yang akurat.
+
+\subsection{Penjelasan variabel dan fungsi kunci firmware}
+
+Implementasi pada berkas \texttt{helloworld.c} menggunakan beberapa komponen perangkat lunak penting untuk menjamin fidelitas audio:
+\begin{itemize}
+    \item \textbf{phase}: Akumulator fase 32-bit yang menentukan posisi pada tabel sinus. Indeks tabel diambil dari bit teratas (\texttt{phase >> 27}).
+    \item \textbf{step}: Nilai penambahan fase per iterasi, dihitung berdasarkan rasio frekuensi target nada terhadap laju sampling (\texttt{Fs}).
+    \item \textbf{rdcycle64()}: Fungsi pembacaan CSR \texttt{mcycle} RISC-V dengan deteksi \textit{rollover} untuk mendapatkan waktu sistem 64-bit yang presisi.
+    \item \textbf{stream\_sample()}: Fungsi yang melakukan \textit{bit-scaling} (penggeseran sampel 16-bit ke 24-bit) dan pengiriman data ke register hardware melalui MMIO.
+    \item \textbf{apply\_control()}: Menggabungkan status perangkat lunak (\texttt{enable, mute, fs\_family}) ke dalam register kontrol hardware melalui operasi bitwise.
+\end{itemize}
+
+
 
 \section{Verifikasi Setelah Perbaikan}
+
+Setelah perbaikan pada lapisan firmware, dilakukan verifikasi ulang untuk memastikan seluruh fitur berjalan sesuai spesifikasi.
+
+\subsection{Verifikasi Frekuensi Audio}
+
+Pengujian dilakukan dengan membangkitkan nada sinus pada frekuensi 1 kHz, 2 kHz, dan 5 kHz. Untuk memastikan akurasi frekuensi yang dihasilkan, tangkapan osiloskop disajikan dalam ukuran besar agar nilai numerik pada layar instrumen dapat terbaca dengan jelas.
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/1khz.jpeg}{%
+        \includegraphics[width=0.9\textwidth]{contents/figures/1khz.jpeg}%
+    }{}
+    \caption{Tangkapan osiloskop untuk nada sinus 1 kHz.}
+    \label{fig:ch5-1khz}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/2khz.jpeg}{%
+        \includegraphics[width=0.9\textwidth]{contents/figures/2khz.jpeg}%
+    }{}
+    \caption{Tangkapan osiloskop untuk nada sinus 2 kHz.}
+    \label{fig:ch5-2khz}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/5khz.jpeg}{%
+        \includegraphics[width=0.9\textwidth]{contents/figures/5khz.jpeg}%
+    }{}
+    \caption{Tangkapan osiloskop untuk nada sinus 5 kHz.}
+    \label{fig:ch5-5khz}
+\end{figure}
+
+\subsection{Verifikasi Fitur Kontrol (Enable dan Mute)}
+
+Fitur kontrol diuji dengan mengubah bit pada register \texttt{CONTROL}. Gambar \ref{fig:ch5-control-test} memperlihatkan pengaruh bit \texttt{ENABLE} dan \texttt{MUTE} terhadap sinyal keluaran.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \IfFileExists{contents/figures/enable0.jpeg}{%
+            \includegraphics[width=\textwidth]{contents/figures/enable0.jpeg}%
+        }{}
+        \caption{\texttt{ENABLE} = 0 (Output mati).}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \IfFileExists{contents/figures/enable1.jpeg}{%
+            \includegraphics[width=\textwidth]{contents/figures/enable1.jpeg}%
+        }{}
+        \caption{\texttt{ENABLE} = 1 (Output aktif).}
+    \end{subfigure}
+    \\ \vspace{1em}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \IfFileExists{contents/figures/mute0.jpeg}{%
+            \includegraphics[width=\textwidth]{contents/figures/mute0.jpeg}%
+        }{}
+        \caption{\texttt{MUTE} = 0 (Normal).}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \IfFileExists{contents/figures/mute1.jpeg}{%
+            \includegraphics[width=\textwidth]{contents/figures/mute1.jpeg}%
+        }{}
+        \caption{\texttt{MUTE} = 1 (Senyap).}
+    \end{subfigure}
+    \caption{Verifikasi fungsionalitas bit \texttt{ENABLE} dan \texttt{MUTE}.}
+    \label{fig:ch5-control-test}
+\end{figure}
+
+\subsection{Verifikasi Lebar Sampel (Sample Width)}
+
+Pengujian lebar sampel dilakukan untuk memastikan data terpaket dengan benar dalam slot 32-bit. Hasil pengamatan pada Gambar \ref{fig:ch5-width-test} menunjukkan perbedaan visual pada kepadatan bit data saat lebar sampel diubah dari 16, 24, hingga 32 bit.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \IfFileExists{contents/figures/sample-width-16.jpeg}{%
+            \includegraphics[width=\textwidth]{contents/figures/sample-width-16.jpeg}%
+        }{}
+        \caption{16-bit.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \IfFileExists{contents/figures/sample-width-24.jpeg}{%
+            \includegraphics[width=\textwidth]{contents/figures/sample-width-24.jpeg}%
+        }{}
+        \caption{24-bit.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \IfFileExists{contents/figures/sample-width-32.jpeg}{%
+            \includegraphics[width=\textwidth]{contents/figures/sample-width-32.jpeg}%
+        }{}
+        \caption{32-bit.}
+    \end{subfigure}
+    \caption{Hasil verifikasi variasi lebar sampel (\textit{sample width}).}
+    \label{fig:ch5-width-test}
+\end{figure}
 
 \begin{figure}[htbp]
     \centering
@@ -60,6 +206,7 @@ Selama validasi perangkat keras ditemukan beberapa bug yang bersumber dari \text
     \caption{Keluaran audio setelah perbaikan: kanal L dan R identik.}
     \label{fig:ch5-fixed-both}
 \end{figure}
+
 
 \begin{table}[htbp]
     \centering
@@ -75,6 +222,33 @@ Selama validasi perangkat keras ditemukan beberapa bug yang bersumber dari \text
         \hline
     \end{tabular}
 \end{table}
+
+\section{Analisis Penggunaan Sumber Daya dan Daya}
+
+Implementasi IP I2S pada FPGA Artix-7 (Basys3) menghasilkan penggunaan sumber daya yang sangat efisien. Tabel \ref{tab:ch5-resource} dan Gambar \ref{fig:ch5-utilization} merangkum hasil *utilization* dan estimasi konsumsi daya dari Vivado.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \IfFileExists{contents/figures/utilization-summary.png}{%
+            \includegraphics[width=\textwidth]{contents/figures/utilization-summary.png}%
+        }{}
+        \caption{Ringkasan penggunaan sumber daya.}
+        \label{fig:ch5-utilization}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \IfFileExists{contents/figures/power-summary.png}{%
+            \includegraphics[width=\textwidth]{contents/figures/power-summary.png}%
+        }{}
+        \caption{Estimasi konsumsi daya.}
+        \label{fig:ch5-power}
+    \end{subfigure}
+    \caption{Analisis implementasi hardware pada FPGA Basys3.}
+    \label{fig:ch5-hw-analysis}
+\end{figure}
 
 \section{Pembahasan terhadap Tujuan Penelitian}
 

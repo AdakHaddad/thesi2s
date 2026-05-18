@@ -12,7 +12,7 @@ Daftar ini disusun untuk skripsi **I2S TX + AXI4-Lite + MicroBlaze/Vitis + PCM51
 | **PCM5102A** | Texas Instruments **PCM5102A datasheet** + **application notes** (format data, clock, filter). |
 | **7-Series clock** | Xilinx **UG472** (*7 Series FPGAs Clocking Resources User Guide*), **UG953** (Clocking Wizard). |
 | **MicroBlaze V / SoC** | Xilinx **Embedded Design Hub** — dokumentasi MicroBlaze V, AXI, interrupt; **Vitis** embedded flow. |
-| **ILA** | Xilinx *Vivado Design Suite User Guide: Programming and Debugging* (Integrated Logic Analyzer). |
+| **osiloskop/simulasi** | Xilinx *Vivado Design Suite User Guide: Programming and Debugging* (Integrated Logic Analyzer). |
 
 ## Buku teks digital design & FPGA
 
@@ -44,9 +44,9 @@ Daftar ini disusun untuk skripsi **I2S TX + AXI4-Lite + MicroBlaze/Vitis + PCM51
 
 ## Cara belajar efektif
 
-1. Baca **datasheet PCM5102A** + satu **spesifikasi I2S** — samakan dengan gelombang di osiloskop/ILA.  
+1. Baca **datasheet PCM5102A** + satu **spesifikasi I2S** — samakan dengan gelombang di osiloskop/osiloskop/simulasi.  
 2. Baca bab **AXI4-Lite handshake** + satu contoh transaksi di simulasi.  
-3. Implementasi kecil: **toggle register → ILA**; lalu **BCLK/WS**; terakhir **FIFO + IRQ**.  
+3. Implementasi kecil: **toggle register → osiloskop/simulasi**; lalu **BCLK/WS**; terakhir **FIFO + IRQ**.  
 4. Tulis **tabel actual vs target** setiap kali mengubah MMCM atau pembagi.
 
 ---
@@ -151,7 +151,7 @@ sequenceDiagram
 
 Read channel: `AR*` → `R*` dengan pola VALID/READY serupa.
 
-### Apa yang harus kamu "lihat" di ILA / osiloskop
+### Apa yang harus kamu "lihat" di osiloskop/simulasi / osiloskop
 
 1. **64 BCLK** per satu naik/turun penuh WS (atau setengah period WS tergantung definisi gambar—yang penting konsisten dengan serializer kamu).  
 2. **DATA** berubah pada posisi bit yang sesuai fungsi `i2s_next_serial_bit` (atau setara).  

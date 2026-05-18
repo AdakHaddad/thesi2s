@@ -10,9 +10,30 @@
 \subsubsection{Modul DAC audio}
 \textbf{PCM5102A Audio DAC Module} digunakan sebagai penerima data I2S~\citep{pcm5102a_datasheet}. Modul ini mendukung antarmuka audio serial, berbagai \textit{sample rate} hingga 384 kHz, dan keluaran analog stereo untuk verifikasi suara.
 
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \IfFileExists{contents/figures/pmod-pcm-wiring-diagram.png}{%
+            \includegraphics[width=\textwidth]{contents/figures/pmod-pcm-wiring-diagram.png}%
+        }{}
+        \caption{Diagram koneksi pin.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \IfFileExists{contents/figures/pmod-dac-wiring-capture.jpg}{%
+            \includegraphics[width=\textwidth]{contents/figures/pmod-dac-wiring-capture.jpg}%
+        }{}
+        \caption{Implementasi fisik.}
+    \end{subfigure}
+    \caption{Koneksi antara Basys3 dan modul DAC PCM5102A.}
+    \label{fig:ch3-wiring-dac}
+\end{figure}
+
 \subsubsection{Perangkat bantu}
 \begin{itemize}
-    \item \textbf{Oscilloscope / logic analyzer / ILA} untuk memverifikasi sinyal BCLK, WS, dan DATA.
+    \item \textbf{Oscilloscope / logic analyzer} untuk memverifikasi sinyal BCLK, WS, dan DATA.
     \item \textbf{Speaker atau headphone aktif} untuk uji keluaran audio.
     \item \textbf{Breadboard dan kabel jumper} untuk koneksi Basys3 ke PCM5102A.
 \end{itemize}
@@ -66,7 +87,7 @@ Dengan definisi ini, verifikasi tidak berhenti pada kecocokan waveform semata, t
 menilai apakah perilaku sistem sudah sesuai dengan tujuan operasional peripheral.
 
 \noindent Pada alur kerja aktual penelitian ini, verifikasi perilaku dasar terlebih dahulu
-dilakukan melalui \textit{bitstream bring-up}, pengamatan ILA, dan pengukuran pada perangkat
+dilakukan melalui \textit{bitstream bring-up}, simulasi \textit{testbench}, dan pengukuran pada perangkat
 keras. Setelah hubungan timing utama telah teridentifikasi pada FPGA nyata, dibuat
 \textit{testbench} Vivado/XSim pada proyek \texttt{C:\textbackslash tesi2s\textbackslash testblock}
 untuk mereproduksi kondisi \texttt{enable}, \texttt{mute}, pemilihan \texttt{fs\_mode}, dan
@@ -104,7 +125,7 @@ Penelitian ini mengikuti tahapan berikut:
     \item Implementasi RTL Verilog dan verifikasi awal.
     \item Integrasi ke dalam SoC pada Vivado Block Design.
     \item Pengembangan perangkat lunak uji di Vitis.
-    \item Pengujian hardware dengan ILA, pengukuran sinyal, dan validasi audio.
+    \item Pengujian hardware dengan simulasi \textit{testbench}, pengukuran sinyal, dan validasi audio.
     \item Analisis hasil, penyusunan dokumen, dan penarikan kesimpulan.
 \end{enumerate}
 
@@ -119,7 +140,7 @@ Penelitian ini mengikuti tahapan berikut:
     \node[stepbox] (s3) at (0,-3.6) {Implementasi RTL Verilog\\wrapper, AXI slave, CDC, dan serializer};
     \node[stepbox] (s4) at (0,-5.4) {Integrasi custom IP ke SoC Vivado\\MicroBlaze V, BRAM, clocking, UART, dan constraint};
     \node[stepbox] (s5) at (0,-7.2) {Pengembangan firmware uji di Vitis\\konfigurasi register dan pembangkitan sampel};
-    \node[stepbox] (s6) at (0,-9.0) {Bring-up bitstream dan verifikasi perangkat keras\\ILA, osiloskop, dan validasi audio};
+    \node[stepbox] (s6) at (0,-9.0) {Bring-up bitstream dan verifikasi perangkat keras\\testbench, osiloskop, dan validasi audio};
     \node[stepbox] (s7) at (0,-10.8) {Penyusunan testbench untuk verifikasi pelengkap\\reproduksi \texttt{enable}, \texttt{mute}, \texttt{fs\_mode}, dan serialisasi data};
     \node[stepbox] (s8) at (0,-12.6) {Analisis hasil, penulisan skripsi,\\dan penarikan kesimpulan};
 

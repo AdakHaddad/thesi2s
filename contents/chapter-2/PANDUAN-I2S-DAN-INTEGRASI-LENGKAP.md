@@ -59,7 +59,7 @@ F_s = \frac{f_{\mathrm{BCLK}}}{64}
 - **44,1 kHz** -- CD.
 - **48 kHz** -- audio pro / video.
 - **96 / 192 kHz** -- hi-res (jika DAC + clock + board mendukung).
-- **384 kHz** -- muncul pada **beberapa** DAC/codec kelas tertentu; **tidak otomatis** didukung modul breakout atau konfigurasi clock kamu. **Selalu cek datasheet** dan ukur di osiloskop/ILA.
+- **384 kHz** -- muncul pada **beberapa** DAC/codec kelas tertentu; **tidak otomatis** didukung modul breakout atau konfigurasi clock kamu. **Selalu cek datasheet** dan ukur di osiloskop/osiloskop.
 
 Di FPGA, \(F_s\) **efektif** ditentukan oleh **berapa kali LRCK berganti per detik** yang kamu bangkitkan dari **pembagi + osilator aktual** (MMCM sering tidak tepat 24,576 MHz -> nilai "≈" wajar di skripsi).
 

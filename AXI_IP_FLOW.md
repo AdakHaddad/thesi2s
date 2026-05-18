@@ -17,7 +17,7 @@ This document describes a recommended workflow for developing an IP core that is
 5. **Integration TB**: use AXI BFMs or existing AXI verification libraries to exercise protocol details, randomize delays, and assert bus-level correctness.
 6. **Simulate coverage & regressions**: enable functional coverage (if available) and run a regression suite (deterministic seeds + randomized tests).
 7. **Top-level / Block Design**: add wrapper/core to your Vivado Block Design or top-level wrapper with clocks, resets, and constraints.
-8. **Hardware validation**: program bitstream when necessary. Use ILA probes and incremental builds for hardware-specific issues.
+8. **Hardware validation**: program bitstream when necessary. Use osiloskop/simulasi probes and incremental builds for hardware-specific issues.
 9. **Package and document**: create .xci/.zip with example BD, reg map, and simulation TB.
 
 ## Example repo layout
@@ -87,7 +87,7 @@ pytest -q tests/test_core.py   # assumes cocotb test harness and verilator build
 6. Add functional coverage and assertions (if supported) to measure test completeness. Aim for coverage points for all reg accesses, error conditions, and corner protocols.
 
 7. If a failure appears only on hardware:
-   - add ILAs to observe suspect signals (AXI channels, core internal state)
+   - add osiloskop/simulasis to observe suspect signals (AXI channels, core internal state)
    - try incremental bitstreams or smaller systems to isolate the issue
 
 ## Pass/fail criteria (practical)
@@ -95,7 +95,7 @@ pytest -q tests/test_core.py   # assumes cocotb test harness and verilator build
 - Unit tests: all self-checking TBs exit with PASS and return code 0.
 - Integration: no protocol assertion fails; sampled outputs match the golden model over long randomized runs.
 - Coverage: critical coverage points reached (or known exceptions documented).
-- Hardware: if needed, measured signals (ILA/oscilloscope/headset) match reference behavior within timing/analog constraints.
+- Hardware: if needed, measured signals (osiloskop/simulasi/oscilloscope/headset) match reference behavior within timing/analog constraints.
 
 ## Automation & CI
 
@@ -108,7 +108,7 @@ pytest -q tests/test_core.py   # assumes cocotb test harness and verilator build
 - Integration AXI protocol checks PASS? -> yes/no
 - Golden-model compare PASS? -> yes/no
 - Coverage adequate? -> yes/no
-- Hardware-only issues reproducible in ILA? -> yes/no
+- Hardware-only issues reproducible in osiloskop/simulasi? -> yes/no
 
 ---
 

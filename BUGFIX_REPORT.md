@@ -21,7 +21,7 @@
 | `xilinx_vivado_design_suite_2021` | AMD Xilinx, *Vivado Design Suite UG: Designing with IP*, UG896, 2021 |
 | `xilinx_basys3_ref` | Digilent Inc., *Basys 3 FPGA Board Reference Manual*, 2020 |
 | `xilinx_vitis_embedded_2021` | AMD Xilinx, *Vitis Unified Software Platform Doc.*, UG1400, 2021 |
-| `xilinx_ila_pg2021` | AMD Xilinx, *ILA v6.2 Product Guide*, PG172, 2021 |
+| `xilinx_ila_pg2021` | AMD Xilinx, *osiloskop/simulasi v6.2 Product Guide*, PG172, 2021 |
 | `palnitkar_verilog_2003` | Palnitkar, *Verilog HDL*, 2nd ed., Prentice Hall, 2003 |
 | `harris_harris_digital_2022` | Harris & Harris, *Digital Design and Computer Architecture: RISC-V Ed.*, 2022 |
 | `ginosar_metastability_2011` | Ginosar, "Metastability and Synchronizers," IEEE D&T, 2011 |

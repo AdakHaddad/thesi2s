@@ -61,49 +61,147 @@ Tabel \ref{tab:ch3-regmap} merangkum register word-aligned yang digunakan pada i
 
 RTL direalisasikan dalam dua berkas Verilog: \texttt{i2s.v} sebagai \textit{top-level wrapper} dan \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v} sebagai modul utama yang mencakup seluruh logika AXI4-Lite, CDC, dan serializer I2S.
 
+\begin{landscape}
 \begin{figure}[htbp]
     \centering
     \IfFileExists{contents/figures/interface-view-lock-diagram.png}{%
-        \includegraphics[width=0.95\textwidth]{contents/figures/interface-view-lock-diagram.png}%
+        \includegraphics[width=1.3\textwidth]{contents/figures/interface-view-lock-diagram.png}%
     }{}
     \caption{Block Design Vivado: MicroBlaze V terhubung ke IP I2S melalui AXI SmartConnect.}
     \label{fig:ch4-bd-vivado}
 \end{figure}
+\end{landscape}
 
 \subsection{Pemetaan pin (constraint)}
 
 Pin I2S dihubungkan ke header PMOD JA pada Basys3 melalui file \texttt{cnstr.xdc} sebagai berikut:
 
 \begin{verbatim}
-set_property -dict {PACKAGE_PIN J1 IOSTANDARD LVCMOS33} [get_ports i2s_mclk_0]
-set_property -dict {PACKAGE_PIN L2 IOSTANDARD LVCMOS33} [get_ports i2s_bclk_0]
-set_property -dict {PACKAGE_PIN J2 IOSTANDARD LVCMOS33} [get_ports i2s_ws_0]
-set_property -dict {PACKAGE_PIN G2 IOSTANDARD LVCMOS33} [get_ports i2s_data_0]
+set_property PACKAGE_PIN J1 [get_ports i2s_mclk_0]
+set_property IOSTANDARD LVCMOS33 [get_ports i2s_mclk_0]
+set_property PACKAGE_PIN L2 [get_ports i2s_bclk_0]
+set_property IOSTANDARD LVCMOS33 [get_ports i2s_bclk_0]
+set_property PACKAGE_PIN J2 [get_ports i2s_ws_0]
+set_property IOSTANDARD LVCMOS33 [get_ports i2s_ws_0]
+set_property PACKAGE_PIN G2 [get_ports i2s_data_0]
+set_property IOSTANDARD LVCMOS33 [get_ports i2s_data_0]
 \end{verbatim}
 
 \subsection{Detail logika RTL (serializer dan CDC)}
 
-\subsubsection{Mekanisme Clock Domain Crossing (CDC)}
+\subsubsection{Mekanisme Clock Domain Crossing (CDC) dan Glitch-Free Mux}
 
-Data audio ditulis oleh MicroBlaze V pada domain \texttt{S\_AXI\_ACLK} (100 MHz), sementara serializer beroperasi pada domain \texttt{internal\_mclk} (${\sim}24$ MHz). Sinkronisasi dilakukan menggunakan flip-flop ganda dan latching pada batas frame stereo.
+Data audio ditulis oleh MicroBlaze V pada domain \texttt{S\_AXI\_ACLK} (100 MHz), sementara serializer beroperasi pada domain \texttt{internal\_mclk} (${\sim}24$ MHz). Sinkronisasi dilakukan menggunakan flip-flop ganda dan latching pada batas frame stereo. Selain itu, perpindahan antar keluarga clock dilakukan menggunakan \textit{glitch-free clock multiplexer} untuk menjaga integritas sinyal clock saat berpindah mode.
 
-\begin{lstlisting}[language=Verilog, caption={Cuplikan modul \texttt{cdc\_sync} pada RTL.}, label={lst:ch4-cdc-sync}]
+\begin{lstlisting}[language=Verilog, caption={Logika \textit{glitch-free clock multiplexer} dan CDC.}, label={lst:ch4-cdc-mux}]
+// Glitch-free clock multiplexer
+always @(negedge clk0) begin
+    q0_d1 <= !sel & !q1_d2;
+    q0_d2 <= q0_d1;
+end
+always @(negedge clk1) begin
+    q1_d1 <= sel & !q0_d2;
+    q1_d2 <= q1_d1;
+end
+assign clk_o = (q0_d2 & clk0) | (q1_d2 & clk1);
+
+// CDC Sync untuk register kontrol
 always @(posedge dest_clk) begin
     stage1_q <= src_in;
     stage2_q <= stage1_q;
 end
 \end{lstlisting}
 
+Penggunaan \textit{negedge} pada multiplexer memastikan bahwa sinyal seleksi hanya berubah saat clock dalam keadaan rendah, sehingga mencegah munculnya pulsa clock pendek yang tidak diinginkan.
+
 \subsubsection{Logika serializer Philips I2S}
 
-\begin{lstlisting}[language=Verilog, caption={Cuplikan logika serializer I2S.}, label={lst:ch4-serializer}]
-case (bit_count_q)
-    6'd0, 6'd32: i2s_next_serial_bit = 1'b0; // delay bit
-    default: begin
-        // Serialisasi MSB first
+Logika utama serializer diimplementasikan melalui fungsi yang menentukan nilai bit serial berikutnya berdasarkan pencacah bit (\texttt{bit\_count\_q}).
+
+\begin{lstlisting}[language=Verilog, caption={Fungsi penentu bit serial I2S.}, label={lst:ch4-serializer}]
+function i2s_next_serial_bit;
+    input [31:0] left_samp;
+    input [31:0] right_samp;
+    input [5:0]  bc;
+    input [5:0]  width;
+    begin
+        in_left = (bc < 6'd32);
+        pos     = bc[4:0];
+        if (pos == 5'd0)
+            i2s_next_serial_bit = 1'b0; // delay bit Philips
+        else if (pos <= width) begin
+            bit_idx = width - {1'b0, pos};
+            i2s_next_serial_bit = in_left ? left_samp[bit_idx[4:0]]
+                                          : right_samp[bit_idx[4:0]];
+        end else
+            i2s_next_serial_bit = 1'b0;
     end
-endcase
+endfunction
 \end{lstlisting}
+
+Fungsi tersebut mengimplementasikan protokol Philips I2S secara ketat, di mana bit pertama setelah transisi \texttt{WS} (\texttt{pos == 0}) selalu bernilai nol sebagai \textit{delay bit}. Pengiriman data dilakukan secara MSB-first sesuai lebar bit (\texttt{width}) yang dikonfigurasi. Sinyal output fisik (\texttt{i2s\_bclk}, \texttt{i2s\_ws}, \texttt{i2s\_data}) kemudian dibangkitkan pada domain \texttt{internal\_mclk} menggunakan pencacah yang berjalan dari 0 sampai 63 untuk mencakup satu frame stereo penuh.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \IfFileExists{contents/figures/bit-counter-waveform.png}{%
+            \includegraphics[width=\textwidth]{contents/figures/bit-counter-waveform.png}%
+        }{}
+        \caption{Waveform pencacah bit.}
+        \label{fig:ch4-bit-counter}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \IfFileExists{contents/figures/clock-divider-waveform.png}{%
+            \includegraphics[width=\textwidth]{contents/figures/clock-divider-waveform.png}%
+        }{}
+        \caption{Waveform pembagi clock.}
+        \label{fig:ch4-clk-divider}
+    \end{subfigure}
+    \caption{Verifikasi perilaku pencacah dan pembagi clock pada simulasi.}
+    \label{fig:ch4-sim-waveforms}
+\end{figure}
+
+\subsubsection{Penjelasan variabel dan fungsi kunci RTL}
+
+Berikut adalah rincian variabel dan fungsi utama yang mengatur jalannya hardware I2S:
+\begin{itemize}
+    \item \textbf{slv\_reg0--2}: Register AXI4-Lite untuk data kiri, kanan, dan kontrol (enable, mute, pemilihan clock).
+    \item \textbf{internal\_mclk}: Master clock audio yang dipilih (\textit{glitch-free}) sebagai referensi utama serializer.
+    \item \textbf{bit\_count\_q (6-bit)}: Pencacah posisi bit (0--63) yang menentukan batas kanal kiri dan kanan.
+    \item \textbf{bclk\_en\_w}: Sinyal pemungkin pulsa \textit{Bit Clock} berdasarkan pembagi frekuensi internal.
+    \item \textbf{i2s\_next\_serial\_bit}: Fungsi pemetaan paralel-ke-serial yang menangani \textit{1-bit delay} Philips dan \textit{indexing} MSB.
+\end{itemize}
+
+\section{Verifikasi Simulasi (Testbench)}
+
+Sebelum diimplementasikan pada FPGA, desain diverifikasi melalui simulasi fungsional menggunakan berkas \texttt{i2s\_tb.v} pada lingkungan Vivado Simulator.
+
+\subsection{Pembahasan kode testbench}
+
+\begin{lstlisting}[language=Verilog, caption={Cuplikan stimulus pada berkas testbench.}, label={lst:ch4-tb-stimulus}]
+initial begin
+    sample_l = 32'h0000AAAA; sample_r = 32'h00005555;
+    enable = 0; #2000;
+    enable = 1; #5000;
+    mute = 1;   #5000;
+    mute = 0;   fs_mode = 1;
+    #1000000; $finish;
+end
+\end{lstlisting}
+
+Analisis baris-per-baris terhadap skenario simulasi adalah sebagai berikut:
+\begin{enumerate}
+    \item \textbf{Inisialisasi Data}: Sampel kiri diatur ke \texttt{AAAA} dan kanan ke \texttt{5555} untuk mempermudah identifikasi bit MSB dan LSB pada \textit{waveform}.
+    \item \textbf{Reset/Idle state}: Sistem dimulai dengan \texttt{enable = 0} untuk memastikan tidak ada data sampah yang terkirim saat peripheral tidak aktif.
+    \item \textbf{Normal Playback}: Pengaktifan \texttt{enable = 1} memverifikasi bahwa serializer mulai beroperasi dan mengirimkan bit MSB dari data \texttt{AAAA}.
+    \item \textbf{Uji Mute}: Pengubahan \texttt{mute = 1} memverifikasi bahwa output \texttt{i2s\_data} menjadi nol seketika, namun \texttt{i2s\_bclk} dan \texttt{i2s\_ws} tetap berosilasi (menjaga sinkronisasi DAC).
+    \item \textbf{Perubahan Frekuensi}: Pengubahan \texttt{fs\_mode = 1} memverifikasi stabilitas pembagi clock internal saat beralih ke laju sampling yang lebih tinggi.
+\end{enumerate}
+
+
 
 \section{Konfigurasi Clocking Wizard}
 
@@ -113,6 +211,17 @@ Clocking Wizard~\citep{xilinx_clocking_wizard_2021} dikonfigurasi menghasilkan t
     \item \texttt{clk\_out2} = 24,576 MHz (\texttt{audio\_48\_clk}).
     \item \texttt{clk\_out3} = 22,579 MHz (\texttt{audio\_44\_clk}).
 \end{enumerate}
+
+\begin{landscape}
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/clocking-view-block-diagram.png}{%
+        \includegraphics[width=1.2\textwidth]{contents/figures/clocking-view-block-diagram.png}%
+    }{}
+    \caption{Konfigurasi clocking pada Vivado Block Design.}
+    \label{fig:ch4-clocking-view}
+\end{figure}
+\end{landscape}
 
 \begin{table}[htbp]
     \centering
