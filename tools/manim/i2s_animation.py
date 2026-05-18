@@ -123,50 +123,64 @@ class FrameLatchScene(Scene):
 
 class SerializationScene(Scene):
     def construct(self):
-        title = Text("I2S Serialization", font_size=34).to_edge(UP)
+        title = Text("I2S Serialization (Philips Standard)", font_size=32).to_edge(UP)
         self.play(FadeIn(title))
 
-        # timing strip
-        bclk = Line(LEFT * 6, RIGHT * 6).shift(DOWN * 1.5)
-        bclk_label = Text("BCLK", font_size=20).next_to(bclk, LEFT)
-        ws_line = Line(LEFT * 6, RIGHT * 6).shift(DOWN * 0.6)
-        ws_label = Text("WS / LRCLK", font_size=20).next_to(ws_line, LEFT)
-        data_line = Line(LEFT * 6, RIGHT * 6).shift(UP * 0.2)
-        data_label = Text("DATA", font_size=20).next_to(data_line, LEFT)
+        # timing strip labels and lines
+        bclk = Line(LEFT * 5, RIGHT * 5).shift(UP * 1.5)
+        bclk_lab = Text("BCLK", font_size=20, color=BLUE).next_to(bclk, LEFT)
+        ws = Line(LEFT * 5, RIGHT * 5).shift(UP * 0.5)
+        ws_lab = Text("WS (LRCK)", font_size=20, color=YELLOW).next_to(ws, LEFT)
+        data = Line(LEFT * 5, RIGHT * 5).shift(DOWN * 0.5)
+        data_lab = Text("DATA", font_size=20, color=GREEN).next_to(data, LEFT)
 
-        self.play(Create(bclk), Write(bclk_label))
-        self.play(Create(ws_line), Write(ws_label))
-        self.play(Create(data_line), Write(data_label))
+        # Create waves
+        bclk_wave = VGroup(*[
+            Line(ORIGIN, UP * 0.5).shift(RIGHT * (i * 0.5) + LEFT * 5 + UP * 1.25) if i % 2 == 0 else 
+            Line(UP * 0.5, ORIGIN).shift(RIGHT * (i * 0.5) + LEFT * 5 + UP * 1.25)
+            for i in range(21)
+        ])
+        # connect tops and bottoms
+        for i in range(len(bclk_wave)-1):
+            start = bclk_wave[i].get_end() if i % 2 == 0 else bclk_wave[i].get_start()
+            end = bclk_wave[i+1].get_start() if i % 2 != 0 else bclk_wave[i+1].get_end()
+            # Wait, easier way for square wave:
+            pass
+        
+        # Simpler visual: Bit boxes shifting
+        bits_group = VGroup()
+        values = ["0", "MSB", "B1", "B2", "...", "LSB"]
+        colors = [GREY, GREEN, GREEN, GREEN, GREEN, GREEN]
+        
+        for i, (v, c) in enumerate(zip(values, colors)):
+            box = Square(side_length=0.6, fill_opacity=0.3, color=c)
+            txt = Text(v, font_size=16).move_to(box.get_center())
+            bits_group.add(VGroup(box, txt))
+        
+        bits_group.arrange(RIGHT, buff=0.1).move_to(LEFT * 3 + DOWN * 0.5)
+        
+        ws_rect = Rectangle(width=5, height=0.6, color=YELLOW, fill_opacity=0.1).move_to(LEFT * 2.5 + UP * 0.5)
+        ws_txt = Text("Left Channel (WS=LOW)", font_size=18).move_to(ws_rect.get_center())
 
+        self.play(Create(bclk), Write(bclk_lab), Create(ws), Write(ws_lab), Create(data), Write(data_lab))
+        self.play(FadeIn(ws_rect), Write(ws_txt))
+        self.play(LaggedStart(*[FadeIn(b) for b in bits_group], lag_ratio=0.1))
 
+        # Show the "One-bit Delay"
+        arrow = Arrow(start=ws_rect.get_left() + DOWN * 0.2, end=bits_group[0].get_top(), color=RED)
+        delay_txt = Text("One-bit delay", font_size=16, color=RED).next_to(arrow, RIGHT)
+        
+        self.play(GrowArrow(arrow), Write(delay_txt))
+        self.play(Indicate(bits_group[0], color=RED))
+        self.wait(1.5)
+        self.play(FadeOut(arrow), FadeOut(delay_txt))
 
-        # compute BCLK frequency from sample rate and slot width
-        sample_rate = FS_DEFAULT
-        slot_width = SLOT_WIDTH
-        # stereo frame bits = 2 * slot_width
-        bclk_freq = sample_rate * 2 * slot_width
+        # Shift bits
+        for _ in range(3):
+            self.play(bits_group.animate.shift(RIGHT * 0.7), run_time=0.6)
+            self.play(Flash(bits_group[1], flash_radius=0.4))
 
-        # Map real period to animation period using a scale, but keep a minimum
-        real_period = 1.0 / bclk_freq if bclk_freq > 0 else 1.0
-        anim_scale = 0.02  # adjust for faster/slower animation
-        anim_period = max(real_period * anim_scale, 0.06)
-
-        # draw a short bit stream as boxes shifting right
-        bits = VGroup(*[Square(side_length=0.35, fill_opacity=1, color=GREEN) for _ in range(12)])
-        bits.arrange(RIGHT, buff=0.12).move_to(LEFT * 4 + UP * 0.2)
-        bit_labels = VGroup(*[Text("", font_size=12).move_to(b.get_center()) for b in bits])
-        for b, l in zip(bits, bit_labels):
-            self.add(b, l)
-
-        # animate bits shifting under DATA line driven by computed anim_period
-        iterations = 16
-        for i in range(iterations):
-            self.play(bits.animate.shift(RIGHT * 0.6), run_time=anim_period)
-            # toggle WS visual every slot_width*2 shifts (simulate LRCLK)
-            if (i % (slot_width // 8 if slot_width>=8 else 1)) == 0:
-                self.play(Indicate(ws_line, color=YELLOW), run_time=anim_period * 0.1)
-
-        self.wait(0.6)
+        self.wait(1)
 
 
 class I2SAnimation(Scene):

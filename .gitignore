@@ -16,3 +16,8 @@
 *.fdb_latexmk
 *.fls
 *.synctex.gz
+*.py
+*.exe
+*.pyc
+*.typed
+*.pyo
