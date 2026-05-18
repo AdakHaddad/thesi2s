@@ -9,10 +9,38 @@ Pengamatan sinyal pada \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_da
 \begin{landscape}
 \begin{figure}[htbp]
     \centering
-    \IfFileExists{contents/figures/sample-latching-leftright-waveform.png}{%
-        \includegraphics[width=1.3\textwidth]{contents/figures/sample-latching-leftright-waveform.png}%
-    }{}
-    \caption{Tangkapan waveform: BCLK, WS, dan DATA -- satu frame stereo 64 BCLK.}
+    \begin{subfigure}[t]{0.98\linewidth}
+        \centering
+        \IfFileExists{contents/figures/sample-latching-leftright-waveform.png}{%
+            \includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{contents/figures/sample-latching-leftright-waveform.png}%
+        }{}
+        \caption{BCLK, WS, dan DATA -- satu frame stereo 64 BCLK.}
+        \label{fig:ch5-waveform-frame}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}[t]{0.98\linewidth}
+        \centering
+        \IfFileExists{contents/figures/bit-counter-waveform.png}{%
+            \includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{contents/figures/bit-counter-waveform.png}%
+        }{}
+        \caption{Penghitung bit I2S selama satu frame stereo.}
+        \label{fig:ch5-bit-counter-waveform}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}[t]{0.98\linewidth}
+        \centering
+        \IfFileExists{contents/figures/clock-divider-waveform.png}{%
+            \includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{contents/figures/clock-divider-waveform.png}%
+        }{}
+        \caption{Pembagi clock untuk pembangkitan BCLK.}
+        \label{fig:ch5-clock-divider-waveform}
+    \end{subfigure}
+
+    \caption{Tangkapan waveform validasi timing I2S.}
     \label{fig:ch5-waveform}
 \end{figure}
 \end{landscape}
@@ -22,6 +50,8 @@ Pengamatan sinyal pada \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_da
     \item Satu frame stereo terdiri dari tepat 64 periode BCLK (32 kiri + 32 kanan).
     \item WS beralih satu BCLK \textit{sebelum} MSB data, sesuai spesifikasi Philips.
     \item Bit pertama setelah setiap peralihan WS selalu bernilai 0.
+    \item Penghitung bit kembali ke awal frame setelah 64 periode BCLK.
+    \item Pembagi clock menghasilkan BCLK sesuai mode frekuensi sampling yang dipilih.
 \end{itemize}
 
 \section{Analisis Frekuensi Sampling}
@@ -36,6 +66,22 @@ Pengamatan sinyal pada \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_da
         \hline
         \texttt{FS\_MODE = 0} & 24,597 MHz & $\div 8$ & 3,0746 MHz & 48,03 kHz \\
         \texttt{FS\_MODE = 1} & 24,597 MHz & $\div 4$ & 6,1493 MHz & 96,08 kHz \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Hasil pengukuran frekuensi sampling pada empat mode Fs.}
+    \label{tab:ch5-fs-measured}
+    \begin{tabular}{|l|r|r|r|}
+        \hline
+        \textbf{FS Mode} & \textbf{Measured Fs} & \textbf{Error} & \textbf{Error (\%)} \\
+        \hline
+        44,1 kHz & 43,8020 kHz & -0,2980 kHz & -0,676 \\
+        88,2 kHz & 87,6036 kHz & -0,5964 kHz & -0,676 \\
+        48 kHz   & 48,0409 kHz & +0,0409 kHz & +0,085 \\
+        96 kHz   & 96,0814 kHz & +0,0814 kHz & +0,085 \\
         \hline
     \end{tabular}
 \end{table}
@@ -84,7 +130,7 @@ Implementasi pada berkas \texttt{helloworld.c} menggunakan beberapa komponen per
     \item \textbf{step}: Nilai penambahan fase per iterasi, dihitung berdasarkan rasio frekuensi target nada terhadap laju sampling (\texttt{Fs}).
     \item \textbf{rdcycle64()}: Fungsi pembacaan CSR \texttt{mcycle} RISC-V dengan deteksi \textit{rollover} untuk mendapatkan waktu sistem 64-bit yang presisi.
     \item \textbf{stream\_sample()}: Fungsi yang melakukan \textit{bit-scaling} (penggeseran sampel 16-bit ke 24-bit) dan pengiriman data ke register hardware melalui MMIO.
-    \item \textbf{apply\_control()}: Menggabungkan status perangkat lunak (\texttt{enable, mute, fs\_family}) ke dalam register kontrol hardware melalui operasi bitwise.
+    \item \textbf{\path{apply_control()}}: Menggabungkan status perangkat lunak (\path{enable}, \path{mute}, \path{fs_family}) ke dalam register kontrol hardware melalui operasi bitwise.
 \end{itemize}
 
 

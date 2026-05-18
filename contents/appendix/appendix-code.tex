@@ -12,13 +12,13 @@ secara langsung.
 \centering
 \caption{Berkas RTL pada \texttt{ip\_repo/i2s\_1\_0/hdl}.}
 \label{tab:app-rtl-files}
-\begin{tabular}{|p{5.0cm}|p{9.0cm}|}
+\begin{tabular}{|>{\raggedright\arraybackslash}p{5.0cm}|>{\raggedright\arraybackslash}p{9.0cm}|}
 \hline
 \textbf{Berkas} & \textbf{Isi utama} \\
 \hline
-\texttt{i2s.v} & Wrapper IP untuk Vivado IP Packager. Berkas ini meneruskan port clock audio, port output I2S, dan port AXI4-Lite ke modul utama tanpa menambah logika baru. \\
+\path{i2s.v} & Wrapper IP untuk Vivado IP Packager. Berkas ini meneruskan port clock audio, port output I2S, dan port AXI4-Lite ke modul utama tanpa menambah logika baru. \\
 \hline
-\texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v} & Modul utama IP. Berisi state machine AXI4-Lite, register file, pemilih clock audio, sinkronisasi clock domain, latch sampel, pembagi BCLK, dan serializer Philips I2S. \\
+\path{i2s_slave_lite_v1_0_S00_AXI.v} & Modul utama IP. Berisi state machine AXI4-Lite, register file, pemilih clock audio, sinkronisasi clock domain, latch sampel, pembagi BCLK, dan serializer Philips I2S. \\
 \hline
 \end{tabular}
 \end{table}
@@ -51,21 +51,21 @@ data dengan timing berbasis counter siklus CPU.
 \centering
 \caption{Ringkasan fungsi penting pada \texttt{helloworld.c}.}
 \label{tab:app-fw-func}
-\begin{tabular}{|p{4.2cm}|p{9.8cm}|}
+\begin{tabular}{|>{\raggedright\arraybackslash}p{4.2cm}|>{\raggedright\arraybackslash}p{9.8cm}|}
 \hline
 \textbf{Fungsi / Bagian} & \textbf{Peran} \\
 \hline
-\texttt{rdcycle64()} & Membaca CSR \texttt{mcycle} 64 bit. Digunakan untuk membuat loop sampel berbasis deadline absolut. \\
+\path{rdcycle64()} & Membaca CSR \path{mcycle} 64 bit. Digunakan untuk membuat loop sampel berbasis deadline absolut. \\
 \hline
-\texttt{current\_sample\_rate()} & Mengubah kombinasi \texttt{FS\_FAMILY} dan \texttt{FS\_MODE} menjadi nilai Fs 48 kHz, 44,1 kHz, 96 kHz, atau 88,2 kHz. \\
+\path{current_sample_rate()} & Mengubah kombinasi \path{FS_FAMILY} dan \path{FS_MODE} menjadi nilai Fs 48 kHz, 44,1 kHz, 96 kHz, atau 88,2 kHz. \\
 \hline
-\texttt{apply\_control()} & Menggabungkan state software menjadi word \texttt{CONTROL} lalu menulisnya ke IP dengan \texttt{Xil\_Out32}. \\
+\path{apply_control()} & Menggabungkan state software menjadi word \path{CONTROL} lalu menulisnya ke IP dengan \path{Xil_Out32}. \\
 \hline
-\texttt{stream\_sample()} & Menghasilkan sampel sinus, menyesuaikan posisi bit terhadap \texttt{SAMPLE\_WIDTH}, lalu menulis \texttt{DATA\_LEFT} dan \texttt{DATA\_RIGHT}. \\
+\path{stream_sample()} & Menghasilkan sampel sinus, menyesuaikan posisi bit terhadap \path{SAMPLE_WIDTH}, lalu menulis \path{DATA_LEFT} dan \path{DATA_RIGHT}. \\
 \hline
-\texttt{handle\_key()} & Memproses input UART untuk memilih frekuensi nada, kanal aktif, mute, enable, keluarga Fs, mode Fs, dan lebar sampel. \\
+\path{handle_key()} & Memproses input UART untuk memilih frekuensi nada, kanal aktif, mute, enable, keluarga Fs, mode Fs, dan lebar sampel. \\
 \hline
-\texttt{main()} & Inisialisasi platform, validasi akses AXI, pencetakan menu, dan loop utama pengiriman sampel. \\
+\path{main()} & Inisialisasi platform, validasi akses AXI, pencetakan menu, dan loop utama pengiriman sampel. \\
 \hline
 \end{tabular}
 \end{table}
@@ -88,7 +88,7 @@ memberi nilai sampel kiri-kanan, serta mengubah sinyal \texttt{enable},
 \centering
 \caption{Skenario verifikasi pada testbench.}
 \label{tab:app-tb-scenario}
-\begin{tabular}{|p{3.2cm}|p{5.0cm}|p{5.8cm}|}
+\begin{tabular}{|>{\raggedright\arraybackslash}p{2.8cm}|>{\raggedright\arraybackslash}p{4.4cm}|>{\raggedright\arraybackslash}p{5.2cm}|}
 \hline
 \textbf{Skenario} & \textbf{Stimulus} & \textbf{Tujuan pengamatan} \\
 \hline
@@ -102,6 +102,26 @@ Mode Fs tinggi & \texttt{fs\_mode=1} & Memastikan pembagi BCLK berubah sehingga 
 \hline
 \end{tabular}
 \end{table}
+
+\section{Skrip Rekonstruksi Proyek Vivado}
+
+Proyek Vivado dapat direkonstruksi menggunakan skrip Tcl yang tersedia pada
+repositori proyek berikut:
+
+\begin{lstlisting}[caption={Lokasi skrip rekonstruksi proyek Vivado.}]
+https://github.com/adakhaddad/thesi2s
+thesi2s/i2sProject.tcl
+\end{lstlisting}
+
+Skrip ini merupakan hasil ekspor Vivado 2025.2 untuk proyek \path{nobufgmux}.
+Isi utamanya mencakup pembuatan project untuk part \path{xc7a35tcpg236-1},
+pengaturan board Basys3, penambahan Block Design \path{bdesign_clock_core.bd},
+constraint \path{constrn.xdc}, path IP repository, serta konfigurasi run
+\path{synth_1} dan \path{impl_1}. Skrip tidak dicetak penuh karena sebagian
+besar barisnya berupa metadata otomatis dari Vivado. Untuk menjalankan ulang
+proyek, skrip dapat di-\textit{source} dari Vivado Tcl Shell setelah repositori
+proyek diambil dan dependensi sumber yang dirujuk tersedia sesuai struktur
+repositori.
 
 \section{Hubungan Kode dengan Bab Utama}
 

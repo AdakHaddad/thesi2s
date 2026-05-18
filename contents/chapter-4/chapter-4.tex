@@ -5,9 +5,9 @@
 Bab ini menjelaskan implementasi inti dari peripheral \textit{I2S transmitter} yang
 dirancang sebagai custom IP AXI4-Lite. Fokus rancangan adalah mengubah sampel PCM
 stereo yang ditulis oleh MicroBlaze V melalui register menjadi sinyal serial
-\texttt{i2s\_mclk}, \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data} sesuai format Philips
+\path{i2s_mclk}, \path{i2s_bclk}, \path{i2s_ws}, dan \path{i2s_data} sesuai format Philips
 I2S~\citep{philips_i2s_1986}. Implementasi utama berada pada tiga bagian:
-\texttt{ip\_repo/i2s\_1\_0/hdl} untuk RTL IP, \texttt{micblaze/ws/rtlfix/src/helloworld.c}
+\path{ip_repo/i2s_1_0/hdl} untuk RTL IP, \path{micblaze/ws/rtlfix/src/helloworld.c}
 untuk aplikasi uji, dan \texttt{testblock} untuk testbench RTL.
 
 \begin{figure}[htbp]
@@ -19,9 +19,9 @@ untuk aplikasi uji, dan \texttt{testblock} untuk testbench RTL.
     \label{fig:ch4-block-ip}
 \end{figure}
 
-Alur data dimulai dari aplikasi C yang menulis register \texttt{DATA\_LEFT},
-\texttt{DATA\_RIGHT}, dan \texttt{CONTROL}. Register tersebut berada pada domain
-\texttt{S\_AXI\_ACLK} 100 MHz, kemudian disinkronkan ke domain clock audio. Serializer
+Alur data dimulai dari aplikasi C yang menulis register \path{DATA_LEFT},
+\path{DATA_RIGHT}, dan \path{CONTROL}. Register tersebut berada pada domain
+\path{S_AXI_ACLK} 100 MHz, kemudian disinkronkan ke domain clock audio. Serializer
 I2S membaca sampel pada awal frame stereo agar data tidak berubah di tengah word,
 lalu mengirimkan kanal kiri dan kanan masing-masing dalam slot 32 bit.
 
@@ -42,7 +42,7 @@ lalu mengirimkan kanal kiri dan kanan masing-masing dalam slot 32 bit.
 \centering
 \caption{Register map IP I2S AXI4-Lite.}
 \label{tab:ch4-regmap}
-\begin{tabular}{|l|l|p{4.0cm}|p{5.6cm}|}
+\begin{tabular}{|l|l|>{\raggedright\arraybackslash}p{4.0cm}|>{\raggedright\arraybackslash}p{5.6cm}|}
 \hline
 \textbf{Offset} & \textbf{Nama} & \textbf{Akses} & \textbf{Fungsi} \\
 \hline
@@ -73,8 +73,8 @@ lalu mengirimkan kanal kiri dan kanan masing-masing dalam slot 32 bit.
 
 \section{Implementasi RTL IP}
 
-RTL IP terdiri dari \texttt{i2s.v} sebagai wrapper dan
-\texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v} sebagai modul utama. Wrapper hanya
+RTL IP terdiri dari \path{i2s.v} sebagai wrapper dan
+\path{i2s_slave_lite_v1_0_S00_AXI.v} sebagai modul utama. Wrapper hanya
 menjaga nama port agar sesuai dengan IP Packager Vivado, sedangkan modul utama
 berisi register AXI4-Lite, pemilihan clock, CDC, pembagi clock, latch sampel,
 dan serializer I2S.
@@ -158,8 +158,8 @@ cdc_sync #(.WIDTH(32)) cdc_left_inst (
 );
 \end{lstlisting}
 
-Register AXI ditulis pada \texttt{S\_AXI\_ACLK}, sedangkan serializer berjalan pada
-\texttt{internal\_mclk}. Karena kedua domain tidak identik, setiap word register
+Register AXI ditulis pada \path{S_AXI_ACLK}, sedangkan serializer berjalan pada
+\path{internal_mclk}. Karena kedua domain tidak identik, setiap word register
 disinkronkan dengan dua tahap flip-flop. Sampel kemudian baru dilatch pada
 batas frame stereo, sehingga risiko perubahan data di tengah pengiriman kanal
 dapat dihindari.
@@ -265,7 +265,10 @@ berjalan tetapi sampel yang masuk ke serializer dipaksa nol.
 IP I2S dikemas melalui Vivado IP Packager, kemudian dihubungkan ke MicroBlaze V,
 BRAM, UART, Clocking Wizard, reset controller, dan AXI SmartConnect. Clocking
 Wizard menghasilkan clock sistem 100 MHz serta dua clock audio. Sinyal I2S
-dipetakan ke header PMOD Basys3 melalui constraint berikut.
+dipetakan ke header PMOD Basys3 melalui constraint berikut. Proyek Vivado juga
+dilengkapi skrip \path{i2sProject.tcl} pada repositori proyek agar konfigurasi
+Block Design, fileset, constraint, IP repository, dan run
+synthesis/implementation dapat direkonstruksi kembali dari Vivado Tcl Shell.
 
 \begin{lstlisting}[caption={Constraint pin I2S pada Basys3.}, label={lst:ch4-xdc}]
 set_property PACKAGE_PIN J1 [get_ports i2s_mclk_0]

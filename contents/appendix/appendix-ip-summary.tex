@@ -1,93 +1,94 @@
-% Appendix: Block Design IP summaries
-\chapter*{Block Design IP Summaries}
-\addcontentsline{toc}{chapter}{Block Design IP Summaries}
+\chapter*{Ringkasan IP Block Design}
+\addcontentsline{toc}{chapter}{Ringkasan IP Block Design}
 
-This appendix lists the main IP blocks present in the Vivado Block Design \texttt{design\_1} and summarizes their primary interfaces and key parameters. XML metadata files for each IP are located under \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/}.
+Lampiran ini merangkum IP utama pada Vivado Block Design \path{design_1}.
+Berkas metadata XML setiap IP berada pada direktori
+\path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/}.
 
-\section*{design\_1\_clk\_wiz\_0\_0}
-Purpose: Clocking Wizard that provides generated clocks and an AXI-lite control interface.
-Main interfaces:
-- \texttt{s\_axi\_lite} (AXI4, control)
-- \texttt{s\_axi\_aclk} (clock)
-Key parameters: \texttt{DATA\_WIDTH=32}, \texttt{FREQ\_HZ=100000000}, \texttt{ADDR\_WIDTH=32}
-XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_clk\_wiz\_0\_0/design\_1\_clk\_wiz\_0\_0.xml}
+\section*{\path{design_1_clk_wiz_0_0}}
+\begin{description}
+    \item[Purpose] Clocking Wizard untuk menghasilkan clock desain dan antarmuka kontrol AXI-Lite.
+    \item[Main interfaces] \path{s_axi_lite} (AXI4 control), \path{s_axi_aclk} (clock).
+    \item[Key parameters] \path{DATA_WIDTH=32}, \path{FREQ_HZ=100000000}, \path{ADDR_WIDTH=32}.
+    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_clk_wiz_0_0/design_1_clk_wiz_0_0.xml}.
+\end{description}
 
-\section*{design\_1\_microblaze\_riscv\_0\_0}
-Purpose: MicroBlaze RISC-V soft processor for embedded software control.
-Main interfaces:
-- Clock/Reset signals (clock domain \texttt{/clk\_wiz\_0\_clk\_out1})
-- \texttt{INTERRUPT} / \texttt{MON\_INTERRUPT} (interrupt inputs)
-- Multiple AXI/monitor interfaces referenced in \texttt{ASSOCIATED\_BUSIF}
-Key parameters: \texttt{FREQ\_HZ=100000000}, \texttt{CLK\_DOMAIN=/clk\_wiz\_0\_clk\_out1}
-XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_microblaze\_riscv\_0\_0/design\_1\_microblaze\_riscv\_0\_0.xml}
+\section*{\path{design_1_microblaze_riscv_0_0}}
+\begin{description}
+    \item[Purpose] Soft processor MicroBlaze RISC-V untuk kontrol embedded software.
+    \item[Main interfaces] Clock/reset pada domain \path{/clk_wiz_0_clk_out1}, \path{INTERRUPT}, \path{MON_INTERRUPT}, serta beberapa antarmuka AXI/monitor.
+    \item[Key parameters] \path{FREQ_HZ=100000000}, \path{CLK_DOMAIN=/clk_wiz_0_clk_out1}.
+    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_microblaze_riscv_0_0/design_1_microblaze_riscv_0_0.xml}.
+\end{description}
 
-\section*{design\_1\_dlmb\_v10\_0}
-Purpose: Data Local Memory Bus (DLMB) slave interfaces for processor local memory access.
-Main interfaces:
-- \texttt{LMB\_Sl\_0}, \texttt{LMB\_Sl\_1}, ... (LMB mirrored slave ports)
-Key parameters: \texttt{ADDR\_WIDTH=32}, \texttt{DATA\_WIDTH=32}, \texttt{READ\_WRITE\_MODE=READ\_WRITE}
-XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_dlmb\_v10\_0/design\_1\_dlmb\_v10\_0.xml}
+\section*{\path{design_1_dlmb_v10_0}}
+\begin{description}
+    \item[Purpose] Data Local Memory Bus (DLMB) untuk akses memori lokal sisi data.
+    \item[Main interfaces] \path{LMB_Sl_0}, \path{LMB_Sl_1}, dan port LMB slave lainnya.
+    \item[Key parameters] \path{ADDR_WIDTH=32}, \path{DATA_WIDTH=32}, \path{READ_WRITE_MODE=READ_WRITE}.
+    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_dlmb_v10_0/design_1_dlmb_v10_0.xml}.
+\end{description}
 
-\section*{design\_1\_ilmb\_v10\_0}
-Purpose: Instruction Local Memory Bus (ILMB) slave interfaces for instruction fetch.
-Main interfaces:
-- \texttt{LMB\_Sl\_0}, \texttt{LMB\_Sl\_1}, ... (LMB mirrored slave ports)
-Key parameters: \texttt{ADDR\_WIDTH=32}, \texttt{DATA\_WIDTH=32}, \texttt{READ\_WRITE\_MODE=READ\_WRITE}
-XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_ilmb\_v10\_0/design\_1\_ilmb\_v10\_0.xml}
+\section*{\path{design_1_ilmb_v10_0}}
+\begin{description}
+    \item[Purpose] Instruction Local Memory Bus (ILMB) untuk akses instruksi dari memori lokal.
+    \item[Main interfaces] \path{LMB_Sl_0}, \path{LMB_Sl_1}, dan port LMB slave lainnya.
+    \item[Key parameters] \path{ADDR_WIDTH=32}, \path{DATA_WIDTH=32}, \path{READ_WRITE_MODE=READ_WRITE}.
+    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_ilmb_v10_0/design_1_ilmb_v10_0.xml}.
+\end{description}
 
-\section*{design\_1\_dlmb\_bram\_if\_cntlr\_0}
-Purpose: BRAM interface controller connected to DLMB (data-side local memory controller).
-Main interfaces:
-- \texttt{INTERRUPT} (interrupt output)
-- \texttt{SLMB}, \texttt{SLMB1}, ... (LMB slave interfaces)
-Key parameters: provides memory map refs \texttt{SLMB}, data/addr widths 32-bit
-XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_dlmb\_bram\_if\_cntlr\_0/design\_1\_dlmb\_bram\_if\_cntlr\_0.xml}
+\section*{\path{design_1_dlmb_bram_if_cntlr_0}}
+\begin{description}
+    \item[Purpose] BRAM interface controller untuk jalur DLMB.
+    \item[Main interfaces] \path{INTERRUPT}, \path{SLMB}, \path{SLMB1}, dan port LMB slave lainnya.
+    \item[Key parameters] Referensi memory map \path{SLMB} dengan lebar data dan alamat 32 bit.
+    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_dlmb_bram_if_cntlr_0/design_1_dlmb_bram_if_cntlr_0.xml}.
+\end{description}
 
-\section*{design\_1\_ilmb\_bram\_if\_cntlr\_0}
-Purpose: BRAM interface controller connected to ILMB (instruction-side local memory controller).
-Main interfaces:
-- LMB slave interfaces (instruction path)
-Key parameters: standard BRAM/LMB glue with 32-bit widths
-XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_ilmb\_bram\_if\_cntlr\_0/design\_1\_ilmb\_bram\_if\_cntlr\_0.xml}
+\section*{\path{design_1_ilmb_bram_if_cntlr_0}}
+\begin{description}
+    \item[Purpose] BRAM interface controller untuk jalur ILMB.
+    \item[Main interfaces] Port LMB slave pada jalur instruksi.
+    \item[Key parameters] Glue logic BRAM/LMB standar dengan lebar data dan alamat 32 bit.
+    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_ilmb_bram_if_cntlr_0/design_1_ilmb_bram_if_cntlr_0.xml}.
+\end{description}
 
-\section*{design\_1\_lmb\_bram\_0}
-Purpose: BRAM block exposed as LMB/AXI memory.
-Main interfaces:
-- Clock/Reset (\texttt{ACLK}, \texttt{ARESETN})
-- \texttt{AXI\_SLAVE\_S\_AXI} (AXI interface to access BRAM)
-Key parameters: \texttt{FREQ\_HZ=100000000}, AXI slave memory map \texttt{S\_1}
-XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_lmb\_bram\_0/design\_1\_lmb\_bram\_0.xml}
+\section*{\path{design_1_lmb_bram_0}}
+\begin{description}
+    \item[Purpose] Blok BRAM yang diekspos sebagai memori LMB/AXI.
+    \item[Main interfaces] \path{ACLK}, \path{ARESETN}, dan \path{AXI_SLAVE_S_AXI}.
+    \item[Key parameters] \path{FREQ_HZ=100000000}, memory map slave \path{S_1}.
+    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_lmb_bram_0/design_1_lmb_bram_0.xml}.
+\end{description}
 
-\section*{design\_1\_mdm\_1\_0}
-Purpose: Microprocessor Debug Module (MDM) providing debug access (AXI-Lite) and control/monitoring.
-Main interfaces:
-- \texttt{S\_AXI} (AXI4-Lite)
-Key parameters: \texttt{DATA\_WIDTH=32}, \texttt{ADDR\_WIDTH=32}
-XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_mdm\_1\_0/design\_1\_mdm\_1\_0.xml}
+\section*{\path{design_1_mdm_1_0}}
+\begin{description}
+    \item[Purpose] Microprocessor Debug Module (MDM) untuk akses debug AXI-Lite.
+    \item[Main interfaces] \path{S_AXI}.
+    \item[Key parameters] \path{DATA_WIDTH=32}, \path{ADDR_WIDTH=32}.
+    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_mdm_1_0/design_1_mdm_1_0.xml}.
+\end{description}
 
-\section*{design\_1\_rst\_clk\_wiz\_0\_100M\_0}
-Purpose: Reset controller synchronizer associated with the clock wizard (generates resets for bus/processor domains).
-Main interfaces:
-- \texttt{clock} (slowest\_sync\_clk)
-- \texttt{ext\_reset}, \texttt{aux\_reset}, \texttt{dbg\_reset} (external reset inputs)
-Key parameters: \texttt{FREQ\_HZ=100000000}, associated resets \texttt{mb\_reset:bus\_struct\_reset:interconnect\_aresetn:peripheral\_aresetn}
-XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_rst\_clk\_wiz\_0\_100M\_0/design\_1\_rst\_clk\_wiz\_0\_100M\_0.xml}
+\section*{\path{design_1_rst_clk_wiz_0_100M_0}}
+\begin{description}
+    \item[Purpose] Reset controller untuk sinkronisasi reset pada domain clock sistem.
+    \item[Main interfaces] \path{slowest_sync_clk}, \path{ext_reset}, \path{aux_reset}, dan \path{dbg_reset}.
+    \item[Key parameters] \path{FREQ_HZ=100000000}; reset terkait \path{mb_reset}, \path{bus_struct_reset}, \path{interconnect_aresetn}, dan \path{peripheral_aresetn}.
+    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_rst_clk_wiz_0_100M_0/design_1_rst_clk_wiz_0_100M_0.xml}.
+\end{description}
 
-\section*{design\_1\_axi\_smc\_0}
-Purpose: AXI SmartConnect / interconnect for routing AXI masters to AXI slaves (protocol conversion, sizing, etc.).
-Main interfaces:
-- \texttt{CLK.aclk} (clock)
-- \texttt{RST.aresetn} (reset)
-- \texttt{S00\_AXI} (AXI slave port)
-- \texttt{M00\_AXI}, \texttt{M01\_AXI} (AXI master ports) -- routing targets
-Key parameters: \texttt{FREQ\_HZ=100000000}, \texttt{ASSOCIATED\_BUSIF=M00\_AXI:M01\_AXI:S00\_AXI}
-XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_axi\_smc\_0/design\_1\_axi\_smc\_0.xml}
+\section*{\path{design_1_axi_smc_0}}
+\begin{description}
+    \item[Purpose] AXI SmartConnect untuk merutekan transaksi AXI dari master ke slave.
+    \item[Main interfaces] \path{CLK.aclk}, \path{RST.aresetn}, \path{S00_AXI}, \path{M00_AXI}, dan \path{M01_AXI}.
+    \item[Key parameters] \path{FREQ_HZ=100000000}, \path{ASSOCIATED_BUSIF=M00_AXI:M01_AXI:S00_AXI}.
+    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_axi_smc_0/design_1_axi_smc_0.xml}.
+\end{description}
 
-\section*{design\_1\_i2s\_0\_0}
-Purpose: Custom/third-party I2S transmitter IP wrapped as AXI slave (control via AXI4-Lite).
-Main interfaces:
-- \texttt{S00\_AXI} (AXI4-Lite control interface, \texttt{ADDR\_WIDTH=4}, \texttt{DATA\_WIDTH=32}, \texttt{PROTOCOL=AXI4LITE})
-Key parameters: \texttt{WIZ\_DATA\_WIDTH=32}, \texttt{WIZ\_NUM\_REG=4}, \texttt{ADDR\_WIDTH=4}
-XML: \texttt{i2sproject/i2sproject.gen/sources\_1/bd/design\_1/ip/design\_1\_i2s\_0\_0/design\_1\_i2s\_0\_0.xml}
-
-% End of appendix file
+\section*{\path{design_1_i2s_0_0}}
+\begin{description}
+    \item[Purpose] Custom IP I2S transmitter dengan kontrol AXI4-Lite.
+    \item[Main interfaces] \path{S00_AXI} sebagai antarmuka kontrol AXI4-Lite.
+    \item[Key parameters] \path{WIZ_DATA_WIDTH=32}, \path{WIZ_NUM_REG=4}, \path{ADDR_WIDTH=4}, \path{DATA_WIDTH=32}, \path{PROTOCOL=AXI4LITE}.
+    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_i2s_0_0/design_1_i2s_0_0.xml}.
+\end{description}
