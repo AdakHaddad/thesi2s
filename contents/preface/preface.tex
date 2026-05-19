@@ -6,21 +6,104 @@
 
 \vspace{0.5cm}
 
-Puji syukur ke hadirat Allah SWT atas limpahan rahmat, karunia, serta petunjuk-Nya sehingga tugas akhir berupa penyusunan skripsi ini dengan judul \textbf{"Perancangan Peripheral I2S dengan AXI4-Lite Interface menggunakan Verilog"} telah terselesaikan dengan baik. Dalam hal penyusunan tugas akhir ini penulis telah banyak mendapatkan arahan, bantuan, serta dukungan dari berbagai pihak. Oleh karena itu pada kesempatan ini penulis mengucapkan terima kasih kepada:
+Puji syukur penulis panjatkan ke hadirat Allah SWT atas rahmat, karunia, dan
+petunjuk-Nya sehingga penulis dapat menyelesaikan skripsi yang berjudul
+\textbf{"Perancangan Peripheral I2S dengan AXI4-Lite Interface menggunakan Verilog"}.
+Shalawat serta salam semoga senantiasa tercurah kepada Rasulullah SAW, keluarga,
+sahabat, dan para pengikutnya hingga akhir zaman.
 
+Penyusunan skripsi ini tidak terlepas dari bantuan, bimbingan, dukungan, dan
+doa dari banyak pihak. Oleh karena itu, penulis menyampaikan terima kasih kepada:
 
 \begin{enumerate}
-	\item Kedua orang tua dan keluarga besar yang senantiasa memberikan doa, dukungan moril, serta kasih sayang yang tak terhingga sepanjang masa studi penulis.
+	\item Kedua orang tua dan keluarga besar penulis yang selalu memberikan doa,
+	dukungan, perhatian, dan kasih sayang selama penulis menempuh masa studi.
 	
-	\item Bapak Ir. Agus Bejo, S.T., M.Eng., D.Eng., IPM. dan Bapak Ir. Wahyu Dewanto, M.T. selaku dosen pembimbing yang telah memberikan bimbingan, arahan, serta waktu luangnya untuk membantu penulis menyelesaikan penelitian ini.
-		
-	\item Segenap dosen dan staf di Departemen Teknik Elektro dan Teknologi Informasi (DTETI) FT UGM yang telah memberikan bekal ilmu pengetahuan dan bantuan administratif selama masa perkuliahan.
-
-    \item Teman-teman seperjuangan Teknologi Informasi angkatan 2022 yang telah memberikan semangat dan kerja sama selama masa studi.
-
+	\item Bapak Ir. Agus Bejo, S.T., M.Eng., D.Eng., IPM. dan Bapak Ir. Wahyu
+	Dewanto, M.T. selaku dosen pembimbing yang telah meluangkan waktu untuk
+	memberikan arahan, masukan, dan bimbingan selama proses penelitian dan
+	penyusunan skripsi ini.
+	
+	\item Segenap dosen dan staf Departemen Teknik Elektro dan Teknologi Informasi,
+	Fakultas Teknik, Universitas Gadjah Mada, yang telah memberikan ilmu,
+	pengalaman, serta bantuan administratif selama masa perkuliahan.
+	
+	\item Teman-teman Teknologi Informasi angkatan 2022 dan teman-teman UGM lintas
+	angkatan yang telah menjadi rekan belajar, berdiskusi, dan menjalani berbagai
+	dinamika perkuliahan.
+	
+	\item Om Asep yang telah memberikan dukungan, perhatian, dan menjadi sosok wali
+	bagi penulis selama tinggal di Yogyakarta.
+	
+	\item Teman-teman Laboratorium IC, yaitu Ariq, Aji, Willi, Adit, Muhajir,
+	Rakhel, Jonatan, Alfito, Arifa, serta Pak Sudiro, Mas Byan, Mas Cahyo, dan
+	Mas Abid, atas diskusi, masukan, dan kebersamaan selama proses penelitian.
+	
+	\item Mas Hilmi, Ustadz Nabyl, Ustadz Habibi, Ustadz Arif, Ustadz Minan,
+	Ustadz Nurkholis, Ustadz Fawaid, serta teman-teman santri Pesantren Attaqwa
+	Alawiyah yang telah memberikan ilmu, dukungan, pengalaman berharga, serta
+	kesempatan kepada penulis untuk belajar dan mengajar kelas matematika,
+	khususnya materi \textit{pre-algebra} dan aljabar dasar, selama masa
+	perkuliahan.
+	
+	\item Teman-teman Alamin Yogyakarta yang telah menjadi keluarga dan teman
+	berproses selama penulis menempuh pendidikan di Yogyakarta.
+	
+	\item Tim penelitian Psybot, yaitu Mba Khomsah, Virna, Anggita, Fina, dan
+	Bu Indrayanti yang telah memberikan pengalaman penelitian hingga kesempatan
+	presentasi di PIMNAS 36, serta Pak Idham, Mba Tata, dan Mba Riyanti dalam
+	penelitian terkait kesehatan mental karyawan.
+	
+	\item Pak Guntur Dharma Putra, Pak Bimo Sunarfri Hantono, Fathan Zhahir,
+	Mas Bagus Raka, Pak Rayuh Shilah Hanggara, Pak Heruwanto, dan Pak Sony
+	R. Anugrahanto yang telah membimbing serta bekerja sama dalam penelitian
+	sistem signage DTETI.
+	
+	\item Mas Giga, Mas Krisna, Mas Afiq, Mas Orlando, dan Bang Furqan yang telah
+	memberikan saran, dukungan, serta menjadi mentor selama masa perkuliahan
+	penulis.
+	
+	\item Pak Nasikun, Mas Iskan, Pak Hartanto, dan Pak Nur yang telah memberikan
+	bimbingan dan pengalaman berharga selama penulis bekerja paruh waktu sebagai
+	developer di fakultas, serta rekan-rekan kantor: Pak Purwoko, Pak Doni,
+	Pak Bandi, Bu Desi, Bu Rahmi, Bu Nanda, Bu Mega, dan Pak Arief atas
+	kebersamaan dan dukungannya.
+	
+	\item Rekan-rekan selama program magang IC Design Engineer di Polytron, yaitu
+	Raphael, Fauzan, Kak Nur, Pande, Rizfa, Afgar, Andres, Ardian, Azriel, Bayu,
+	Yavi, Chandra, Debora, Dwi, Faiq, Faisal, Ferhad, Hanif, Hisyam, Arif, Ivan,
+	Mba Fazya, Fira, Ela, Renata, Aiman, Mas Andre, Mas Aziz, Galih, Mas Jabar,
+	Jevon, Mas Priyo, Radit, Wisnu, Valen, Mas Wibaga, Mba Jihan, Mona, Fattah,
+	Naumi, Nicky, Panji, Putra, Qory, Raihan, Reza, Ridho, Surya, dan Tegar,
+	serta Pak Arvin, Pak Riyad, dan Bu Dian atas pengalaman, kerja sama, dan
+	dukungan selama kegiatan magang berlangsung.
+	
+	\item Teman-teman KKN Minggir, yaitu Ayub, Subhan, Afifa, Anggun, Gama,
+	Jasmin, Linggar, Akbar, Hanifah, Lea, Nisa, Padia, Rona, Iqbal, Amalia,
+	Hilmi, Ilma, Irsyad, Lala, Safira, Berlean, Fajar, Farah, Hanif, Ifah,
+	Sheila, Risti, dan Mba Vania, serta masyarakat Padukuhan Ngijon yang telah
+	memberikan pengalaman, cerita, dan kebersamaan selama 51 hari pelaksanaan
+	KKN.
+	
+	\item Pak Yaenuri, A.Md., Pak Sunandar, S.T., Pak Nanang Muhammad Yusuf,
+	S.T., Pak Heruwanto, S.T., M.M., Pak Nanang Dani Widyanto, S.T., Pak Rayuh
+	Dhilah Hanggara, S.T., Pak Arwin Pamungkas, S.Pd., Pak Tri Wahyudiono, serta
+	jajaran tenaga pendidik yang dengan penuh senyuman telah memberikan dukungan,
+	bantuan, serta pengalaman selama masa perkuliahan dan kegiatan akademik
+	maupun laboratorium.
+	
+	\item Teman-teman Eternity Sistem Informasi UNTAN yang selalu memberikan
+	dukungan kepada penulis selama menjalani dinamika kehidupan perkuliahan.
+	
+	\item Teman-teman sobat DTI, yaitu Sulton, Hanief, Alfath, Mas Adji, Mas
+	Syafaq, Mas Hafzhan, dan Fahmi yang telah menemani penulis selama pengerjaan
+	skripsi di DTI.
 \end{enumerate}
 
-Akhir kata penulis berharap semoga skripsi ini dapat memberikan manfaat bagi perkembangan ilmu pengetahuan, khususnya di bidang sistem digital dan sistem embedded, serta bagi kita semua, aamiin.
+Penulis menyadari bahwa skripsi ini masih memiliki kekurangan. Oleh karena itu,
+penulis terbuka terhadap saran dan masukan yang membangun. Semoga skripsi ini
+dapat memberikan manfaat bagi pengembangan ilmu pengetahuan, khususnya pada
+bidang sistem digital dan sistem embedded.
 
 \begin{flushright}
 	Yogyakarta, 14 Mei 2026 \\
