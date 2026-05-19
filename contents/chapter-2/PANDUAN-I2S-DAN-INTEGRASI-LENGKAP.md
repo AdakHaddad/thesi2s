@@ -250,11 +250,11 @@ Kamu bisa mengganti `.pdf` dengan `.png` dengan mengedit path di LaTeX jika lebi
 
 | Lokasi | Isi |
 |--------|-----|
-| `D:\Vivado-projects\Basys3\sbml\ip_repo\i2s_1_0\hdl\i2s_slave_lite_v1_0_S00_AXI.v` | RTL AXI + I2S v1 |
-| `D:\Vivado-projects\Basys3\sbml\ip_repo\i2s_1_0\hdl\i2s.v` | Wrapper IP |
-| `D:\Vivado-projects\Basys3\sbml\ip_repo\i2s_1_0\I2S_SLAVE_LITE_MASTER_GUIDE.md` | Panduan baris-per-blok RTL |
-| `D:\Vivado-projects\Basys3\sbml\I2S_AXI_REGISTER_DOC.md` | Dokumen register (sesuai evolusi proyek) |
-| `D:\Vivado-projects\Basys3\sbml\I2S_V2_IMPLEMENTATION_SPEC.md` | Spesifikasi target v2 |
+| `[folder_repo_fpga]/ip_repo\i2s_1_0\hdl\i2s_slave_lite_v1_0_S00_AXI.v` | RTL AXI + I2S v1 |
+| `[folder_repo_fpga]/ip_repo\i2s_1_0\hdl\i2s.v` | Wrapper IP |
+| `[folder_repo_fpga]/ip_repo\i2s_1_0\I2S_SLAVE_LITE_MASTER_GUIDE.md` | Panduan baris-per-blok RTL |
+| `[folder_repo_fpga]/I2S_AXI_REGISTER_DOC.md` | Dokumen register (sesuai evolusi proyek) |
+| `[folder_repo_fpga]/I2S_V2_IMPLEMENTATION_SPEC.md` | Spesifikasi target v2 |
 | `C:\tesi2s\thesi2s\contents\chapter-2\chapter-2.tex` | Bab II + placeholder gambar |
 
 ---

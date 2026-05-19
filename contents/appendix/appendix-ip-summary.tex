@@ -3,14 +3,14 @@
 
 Lampiran ini merangkum IP utama pada Vivado Block Design \path{design_1}.
 Berkas metadata XML setiap IP berada pada direktori
-\path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/}.
+\path{gen/sources_1/bd/design_1/ip/}.
 
 \section*{\path{design_1_clk_wiz_0_0}}
 \begin{description}
     \item[Purpose] Clocking Wizard untuk menghasilkan clock desain dan antarmuka kontrol AXI-Lite.
     \item[Main interfaces] \path{s_axi_lite} (AXI4 control), \path{s_axi_aclk} (clock).
     \item[Key parameters] \path{DATA_WIDTH=32}, \path{FREQ_HZ=100000000}, \path{ADDR_WIDTH=32}.
-    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_clk_wiz_0_0/design_1_clk_wiz_0_0.xml}.
+    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_clk_wiz_0_0/design_1_clk_wiz_0_0.xml}.
 \end{description}
 
 \section*{\path{design_1_microblaze_riscv_0_0}}
@@ -18,7 +18,7 @@ Berkas metadata XML setiap IP berada pada direktori
     \item[Purpose] Soft processor MicroBlaze RISC-V untuk kontrol embedded software.
     \item[Main interfaces] Clock/reset pada domain \path{/clk_wiz_0_clk_out1}, \path{INTERRUPT}, \path{MON_INTERRUPT}, serta beberapa antarmuka AXI/monitor.
     \item[Key parameters] \path{FREQ_HZ=100000000}, \path{CLK_DOMAIN=/clk_wiz_0_clk_out1}.
-    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_microblaze_riscv_0_0/design_1_microblaze_riscv_0_0.xml}.
+    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_microblaze_riscv_0_0/design_1_microblaze_riscv_0_0.xml}.
 \end{description}
 
 \section*{\path{design_1_dlmb_v10_0}}
@@ -26,7 +26,7 @@ Berkas metadata XML setiap IP berada pada direktori
     \item[Purpose] Data Local Memory Bus (DLMB) untuk akses memori lokal sisi data.
     \item[Main interfaces] \path{LMB_Sl_0}, \path{LMB_Sl_1}, dan port LMB slave lainnya.
     \item[Key parameters] \path{ADDR_WIDTH=32}, \path{DATA_WIDTH=32}, \path{READ_WRITE_MODE=READ_WRITE}.
-    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_dlmb_v10_0/design_1_dlmb_v10_0.xml}.
+    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_dlmb_v10_0/design_1_dlmb_v10_0.xml}.
 \end{description}
 
 \section*{\path{design_1_ilmb_v10_0}}
@@ -34,7 +34,7 @@ Berkas metadata XML setiap IP berada pada direktori
     \item[Purpose] Instruction Local Memory Bus (ILMB) untuk akses instruksi dari memori lokal.
     \item[Main interfaces] \path{LMB_Sl_0}, \path{LMB_Sl_1}, dan port LMB slave lainnya.
     \item[Key parameters] \path{ADDR_WIDTH=32}, \path{DATA_WIDTH=32}, \path{READ_WRITE_MODE=READ_WRITE}.
-    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_ilmb_v10_0/design_1_ilmb_v10_0.xml}.
+    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_ilmb_v10_0/design_1_ilmb_v10_0.xml}.
 \end{description}
 
 \section*{\path{design_1_dlmb_bram_if_cntlr_0}}
@@ -42,7 +42,7 @@ Berkas metadata XML setiap IP berada pada direktori
     \item[Purpose] BRAM interface controller untuk jalur DLMB.
     \item[Main interfaces] \path{INTERRUPT}, \path{SLMB}, \path{SLMB1}, dan port LMB slave lainnya.
     \item[Key parameters] Referensi memory map \path{SLMB} dengan lebar data dan alamat 32 bit.
-    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_dlmb_bram_if_cntlr_0/design_1_dlmb_bram_if_cntlr_0.xml}.
+    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_dlmb_bram_if_cntlr_0/design_1_dlmb_bram_if_cntlr_0.xml}.
 \end{description}
 
 \section*{\path{design_1_ilmb_bram_if_cntlr_0}}
@@ -50,7 +50,7 @@ Berkas metadata XML setiap IP berada pada direktori
     \item[Purpose] BRAM interface controller untuk jalur ILMB.
     \item[Main interfaces] Port LMB slave pada jalur instruksi.
     \item[Key parameters] Glue logic BRAM/LMB standar dengan lebar data dan alamat 32 bit.
-    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_ilmb_bram_if_cntlr_0/design_1_ilmb_bram_if_cntlr_0.xml}.
+    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_ilmb_bram_if_cntlr_0/design_1_ilmb_bram_if_cntlr_0.xml}.
 \end{description}
 
 \section*{\path{design_1_lmb_bram_0}}
@@ -58,7 +58,7 @@ Berkas metadata XML setiap IP berada pada direktori
     \item[Purpose] Blok BRAM yang diekspos sebagai memori LMB/AXI.
     \item[Main interfaces] \path{ACLK}, \path{ARESETN}, dan \path{AXI_SLAVE_S_AXI}.
     \item[Key parameters] \path{FREQ_HZ=100000000}, memory map slave \path{S_1}.
-    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_lmb_bram_0/design_1_lmb_bram_0.xml}.
+    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_lmb_bram_0/design_1_lmb_bram_0.xml}.
 \end{description}
 
 \section*{\path{design_1_mdm_1_0}}
@@ -66,7 +66,7 @@ Berkas metadata XML setiap IP berada pada direktori
     \item[Purpose] Microprocessor Debug Module (MDM) untuk akses debug AXI-Lite.
     \item[Main interfaces] \path{S_AXI}.
     \item[Key parameters] \path{DATA_WIDTH=32}, \path{ADDR_WIDTH=32}.
-    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_mdm_1_0/design_1_mdm_1_0.xml}.
+    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_mdm_1_0/design_1_mdm_1_0.xml}.
 \end{description}
 
 \section*{\path{design_1_rst_clk_wiz_0_100M_0}}
@@ -74,7 +74,7 @@ Berkas metadata XML setiap IP berada pada direktori
     \item[Purpose] Reset controller untuk sinkronisasi reset pada domain clock sistem.
     \item[Main interfaces] \path{slowest_sync_clk}, \path{ext_reset}, \path{aux_reset}, dan \path{dbg_reset}.
     \item[Key parameters] \path{FREQ_HZ=100000000}; reset terkait \path{mb_reset}, \path{bus_struct_reset}, \path{interconnect_aresetn}, dan \path{peripheral_aresetn}.
-    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_rst_clk_wiz_0_100M_0/design_1_rst_clk_wiz_0_100M_0.xml}.
+    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_rst_clk_wiz_0_100M_0/design_1_rst_clk_wiz_0_100M_0.xml}.
 \end{description}
 
 \section*{\path{design_1_axi_smc_0}}
@@ -82,7 +82,7 @@ Berkas metadata XML setiap IP berada pada direktori
     \item[Purpose] AXI SmartConnect untuk merutekan transaksi AXI dari master ke slave.
     \item[Main interfaces] \path{CLK.aclk}, \path{RST.aresetn}, \path{S00_AXI}, \path{M00_AXI}, dan \path{M01_AXI}.
     \item[Key parameters] \path{FREQ_HZ=100000000}, \path{ASSOCIATED_BUSIF=M00_AXI:M01_AXI:S00_AXI}.
-    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_axi_smc_0/design_1_axi_smc_0.xml}.
+    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_axi_smc_0/design_1_axi_smc_0.xml}.
 \end{description}
 
 \section*{\path{design_1_i2s_0_0}}
@@ -90,5 +90,5 @@ Berkas metadata XML setiap IP berada pada direktori
     \item[Purpose] Custom IP I2S transmitter dengan kontrol AXI4-Lite.
     \item[Main interfaces] \path{S00_AXI} sebagai antarmuka kontrol AXI4-Lite.
     \item[Key parameters] \path{WIZ_DATA_WIDTH=32}, \path{WIZ_NUM_REG=4}, \path{ADDR_WIDTH=4}, \path{DATA_WIDTH=32}, \path{PROTOCOL=AXI4LITE}.
-    \item[XML] \path{i2sproject/i2sproject.gen/sources_1/bd/design_1/ip/design_1_i2s_0_0/design_1_i2s_0_0.xml}.
+    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_i2s_0_0/design_1_i2s_0_0.xml}.
 \end{description}

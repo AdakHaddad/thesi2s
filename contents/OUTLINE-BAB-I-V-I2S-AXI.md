@@ -237,9 +237,9 @@ Letakkan berkas di folder **`thesi2s/contents/figures/`** (buat folder jika belu
 | Dokumen | Lokasi |
 |---------|--------|
 | Panduan in–out I2S, UART, DAC (Markdown) | [contents/chapter-2/PANDUAN-I2S-DAN-INTEGRASI-LENGKAP.md](chapter-2/PANDUAN-I2S-DAN-INTEGRASI-LENGKAP.md) |
-| Spesifikasi implementasi v2 (FIFO, register, IRQ) | `D:\Vivado-projects\Basys3\sbml\I2S_V2_IMPLEMENTATION_SPEC.md` |
-| Panduan RTL `i2s_slave_lite` | `D:\Vivado-projects\Basys3\sbml\ip_repo\i2s_1_0\I2S_SLAVE_LITE_MASTER_GUIDE.md` |
-| Register & alur saat ini (dok proyek FPGA) | `D:\Vivado-projects\Basys3\sbml\I2S_AXI_REGISTER_DOC.md` |
+| Spesifikasi implementasi v2 (FIFO, register, IRQ) | `[folder_repo_fpga]/I2S_V2_IMPLEMENTATION_SPEC.md` |
+| Panduan RTL `i2s_slave_lite` | `[folder_repo_fpga]/ip_repo\i2s_1_0\I2S_SLAVE_LITE_MASTER_GUIDE.md` |
+| Register & alur saat ini (dok proyek FPGA) | `[folder_repo_fpga]/I2S_AXI_REGISTER_DOC.md` |
 
 ---
 

@@ -23,9 +23,9 @@
 # 2. The following source(s) files that were local or imported into the original project.
 #    (Please see the '$orig_proj_dir' and '$origin_dir' variable setting below at the start of the script)
 #
-#    "C:/tesi2s/nobufgmux/nobufgmux.srcs/sources_1/bd/bdesign_clock_core/bdesign_clock_core.bd"
-#    "C:/tesi2s/nobufgmux/nobufgmux.srcs/constrs_1/new/constrn.xdc"
-#    "C:/tesi2s/nobufgmux/nobufgmux.srcs/utils_1/imports/synth_1/bdesign_clock_core_wrapper.dcp"
+#    "$origin_dir/sources_1/bd/bdesign_clock_core/bdesign_clock_core.bd"
+#    "$origin_dir/constrs_1/new/constrn.xdc"
+#    "$origin_dir/utils_1/imports/synth_1/bdesign_clock_core_wrapper.dcp"
 #
 # 3. The following remote source files that were added to the original project:-
 #
@@ -37,9 +37,9 @@
 proc checkRequiredFiles { origin_dir} {
   set status true
   set files [list \
- "[file normalize "$origin_dir/../nobufgmux/nobufgmux.srcs/sources_1/bd/bdesign_clock_core/bdesign_clock_core.bd"]"\
- "[file normalize "$origin_dir/../nobufgmux/nobufgmux.srcs/constrs_1/new/constrn.xdc"]"\
- "[file normalize "$origin_dir/../nobufgmux/nobufgmux.srcs/utils_1/imports/synth_1/bdesign_clock_core_wrapper.dcp"]"\
+ "[file normalize "$origin_dir/sources_1/bd/bdesign_clock_core/bdesign_clock_core.bd"]"\
+ "[file normalize "$origin_dir/constrs_1/new/constrn.xdc"]"\
+ "[file normalize "$origin_dir/utils_1/imports/synth_1/bdesign_clock_core_wrapper.dcp"]"\
   ]
   foreach ifile $files {
     if { ![file isfile $ifile] } {
@@ -49,8 +49,8 @@ proc checkRequiredFiles { origin_dir} {
   }
 
   set paths [list \
- "[file normalize "$origin_dir/../../Users/LENOVO/Documents/ip_repo/tes_1_0"]"]"\
- "[file normalize "$origin_dir/../../Users/LENOVO/Documents/ip_repo"]"]"\
+ "[file normalize "$origin_dir/ip_repo/tes_1_0"]"]"\
+ "[file normalize "$origin_dir/ip_repo"]"]"\
   ]
   foreach ipath $paths {
     if { ![file isdirectory $ipath] } {
@@ -70,7 +70,7 @@ if { [info exists ::origin_dir_loc] } {
 }
 
 # Set the project name
-set _xil_proj_name_ "nobufgmux"
+set _xil_proj_name_ "i2s_project"
 
 # Use project name variable, if specified in the tcl shell
 if { [info exists ::user_project_name] } {
@@ -126,7 +126,7 @@ if { $::argc > 0 } {
 }
 
 # Set the directory path for the original project from where this script was exported
-set orig_proj_dir "[file normalize "$origin_dir/../nobufgmux"]"
+set orig_proj_dir "[file normalize "$origin_dir"]"
 
 # Check for paths and files needed for project creation
 set validate_required 0
@@ -150,7 +150,7 @@ set proj_dir [get_property directory [current_project]]
 
 # Set project properties
 set obj [current_project]
-set_property -name "board_part_repo_paths" -value "[file normalize "$origin_dir/../../Users/LENOVO/AppData/Roaming/Xilinx/Vivado/2025.2/xhub/board_store/xilinx_board_store"]" -objects $obj
+set_property -name "board_part_repo_paths" -value "[file normalize "$origin_dir/vivado-boards/new/board_files"]" -objects $obj
 set_property -name "board_part" -value "digilentinc.com:basys3:part0:1.2" -objects $obj
 set_property -name "default_lib" -value "xil_defaultlib" -objects $obj
 set_property -name "enable_resource_estimation" -value "0" -objects $obj
@@ -190,7 +190,7 @@ if { $obj != {} } {
 set obj [get_filesets sources_1]
 # Import local files from the original project
 set files [list \
- [file normalize "${origin_dir}/../nobufgmux/nobufgmux.srcs/sources_1/bd/bdesign_clock_core/bdesign_clock_core.bd" ]\
+ [file normalize "${origin_dir}/sources_1/bd/bdesign_clock_core/bdesign_clock_core.bd" ]\
 ]
 set imported_files ""
 foreach f $files {
@@ -199,7 +199,7 @@ foreach f $files {
 
 #call make_wrapper to create wrapper files
 if { [get_property IS_LOCKED [ get_files -norecurse bdesign_clock_core.bd] ] == 1  } {
-  import_files -fileset sources_1 [file normalize "${origin_dir}/../nobufgmux/nobufgmux.gen/sources_1/bd/bdesign_clock_core/hdl/bdesign_clock_core_wrapper.v" ]
+  import_files -fileset sources_1 [file normalize "${origin_dir}/gen/sources_1/bd/bdesign_clock_core/hdl/bdesign_clock_core_wrapper.v" ]
 } else {
   set wrapper_path [make_wrapper -fileset sources_1 -files [ get_files -norecurse bdesign_clock_core.bd] -top]
   add_files -norecurse -fileset sources_1 $wrapper_path
@@ -229,7 +229,7 @@ if {[string equal [get_filesets -quiet constrs_1] ""]} {
 set obj [get_filesets constrs_1]
 
 # Add/Import constrs file and set constrs file properties
-set file "[file normalize "$origin_dir/../nobufgmux/nobufgmux.srcs/constrs_1/new/constrn.xdc"]"
+set file "[file normalize "$origin_dir/constrs_1/new/constrn.xdc"]"
 set file_imported [import_files -fileset constrs_1 [list $file]]
 set file "new/constrn.xdc"
 set file_obj [get_files -of_objects [get_filesets constrs_1] [list "*$file"]]
@@ -257,7 +257,7 @@ set_property -name "top_lib" -value "xil_defaultlib" -objects $obj
 set obj [get_filesets utils_1]
 # Import local files from the original project
 set files [list \
- [file normalize "${origin_dir}/../nobufgmux/nobufgmux.srcs/utils_1/imports/synth_1/bdesign_clock_core_wrapper.dcp" ]\
+ [file normalize "${origin_dir}/utils_1/imports/synth_1/bdesign_clock_core_wrapper.dcp" ]\
 ]
 set imported_files ""
 foreach f $files {

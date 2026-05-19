@@ -40,7 +40,7 @@ Daftar ini disusun untuk skripsi **I2S TX + AXI4-Lite + MicroBlaze/Vitis + PCM51
 
 - [PANDUAN-I2S-DAN-INTEGRASI-LENGKAP.md](chapter-2/PANDUAN-I2S-DAN-INTEGRASI-LENGKAP.md) — alur UART vs I2S, DAC, angka \(F_s\).
 - [OUTLINE-BAB-I-V-I2S-AXI.md](OUTLINE-BAB-I-V-I2S-AXI.md) — struktur bab + nama file gambar.
-- Repo FPGA (`sbml`): `I2S_SLAVE_LITE_MASTER_GUIDE.md`, `I2S_V2_IMPLEMENTATION_SPEC.md`, `I2S_AXI_REGISTER_DOC.md`.
+- Dokumentasi IP: `I2S_SLAVE_LITE_MASTER_GUIDE.md`, `I2S_V2_IMPLEMENTATION_SPEC.md`, `I2S_AXI_REGISTER_DOC.md`.
 
 ## Cara belajar efektif
 
