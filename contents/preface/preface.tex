@@ -1,8 +1,8 @@
 Puji syukur penulis panjatkan ke hadirat Allah SWT atas rahmat, karunia, dan
 petunjuk-Nya sehingga penulis dapat menyelesaikan skripsi yang berjudul
 \textbf{"Perancangan Peripheral I2S dengan AXI4-Lite Interface menggunakan Verilog"}.
-Shalawat serta salam semoga senantiasa tercurah kepada Rasulullah SAW, keluarga,
-sahabat, dan para pengikutnya hingga akhir zaman.
+Shalawat serta salam semoga senantiasa tercurah kepada Rasulullah SAW,
+keluarga, sahabat, dan para pengikut beliau hingga akhir zaman.
 
 Penyusunan skripsi ini tidak terlepas dari bantuan, bimbingan, dukungan, dan
 doa dari banyak pihak. Oleh karena itu, penulis menyampaikan terima kasih kepada:
@@ -11,10 +11,14 @@ doa dari banyak pihak. Oleh karena itu, penulis menyampaikan terima kasih kepada
 	\item Kedua orang tua dan keluarga besar penulis yang selalu memberikan doa,
 	dukungan, perhatian, dan kasih sayang selama penulis menempuh masa studi.
 	
-	\item Bapak Ir. Agus Bejo, S.T., M.Eng., D.Eng., IPM. selaku dosen pembimbing pertama yang mengenalkan saya pada bidang IC design saat kelas Sistem Berbasis Mikrokontroler, serta Bapak Ir. Wahyu
-	Dewanto, M.T. selaku dosen pembimbing kedua yang telah mengajarkan saya dasar komunikasi data di semester 3 sehingga semakin tertarik pada cara kerja sebuah komputer, telah meluangkan waktu untuk
-	memberikan arahan, masukan, dan bimbingan selama proses penelitian dan
-	penyusunan skripsi ini.
+	\item Bapak Ir. Agus Bejo, S.T., M.Eng., D.Eng., IPM. selaku dosen
+	pembimbing pertama yang mengenalkan penulis pada bidang IC design saat
+	perkuliahan Sistem Berbasis Mikrokontroler, serta Bapak Ir. Wahyu Dewanto,
+	M.T. selaku dosen pembimbing kedua yang mengajarkan dasar komunikasi data
+	kepada penulis pada semester tiga sehingga menumbuhkan ketertarikan pada
+	cara kerja komputer. Keduanya telah meluangkan waktu untuk memberikan
+	arahan, masukan, dan bimbingan selama proses penelitian dan penyusunan
+	skripsi ini.
 	
 	\item Segenap dosen dan staf Departemen Teknik Elektro dan Teknologi Informasi,
 	Fakultas Teknik, Universitas Gadjah Mada, yang telah memberikan ilmu,
@@ -24,7 +28,8 @@ doa dari banyak pihak. Oleh karena itu, penulis menyampaikan terima kasih kepada
 	angkatan yang telah menjadi rekan belajar, berdiskusi, dan menjalani berbagai
 	dinamika perkuliahan.
 	
-	\item Om Asep yang telah memberikan dukungan, perhatian, dan menjadi wali selama tinggal di Yogyakarta.
+	\item Om Asep yang telah memberikan dukungan, perhatian, dan menjadi wali
+	selama penulis tinggal di Yogyakarta.
 	
 	\item Teman-teman Laboratorium IC, yaitu Ariq, Aji, Willi, Adit, Muhajir,
 	Rakhel, Jonatan, Alphons, Mas Alfito, Mba Arifa, Ciel, serta Pak Sudiro, Mas Byan, Mas Cahyo, dan
@@ -37,22 +42,59 @@ doa dari banyak pihak. Oleh karena itu, penulis menyampaikan terima kasih kepada
 	
 	\item Teman-teman Alamin Yogyakarta yang telah menjadi keluarga dan teman
 	berproses selama penulis menempuh pendidikan di Yogyakarta.
+
+	\item Anggana Putra, Gusti Syahrul, Nadya Biantri, dan Nicho
+	Desvayawindra, teman sekolah penulis dari Pontianak yang telah menemani,
+	memberikan saran dan informasi seputar Yogyakarta, serta menjadi tempat
+	berkonsultasi saat penulis awal pindah.
+
+	\item Mas Giga Hidjrika, Mas Karunia Perjuangan, Mas Lutfi Andriyanto, Mas
+	Krisna Laksheta, Mas Afiq Zuhdi, Mas Orlando Ferrari, dan Bang Furqan yang
+	telah menjadi mentor penulis selama masa perkuliahan.
 	
+	\item Ridhwan Saputra, Adib Maulana, Arif Ibadurahman, Ega Baskara, serta
+	teman-teman PPSMB Harjono Danoesastro 2 dan Sadewa 6 yang menjadi teman
+	pertama penulis di UGM. Terima kasih pula kepada Mba Ifa dan Mba Ima
+	sebagai pembimbing pada awal perkuliahan, serta Mas Damar dan Mba Dita
+	sebagai mentor pada masa pengenalan kampus. Penulis juga berterima kasih
+	kepada Mba Siti Malatania yang menjadi narahubung saat awal masuk kampus,
+	serta semua pihak yang membantu penulis ketika pertama kali mendaftar
+	perkuliahan.
+
 	\item Tim penelitian Psybot, yaitu Mba Khomsah, Virna, Anggita, Fina, dan
-	Ibu Indrayanti, S. Psi., M.Si., Ph.D., Psikolog yang telah memberikan pengalaman penelitian hingga kesempatan
-	presentasi di PIMNAS, serta Bapak Muhammad Idham Ananta Timur, M.Kom., Mba Tata, Mba Riyanti, dan Mas Alfan dalam
-	penelitian terkait kesehatan mental karyawan.
+	Ibu Indrayanti, S.Psi., M.Si., Ph.D., Psikolog yang telah memberikan
+	pengalaman penelitian dan kesempatan presentasi di PIMNAS beserta
+	teman-teman kontingen, serta Bapak Muhammad Idham Ananta Timur, M.Kom.,
+	Mba Tata, Mba Riyanti, dan Mas Alfan dalam penelitian terkait kesehatan
+	mental karyawan dengan skrining bot WhatsApp. Terima kasih juga kepada Dela
+	Feby yang telah memberikan informasi terkait lomba yang paling berpengaruh dalam membuka kesempatan dan memperluas relasi penulis selama kuliah.
 	
-	\item Bapak Dr. Guntur Dharma Putra, Bapak Dr. Bimo Sunarfri Hantono, S.T., M.Eng., Fathan Zahir,
-	Mas Bagus Raka, atas ilmu, pengalaman, dan kerja sama dalam penelitian sistem signage DTETI.
+	\item Teman-teman mahasiswa penggiat startup, yaitu Ridho Alfadri, Azfazaki
+	Hilmi, Tantowi Shah, Achmad Luthfan, dan Mas Arief Rahman yang telah
+	memberikan pengalaman berharga dalam berkarya dan mendorong penulis untuk
+	berani mencoba hal baru.
+
+	\item Tim petugas TPS mahasiswa Karanggayam, yaitu Zahy, Farhan, Ipal,
+	Astrid, Mba Safa, dan Mba Faiqoh yang bersama-sama telah menjalankan tugas
+	sebagai petugas TPS pada Pemilu 2024 dengan bersih dan transparan.
+
+	\item Teman-teman Kelas Naskah, yaitu Kak Mark, Kak Alif, Manda, Mas Ai,
+	dan Kak Maria, serta rekan-rekan dari divisi lain yang telah memberikan
+	pengalaman kepada penulis sebagai developer volunteer untuk industri
+	perfilman di Indonesia.
+
+	\item Bapak Dr. Guntur Dharma Putra, Bapak Dr. Bimo Sunarfri Hantono,
+	S.T., M.Eng., Fathan Zahir, dan Mas Bagus Raka atas ilmu, pengalaman, dan
+	kerja sama dalam penelitian sistem signage DTETI.
 	
-	\item Mas Giga, Mas Krisna, Mas Afiq, Mas Orlando, dan Bang Furqan yang telah
-	memberikan saran, dukungan, serta menjadi mentor selama masa perkuliahan.
-	
-	\item  Bapak Dr. Ir. Ahmad Nasikun, ST, M.Sc., Mas Iskan, Pak Hartanto, dan Pak Nur Muhammad yang telah memberikan
-	bimbingan dan pengalaman berharga selama penulis bekerja paruh waktu sebagai
-	developer di fakultas, serta rekan-rekan kantor FT Pak Purwoko, Pak Doni,
-	Pak Bandi, Bu Desi, Bu Rahmi, Bu Nanda, Bu Acil, Bu Mega, dan Pak Arief atas kebersamaan dan dukungannya.
+	\item Bapak Dr. Ir. Ahmad Nasikun, S.T., M.Sc., Mas Iskan, Pak Hartanto,
+	dan Pak Nur Muhammad yang telah memberikan bimbingan dan pengalaman
+	berharga selama penulis bekerja paruh waktu sebagai developer di fakultas.
+	Terima kasih pula kepada rekan-rekan kantor FT, yaitu Pak Purwoko, Pak
+	Doni, Pak Bandi, Bu Desi, Bu Rahmi, Bu Nanda, Bu Acil, Bu Mega, Pak
+	Untung, dan Pak Arief atas kebersamaan dan dukungannya, serta Bu Nuning
+	yang telah memberikan kesempatan kepada penulis untuk mengembangkan sistem
+	capaian kerja di FKKMK UGM.
 	
 	\item Rekan-rekan selama program kuliah magang IC Design Engineer di Polytron,
 	Raphael, Fauzan, Kak Nur, Pande, Rizfa, Afgar, Andres, Ardian, Azriel, Bayu,
@@ -61,9 +103,13 @@ doa dari banyak pihak. Oleh karena itu, penulis menyampaikan terima kasih kepada
 	Jevon, Mas Priyo, Radit, Wisnu, Valen, Mas Wibaga, Mba Jihan, Mona, Fattah,
 	Naumi, Nicky, Panji, Putra, Qory, Raihan, Reza, Ridho, Surya, dan Tegar,
 	serta Pak Arvin, Pak Riyad, dan Bu Dian atas pengalaman, kerja sama, dan
-	dukungan selama kegiatan magang berlangsung. Serta Bapak Warsun Najib, M.T. yang menjadi pembimbing serta memberi masukan saat laporan seminar kuliah praktik.
+	dukungan selama kegiatan magang berlangsung. Terima kasih juga kepada Bapak
+	Warsun Najib, M.T. yang menjadi pembimbing serta memberikan masukan saat
+	laporan seminar kuliah praktik.
 	
-	\item Tim Capstone D-02 Nanta, Titan, Laras, Nisa yang telah memberikan pengalaman, kerja sama menciptakan H.A.R.V.E.S.T sebagai solusi pertanian bawang merah di Bantul.
+	\item Sahabat satu tim Capstone D-02, yaitu Nanta, Titan, Laras, dan Nisa
+	yang telah memberikan pengalaman dan kerja sama dalam menciptakan
+	H.A.R.V.E.S.T. sebagai solusi pertanian bawang merah di Bantul.
 	
 	\item Teman-teman KKN Minggir, yaitu Ayub, Subhan, Afifa, Anggun, Gama,
 	Jasmin, Linggar, Akbar, Hanifah, Lea, Nisa, Padia, Rona, Iqbal, Amalia,
@@ -78,25 +124,34 @@ doa dari banyak pihak. Oleh karena itu, penulis menyampaikan terima kasih kepada
 	jajaran tenaga pendidik yang dengan penuh senyuman telah memberikan dukungan,
 	bantuan, serta pengalaman selama masa perkuliahan dan kegiatan akademik
 	maupun laboratorium.
+
+	\item Tim Senior Project Documind, yaitu Febri dan Yitzhak, Junior Project
+	HarborFlow, yaitu Mirsad Alganawi dan Marseillo Satrian, serta Junior
+	Project PaluGada, yaitu Luthfi Hanif dan Brian yang tetap melanjutkan
+	pekerjaan tim ketika penulis menjalani kuliah magang.
 	
 	\item Teman-teman Eternity Sistem Informasi UNTAN yang selalu memberikan
 	dukungan kepada penulis selama menjalani dinamika kehidupan perkuliahan.
 	
-	\item Teman-teman sobat DTI, yaitu Sulton Fatih, Hanif Riadi, Alfath Azka, Mas Adji Sudradjat, Mas
-	Syafaq Abdallah, Mas Hafzhan Wisli, dan Fahmi Irfan Faiz yang telah menemani penulis selama pengerjaan
-	skripsi di DTI.
+	\item Teman-teman sobat DTI, yaitu Sulton Fatih, Hanif Riadi, Alfath Azka,
+	Mas Adji Sudradjat, Mas Syafaq Abdallah, Mas Hafzhan Wisli, dan Fahmi
+	Irfan Faiz yang telah menemani penulis selama pengerjaan skripsi di DTI.
 	
-	\item Tetangga kos dekat apartemen, yaitu Mas Hasan, Mas Rama, Mas Choerul, Mas Kris, Mas Bagus, Mas Aldi, dan Mas Alvin yang selalu ada saat dibutuhkan atau saat perlu meminjam barang, serta Pak Ari selaku bapak kos, Pak Tumiran, Bu Mangkir, dan warga Pogung yang telah membantu penulis selama tinggal di sana.
+	\item Tetangga kos dekat apartemen, yaitu Mas Hasan, Mas Rama, Mas
+	Choerul, Mas Kris, Mas Bagus, Mas Aldi, dan Mas Alvin yang selalu hadir
+	saat dibutuhkan, termasuk ketika penulis perlu meminjam barang, serta Pak
+	Ari selaku bapak kos, Pak Tumiran, Bu Mangkir, dan warga Pogung yang telah
+	membantu penulis selama tinggal di sana.
 
 \end{enumerate}
 
 Penulis menyadari bahwa skripsi ini masih memiliki kekurangan. Oleh karena itu,
-penulis terbuka terhadap saran dan masukan yang membangun. Semoga skripsi ini
-dapat memberikan manfaat bagi pengembangan ilmu pengetahuan, khususnya pada
-bidang sistem digital dan sistem embedded. Akhir kata, penulis mengucapkan
-terima kasih kepada semua pihak yang telah memberikan dukungan, bantuan, dan
-doa selama proses penyusunan skripsi ini. Semoga Allah subhanahu wa ta'ala
-membalas semua kebaikan yang telah diberikan. Aamiin.
+penulis terbuka terhadap saran dan masukan yang membangun. Penulis berharap
+skripsi ini dapat memberikan manfaat bagi pengembangan ilmu pengetahuan,
+khususnya dalam bidang sistem digital dan sistem embedded. Akhir kata,
+penulis mengucapkan terima kasih kepada seluruh pihak yang telah memberikan
+dukungan, bantuan, dan doa selama proses penyusunan skripsi ini. Semoga Allah
+subhanahu wa ta'ala membalas segala kebaikan yang telah diberikan. Aamiin.
 
 \begin{flushright}
 	Yogyakarta, 14 Mei 2026 \\
