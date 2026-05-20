@@ -25,6 +25,7 @@ type Phase = {
   summary: string;
   detail: string;
   codeFocus: string;
+  stageIndex: number;
 };
 
 const sampleWidth = 24;
@@ -65,6 +66,7 @@ const phases: Phase[] = [
     summary: "The processor updates slv_reg0 immediately, but the serializer does not touch it yet.",
     detail: "This decouples software timing from the audio bitstream. A write can happen at any AXI cycle without corrupting an in-flight I2S word.",
     codeFocus: "AXI register write",
+    stageIndex: 0,
   },
   {
     id: "cdc-stage1",
@@ -79,6 +81,7 @@ const phases: Phase[] = [
     summary: "The first synchronizer flip-flop captures the asynchronous AXI-domain sample.",
     detail: "This stage may see the transition at any safe audio edge; it is intentionally isolated before the value is used by the datapath.",
     codeFocus: "first CDC synchronizer flop",
+    stageIndex: 1,
   },
   {
     id: "cdc-stage2",
@@ -93,6 +96,7 @@ const phases: Phase[] = [
     summary: "The second synchronizer flop exports a cleaner version into the audio logic.",
     detail: "Only after this point should the sample be consumed by logic that controls timing-critical outputs such as WS and DATA.",
     codeFocus: "second CDC synchronizer flop",
+    stageIndex: 2,
   },
   {
     id: "frame-latch",
@@ -107,6 +111,7 @@ const phases: Phase[] = [
     summary: "At bit_count = 0, both stereo samples are latched together for the next full frame.",
     detail: "This is the critical anti-tearing mechanism: both channels are frozen at the same frame boundary before serialization begins.",
     codeFocus: "frame-boundary latching",
+    stageIndex: 3,
   },
   {
     id: "left-delay",
@@ -121,6 +126,7 @@ const phases: Phase[] = [
     summary: "Philips I2S requires a one-bit delay after the WS edge before the MSB appears.",
     detail: "That is why bit_count 0 is not payload. The data line is forced low for one BCLK so the receiver can align channel selection cleanly.",
     codeFocus: "WS edge and mandatory delay cell",
+    stageIndex: 4,
   },
   {
     id: "left-payload",
@@ -135,6 +141,7 @@ const phases: Phase[] = [
     summary: "At bit_count = 1, the left-channel MSB is driven first, then the serializer walks downward bit by bit.",
     detail: `For a ${sampleWidth}-bit payload, bit_count 1..${sampleWidth} emit sample_left_q[23:0] MSB-first. The remainder of the 32-bit slot becomes zero padding.`,
     codeFocus: "left payload bit selection",
+    stageIndex: 4,
   },
   {
     id: "right-delay",
@@ -149,6 +156,7 @@ const phases: Phase[] = [
     summary: "When bit_count crosses 32, WS rises and the serializer inserts the second mandatory delay bit.",
     detail: "The right channel follows the same rule as the left channel: WS changes first, then the first payload bit appears one BCLK later.",
     codeFocus: "right-slot WS transition",
+    stageIndex: 4,
   },
   {
     id: "right-payload",
@@ -163,6 +171,7 @@ const phases: Phase[] = [
     summary: "At bit_count = 33, the right-channel MSB starts shifting out, again MSB-first.",
     detail: `The index equation changes to sample_right_q[g_width - (bit_count_q - 32)], so bit_count 33 maps back to sample_right_q[23].`,
     codeFocus: "right payload bit selection",
+    stageIndex: 4,
   },
 ];
 
@@ -193,6 +202,61 @@ function slotCells(side: "left" | "right", activePhase: Phase) {
   });
 }
 
+const datapathStages = [
+  { key: "axi", label: "AXI write", note: "CPU updates DATA_LEFT / DATA_RIGHT" },
+  { key: "cdc1", label: "CDC stage 1", note: "first audio-domain sample" },
+  { key: "cdc2", label: "CDC stage 2", note: "cleaned destination value" },
+  { key: "latch", label: "Frame latch", note: "freeze both channels at bit_count = 0" },
+  { key: "serializer", label: "Serializer", note: "delay bit, then MSB-first output" },
+];
+
+function frameSegments(activePhase: Phase) {
+  return [
+    {
+      key: "left-delay",
+      label: "L delay",
+      range: "0",
+      active: activePhase.id === "left-delay",
+      complete: activePhase.bitCount > 0,
+    },
+    {
+      key: "left-payload",
+      label: "L payload",
+      range: `1-${sampleWidth}`,
+      active: activePhase.id === "left-payload",
+      complete: activePhase.bitCount > sampleWidth,
+    },
+    {
+      key: "left-pad",
+      label: "L pad",
+      range: `${sampleWidth + 1}-31`,
+      active: activePhase.bitCount > sampleWidth && activePhase.bitCount < 32,
+      complete: activePhase.bitCount >= 32,
+    },
+    {
+      key: "right-delay",
+      label: "R delay",
+      range: "32",
+      active: activePhase.id === "right-delay",
+      complete: activePhase.bitCount > 32,
+    },
+    {
+      key: "right-payload",
+      label: "R payload",
+      range: `33-${32 + sampleWidth}`,
+      active: activePhase.id === "right-payload",
+      complete: activePhase.bitCount > 32 + sampleWidth,
+    },
+    {
+      key: "right-pad",
+      label: "R pad",
+      range: `${33 + sampleWidth}-63`,
+      active: activePhase.bitCount > 32 + sampleWidth,
+      complete: false,
+    },
+  ];
+}
+
 export default function FullFlow() {
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -212,6 +276,11 @@ export default function FullFlow() {
   const phase = phases[phaseIndex];
   const leftCells = useMemo(() => slotCells("left", phase), [phase]);
   const rightCells = useMemo(() => slotCells("right", phase), [phase]);
+  const activeSegment = phase.bitCount < 32 ? "left" : "right";
+  const currentWord = activeSegment === "left" ? leftWord : rightWord;
+  const serializerProgress = phase.bitCount / 63;
+  const segments = frameSegments(phase);
+  const packetLeft = 8 + (phase.stageIndex / (datapathStages.length - 1)) * 84;
 
   return (
     <section className="section-card frame-card" id="full-flow">
@@ -220,8 +289,8 @@ export default function FullFlow() {
         <h2>One-Viewport Serializer Walkthrough</h2>
         <p>
           This panel follows the real datapath in order: AXI write, CDC, frame latch, WS delay bit, left-slot serialization, WS transition,
-          and right-slot serialization. The highlighted code lines move with the animation so the behaviour stays tied to RTL, not just a
-          decorative motion.
+          and right-slot serialization. The motion now tracks the sample itself so you can see when it is still a parallel word, when it
+          is frozen for a frame, and when it finally becomes a single serial DATA bit.
         </p>
       </div>
 
@@ -276,7 +345,7 @@ export default function FullFlow() {
 
         <div className="fullflow-panel viewport-panel">
           <div className="fullflow-panel-head">
-            <p className="eyebrow">Serializer viewport</p>
+            <p className="eyebrow">Sample journey</p>
             <h3>{phase.title}</h3>
           </div>
 
@@ -299,77 +368,125 @@ export default function FullFlow() {
             </div>
           </div>
 
-          <div className="pipeline-rail">
-            <div className={phaseIndex >= 0 ? "rail-node active" : "rail-node"}>
-              <span>AXI</span>
-              <small>{phase.id === "axi-write" ? "write now" : "ready"}</small>
-            </div>
-            <div className={phaseIndex >= 1 ? "rail-node active" : "rail-node"}>
-              <span>CDC1</span>
-              <small>{phaseIndex >= 1 ? "sampled" : "idle"}</small>
-            </div>
-            <div className={phaseIndex >= 2 ? "rail-node active" : "rail-node"}>
-              <span>CDC2</span>
-              <small>{phaseIndex >= 2 ? "clean" : "idle"}</small>
-            </div>
-            <div className={phaseIndex >= 3 ? "rail-node active" : "rail-node"}>
-              <span>LATCH</span>
-              <small>{phaseIndex >= 3 ? "frozen" : "waiting"}</small>
-            </div>
-            <div className={phase.leftActive ? "rail-node active left" : "rail-node left"}>
-              <span>L slot</span>
-              <small>{phase.leftActive ? "shifting" : "queued"}</small>
-            </div>
-            <div className={phase.rightActive ? "rail-node active right" : "rail-node right"}>
-              <span>R slot</span>
-              <small>{phase.rightActive ? "shifting" : "queued"}</small>
-            </div>
+          <div className="journey-stage-strip" aria-label="Datapath stages">
+            {datapathStages.map((stage, index) => (
+              <div
+                key={stage.key}
+                className={
+                  index === phase.stageIndex
+                    ? "journey-stage-card active"
+                    : index < phase.stageIndex
+                      ? "journey-stage-card complete"
+                      : "journey-stage-card"
+                }
+              >
+                <span>{stage.label}</span>
+                <small>{stage.note}</small>
+              </div>
+            ))}
           </div>
 
-          <div className="viewport-columns">
-            <div className="slot-panel">
-              <div className="slot-panel-head">
-                <strong>Left slot</strong>
-                <span>WS = 0, bit_count 0..31</span>
+          <div className="journey-canvas frame-card subtle-card">
+            <div className="journey-track" aria-hidden="true">
+              <div
+                className={`sample-packet ${activeSegment === "left" ? "left" : "right"}`}
+                style={{ left: `${packetLeft}%` }}
+              >
+                <span>{activeSegment === "left" ? "L" : "R"}</span>
+                <strong>{phase.dataBit}</strong>
               </div>
-              <div className="slot-grid">
-                {leftCells.map((cell) => (
-                  <div key={`left-${cell.label}`} className={cell.isCurrent ? "slot-cell current left" : "slot-cell left"}>
-                    <span>{cell.label}</span>
-                    <strong>{cell.bit}</strong>
-                    <small>{cell.detail}</small>
+              <div className="journey-flowline" />
+              <div className="journey-nodes">
+                {datapathStages.map((stage, index) => (
+                  <div key={stage.key} className={index === phase.stageIndex ? "journey-node active" : index < phase.stageIndex ? "journey-node complete" : "journey-node"}>
+                    <strong>{index + 1}</strong>
+                    <span>{stage.label}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="slot-panel">
-              <div className="slot-panel-head">
-                <strong>Right slot</strong>
-                <span>WS = 1, bit_count 32..63</span>
+            <div className="journey-hud">
+              <div className="sample-word active">
+                <span>Parallel word in motion</span>
+                <strong>0x{currentWord.toString(16).toUpperCase()}</strong>
+                <code>{formatBinary(currentWord).slice(0, sampleWidth)}...</code>
               </div>
-              <div className="slot-grid">
-                {rightCells.map((cell) => (
-                  <div key={`right-${cell.label}`} className={cell.isCurrent ? "slot-cell current right" : "slot-cell right"}>
-                    <span>{cell.label}</span>
-                    <strong>{cell.bit}</strong>
-                    <small>{cell.detail}</small>
-                  </div>
-                ))}
+              <div className="signal-stat">
+                <span>What DATA pin sees now</span>
+                <strong>{phase.dataBit}</strong>
+              </div>
+              <div className="signal-stat">
+                <span>Current slot</span>
+                <strong>{activeSegment === "left" ? "Left / WS=0" : "Right / WS=1"}</strong>
               </div>
             </div>
           </div>
 
-          <div className="sample-bank">
-            <div className={phase.leftActive ? "sample-word active" : "sample-word"}>
-              <span>sample_left_q</span>
-              <strong>0x{leftWord.toString(16).toUpperCase()}</strong>
-              <code>{formatBinary(leftWord).slice(0, 24)}...</code>
+          <div className="serializer-board">
+            <div className="serializer-head">
+              <div>
+                <p className="eyebrow">Frame serializer</p>
+                <h3>Where the parallel word turns into a serial I2S stream</h3>
+              </div>
+              <div className="serializer-status">
+                <span>cursor</span>
+                <strong>bit_count {phase.bitCount}</strong>
+              </div>
             </div>
-            <div className={phase.rightActive ? "sample-word active" : "sample-word"}>
-              <span>sample_right_q</span>
-              <strong>0x{rightWord.toString(16).toUpperCase()}</strong>
-              <code>{formatBinary(rightWord).slice(0, 24)}...</code>
+
+            <div className="serializer-segments" aria-label="I2S frame segments">
+              {segments.map((segment) => (
+                <div
+                  key={segment.key}
+                  className={segment.active ? "serializer-segment active" : segment.complete ? "serializer-segment complete" : "serializer-segment"}
+                >
+                  <span>{segment.label}</span>
+                  <small>{segment.range}</small>
+                </div>
+              ))}
+            </div>
+
+            <div className="serializer-lane">
+              <div className="serializer-lane-track" />
+              <div className="serializer-lane-progress" style={{ width: `${serializerProgress * 100}%` }} />
+              <div className="serializer-cursor" style={{ left: `calc(${serializerProgress * 100}% - 14px)` }}>
+                <span>{phase.dataBit}</span>
+              </div>
+            </div>
+
+            <div className="viewport-columns">
+              <div className="slot-panel">
+                <div className="slot-panel-head">
+                  <strong>Left slot</strong>
+                  <span>WS = 0, bit_count 0..31</span>
+                </div>
+                <div className="slot-grid">
+                  {leftCells.map((cell) => (
+                    <div key={`left-${cell.label}`} className={cell.isCurrent ? "slot-cell current left" : "slot-cell left"}>
+                      <span>{cell.label}</span>
+                      <strong>{cell.bit}</strong>
+                      <small>{cell.detail}</small>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="slot-panel">
+                <div className="slot-panel-head">
+                  <strong>Right slot</strong>
+                  <span>WS = 1, bit_count 32..63</span>
+                </div>
+                <div className="slot-grid">
+                  {rightCells.map((cell) => (
+                    <div key={`right-${cell.label}`} className={cell.isCurrent ? "slot-cell current right" : "slot-cell right"}>
+                      <span>{cell.label}</span>
+                      <strong>{cell.bit}</strong>
+                      <small>{cell.detail}</small>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>

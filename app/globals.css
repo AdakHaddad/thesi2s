@@ -1110,6 +1110,257 @@ main {
   gap: 0.65rem;
 }
 
+.journey-stage-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.journey-stage-card,
+.journey-node,
+.serializer-status,
+.serializer-segment,
+.journey-canvas,
+.serializer-board {
+  border: 1px solid rgba(31, 24, 16, 0.08);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.journey-stage-card {
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 1rem;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.journey-stage-card span,
+.journey-node span,
+.serializer-status span,
+.serializer-segment span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent-amber);
+  font-weight: 700;
+}
+
+.journey-stage-card small,
+.journey-node small,
+.serializer-segment small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.journey-stage-card.active,
+.journey-node.active,
+.serializer-segment.active {
+  background: #171311;
+  border-color: #171311;
+  transform: translateY(-2px);
+}
+
+.journey-stage-card.active span,
+.journey-stage-card.active small,
+.journey-node.active span,
+.journey-node.active strong,
+.serializer-segment.active span,
+.serializer-segment.active small {
+  color: #fffaf4;
+}
+
+.journey-stage-card.complete,
+.journey-node.complete,
+.serializer-segment.complete {
+  background: rgba(15, 118, 110, 0.1);
+  border-color: rgba(15, 118, 110, 0.18);
+}
+
+.journey-canvas,
+.serializer-board {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 1.4rem;
+}
+
+.journey-track {
+  position: relative;
+  padding: 1.6rem 0 0.4rem;
+}
+
+.journey-flowline {
+  position: absolute;
+  top: 2.2rem;
+  left: 8%;
+  right: 8%;
+  height: 6px;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(29, 78, 216, 0.16), rgba(15, 118, 110, 0.2) 55%, rgba(217, 119, 6, 0.18));
+}
+
+.journey-nodes {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.journey-node {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.28rem;
+  justify-items: center;
+  padding: 0.85rem 0.65rem;
+  border-radius: 1rem;
+  text-align: center;
+}
+
+.journey-node strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--foreground);
+}
+
+.sample-packet {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 24, 16, 0.12);
+  background: #171311;
+  color: #fffaf4;
+  box-shadow: 0 16px 36px rgba(23, 19, 17, 0.18);
+  transition: left 420ms ease;
+}
+
+.sample-packet.left {
+  box-shadow: 0 16px 36px rgba(29, 78, 216, 0.18);
+}
+
+.sample-packet.right {
+  box-shadow: 0 16px 36px rgba(15, 118, 110, 0.18);
+}
+
+.sample-packet span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  background: rgba(255, 250, 244, 0.16);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.sample-packet strong {
+  color: inherit;
+  font-size: 1.05rem;
+}
+
+.journey-hud {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(0, 0.9fr));
+  gap: 0.75rem;
+}
+
+.serializer-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: end;
+}
+
+.serializer-head h3,
+.serializer-head p {
+  margin: 0;
+}
+
+.serializer-status {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 10rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 1rem;
+}
+
+.serializer-status strong {
+  color: var(--foreground);
+}
+
+.serializer-segments {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.serializer-segment {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem 0.65rem;
+  border-radius: 0.95rem;
+  text-align: center;
+}
+
+.serializer-lane {
+  position: relative;
+  padding: 1.3rem 0 0.7rem;
+}
+
+.serializer-lane-track,
+.serializer-lane-progress {
+  position: absolute;
+  left: 0;
+  top: 1.4rem;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.serializer-lane-track {
+  right: 0;
+  background: rgba(31, 24, 16, 0.08);
+}
+
+.serializer-lane-progress {
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-teal));
+  transition: width 320ms ease;
+}
+
+.serializer-cursor {
+  position: absolute;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #171311;
+  color: #fffaf4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 28px rgba(23, 19, 17, 0.2);
+  transition: left 320ms ease;
+}
+
+.serializer-cursor span {
+  font-weight: 700;
+}
+
 .rail-node {
   display: grid;
   gap: 0.2rem;
@@ -1296,8 +1547,14 @@ main {
 
   .signal-headline,
   .pipeline-rail,
-  .sample-bank {
+  .sample-bank,
+  .journey-stage-strip,
+  .serializer-segments {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .journey-hud {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1341,7 +1598,10 @@ main {
   .signal-headline,
   .pipeline-rail,
   .viewport-columns,
-  .sample-bank {
+  .sample-bank,
+  .journey-stage-strip,
+  .serializer-segments,
+  .journey-hud {
     grid-template-columns: 1fr;
   }
 
@@ -1351,6 +1611,19 @@ main {
 
   .wave-row {
     grid-template-columns: 56px repeat(5, minmax(0, 1fr));
+  }
+
+  .journey-track {
+    overflow-x: auto;
+    padding-bottom: 0.85rem;
+  }
+
+  .journey-nodes {
+    min-width: 720px;
+  }
+
+  .journey-flowline {
+    min-width: 600px;
   }
 }
 
