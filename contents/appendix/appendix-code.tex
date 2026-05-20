@@ -113,10 +113,10 @@ https://github.com/adakhaddad/thesi2s
 \end{lstlisting}
 
 Skrip ini merupakan hasil ekspor Vivado 2025.2 untuk rekonstruksi proyek pada repositori GitHub ini.
-Isi utamanya mencakup pembuatan project untuk part \path{xc7a35tcpg236-1},
-pengaturan board Basys3, penambahan Block Design \path{bdesign_clock_core.bd},
-constraint \path{constrn.xdc}, path IP repository, serta konfigurasi run
-\path{synth_1} dan \path{impl_1}. Skrip tidak dicetak penuh karena sebagian
+Isi utamanya mencakup pembuatan project \path{nobufgmux} untuk part \path{xc7a35tcpg236-1},
+penambahan Block Design \path{bdesign_clock_core.bd}, constraint
+\path{nobufgmux.srcs/constrs_1/new/constrn.xdc}, path IP repository ke
+\path{ip_repo/i2s_1_0}, serta konfigurasi run \path{synth_1} dan \path{impl_1}. Skrip tidak dicetak penuh karena sebagian
 besar barisnya berupa metadata otomatis dari Vivado. Untuk menjalankan ulang
 proyek, skrip dapat di-\textit{source} dari Vivado Tcl Shell setelah repositori
 proyek diambil dan dependensi sumber yang dirujuk tersedia.

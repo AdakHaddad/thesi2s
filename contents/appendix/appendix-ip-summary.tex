@@ -1,94 +1,85 @@
 \chapter*{Ringkasan IP Block Design}
 \addcontentsline{toc}{chapter}{Ringkasan IP Block Design}
 
-Lampiran ini merangkum IP utama pada Vivado Block Design \path{design_1}.
-Berkas metadata XML setiap IP berada pada direktori
-\path{gen/sources_1/bd/design_1/ip/}.
+Lampiran ini merangkum IP utama pada Vivado Block Design \path{bdesign_clock_core}
+yang berada pada proyek \path{nobufgmux}. Berkas deskripsi block design utama
+tersimpan pada \path{nobufgmux/nobufgmux.srcs/sources_1/bd/bdesign_clock_core/bdesign_clock_core.bd},
+sedangkan hasil generasi IP berada pada
+\path{nobufgmux/nobufgmux.gen/sources_1/bd/bdesign_clock_core/ip/}.
 
-\section*{\path{design_1_clk_wiz_0_0}}
+\section*{Ringkasan arsitektur}
+\begin{itemize}
+    \item Clock sistem berasal dari \path{sys_clock} 100 MHz dan masuk ke \path{clk_wiz_0}.
+    \item \path{clk_wiz_0} menghasilkan tiga keluaran: 100 MHz untuk domain sistem, 24{,}576 MHz untuk keluarga 48/96 kHz, dan 22{,}579 MHz untuk keluarga 44{,}1/88{,}2 kHz.
+    \item \path{microblaze_riscv_0} bertindak sebagai master AXI dan terhubung ke \path{axi_smc}.
+    \item \path{axi_smc} merutekan transaksi ke dua slave: \path{i2s_0} dan \path{axi_uartlite_0}.
+    \item Keluaran audio eksternal yang diekspos block design adalah \path{i2s_mclk_0}, \path{i2s_bclk_0}, \path{i2s_ws_0}, dan \path{i2s_data_0}.
+\end{itemize}
+
+\section*{Peta alamat}
+\begin{table}[htbp]
+\centering
+\caption{Segmen alamat penting pada block design \texttt{bdesign\_clock\_core}.}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Peripheral} & \textbf{Segmen} & \textbf{Offset basis} \\
+\hline
+\path{i2s_0} & \path{SEG_i2s_0_S00_AXI_reg} & \path{0x00020000} \\
+\path{axi_uartlite_0} & \path{SEG_axi_uartlite_0_Reg} & \path{0x04060000} \\
+\path{local BRAM} & \path{dlmb/ilmb memory} & \path{0x00000000} \\
+\hline
+\end{tabular}
+\end{table}
+
+\section*{\path{clk_wiz_0}}
 \begin{description}
-    \item[Purpose] Clocking Wizard untuk menghasilkan clock desain dan antarmuka kontrol AXI-Lite.
-    \item[Main interfaces] \path{s_axi_lite} (AXI4 control), \path{s_axi_aclk} (clock).
-    \item[Key parameters] \path{DATA_WIDTH=32}, \path{FREQ_HZ=100000000}, \path{ADDR_WIDTH=32}.
-    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_clk_wiz_0_0/design_1_clk_wiz_0_0.xml}.
+    \item[Purpose] Clocking Wizard untuk membangkitkan domain clock sistem dan dua keluarga clock audio.
+    \item[Key parameters] \path{CLK_IN1=100 MHz}, \path{CLKOUT2=24.576 MHz}, \path{CLKOUT3=22.579 MHz}.
+    \item[Connections] \path{clk_out1} ke domain 100 MHz; \path{clk_out2} ke \path{i2s_0/audio_48_clk}; \path{clk_out3} ke \path{i2s_0/audio_44_clk}.
 \end{description}
 
-\section*{\path{design_1_microblaze_riscv_0_0}}
+\section*{\path{microblaze_riscv_0}}
 \begin{description}
-    \item[Purpose] Soft processor MicroBlaze RISC-V untuk kontrol embedded software.
-    \item[Main interfaces] Clock/reset pada domain \path{/clk_wiz_0_clk_out1}, \path{INTERRUPT}, \path{MON_INTERRUPT}, serta beberapa antarmuka AXI/monitor.
-    \item[Key parameters] \path{FREQ_HZ=100000000}, \path{CLK_DOMAIN=/clk_wiz_0_clk_out1}.
-    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_microblaze_riscv_0_0/design_1_microblaze_riscv_0_0.xml}.
+    \item[Purpose] Soft processor RISC-V untuk menjalankan firmware \path{micblaze/ws/rtlfix/src/helloworld.c}.
+    \item[Key parameters] Debug aktif, jalur \path{M_AXI_DP} untuk akses peripheral, serta ILMB/DLMB untuk memori lokal.
+    \item[Connections] Clock 100 MHz dari \path{clk_wiz_0}; reset dari \path{rst_clk_wiz_0_100M}; master AXI ke \path{axi_smc/S00_AXI}.
 \end{description}
 
-\section*{\path{design_1_dlmb_v10_0}}
+\section*{\path{microblaze_riscv_0_local_memory}}
 \begin{description}
-    \item[Purpose] Data Local Memory Bus (DLMB) untuk akses memori lokal sisi data.
-    \item[Main interfaces] \path{LMB_Sl_0}, \path{LMB_Sl_1}, dan port LMB slave lainnya.
-    \item[Key parameters] \path{ADDR_WIDTH=32}, \path{DATA_WIDTH=32}, \path{READ_WRITE_MODE=READ_WRITE}.
-    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_dlmb_v10_0/design_1_dlmb_v10_0.xml}.
+    \item[Purpose] Subsistem memori lokal instruksi dan data.
+    \item[Sub-IP] \path{dlmb_v10}, \path{ilmb_v10}, \path{dlmb_bram_if_cntlr}, \path{ilmb_bram_if_cntlr}, dan \path{lmb_bram}.
+    \item[Key parameters] BRAM bertipe \path{True_Dual_Port_RAM} dan dihubungkan ke kedua jalur LMB.
 \end{description}
 
-\section*{\path{design_1_ilmb_v10_0}}
+\section*{\path{mdm_1}}
 \begin{description}
-    \item[Purpose] Instruction Local Memory Bus (ILMB) untuk akses instruksi dari memori lokal.
-    \item[Main interfaces] \path{LMB_Sl_0}, \path{LMB_Sl_1}, dan port LMB slave lainnya.
-    \item[Key parameters] \path{ADDR_WIDTH=32}, \path{DATA_WIDTH=32}, \path{READ_WRITE_MODE=READ_WRITE}.
-    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_ilmb_v10_0/design_1_ilmb_v10_0.xml}.
+    \item[Purpose] \textit{Microprocessor Debug Module} untuk debug prosesor.
+    \item[Connections] Antarmuka debug langsung ke \path{microblaze_riscv_0/DEBUG}.
 \end{description}
 
-\section*{\path{design_1_dlmb_bram_if_cntlr_0}}
+\section*{\path{rst_clk_wiz_0_100M}}
 \begin{description}
-    \item[Purpose] BRAM interface controller untuk jalur DLMB.
-    \item[Main interfaces] \path{INTERRUPT}, \path{SLMB}, \path{SLMB1}, dan port LMB slave lainnya.
-    \item[Key parameters] Referensi memory map \path{SLMB} dengan lebar data dan alamat 32 bit.
-    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_dlmb_bram_if_cntlr_0/design_1_dlmb_bram_if_cntlr_0.xml}.
+    \item[Purpose] Reset controller sinkron untuk domain 100 MHz.
+    \item[Connections] Menghasilkan \path{mb_reset}, \path{bus_struct_reset}, dan \path{peripheral_aresetn} untuk MicroBlaze, SmartConnect, I2S, dan UARTLite.
 \end{description}
 
-\section*{\path{design_1_ilmb_bram_if_cntlr_0}}
+\section*{\path{axi_smc}}
 \begin{description}
-    \item[Purpose] BRAM interface controller untuk jalur ILMB.
-    \item[Main interfaces] Port LMB slave pada jalur instruksi.
-    \item[Key parameters] Glue logic BRAM/LMB standar dengan lebar data dan alamat 32 bit.
-    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_ilmb_bram_if_cntlr_0/design_1_ilmb_bram_if_cntlr_0.xml}.
+    \item[Purpose] AXI SmartConnect tunggal yang menghubungkan satu master ke dua slave.
+    \item[Connections] \path{S00_AXI} dari \path{microblaze_riscv_0}; \path{M00_AXI} ke \path{i2s_0}; \path{M01_AXI} ke \path{axi_uartlite_0}.
 \end{description}
 
-\section*{\path{design_1_lmb_bram_0}}
+\section*{\path{i2s_0}}
 \begin{description}
-    \item[Purpose] Blok BRAM yang diekspos sebagai memori LMB/AXI.
-    \item[Main interfaces] \path{ACLK}, \path{ARESETN}, dan \path{AXI_SLAVE_S_AXI}.
-    \item[Key parameters] \path{FREQ_HZ=100000000}, memory map slave \path{S_1}.
-    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_lmb_bram_0/design_1_lmb_bram_0.xml}.
+    \item[Purpose] Custom IP I2S transmitter dari \path{ip_repo/i2s_1_0}.
+    \item[Main interfaces] \path{S00_AXI} untuk kontrol register, \path{audio_48_clk}, \path{audio_44_clk}, dan empat keluaran I2S.
+    \item[Key parameters] Empat register AXI4-Lite 32-bit, \path{C_S00_AXI_BASEADDR=0x00020000}, domain data 100 MHz dan domain audio terpisah.
 \end{description}
 
-\section*{\path{design_1_mdm_1_0}}
+\section*{\path{axi_uartlite_0}}
 \begin{description}
-    \item[Purpose] Microprocessor Debug Module (MDM) untuk akses debug AXI-Lite.
-    \item[Main interfaces] \path{S_AXI}.
-    \item[Key parameters] \path{DATA_WIDTH=32}, \path{ADDR_WIDTH=32}.
-    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_mdm_1_0/design_1_mdm_1_0.xml}.
-\end{description}
-
-\section*{\path{design_1_rst_clk_wiz_0_100M_0}}
-\begin{description}
-    \item[Purpose] Reset controller untuk sinkronisasi reset pada domain clock sistem.
-    \item[Main interfaces] \path{slowest_sync_clk}, \path{ext_reset}, \path{aux_reset}, dan \path{dbg_reset}.
-    \item[Key parameters] \path{FREQ_HZ=100000000}; reset terkait \path{mb_reset}, \path{bus_struct_reset}, \path{interconnect_aresetn}, dan \path{peripheral_aresetn}.
-    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_rst_clk_wiz_0_100M_0/design_1_rst_clk_wiz_0_100M_0.xml}.
-\end{description}
-
-\section*{\path{design_1_axi_smc_0}}
-\begin{description}
-    \item[Purpose] AXI SmartConnect untuk merutekan transaksi AXI dari master ke slave.
-    \item[Main interfaces] \path{CLK.aclk}, \path{RST.aresetn}, \path{S00_AXI}, \path{M00_AXI}, dan \path{M01_AXI}.
-    \item[Key parameters] \path{FREQ_HZ=100000000}, \path{ASSOCIATED_BUSIF=M00_AXI:M01_AXI:S00_AXI}.
-    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_axi_smc_0/design_1_axi_smc_0.xml}.
-\end{description}
-
-\section*{\path{design_1_i2s_0_0}}
-\begin{description}
-    \item[Purpose] Custom IP I2S transmitter dengan kontrol AXI4-Lite.
-    \item[Main interfaces] \path{S00_AXI} sebagai antarmuka kontrol AXI4-Lite.
-    \item[Key parameters] \path{WIZ_DATA_WIDTH=32}, \path{WIZ_NUM_REG=4}, \path{ADDR_WIDTH=4}, \path{DATA_WIDTH=32}, \path{PROTOCOL=AXI4LITE}.
-    \item[XML] \path{gen/sources_1/bd/design_1/ip/design_1_i2s_0_0/design_1_i2s_0_0.xml}.
+    \item[Purpose] UARTLite untuk antarmuka terminal firmware.
+    \item[Main interfaces] \path{S_AXI} untuk konfigurasi AXI dan \path{UART} untuk \path{usb_uart_txd}/\path{usb_uart_rxd}.
+    \item[Key parameters] Alamat basis \path{0x04060000} pada ruang alamat MicroBlaze.
 \end{description}
