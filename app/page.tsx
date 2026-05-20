@@ -60,7 +60,7 @@ type SignalTimelineProps = {
 
 const outlineSections = [
   { id: "hero", label: "Overview" },
-  { id: "full-flow", label: "0. Full Whole Flow" },
+  { id: "full-flow", label: "0. Full serialization flow" },
   { id: "clock-generation", label: "1. Clock generation" },
   { id: "clock-divider", label: "2. Divider and BCLK enable" },
   { id: "power-on-reset", label: "3. Power-on reset" },
@@ -470,7 +470,7 @@ export default function Home() {
           <div className="outline-card frame-card">
             <p className="eyebrow">Reader map</p>
             <p className="outline-note">
-              This page starts with clocks, then divides them, resets them, synchronises them, frames the register bits, and finally turns the bits into a serial I2S stream.
+              This page starts with clocks, then divides them, resets them, synchronises them, latches stereo words at the frame boundary, and finally serializes them bit by bit with Philips I2S timing.
             </p>
           </div>
         </aside>
@@ -484,8 +484,9 @@ export default function Home() {
                 Use the controls to change the clock family, divider mode, sample width, and runtime behaviour. Every derived value updates live so the register map, timing math, and I2S waveform stay connected.
               </p>
               <div className="chip-row">
-                <span className="chip">single column</span>
+                <span className="chip">single viewport walkthrough</span>
                 <span className="chip">live derivations</span>
+                <span className="chip">code-synchronised animation</span>
                 <span className="chip">waveform preview</span>
                 <span className="chip">hardware ready</span>
               </div>
