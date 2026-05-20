@@ -285,7 +285,314 @@ Implementasi IP I2S pada FPGA Artix-7 (Basys3) menghasilkan penggunaan sumber da
 
 \section{Pembahasan terhadap Tujuan Penelitian}
 
-Hasil penelitian menunjukkan bahwa pendekatan register-mapped AXI4-Lite efektif untuk membangun peripheral I2S TX. Seluruh perbaikan bug dilakukan pada lapisan firmware, yang mengonfirmasi bahwa desain RTL sudah stabil dan benar sejak awal.
+Hasil penelitian menunjukkan bahwa pendekatan register-mapped AXI4-Lite efektif untuk membangun peripheral I2S TX. Seluruh perbaikan bug dilakukan pada lapisan firmware, yang mengonfirmasi bahwa desain RTL sudah stabil dan benar sejak awal. Penambahan tangkapan sinyal pada berbagai skenario konfigurasi memperlihatkan bahwa perilaku antarmuka tetap konsisten ketika frekuensi sampling, lebar data, dan rute kanal diubah melalui register kontrol.
+
+\subsection{Pembahasan perubahan frekuensi sampling}
+
+Pengujian pada mode 44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz menunjukkan bahwa jalur clock dan keluaran analog berubah secara proporsional terhadap konfigurasi \texttt{FS\_FAMILY} dan \texttt{FS\_MODE}. Pada Gambar \ref{fig:ch5-disc-fs}, sinyal \texttt{LRCK} tetap mewakili frekuensi sampling, sedangkan \texttt{BCLK} meningkat sebanding terhadap kebutuhan jumlah bit per frame. Keluaran \texttt{LOUT}/\texttt{ROUT} juga mempertahankan bentuk gelombang yang seragam, sehingga dapat disimpulkan bahwa proses perpindahan keluarga clock tidak menimbulkan gangguan fungsional pada jalur data.
+
+\begin{landscape}
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lck-44k.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lck-44k.jpg}%
+        }{}
+        \caption{\texttt{LRCK} 44,1 kHz}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lck-48k.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lck-48k.jpg}%
+        }{}
+        \caption{\texttt{LRCK} 48 kHz}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lck-88k.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lck-88k.jpg}%
+        }{}
+        \caption{\texttt{LRCK} 88,2 kHz}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lck-96k.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lck-96k.jpg}%
+        }{}
+        \caption{\texttt{LRCK} 96 kHz}
+    \end{subfigure}
+
+    \vspace{0.8em}
+
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/bclk-44k.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/bclk-44k.jpg}%
+        }{}
+        \caption{\texttt{BCLK} 44,1 kHz}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/bclk-48k.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/bclk-48k.jpg}%
+        }{}
+        \caption{\texttt{BCLK} 48 kHz}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/bclk-88k.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/bclk-88k.jpg}%
+        }{}
+        \caption{\texttt{BCLK} 88,2 kHz}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/bclk-96k.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/bclk-96k.jpg}%
+        }{}
+        \caption{\texttt{BCLK} 96 kHz}
+    \end{subfigure}
+
+    \vspace{0.8em}
+
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lout-rout-44k.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lout-rout-44k.jpg}%
+        }{}
+        \caption{\texttt{LOUT}/\texttt{ROUT} 44,1 kHz}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lout-rout-48k.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lout-rout-48k.jpg}%
+        }{}
+        \caption{\texttt{LOUT}/\texttt{ROUT} 48 kHz}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lout-rout-88k.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lout-rout-88k.jpg}%
+        }{}
+        \caption{\texttt{LOUT}/\texttt{ROUT} 88,2 kHz}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lout-rout-96k.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lout-rout-96k.jpg}%
+        }{}
+        \caption{\texttt{LOUT}/\texttt{ROUT} 96 kHz}
+    \end{subfigure}
+    \caption{Perbandingan sinyal dan keluaran analog pada empat mode frekuensi sampling.}
+    \label{fig:ch5-disc-fs}
+\end{figure}
+\end{landscape}
+
+\subsection{Pembahasan perubahan lebar data}
+
+Variasi lebar data 16, 24, dan 32 bit memperlihatkan bahwa serializer mempertahankan struktur frame I2S yang sama, tetapi mengubah jumlah bit data efektif yang dibawa dalam slot 32 bit. Gambar \ref{fig:ch5-disc-width} memperlihatkan bahwa pola \texttt{i2s\_data} berubah sesuai panjang data valid, sedangkan \texttt{BCLK} tetap mengikuti kebutuhan slot stereo yang konstan. Hal ini mendukung tujuan rancangan agar IP dapat dipakai untuk beberapa format sampel tanpa mengubah struktur perangkat keras utama.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \IfFileExists{contents/figures/din-16bit.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/din-16bit.jpg}%
+        }{}
+        \caption{\texttt{DATA} 16 bit}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \IfFileExists{contents/figures/din-24bit.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/din-24bit.jpg}%
+        }{}
+        \caption{\texttt{DATA} 24 bit}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \IfFileExists{contents/figures/din-32bit.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/din-32bit.jpg}%
+        }{}
+        \caption{\texttt{DATA} 32 bit}
+    \end{subfigure}
+
+    \vspace{0.8em}
+
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \IfFileExists{contents/figures/bclk-16bit.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/bclk-16bit.jpg}%
+        }{}
+        \caption{\texttt{BCLK} 16 bit}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \IfFileExists{contents/figures/bclk-24bit.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/bclk-24bit.jpg}%
+        }{}
+        \caption{\texttt{BCLK} 24 bit}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \IfFileExists{contents/figures/bclk-32bit.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/bclk-32bit.jpg}%
+        }{}
+        \caption{\texttt{BCLK} 32 bit}
+    \end{subfigure}
+
+    \vspace{0.8em}
+
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \IfFileExists{contents/figures/lout-rout-16bit.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lout-rout-16bit.jpg}%
+        }{}
+        \caption{Keluaran 16 bit}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \IfFileExists{contents/figures/lout-rout-24bit.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lout-rout-24bit.jpg}%
+        }{}
+        \caption{Keluaran 24 bit}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \IfFileExists{contents/figures/lout-rout-32bit.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lout-rout-32bit.jpg}%
+        }{}
+        \caption{Keluaran 32 bit}
+    \end{subfigure}
+    \caption{Perbandingan efek perubahan lebar data terhadap sinyal digital dan keluaran analog.}
+    \label{fig:ch5-disc-width}
+\end{figure}
+
+\subsection{Pembahasan kontrol kanal dan mute}
+
+Skenario \textit{left-only}, \textit{right-only}, \textit{both}, \texttt{ENABLE}=0, dan \texttt{MUTE}=1 membuktikan bahwa kontrol register bekerja langsung terhadap jalur data maupun amplitudo keluaran. Gambar \ref{fig:ch5-disc-control} menunjukkan bahwa pemilihan kanal memengaruhi pola data serial dan level analog pada kanal yang sesuai, sedangkan \texttt{MUTE} meniadakan keluaran tanpa menghentikan clock. Karakteristik ini penting untuk menunjukkan bahwa desain tidak hanya benar secara timing, tetapi juga responsif terhadap kontrol perangkat lunak secara real-time.
+
+\begin{landscape}
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/din-left-only.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/din-left-only.jpg}%
+        }{}
+        \caption{\texttt{DATA} left-only}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/din-right-only.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/din-right-only.jpg}%
+        }{}
+        \caption{\texttt{DATA} right-only}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/din-both.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/din-both.jpg}%
+        }{}
+        \caption{\texttt{DATA} both}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/bclk-enable0.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/bclk-enable0.jpg}%
+        }{}
+        \caption{\texttt{ENABLE}=0}
+    \end{subfigure}
+
+    \vspace{0.8em}
+
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lout-rout-left-only.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lout-rout-left-only.jpg}%
+        }{}
+        \caption{Keluaran left-only}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lout-rout-right-only.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lout-rout-right-only.jpg}%
+        }{}
+        \caption{Keluaran right-only}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lout-rout-enable0.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lout-rout-enable0.jpg}%
+        }{}
+        \caption{Keluaran saat \texttt{ENABLE}=0}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lout-rout-mute1.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lout-rout-mute1.jpg}%
+        }{}
+        \caption{Keluaran saat \texttt{MUTE}=1}
+    \end{subfigure}
+
+    \vspace{0.8em}
+
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lck-left-only.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lck-left-only.jpg}%
+        }{}
+        \caption{\texttt{LRCK} left-only}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lck-right-only.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lck-right-only.jpg}%
+        }{}
+        \caption{\texttt{LRCK} right-only}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lck-both.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lck-both.jpg}%
+        }{}
+        \caption{\texttt{LRCK} both}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.24\linewidth}
+        \centering
+        \IfFileExists{contents/figures/lck-mute1.jpg}{%
+            \includegraphics[width=\linewidth]{contents/figures/lck-mute1.jpg}%
+        }{}
+        \caption{\texttt{LRCK} saat \texttt{MUTE}=1}
+    \end{subfigure}
+    \caption{Validasi perubahan kanal aktif, disable output, dan mute melalui register kontrol.}
+    \label{fig:ch5-disc-control}
+\end{figure}
+\end{landscape}
 
 \section{Perbandingan dengan referensi desain}
 
