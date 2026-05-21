@@ -178,32 +178,32 @@ Fitur kontrol diuji dengan mengubah bit pada register \texttt{CONTROL}. Gambar \
     \centering
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \IfFileExists{contents/figures/enable0.jpeg}{%
-            \includegraphics[width=\textwidth]{contents/figures/enable0.jpeg}%
+        \IfFileExists{contents/figures/lout-rout-enable0.jpg}{%
+            \includegraphics[width=\textwidth]{contents/figures/lout-rout-enable0.jpg}%
         }{}
         \caption{\texttt{ENABLE} = 0 (Output mati).}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \IfFileExists{contents/figures/enable1.jpeg}{%
-            \includegraphics[width=\textwidth]{contents/figures/enable1.jpeg}%
+        \IfFileExists{contents/figures/lout-rout-enable1.jpg}{%
+            \includegraphics[width=\textwidth]{contents/figures/lout-rout-enable1.jpg}%
         }{}
         \caption{\texttt{ENABLE} = 1 (Output aktif).}
     \end{subfigure}
     \\ \vspace{1em}
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \IfFileExists{contents/figures/mute0.jpeg}{%
-            \includegraphics[width=\textwidth]{contents/figures/mute0.jpeg}%
+        \IfFileExists{contents/figures/lout-rout-mute0.jpg}{%
+            \includegraphics[width=\textwidth]{contents/figures/lout-rout-mute0.jpg}%
         }{}
         \caption{\texttt{MUTE} = 0 (Normal).}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \IfFileExists{contents/figures/mute1.jpeg}{%
-            \includegraphics[width=\textwidth]{contents/figures/mute1.jpeg}%
+        \IfFileExists{contents/figures/lout-rout-mute1.jpg}{%
+            \includegraphics[width=\textwidth]{contents/figures/lout-rout-mute1.jpg}%
         }{}
         \caption{\texttt{MUTE} = 1 (Senyap).}
     \end{subfigure}
@@ -222,21 +222,7 @@ Fitur kontrol diuji dengan mengubah bit pada register \texttt{CONTROL}. Gambar \
     \label{fig:ch5-fixed-both}
 \end{figure}
 
-
-\begin{table}[htbp]
-    \centering
-    \caption{Hasil verifikasi firmware setelah perbaikan bug.}
-    \label{tab:ch5-verifikasi}
-    \begin{tabular}{|l|l|c|}
-        \hline
-        \textbf{Skenario Uji} & \textbf{Hasil yang Diharapkan} & \textbf{Status} \\
-        \hline
-        Both + 1 kHz & L dan R identik, 1 kHz & \checkmark \\
-        Left only + 1 kHz & L aktif, R = 0 & \checkmark \\
-        MUTE aktif & Kedua kanal = 0, clock tetap & \checkmark \\
-        \hline
-    \end{tabular}
-\end{table}
+Dari hasil tersebut teramati bahwa setelah perbaikan firmware, kedua kanal L dan R menghasilkan bentuk gelombang yang identik, menunjukkan bahwa masalah ketidakseimbangan amplitudo telah teratasi. Frekuensi nada sinus juga sesuai dengan target, mengindikasikan bahwa loop timing berbasis \texttt{mcycle} berhasil menghilangkan \textit{drift} yang sebelumnya terjadi. Serta fitur kontrol \texttt{ENABLE} dan \texttt{MUTE} berfungsi sesuai harapan, memberikan fleksibilitas dalam pengembangan sistem.
 
 \section{Analisis Penggunaan Sumber Daya dan Daya}
 
