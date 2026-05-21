@@ -5,6 +5,118 @@ Lampiran ini merangkum IP utama pada Vivado Block Design yang digunakan dalam
 proyek ini. Berkas deskripsi block design utama dan hasil generasi IP tersedia
 di direktori keluaran yang dihasilkan oleh Vivado.
 
+\section*{Diagram Block Design}
+
+\begin{figure}[htbp]
+\centering
+\IfFileExists{contents/figures/color-coded-block-diagram.png}{%
+    \includegraphics[width=0.95\textwidth]{contents/figures/color-coded-block-diagram.png}%
+}{}
+\caption{Diagram block design berwarna yang menunjukkan hubungan prosesor, interconnect, clock, dan IP I2S.}
+\label{fig:app-block-color}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\IfFileExists{contents/figures/clocking-view-block-diagram.png}{%
+    \includegraphics[width=0.90\textwidth]{contents/figures/clocking-view-block-diagram.png}%
+}{}
+\caption{Tampilan clocking view pada block design untuk pembangkitan domain clock sistem dan audio.}
+\label{fig:app-block-clocking}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\IfFileExists{contents/figures/interface-view-lock-diagram.png}{%
+    \includegraphics[width=0.95\textwidth]{contents/figures/interface-view-lock-diagram.png}%
+}{}
+\caption{Tampilan interface view yang memperlihatkan keterhubungan MicroBlaze, UARTLite, dan IP I2S melalui AXI SmartConnect.}
+\label{fig:app-block-interface}
+\end{figure}
+
+\section*{Figur Komponen Block Design}
+
+\begin{figure}[htbp]
+\centering
+\IfFileExists{contents/figures/clk-wiz-default.png}{%
+    \includegraphics[width=0.70\textwidth]{contents/figures/clk-wiz-default.png}%
+}{}
+\caption{Tampilan awal konfigurasi Clocking Wizard sebelum penyesuaian frekuensi keluaran.}
+\label{fig:app-clk-wiz-default}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\IfFileExists{contents/figures/clk-wiz-configd.png}{%
+    \includegraphics[width=0.78\textwidth]{contents/figures/clk-wiz-configd.png}%
+}{}
+\caption{Clocking Wizard setelah dikonfigurasi untuk menghasilkan clock sistem dan clock audio.}
+\label{fig:app-clk-wiz-configd}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\IfFileExists{contents/figures/microblaze-v.png}{%
+    \includegraphics[width=0.72\textwidth]{contents/figures/microblaze-v.png}%
+}{}
+\caption{Blok prosesor MicroBlaze V yang menjadi pengendali utama sistem.}
+\label{fig:app-microblaze-v}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\IfFileExists{contents/figures/processor-system-reset.png}{%
+    \includegraphics[width=0.78\textwidth]{contents/figures/processor-system-reset.png}%
+}{}
+\caption{Block design reset controller yang membangkitkan sinyal reset sinkron untuk domain sistem.}
+\label{fig:app-reset-controller}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\IfFileExists{contents/figures/axi-smartconnect.png}{%
+    \includegraphics[width=0.78\textwidth]{contents/figures/axi-smartconnect.png}%
+}{}
+\caption{AXI SmartConnect yang merutekan transaksi dari MicroBlaze ke peripheral I2S dan UARTLite.}
+\label{fig:app-axi-smartconnect}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\IfFileExists{contents/figures/local-memory-bram.png}{%
+    \includegraphics[width=0.78\textwidth]{contents/figures/local-memory-bram.png}%
+}{}
+\caption{Subsistem BRAM lokal untuk instruksi dan data MicroBlaze V.}
+\label{fig:app-local-memory}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\IfFileExists{contents/figures/microblaze-debug-module.png}{%
+    \includegraphics[width=0.72\textwidth]{contents/figures/microblaze-debug-module.png}%
+}{}
+\caption{Microprocessor Debug Module yang digunakan untuk keperluan debug prosesor.}
+\label{fig:app-mdm}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\IfFileExists{contents/figures/axi-uartlite.png}{%
+    \includegraphics[width=0.72\textwidth]{contents/figures/axi-uartlite.png}%
+}{}
+\caption{Peripheral UARTLite sebagai antarmuka terminal firmware.}
+\label{fig:app-axi-uartlite}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\IfFileExists{contents/figures/i2s-ip-block.png}{%
+    \includegraphics[width=0.82\textwidth]{contents/figures/i2s-ip-block.png}%
+}{}
+\caption{Blok internal IP I2S TX yang digunakan sebagai peripheral utama.}
+\label{fig:app-i2s-ip}
+\end{figure}
+
 \section*{Ringkasan arsitektur}
 \begin{itemize}
     \item Clock sistem berasal dari \path{sys_clock} 100 MHz dan masuk ke \path{clk_wiz_0}.
