@@ -192,7 +192,6 @@
     0x00 & DATA\_LEFT  & Sampel kanal kiri; MSB di bit [\texttt{SAMPLE\_WIDTH}-1] \\
     0x04 & DATA\_RIGHT & Sampel kanal kanan; packing sama dengan kiri \\
     0x08 & CONTROL     & Enable, Mute, FS\_FAMILY, FS\_MODE, SAMPLE\_WIDTH \\
-    0x0C & RESERVED    & Scratch (dipakai readback test AXI) \\
     \bottomrule
   \end{tabular}
   \end{center}
@@ -523,7 +522,7 @@ while (1) {
           mengurangi beban CPU dan mencegah \textit{underrun} pada beban tinggi.
     \item Mengintegrasikan \textbf{DMA} untuk \textit{streaming} audio kontinu
           tanpa keterlibatan CPU per sampel.
-    \item Menambahkan register \textbf{STATUS} (level buffer, flag underrun)
+    \item Menambahkan diagnostik underrun berbasis FIFO/interrupt
           untuk mendukung pengembangan driver berbasis OS.
     \item Mengembangkan mode \textbf{RX} atau ekstensi \textbf{TDM/multi-channel}
           untuk sistem akuisisi audio yang lebih kompleks.

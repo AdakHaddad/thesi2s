@@ -7,12 +7,12 @@ Penelitian ini merancang dan mengimplementasikan \textbf{IP core transmitter I2S
 \begin{enumerate}
     \item IP berhasil diintegrasikan sebagai peripheral AXI4-Lite dengan peta register aktif
     \texttt{DATA\_LEFT (0x00)}, \texttt{DATA\_RIGHT (0x04)}, dan \texttt{CONTROL (0x08)}.
-    Register \texttt{0x0C} disediakan sebagai cadangan dan berhasil digunakan untuk
-    \textit{readback test} AXI yang memverifikasi koneksi bus.
+    Desain akhir membatasi antarmuka pada tiga register tersebut, sehingga
+    kontrol software tetap ringkas.
 
     \item Aplikasi Vitis bare-metal dapat mengendalikan IP melalui
     \textit{memory-mapped I/O} (\texttt{Xil\_Out32}/\texttt{Xil\_In32}) untuk inisialisasi
-    register CONTROL, pengisian sampel kanal kiri-kanan, dan verifikasi \textit{readback}.
+    register CONTROL dan pengisian sampel kanal kiri-kanan.
 
     \item Pengujian sinyal mengkonfirmasi sinyal \texttt{BCLK} (3,07 MHz), \texttt{WS} (48,03 kHz),
     dan \texttt{DATA} mengikuti mekanisme \textbf{Philips I2S}~\citep{philips_i2s_1986}: 1-bit delay setelah setiap
@@ -44,9 +44,9 @@ Penelitian ini merancang dan mengimplementasikan \textbf{IP core transmitter I2S
     \item Mengganti pendekatan \textit{programmed I/O} dengan \textbf{DMA} untuk
     \textit{streaming} audio kontinu berdurasi panjang tanpa intervensi CPU.
 
-    \item Menambahkan register \textbf{STATUS} yang dapat dibaca oleh firmware untuk
-    memantau kondisi \textit{underrun}, level buffer, dan kesiapan latch CDC ---
-    memudahkan transisi ke driver tingkat sistem operasi.
+    \item Menambahkan mekanisme diagnostik berbasis interrupt atau counter internal
+    apabila FIFO/DMA sudah tersedia, sehingga pemantauan \textit{underrun} tidak
+    perlu mengubah antarmuka register inti yang ringkas.
 
     \item Mengembangkan dukungan \textbf{mode RX} atau ekstensi \textbf{TDM/multi-channel}
     untuk kebutuhan akuisisi dan pemrosesan audio yang lebih kompleks.

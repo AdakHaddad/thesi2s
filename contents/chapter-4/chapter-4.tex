@@ -19,8 +19,8 @@ untuk aplikasi uji, dan \texttt{testblock} untuk testbench RTL.
     \label{fig:ch4-block-ip}
 \end{figure}
 
-Alur data dimulai dari aplikasi C yang menulis register \path{DATA_LEFT},
-\path{DATA_RIGHT}, dan \path{CONTROL}. Register tersebut berada pada domain
+Alur data dimulai dari aplikasi C yang menulis tiga register aktif, yaitu
+\path{DATA_LEFT}, \path{DATA_RIGHT}, dan \path{CONTROL}. Register tersebut berada pada domain
 \path{S_AXI_ACLK} 100 MHz, kemudian disinkronkan ke domain clock audio. Serializer
 I2S membaca sampel pada awal frame stereo agar data tidak berubah di tengah word,
 lalu mengirimkan kanal kiri dan kanan masing-masing dalam slot 32 bit.
@@ -49,7 +49,6 @@ lalu mengirimkan kanal kiri dan kanan masing-masing dalam slot 32 bit.
 \texttt{0x00} & \texttt{DATA\_LEFT} & Write & Sampel PCM kanal kiri. Bit valid berada pada \texttt{[SAMPLE\_WIDTH-1:0]}. \\
 \texttt{0x04} & \texttt{DATA\_RIGHT} & Write & Sampel PCM kanal kanan dengan format yang sama seperti kanal kiri. \\
 \texttt{0x08} & \texttt{CONTROL} & Read/Write & Enable, mute, pilihan keluarga clock, mode Fs, dan lebar sampel. \\
-\texttt{0x0C} & \texttt{RESERVED} & Read/Write & Dipakai untuk \textit{readback test}; bit 0 saat dibaca berisi status latch frame. \\
 \hline
 \end{tabular}
 \end{table}
@@ -108,19 +107,16 @@ di Block Design.
 reg [C_S_AXI_DATA_WIDTH-1:0] slv_reg0;  // DATA_LEFT
 reg [C_S_AXI_DATA_WIDTH-1:0] slv_reg1;  // DATA_RIGHT
 reg [C_S_AXI_DATA_WIDTH-1:0] slv_reg2;  // CONTROL
-reg [C_S_AXI_DATA_WIDTH-1:0] slv_reg3;  // RESERVED
 
 localparam [1:0] REG_DATA_LEFT  = 2'h0;
 localparam [1:0] REG_DATA_RIGHT = 2'h1;
 localparam [1:0] REG_CONTROL    = 2'h2;
-localparam [1:0] REG_RESERVED   = 2'h3;
 \end{lstlisting}
 
 Register \texttt{slv\_reg0} dan \texttt{slv\_reg1} menyimpan sampel kiri dan kanan.
-\texttt{slv\_reg2} menyimpan konfigurasi operasi, sedangkan \texttt{slv\_reg3}
-dipakai sebagai register cadangan untuk pengujian koneksi AXI. Pemisahan ini
-membuat firmware cukup melakukan akses MMIO sederhana tanpa protokol streaming
-tambahan.
+\texttt{slv\_reg2} menyimpan konfigurasi operasi. Dengan hanya tiga register
+aktif, firmware cukup melakukan akses MMIO sederhana tanpa protokol streaming
+tambahan maupun antarmuka pemantauan khusus.
 
 \subsection{Pemilihan clock audio}
 

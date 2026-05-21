@@ -18,7 +18,7 @@ secara langsung.
 \hline
 \path{i2s.v} & Wrapper IP untuk Vivado IP Packager. Berkas ini meneruskan port clock audio, port output I2S, dan port AXI4-Lite ke modul utama tanpa menambah logika baru. \\
 \hline
-\path{i2s_slave_lite_v1_0_S00_AXI.v} & Modul utama IP. Berisi state machine AXI4-Lite, register file, pemilih clock audio, sinkronisasi clock domain, latch sampel, pembagi BCLK, dan serializer Philips I2S. \\
+\path{i2s_slave_lite_v1_0_S00_AXI.v} & Modul utama IP. Berisi state machine AXI4-Lite, register file tiga register, pemilih clock audio, sinkronisasi clock domain, latch sampel, pembagi BCLK, dan serializer Philips I2S. \\
 \hline
 \end{tabular}
 \end{table}
@@ -26,7 +26,7 @@ secara langsung.
 \subsection{Struktur modul utama}
 
 \begin{enumerate}
-    \item \textbf{AXI4-Lite register file}: menerima transaksi tulis/baca dari MicroBlaze V dan menyimpan \texttt{DATA\_LEFT}, \texttt{DATA\_RIGHT}, \texttt{CONTROL}, serta \texttt{RESERVED}.
+    \item \textbf{AXI4-Lite register file}: menerima transaksi tulis/baca dari MicroBlaze V dan menyimpan tiga register aktif, yaitu \texttt{DATA\_LEFT}, \texttt{DATA\_RIGHT}, dan \texttt{CONTROL}.
     \item \textbf{Clock selection}: memilih \texttt{audio\_48\_clk} atau \texttt{audio\_44\_clk} berdasarkan bit \texttt{FS\_FAMILY}.
     \item \textbf{CDC}: membawa register dari domain AXI 100 MHz ke domain audio menggunakan sinkronisasi dua tahap.
     \item \textbf{Sample latch}: mengambil sampel kiri-kanan pada awal frame stereo agar data tidak berubah di tengah transmisi.
@@ -43,8 +43,8 @@ micblaze/ws/rtlfix/src/helloworld.c
 \end{lstlisting}
 
 Aplikasi ini menjalankan pengujian bare-metal terhadap IP I2S. Fungsi utamanya
-adalah melakukan \textit{readback test} AXI, mengatur register kontrol, menerima
-perintah dari UART, membangkitkan sampel sinus, dan menulis sampel ke register
+adalah mengatur register kontrol, menerima perintah dari UART, membangkitkan
+sampel sinus, dan menulis sampel ke register
 data dengan timing berbasis counter siklus CPU.
 
 \begin{table}[htbp]
