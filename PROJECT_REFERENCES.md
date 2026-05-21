@@ -5,11 +5,11 @@ To avoid stale or conflicting documentation, do not create additional top-level 
 
 When referencing implementation sources for the I2S project, use these canonical directories:
 
-- Block design (Vivado project): `nobufgmux/`
+- Block design (Vivado project): the Vivado block design directory
 - I2S IP core: `ip_repo/i2s`
 - Testbenches: `testblocks/`
 - Application / MicroBlaze code: `micblaze/rtlfix`
 
-If you need a longer explanation or tutorial, add it inside the relevant directory above (for example, `nobufgmux/README.md`), not as a repo-wide context file.
+If you need a longer explanation or tutorial, add it inside the relevant directory above (for example, the block design directory README), not as a repo-wide context file.
 
 This file intentionally stays short so presentation tooling (e.g. `better-ppt`) and AI assistants do not pick up stale project context.

@@ -1,11 +1,9 @@
 \chapter*{Ringkasan IP Block Design}
 \addcontentsline{toc}{chapter}{Ringkasan IP Block Design}
 
-Lampiran ini merangkum IP utama pada Vivado Block Design \path{bdesign_clock_core}
-yang berada pada proyek \path{nobufgmux}. Berkas deskripsi block design utama
-tersimpan pada \path{nobufgmux/nobufgmux.srcs/sources_1/bd/bdesign_clock_core/bdesign_clock_core.bd},
-sedangkan hasil generasi IP berada pada
-\path{nobufgmux/nobufgmux.gen/sources_1/bd/bdesign_clock_core/ip/}.
+Lampiran ini merangkum IP utama pada Vivado Block Design yang digunakan dalam
+proyek ini. Berkas deskripsi block design utama dan hasil generasi IP tersedia
+di direktori keluaran yang dihasilkan oleh Vivado.
 
 \section*{Ringkasan arsitektur}
 \begin{itemize}
@@ -72,7 +70,7 @@ sedangkan hasil generasi IP berada pada
 
 \section*{\path{i2s_0}}
 \begin{description}
-    \item[Purpose] Custom IP I2S transmitter dari \path{ip_repo/i2s_1_0}.
+    \item[Purpose] Custom IP I2S transmitter yang disertakan dalam repository IP proyek.
     \item[Main interfaces] \path{S00_AXI} untuk kontrol register, \path{audio_48_clk}, \path{audio_44_clk}, dan empat keluaran I2S.
     \item[Key parameters] Tiga register AXI4-Lite 32-bit, \path{C_S00_AXI_BASEADDR=0x00020000}, domain data 100 MHz dan domain audio terpisah.
 \end{description}
