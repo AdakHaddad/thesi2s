@@ -7,8 +7,8 @@ dirancang sebagai custom IP AXI4-Lite. Fokus rancangan adalah mengubah sampel PC
 stereo yang ditulis oleh MicroBlaze V melalui register menjadi sinyal serial
 \path{i2s_mclk}, \path{i2s_bclk}, \path{i2s_ws}, dan \path{i2s_data} sesuai format Philips
 I2S~\citep{philips_i2s_1986}. Implementasi utama berada pada tiga bagian:
-\path{ip_repo/i2s_1_0/hdl} untuk RTL IP, \path{micblaze/ws/rtlfix/src/helloworld.c}
-untuk aplikasi uji, dan \texttt{testblock} untuk testbench RTL.
+\path{ip_repo/i2s_1_0/hdl} untuk RTL IP, kode aplikasi C melalui Vitis, dan \texttt{testblock}
+sebagai testbench RTL.
 
 \begin{figure}[htbp]
     \centering
@@ -75,7 +75,7 @@ lalu mengirimkan kanal kiri dan kanan masing-masing dalam slot 32 bit.
 RTL IP terdiri dari \path{i2s.v} sebagai wrapper dan
 \path{i2s_slave_lite_v1_0_S00_AXI.v} sebagai modul utama. Wrapper hanya
 menjaga nama port agar sesuai dengan IP Packager Vivado, sedangkan modul utama
-berisi register AXI4-Lite, pemilihan clock, CDC, pembagi clock, latch sampel,
+berisi register AXI4-Lite, pemilihan clock, CDC, pembagi clock, pengambilan sampel,
 dan serializer I2S.
 
 \subsection{Wrapper IP}
@@ -156,13 +156,13 @@ cdc_sync #(.WIDTH(32)) cdc_left_inst (
 
 Register AXI ditulis pada \path{S_AXI_ACLK}, sedangkan serializer berjalan pada
 \path{internal_mclk}. Karena kedua domain tidak identik, setiap word register
-disinkronkan dengan dua tahap flip-flop. Sampel kemudian baru dilatch pada
+disinkronkan dengan dua tahap flip-flop. Sampel kemudian baru diambil pada
 batas frame stereo, sehingga risiko perubahan data di tengah pengiriman kanal
 dapat dihindari.
 
-\subsection{Pembagi clock dan latch sampel}
+\subsection{Pembagi clock dan pengambilan sampel}
 
-\begin{lstlisting}[language=Verilog, caption={Pembagi BCLK dan pengambilan sampel pada awal frame.}, label={lst:ch4-divider-latch}]
+\begin{lstlisting}[language=Verilog, caption={Pembagi BCLK dan pengambilan sampel pada awal frame.}, label={lst:ch4-divider-sample}]
 wire bclk_en_w = fs_mode_sync ? (clock_div_q[0] == 1'b0)
                               : (clock_div_q[1:0] == 2'd0);
 
@@ -179,7 +179,7 @@ end
 
 \texttt{bclk\_en\_w} menentukan kapan state I2S bergerak. Saat
 \texttt{FS\_MODE=0}, BCLK efektif lebih rendah; saat \texttt{FS\_MODE=1}, BCLK
-dipercepat untuk menghasilkan Fs dua kali lipat. Latch sampel dilakukan ketika
+dipercepat untuk menghasilkan Fs dua kali lipat. Pengambilan sampel dilakukan ketika
 \texttt{bit\_count\_q=0}, yaitu awal frame stereo, agar satu frame selalu memakai
 pasangan sampel kiri-kanan yang konsisten.
 
@@ -423,7 +423,7 @@ bit delay setelah perubahan \texttt{WS}, dan \texttt{BCLK} berubah mengikuti
 
 Implementasi akhir membentuk rantai lengkap dari software ke hardware. Firmware
 menulis sampel dan kontrol melalui AXI4-Lite, RTL menyinkronkan register ke
-domain audio, latch sampel dilakukan pada awal frame, dan serializer mengirim
+domain audio, pengambilan sampel dilakukan pada awal frame, dan serializer mengirim
 data dalam format Philips I2S. Testbench memvalidasi perilaku inti serializer,
 sedangkan pengujian hardware pada Bab V memverifikasi bahwa sinyal tersebut
 dapat diterima oleh DAC PCM5102A.
