@@ -1,18 +1,23 @@
 /*****************************************************************************
-* I2S register feature test — all control bits
+* I2S DDS Feature Test — with internal hardware signal generator
 *
-* CONTROL register map:
+* CONTROL register map (matches RTL, do not add bits):
 *   bit[0]    ENABLE       1 = output active
-*   bit[1]    MUTE         1 = force zero output
+*   bit[1]    MUTE         1 = force zero output (HW: clocks continue)
 *   bit[2]    FS_FAMILY    0 = 48/96 kHz family, 1 = 44.1/88.2 kHz family
 *   bit[3]    FS_MODE      0 = low Fs (48 or 44.1), 1 = high Fs (96 or 88.2)
-*   bit[12:8] SAMPLE_WIDTH sample bit width (default 24 if 0)
+*   bit[7:4]  RESERVED     Write ignored
+*   bit[12:8] SAMPLE_WIDTH payload bits per slot (0 defaults to 32 in RTL)
+*   bit[28:13] DDS_FREQ    DDS frequency in Hz (0-65535)
+*   bit[29]   RESERVED
+*   bit[30]   DDS_MODE     0 = Sine, 1 = Square
+*   bit[31]   DDS_ENABLE   1 = HW DDS, 0 = use AXI DATA registers
 *
-* Fs combination table:
-*   FS=0, FS_MODE=0 → 48   kHz
-*   FS=1, FS_MODE=0 → 44.1 kHz
-*   FS=0, FS_MODE=1 → 96   kHz
-*   FS=1, FS_MODE=1 → 88.2 kHz
+* Channel routing (L/R/B) is FIRMWARE-ONLY — no new register bits used.
+*   SW mode  : zero the silent DATA_LEFT or DATA_RIGHT register directly.
+*   HW DDS   : IP sends same sample to both channels. To silence one side,
+*              firmware continuously writes 0 to that DATA register every
+*              frame (the HW latches DATA regs at frame start, so this wins).
 *****************************************************************************/
 
 #include <stdint.h>
@@ -21,10 +26,9 @@
 #include "xil_io.h"
 #include "xparameters.h"
 #include "xuartlite_l.h"
+#include <ctype.h>
 
-/* Read the RISC-V cycle counter (mcycle CSR) — free-running at CPU clock rate.
- * MicroBlaze RISC-V runs at 100 MHz (XPAR_CPU_CORE_CLOCK_FREQ_HZ).
- * Each tick = 10 ns. */
+/* Read the RISC-V cycle counter (mcycle CSR) */
 static inline uint64_t rdcycle64(void)
 {
     uint32_t lo, hi, hi2;
@@ -35,25 +39,37 @@ static inline uint64_t rdcycle64(void)
     } while (hi != hi2);
     return ((uint64_t)hi << 32) | lo;
 }
-
-/* ---- Register map ---- */
+#if defined(XPAR_I2S_DDS_0_BASEADDR)
+#define I2S_BASE       XPAR_I2S_DDS_0_BASEADDR
+#elif defined(XPAR_I2S_0_BASEADDR)
 #define I2S_BASE       XPAR_I2S_0_BASEADDR
+#else
+#error "Cannot find I2S DDS base address in xparameters.h"
+#endif
+/* ---- Register map ---- */
 #define DATA_LEFT      (I2S_BASE + 0x00U)
 #define DATA_RIGHT     (I2S_BASE + 0x04U)
 #define CONTROL        (I2S_BASE + 0x08U)
 
-/* ---- Control bits ---- */
+/* ---- Control bits (RTL-exact, no extra bits) ---- */
 #define CTRL_ENABLE          (1U << 0)
 #define CTRL_MUTE            (1U << 1)
 #define CTRL_FS              (1U << 2)
 #define CTRL_FS_MODE         (1U << 3)
+/* bits 7:4 reserved — never write */
 #define CTRL_WIDTH(w)        (((uint32_t)(w) & 0x1FU) << 8U)
+#define CTRL_DDS_FREQ(f)     (((uint32_t)(f) & 0xFFFFU) << 13U)
+/* bit 29 reserved */
+#define CTRL_DDS_MODE        (1U << 30)
+#define CTRL_DDS_ENABLE      (1U << 31)
 
 /* ---- Audio ---- */
-#define SAMPLE_RATE    48000U
-#define AMPLITUDE      32000   // hampir full scale, dari 22000
+#define AMPLITUDE      32000
 
-/* ---- Sine table ---- */
+/* Channel routing — firmware-only, no register bits consumed */
+typedef enum { CH_BOTH = 0, CH_LEFT = 1, CH_RIGHT = 2 } ch_route_t;
+
+/* ---- Sine table (software fallback) ---- */
 static const int16_t SINE[32] = {
          0,   6393,  12539,  18204,  23170,  27245,  30273,  32137,
      32767,  32137,  30273,  27245,  23170,  18204,  12539,   6393,
@@ -61,15 +77,20 @@ static const int16_t SINE[32] = {
     -32767, -32137, -30273, -27245, -23170, -18204, -12539,  -6393
 };
 
+/* ---- Deadline (SW sample timer) — reset when entering SW mode ---- */
+static uint64_t g_sw_deadline = 0U;
+
 /* ---- State ---- */
-static uint32_t g_freq    = 1000U;
-static uint8_t  g_left    = 1U;
-static uint8_t  g_right   = 1U;
-static uint8_t  g_enable  = 1U;
-static uint8_t  g_mute    = 0U;
-static uint8_t  g_fs      = 0U;   /* 0 = 48/96 kHz family */
-static uint8_t  g_fs_mode = 0U;   /* 0 = low Fs           */
-static uint8_t  g_width   = 24U;
+static uint32_t   g_freq       = 1000U;
+static uint8_t    g_enable     = 1U;
+static uint8_t    g_mute       = 0U;
+static uint8_t    g_fs         = 0U;
+static uint8_t    g_fs_mode    = 0U;
+static uint8_t    g_width      = 24U;
+static uint8_t    g_dds_en     = 1U;
+static uint8_t    g_dds_mode   = 0U;
+static uint16_t   g_dds_freq   = 1000U;
+static ch_route_t g_channel    = CH_BOTH;
 
 /* ---- Derived timing ---- */
 static uint32_t current_sample_rate(void)
@@ -80,216 +101,273 @@ static uint32_t current_sample_rate(void)
     return 88200U;
 }
 
-/* ---- Apply current state to CONTROL register ---- */
+/* ---- Apply CONTROL register (no extra bits, RTL-safe) ---- */
 static void apply_control(void)
 {
     uint32_t ctrl = 0U;
-    if (g_enable)  ctrl |= CTRL_ENABLE;
-    if (g_mute)    ctrl |= CTRL_MUTE;
-    if (g_fs)      ctrl |= CTRL_FS;
-    if (g_fs_mode) ctrl |= CTRL_FS_MODE;
+    if (g_enable)   ctrl |= CTRL_ENABLE;
+    if (g_mute)     ctrl |= CTRL_MUTE;
+    if (g_fs)       ctrl |= CTRL_FS;
+    if (g_fs_mode)  ctrl |= CTRL_FS_MODE;
+    if (g_dds_en)   ctrl |= CTRL_DDS_ENABLE;
+    if (g_dds_mode) ctrl |= CTRL_DDS_MODE;
     ctrl |= CTRL_WIDTH(g_width);
+    ctrl |= CTRL_DDS_FREQ(g_dds_freq);
     Xil_Out32(CONTROL, ctrl);
-    xil_printf("CTRL = 0x%08X\r\n", ctrl);
+    xil_printf("   CTRL = 0x%08X\r\n", ctrl);
 }
 
-/* ---- Print current state ---- */
+/* ---- Apply channel routing to DATA registers ----
+ *
+ * In SW mode this is called once per sample (stream_sample handles it).
+ * In HW DDS mode this is called periodically from the main loop so that
+ * the IP latches 0 on the silent channel at the next frame boundary.
+ * MUTE and ENABLE are checked here too — they are HW-gated in the IP,
+ * but writing 0 explicitly does no harm and makes the state consistent.
+ */
+static void apply_channel_route(uint32_t sample)
+{
+    uint32_t out_l = sample;
+    uint32_t out_r = sample;
+
+    if (!g_enable || g_mute) {
+        out_l = 0U;
+        out_r = 0U;
+    } else {
+        if (g_channel == CH_RIGHT) out_l = 0U;
+        if (g_channel == CH_LEFT)  out_r = 0U;
+    }
+
+    Xil_Out32(DATA_LEFT,  out_l);
+    Xil_Out32(DATA_RIGHT, out_r);
+}
+
+/* ---- Setter helpers (print → apply) ---- */
+static void set_enable(uint8_t v)
+{
+    g_enable = v;
+    xil_printf(">> %-14s = %u\r\n", "ENABLE", (unsigned)g_enable);
+    apply_control();
+}
+
+static void set_mute(uint8_t v)
+{
+    g_mute = v;
+    xil_printf(">> %-14s = %s\r\n", "MUTE", g_mute ? "1 (Silence)" : "0 (Audio)");
+    apply_control();
+}
+
+static void set_dds_en(uint8_t v)
+{
+    g_dds_en = v;
+    xil_printf(">> %-14s = %s\r\n", "DDS ENABLE", g_dds_en ? "1 (HW)" : "0 (SW)");
+    if (!g_dds_en)
+        g_sw_deadline = rdcycle64();   /* snap deadline — prevents freeze on mode switch */
+    apply_control();
+}
+
+static void set_dds_mode(uint8_t v)
+{
+    g_dds_mode = v;
+    xil_printf(">> %-14s = %s\r\n", "DDS MODE", g_dds_mode ? "1 (Square)" : "0 (Sine)");
+    apply_control();
+}
+
+static void set_channel(ch_route_t ch)
+{
+    g_channel = ch;
+    const char *s = (ch == CH_LEFT)  ? "Left only"
+                  : (ch == CH_RIGHT) ? "Right only"
+                  : "Both";
+    xil_printf(">> %-14s = %s\r\n", "CHANNEL", s);
+    /* No CONTROL register change — routing is data-register only */
+    if (g_dds_en) {
+        /* Immediately push 0 to silent channel so next HW latch picks it up */
+        apply_channel_route(0U);
+    }
+}
+
+static void set_width(uint8_t w)
+{
+    g_width = w;
+    xil_printf(">> %-14s = %u bit\r\n", "SAMPLE WIDTH", (unsigned)w);
+    apply_control();
+}
+
+static void set_dds_freq(uint16_t f)
+{
+    g_dds_freq = f;
+    g_freq     = (uint32_t)f;
+    xil_printf(">> %-14s = %u Hz\r\n", "DDS FREQ", (unsigned)f);
+    apply_control();
+}
+
+/* ---- Print state / help ---- */
 static void print_state(void)
 {
+    const char *ch_str = (g_channel == CH_LEFT)  ? "Left only"
+                       : (g_channel == CH_RIGHT) ? "Right only"
+                       : "Both";
     xil_printf("\r\n=============================\r\n");
-    xil_printf(" I2S Register Feature Test\r\n");
+    xil_printf("  I2S + DDS Feature Test\r\n");
     xil_printf("=============================\r\n");
-    xil_printf(" Freq        : %lu Hz\r\n",  (unsigned long)g_freq);
-    xil_printf(" Channel     : %s\r\n",
-               ( g_left &&  g_right) ? "Both"  :
-               ( g_left && !g_right) ? "Left"  :
-               (!g_left &&  g_right) ? "Right" : "None");
-    xil_printf(" ENABLE      : %u\r\n",  g_enable);
-    xil_printf(" MUTE        : %u\r\n",  g_mute);
-    xil_printf(" FS_FAMILY   : %u (%s)\r\n", g_fs,
-               g_fs ? "44.1/88.2 kHz family" : "48/96 kHz family");
-    xil_printf(" FS_MODE     : %u (%s)\r\n", g_fs_mode,
-               g_fs_mode ? "high Fs" : "low Fs");
-    xil_printf(" Fs result   : %s\r\n",
-               (!g_fs && !g_fs_mode) ? "48 kHz"   :
-               ( g_fs && !g_fs_mode) ? "44.1 kHz" :
-               (!g_fs &&  g_fs_mode) ? "96 kHz"   : "88.2 kHz");
-    xil_printf(" SAMPLE_WIDTH: %u bit\r\n", g_width);
+    xil_printf(">> %-14s = %u\r\n",   "DDS ENABLE",    (unsigned)g_dds_en);
+    xil_printf(">> %-14s = %s\r\n",   "DDS MODE",      g_dds_mode ? "Square" : "Sine");
+    xil_printf(">> %-14s = %u Hz\r\n","DDS FREQ",      (unsigned)g_dds_freq);
+    xil_printf(">> %-14s = %u\r\n",   "ENABLE",        (unsigned)g_enable);
+    xil_printf(">> %-14s = %s\r\n",   "MUTE",          g_mute ? "1 (Silence)" : "0 (Audio)");
+    xil_printf(">> %-14s = %s\r\n",   "CHANNEL",       ch_str);
+    xil_printf(">> %-14s = %u bit\r\n","SAMPLE WIDTH", (unsigned)g_width);
+    xil_printf(">> %-14s = %u Hz\r\n","Fs",            (unsigned)current_sample_rate());
     xil_printf("-----------------------------\r\n");
-    xil_printf(" 1/2/5  = freq 1k/2k/5kHz\r\n");
-    xil_printf(" L/R/B  = Left/Right/Both\r\n");
-    xil_printf(" E      = toggle ENABLE\r\n");
-    xil_printf(" M      = toggle MUTE\r\n");
-    xil_printf(" F      = toggle FS family\r\n");
-    xil_printf(" O      = toggle FS_MODE\r\n");
-    xil_printf(" W      = cycle width 16/24/32\r\n");
-    xil_printf(" ?      = show this menu\r\n");
+    xil_printf(" D      toggle DDS ON/OFF\r\n");
+    xil_printf(" S      toggle Sine/Square\r\n");
+    xil_printf(" +/-    DDS Freq +100/-100 Hz\r\n");
+    xil_printf(" */_    DDS Freq +1k/-1k Hz\r\n");
+    xil_printf(" 1/2/5  Freq preset 1k/2k/5kHz\r\n");
+    xil_printf(" E      toggle ENABLE\r\n");
+    xil_printf(" M      toggle MUTE\r\n");
+    xil_printf(" L      Left only\r\n");
+    xil_printf(" R      Right only\r\n");
+    xil_printf(" B      Both channels\r\n");
+    xil_printf(" F      toggle Fs family\r\n");
+    xil_printf(" O      toggle Fs mode\r\n");
+    xil_printf(" W      cycle width 16/24/32\r\n");
+    xil_printf(" ?      show this menu\r\n");
     xil_printf("=============================\r\n");
 }
 
-/* ---- Audio sample ---- */
+/* ---- Software stream_sample (SW DDS path only) ---- */
 static void stream_sample(void)
 {
     static uint32_t phase = 0U;
     uint32_t sr   = current_sample_rate();
     uint32_t step = (uint32_t)(((uint64_t)g_freq << 32) / sr);
 
-    /* Scale 16-bit sine to full AMPLITUDE range */
     int16_t s = (int16_t)(((int32_t)SINE[phase >> 27] * AMPLITUDE) / 32767);
-
-    /*
-     * RTL expects the sample MSB at bit [sample_width-1] of the 32-bit word.
-     * We have a 16-bit value; shift it so its MSB lands at bit (g_width-1).
-     * For g_width=16: no shift. For g_width=24: <<8. For g_width=32: <<16.
-     * Arithmetic right-shift for narrower widths preserves sign.
-     * No mask needed — the RTL serialiser ignores bits above sample_width-1.
-     */
     int32_t s32;
-    if (g_width >= 32U) {
-        /* True 32-bit: sign-extend the 16-bit sample to fill the word */
-        s32 = (int32_t)s << 16;
-    } else if (g_width > 16U) {
-        s32 = (int32_t)s << (g_width - 16U);
-    } else if (g_width < 16U) {
-        s32 = (int32_t)s >> (16U - g_width);
-    } else {
-        s32 = (int32_t)s;
-    }
-    uint32_t samp = (uint32_t)s32;
+    if      (g_width >= 32U) s32 = (int32_t)s << 16;
+    else if (g_width > 16U)  s32 = (int32_t)s << (g_width - 16U);
+    else if (g_width < 16U)  s32 = (int32_t)s >> (16U - g_width);
+    else                     s32 = (int32_t)s;
 
-    /*
-     * Write both channels every frame, even the silent one.
-     * The RTL latches DATA_LEFT and DATA_RIGHT together at frame boundary
-     * via the CDC write-counter, so both must always be written.
-     */
-    Xil_Out32(DATA_LEFT,  g_left  ? samp : 0U);
-    Xil_Out32(DATA_RIGHT, g_right ? samp : 0U);
+    apply_channel_route((uint32_t)s32);
     phase += step;
 }
 
 /* ---- Handle keypress ---- */
+static inline uint16_t clamp_u16(uint32_t v)
+{
+    return (uint16_t)(v > 0xFFFFU ? 0xFFFFU : v);
+}
+
 static void handle_key(uint8_t ch)
 {
-    xil_printf("%c\r\n", ch);
-    switch (ch) {
+    uint8_t lower = (uint8_t)tolower((int)ch);
+    xil_printf("%c\r\n", (char)ch);
 
-        /* ---- Frequency ---- */
-        case '1': g_freq = 1000U; xil_printf(">> 1 kHz\r\n");  break;
-        case '2': g_freq = 2000U; xil_printf(">> 2 kHz\r\n");  break;
-        case '5': g_freq = 5000U; xil_printf(">> 5 kHz\r\n");  break;
+    switch (lower) {
+        /* DDS controls */
+        case 'd': set_dds_en(!g_dds_en);     break;
+        case 's': set_dds_mode(!g_dds_mode); break;
 
-        /* ---- Channel ---- */
-        case 'l': case 'L':
-            g_left = 1U; g_right = 0U;
-            xil_printf(">> Left only\r\n");
+        case '+': case '=':
+            set_dds_freq(clamp_u16((uint32_t)g_dds_freq + 100U));
             break;
-        case 'r': case 'R':
-            g_left = 0U; g_right = 1U;
-            xil_printf(">> Right only\r\n");
+        case '-':
+            set_dds_freq((uint16_t)(g_dds_freq > 100U ? g_dds_freq - 100U : 0U));
             break;
-        case 'b': case 'B':
-            g_left = 1U; g_right = 1U;
-            xil_printf(">> Both\r\n");
+        case '*':
+            set_dds_freq(clamp_u16((uint32_t)g_dds_freq + 1000U));
             break;
-
-        /* ---- ENABLE toggle ---- */
-        case 'e': case 'E':
-            g_enable = !g_enable;
-            xil_printf(">> ENABLE = %u\r\n", g_enable);
-            apply_control();
+        case '_':
+            set_dds_freq((uint16_t)(g_dds_freq > 1000U ? g_dds_freq - 1000U : 0U));
             break;
 
-        /* ---- MUTE toggle ---- */
-        case 'm': case 'M':
-            g_mute = !g_mute;
-            xil_printf(">> MUTE = %u (%s)\r\n", g_mute,
-                       g_mute ? "silence" : "audio");
-            apply_control();
-            break;
+        case '1': set_dds_freq(1000U); break;
+        case '2': set_dds_freq(2000U); break;
+        case '5': set_dds_freq(5000U); break;
 
-        /* ---- FS family toggle ---- */
-        case 'f': case 'F':
+        /* Output controls — always apply even with HW DDS active */
+        case 'e': set_enable(!g_enable); break;
+        case 'm': set_mute(!g_mute);     break;
+
+        /* Channel routing — firmware-only, no CTRL register change */
+        case 'l': set_channel(CH_LEFT);  break;
+        case 'r': set_channel(CH_RIGHT); break;
+        case 'b': set_channel(CH_BOTH);  break;
+
+        /* Fs / width */
+        case 'f':
             g_fs = !g_fs;
-            xil_printf(">> FS_FAMILY = %u (%s)\r\n", g_fs,
-                       g_fs ? "44.1/88.2 kHz family" : "48/96 kHz family");
+            xil_printf(">> %-14s = %s\r\n", "Fs FAMILY",
+                       g_fs ? "44.1k/88.2k" : "48k/96k");
             apply_control();
             break;
-
-        /* ---- FS_MODE toggle ---- */
-        case 'o': case 'O':
+        case 'o':
             g_fs_mode = !g_fs_mode;
-            xil_printf(">> FS_MODE = %u (%s) → Fs = %s\r\n",
-                       g_fs_mode,
-                       g_fs_mode ? "high Fs" : "low Fs",
-                       (!g_fs && !g_fs_mode) ? "48 kHz"   :
-                       ( g_fs && !g_fs_mode) ? "44.1 kHz" :
-                       (!g_fs &&  g_fs_mode) ? "96 kHz"   : "88.2 kHz");
+            xil_printf(">> %-14s = %s\r\n", "Fs MODE",
+                       g_fs_mode ? "Double" : "Standard");
             apply_control();
             break;
-
-        /* ---- SAMPLE_WIDTH cycle 16 -> 24 -> 32 -> 16 ---- */
-        case 'w': case 'W':
-            g_width = (g_width == 16U) ? 24U :
-                      (g_width == 24U) ? 32U : 16U;
-            xil_printf(">> SAMPLE_WIDTH = %u bit\r\n", g_width);
-            apply_control();
+        case 'w':
+            set_width((g_width == 16U) ? 24U : (g_width == 24U) ? 32U : 16U);
             break;
 
-        case '?': print_state(); break;
-
-        default:
-            xil_printf(">> Unknown key, press ? for menu\r\n");
-            break;
+        case '?': print_state(); return;
+        default:  return;
     }
 }
 
-/* ---- Main ---- */
 int main(void)
 {
     init_platform();
-
-    xil_printf("\r\n=== I2S RTL FIX DIAGNOSTIC ===\r\n");
-    xil_printf("Base Address: 0x%08X\r\n", I2S_BASE);
-
-    // AXI Readback Test using the Reserved register (offset 0x0C)
-    // This confirms that the CPU can actually talk to the I2S IP.
-    Xil_Out32(I2S_BASE + 0x0CU, 0xDEADBEEF);
-    uint32_t rd = Xil_In32(I2S_BASE + 0x0CU);
-    xil_printf("AXI Readback Test (Offset 0x0C): 0x%08X - %s\r\n",
-               rd, (rd == 0xDEADBEEF) ? "PASS" : "FAIL (Check Address Mapping/SmartConnect)");
+    xil_printf("\r\n=== I2S + DDS Hardware Generator ===\r\n");
 
     apply_control();
     print_state();
 
-    /*
-     * Deadline-based sample loop.
-     * usleep(period - constant) drifts when overhead varies (UART read, cache
-     * misses, etc.) and at 96 kHz the period is only ~10 µs total — there is no
-     * margin to subtract anything.  Instead we track an absolute deadline in
-     * CPU cycles and busy-wait until the hardware cycle counter reaches it.
-     * This gives sample-accurate timing regardless of per-loop overhead.
-     *
-     * rdcycle64() reads the RISC-V mcycle CSR at CPU clock rate (100 MHz).
-     * period_cycles = 100_000_000 / sample_rate
-     *   48 kHz → 2083 cycles (~20.83 µs)
-     *   96 kHz → 1041 cycles (~10.41 µs)
-     */
-    uint64_t t_deadline = rdcycle64();
+    g_sw_deadline = rdcycle64();   /* initialise before first SW sample */
 
     while (1) {
-        uint32_t sample_rate   = current_sample_rate();
-        uint64_t period_cycles = (uint64_t)XPAR_CPU_CORE_CLOCK_FREQ_HZ / sample_rate;
+        /* ---- SW DDS path: timed sample loop ---- */
+        if (!g_dds_en) {
+            uint32_t sr            = current_sample_rate();
+            uint64_t period_cycles = (uint64_t)XPAR_CPU_CORE_CLOCK_FREQ_HZ / sr;
 
-        stream_sample();
+            /* If deadline is stale (just switched from HW DDS, or first entry),
+               snap it to now so the wait loop doesn't block for millions of cycles. */
+            uint64_t now = rdcycle64();
+            if (g_sw_deadline < now)
+                g_sw_deadline = now;
 
-        if (!XUartLite_IsReceiveEmpty(STDIN_BASEADDRESS))
-            handle_key((uint8_t)XUartLite_RecvByte(STDIN_BASEADDRESS));
+            stream_sample();
+            g_sw_deadline += period_cycles;
+            while (rdcycle64() < g_sw_deadline) {
+                /* poll UART inside the wait so keypresses aren't missed */
+                if (!XUartLite_IsReceiveEmpty(STDIN_BASEADDRESS))
+                    handle_key((uint8_t)XUartLite_RecvByte(STDIN_BASEADDRESS));
+            }
+        } else {
+            /* ---- HW DDS path ----
+             *
+             * Channel routing: if not CH_BOTH, keep writing 0 to the silent
+             * DATA register so the IP latches 0 at the next frame boundary.
+             * The IP latches DATA regs at bit_count=0 (falling BCLK), so
+             * writing once per ~Fs period is more than sufficient.
+             * At 48 kHz with a 100 MHz AXI clock that is ~2083 cycles.
+             */
+            if (g_channel != CH_BOTH || !g_enable || g_mute) {
+                apply_channel_route(0U);   /* 0 = placeholder; routing logic inside */
+            }
 
-        /* Advance deadline by exactly one sample period */
-        t_deadline += period_cycles;
+            /* Small delay to avoid hammering the bus */
+            for (volatile int i = 0; i < 1000; i++);
 
-        /* Busy-wait until the deadline — no sleep() rounding error */
-        while (rdcycle64() < t_deadline) {}
+            /* UART poll */
+            if (!XUartLite_IsReceiveEmpty(STDIN_BASEADDRESS))
+                handle_key((uint8_t)XUartLite_RecvByte(STDIN_BASEADDRESS));
+        }
     }
 
     cleanup_platform();

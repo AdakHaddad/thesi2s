@@ -2,6 +2,8 @@
 
 This directory contains a complete, portable version of the `nobufgmux` project with the fixed `i2s` IP and associated software.
 
+For DDS-to-IIR test integration, see [DDS_IIR_GUIDE.md](DDS_IIR_GUIDE.md).
+
 ## Contents
 
 - `ip_repo/i2s/`: Fixed I2S IP core.
