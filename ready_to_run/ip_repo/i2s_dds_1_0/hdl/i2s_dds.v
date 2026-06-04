@@ -1,15 +1,18 @@
 `timescale 1 ns / 1 ps
 
 // ============================================================================
-// Module      : i2s
-// Description : I2S slave AXI4-Lite peripheral wrapper.
-//               Passes all ports through to the i2s_slave_lite_v1_0_S00_AXI core.
+// Module      : i2s_dds
+// Description : Compatibility wrapper for the AXI4-Lite I2S transmitter.
 //
-// Dual clock input design:
-//   - audio_48_clk : 24.576 MHz for 48/96 kHz sample rate family
-//   - audio_44_clk : 22.579 MHz for 44.1/88.2 kHz sample rate family
-//   - Clock selection via FS_FAMILY bit in CONTROL register
-//   - No vendor-specific primitives (portable to ASIC)
+// The IP name is kept as i2s_dds so existing block designs do not break, but
+// the RTL no longer contains a DDS generator. Firmware writes PCM samples to
+// the DATA_LEFT/DATA_RIGHT registers and programs CONTROL as:
+//   bit 0    ENABLE
+//   bit 1    MUTE
+//   bits 6:2 SAMPLE_WIDTH
+//   bits 26:7 SAMPLE_RATE_HZ
+//
+// audio_48_clk/audio_44_clk are retained only for old BD port compatibility.
 // ============================================================================
 
 module i2s_dds #
@@ -20,9 +23,8 @@ module i2s_dds #
 (
     // Audio clock inputs — both must be running before ENABLE is asserted.
     // Provided by the MMCM/PLL Clock Wizard in the top-level block design.
-    input  wire audio_48_clk,   // 24.576 MHz — 48/96 kHz Fs family
-    input  wire audio_44_clk,   // 22.579 MHz — 44.1/88.2 kHz Fs family
-
+    input  wire audio_48_clk,   // 24.576 MHz — kept for backward compatibility
+    input  wire audio_44_clk,   // 22.579 MHz — kept for backward compatibility
     // I2S serial outputs — connect directly to PCM5102A PMOD pins.
     // MCLK is driven but the PCM5102A can operate without it (SCK mode).
     output wire i2s_mclk,
