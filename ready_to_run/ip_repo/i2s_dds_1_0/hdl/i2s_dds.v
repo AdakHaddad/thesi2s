@@ -12,7 +12,8 @@
 //   bits 6:2 SAMPLE_WIDTH
 //   bits 26:7 SAMPLE_RATE_HZ
 //
-// audio_48_clk/audio_44_clk are retained only for old BD port compatibility.
+// The wrapper now exposes a single audio clock input. Legacy clock-family
+// selection is handled outside this IP.
 // ============================================================================
 
 module i2s_dds #
@@ -21,10 +22,8 @@ module i2s_dds #
     parameter integer C_S00_AXI_ADDR_WIDTH = 4
 )
 (
-    // Audio clock inputs — both must be running before ENABLE is asserted.
-    // Provided by the MMCM/PLL Clock Wizard in the top-level block design.
-    input  wire audio_48_clk,   // 24.576 MHz — kept for backward compatibility
-    input  wire audio_44_clk,   // 22.579 MHz — kept for backward compatibility
+    // Audio clock input provided by the top-level block design.
+    input  wire audio_clk,
     // I2S serial outputs — connect directly to PCM5102A PMOD pins.
     // MCLK is driven but the PCM5102A can operate without it (SCK mode).
     output wire i2s_mclk,
@@ -61,8 +60,8 @@ module i2s_dds #
         .C_S00_AXI_DATA_WIDTH(C_S00_AXI_DATA_WIDTH),
         .C_S00_AXI_ADDR_WIDTH(C_S00_AXI_ADDR_WIDTH)
     ) i2s_dds_slave_lite_v1_0_S00_AXI_inst (
-        .audio_48_clk      (audio_48_clk),
-        .audio_44_clk      (audio_44_clk),
+        .audio_48_clk      (audio_clk),
+        .audio_44_clk      (audio_clk),
         .i2s_mclk          (i2s_mclk),
         .i2s_bclk          (i2s_bclk),
         .i2s_ws            (i2s_ws),

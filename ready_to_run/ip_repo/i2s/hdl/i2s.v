@@ -5,10 +5,9 @@
 // Description : I2S slave AXI4-Lite peripheral wrapper.
 //               Passes all ports through to the i2s_slave_lite_v1_0_S00_AXI core.
 //
-// Dual clock input design:
-//   - audio_48_clk : 24.576 MHz for 48/96 kHz sample rate family
-//   - audio_44_clk : 22.579 MHz for 44.1/88.2 kHz sample rate family
-//   - Clock selection via FS_FAMILY bit in CONTROL register
+// Single audio clock input wrapper:
+//   - audio_clk : external I2S master clock source
+//   - The wrapper forwards the same clock to both legacy core inputs
 //   - No vendor-specific primitives (portable to ASIC)
 // ============================================================================
 
@@ -18,10 +17,8 @@ module i2s #
     parameter integer C_S_AXI_ADDR_WIDTH = 4
 )
 (
-    // Audio clock inputs — both must be running before ENABLE is asserted.
-    // Provided by the MMCM/PLL Clock Wizard in the top-level block design.
-    input  wire audio_48_clk,   // 24.576 MHz — 48/96 kHz Fs family
-    input  wire audio_44_clk,   // 22.579 MHz — 44.1/88.2 kHz Fs family
+    // Audio clock input provided by the top-level block design.
+    input  wire audio_clk,
 
     // I2S serial outputs — connect directly to PCM5102A PMOD pins.
     // MCLK is driven but the PCM5102A can operate without it (SCK mode).
@@ -59,8 +56,8 @@ module i2s #
         .C_S_AXI_DATA_WIDTH(C_S_AXI_DATA_WIDTH),
         .C_S_AXI_ADDR_WIDTH(C_S_AXI_ADDR_WIDTH)
     ) i2s_slave_lite_v1_0_S00_AXI_inst (
-        .audio_48_clk      (audio_48_clk),
-        .audio_44_clk      (audio_44_clk),
+        .audio_48_clk      (audio_clk),
+        .audio_44_clk      (audio_clk),
         .i2s_mclk          (i2s_mclk),
         .i2s_bclk          (i2s_bclk),
         .i2s_ws            (i2s_ws),
