@@ -2,12 +2,44 @@
 \addcontentsline{toc}{chapter}{Arbitrary-Fs I2S dan IP komunikasi buatan sendiri}
 \label{app:arbitrary-fs}
 
-Lampiran ini menjelaskan varian desain I2S yang dibuat sebagai IP komunikasi buatan sendiri agar sistem tidak bergantung pada IP berlisensi dari pihak ketiga. Desain ini mempertahankan jalur validasi yang sama, tetapi menyederhanakan antarmuka clock pada level wrapper dan mendukung pemakaian ulang pada beberapa skenario frekuensi sampling.
+Lampiran ini menjelaskan varian desain I2S yang dibuat sebagai IP komunikasi buatan sendiri agar sistem tidak bergantung pada IP berlisensi dari pihak ketiga. Karena desain utama sudah dijelaskan di bab sebelumnya, lampiran ini hanya menampilkan bagian yang berbeda dari implementasi awal: wrapper terbaru, penyederhanaan antarmuka clock, dan alasan integrasi block design.
 
 \begin{itemize}
-    \item Wrapper IP dipakai untuk menyatukan antarmuka eksternal dan menyembunyikan detail internal dari desain legacy.
+    \item Wrapper IP versi terbaru pada berkas \texttt{i2s.v} dan \texttt{i2s\_dds.v} memakai satu masukan \texttt{audio\_clk}, lalu meneruskannya ke port clock legacy di inti agar desain tetap kompatibel.
     \item Modul inti tetap menyimpan batas aman frekuensi sampling untuk menjaga kestabilan pembangkit clock internal.
-    \item Filter digital dan pengujian 1 kHz digunakan sebagai bukti bahwa desain buatan sendiri dapat diintegrasikan ke jalur audio tanpa mengubah struktur I2S dasar.
+    \item Filter digital, tangkapan osiloskop manual, dan integrasi block design digunakan sebagai bukti bahwa desain buatan sendiri dapat diintegrasikan ke jalur audio tanpa mengubah struktur I2S dasar.
+    \item Pada bagian integrasi, blok IP komunikasi diletakkan di Vivado Block Design bersama MicroBlaze V, AXI SmartConnect, dan Clocking Wizard.
+\end{itemize}
+
+Potongan kode wrapper terbaru yang menunjukkan perbedaan utama ditampilkan pada Listing~\ref{lst:app-wrapper-arbitrary-fs}.
+
+\begin{lstlisting}[language=Verilog, caption={Potongan wrapper IP I2S terbaru dengan satu masukan clock audio.}, label={lst:app-wrapper-arbitrary-fs}]
+module i2s (
+    input  wire audio_clk,
+    output wire i2s_mclk,
+    output wire i2s_bclk,
+    output wire i2s_ws,
+    output wire i2s_data
+);
+
+    i2s_slave_lite_v1_0_S00_AXI i2s_slave_lite_v1_0_S00_AXI_inst (
+        .audio_48_clk (audio_clk),
+        .audio_44_clk (audio_clk),
+        .i2s_mclk     (i2s_mclk),
+        .i2s_bclk     (i2s_bclk),
+        .i2s_ws       (i2s_ws),
+        .i2s_data     (i2s_data)
+    );
+
+endmodule
+\end{lstlisting}
+
+Perbedaan utama terhadap desain awal adalah sebagai berikut:
+\begin{itemize}
+    \item antarmuka eksternal menyusut dari dua port clock audio menjadi satu port \texttt{audio\_clk};
+    \item wrapper kompatibilitas tetap menjaga nama IP dan integrasi block design lama;
+    \item bagian yang tidak berubah, seperti register interface, serializer, dan batas aman Fs, tidak ditulis ulang di lampiran ini;
+    \item kode lengkap tetap ada di folder \texttt{fix/ready\_to\_run/ip\_repo}, sedangkan lampiran ini hanya merangkum delta yang relevan.
 \end{itemize}
 
 Rincian kode dan perubahan perangkat lunak pendukung dijelaskan pada berkas sumber terkait di repositori.
