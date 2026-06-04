@@ -1,0 +1,17 @@
+\subsection{Verifikasi dengan Filter}
+
+Pengujian tambahan dilakukan dengan menyalurkan nada sinus 1 kHz melalui jalur I2S dan
+mengaplikasikan filter digital yang diimplementasikan pada lapisan perangkat lunak. Hasil
+verifikasi menunjukkan bahwa filter memodifikasi konten spektral sesuai rancangan tanpa
+mengganggu timing I2S yang telah diverifikasi sebelumnya. Dokumentasi teknis lengkap mengenai
+varian IP komunikasi buatan sendiri dan perubahan desain tersedia pada Lampiran
+\ref{app:arbitrary-fs}.
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/1khz_filtered.jpeg}{%
+        \includegraphics[width=0.8\textwidth]{contents/figures/1khz_filtered.jpeg}%
+    }{}
+    \caption{Contoh sinyal 1 kHz sebelum dan setelah filter.}
+    \label{fig:ch5-1khz-filtered}
+\end{figure}

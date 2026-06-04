@@ -1,0 +1,13 @@
+\chapter*{Arbitrary-Fs I2S dan IP komunikasi buatan sendiri}
+\addcontentsline{toc}{chapter}{Arbitrary-Fs I2S dan IP komunikasi buatan sendiri}
+\label{app:arbitrary-fs}
+
+Lampiran ini menjelaskan varian desain I2S yang dibuat sebagai IP komunikasi buatan sendiri agar sistem tidak bergantung pada IP berlisensi dari pihak ketiga. Desain ini mempertahankan jalur validasi yang sama, tetapi menyederhanakan antarmuka clock pada level wrapper dan mendukung pemakaian ulang pada beberapa skenario frekuensi sampling.
+
+\begin{itemize}
+    \item Wrapper IP dipakai untuk menyatukan antarmuka eksternal dan menyembunyikan detail internal dari desain legacy.
+    \item Modul inti tetap menyimpan batas aman frekuensi sampling untuk menjaga kestabilan pembangkit clock internal.
+    \item Filter digital dan pengujian 1 kHz digunakan sebagai bukti bahwa desain buatan sendiri dapat diintegrasikan ke jalur audio tanpa mengubah struktur I2S dasar.
+\end{itemize}
+
+Rincian kode dan perubahan perangkat lunak pendukung dijelaskan pada berkas sumber terkait di repositori.

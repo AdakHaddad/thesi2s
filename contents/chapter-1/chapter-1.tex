@@ -36,18 +36,18 @@ Berdasarkan latar belakang tersebut, rumusan masalah penelitian ini adalah:
 
 \section{Tujuan Penelitian}
 
-Tujuan penelitian ini disusun agar selaras dengan rumusan masalah yang telah ditetapkan.
+Tujuan penelitian ini disusun agar selaras dengan rumusan masalah yang telah ditetapkan, sekaligus menegaskan bahwa skripsi ini menghasilkan \textbf{IP komunikasi sendiri} sehingga sistem tidak bergantung pada \textit{license} atau IP komersial pihak ketiga.
 
 \subsection{Tujuan perancangan dan integrasi perangkat keras}
 \begin{enumerate}
-	\item Merancang dan mengimplementasikan modul \textbf{I2S TX} dengan \textbf{AXI4-Lite slave}, register kontrol dan data, serializer \textbf{Philips I2S}, serta mekanisme \textbf{CDC} dan \textbf{sample latch} untuk pengiriman sampel audio stereo yang aman.
-	\item Mengimplementasikan pemilihan \textbf{dua keluarga clock audio} dan pembagi BCLK untuk menghasilkan empat mode frekuensi sampling, lalu mengintegrasikan IP ke dalam \textbf{Vivado Block Design} pada FPGA \textbf{Basys3} beserta pemetaan pin pada file \texttt{.xdc}.
+	\item Merancang dan mengimplementasikan \textbf{IP komunikasi audio I2S TX} berbasis Verilog dengan antarmuka \textbf{AXI4-Lite slave}, register kontrol dan data, serializer \textbf{Philips I2S}, serta mekanisme \textbf{CDC} dan \textbf{sample latch} untuk pengiriman sampel audio stereo yang aman tanpa memakai IP komunikasi berlisensi dari pihak ketiga.
+	\item Mengimplementasikan pemilihan \textbf{keluarga clock audio} dan pembagi BCLK untuk menghasilkan mode frekuensi sampling yang dibutuhkan, lalu mengintegrasikan IP ke dalam \textbf{Vivado Block Design} pada FPGA \textbf{Basys3} beserta pemetaan pin pada file \texttt{.xdc}.
 \end{enumerate}
 
 \subsection{Tujuan integrasi SoC dan perangkat lunak}
 \begin{enumerate}
-	\item Membangun SoC berbasis \textbf{MicroBlaze V} dengan AXI interconnect, BRAM, Clocking Wizard, dan akses ke peripheral I2S melalui \textbf{Vitis}.
-	\item Mengembangkan aplikasi \textbf{Vitis} dalam bahasa C untuk konfigurasi register, pembangkitan sinyal uji audio, pengaturan kanal dan mode sampling, serta pengiriman sampel berbasis memory-mapped I/O.
+	\item Membangun SoC berbasis \textbf{MicroBlaze V} dengan AXI interconnect, BRAM, Clocking Wizard, dan akses ke peripheral I2S hasil rancangan sendiri melalui \textbf{Vitis}.
+	\item Mengembangkan aplikasi \textbf{Vitis} dalam bahasa C untuk konfigurasi register, pembangkitan sinyal uji audio, pengaturan kanal dan mode sampling, serta pengiriman sampel berbasis memory-mapped I/O ke IP komunikasi yang dibuat sendiri.
 \end{enumerate}
 
 \subsection{Tujuan verifikasi dan validasi}

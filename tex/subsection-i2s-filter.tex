@@ -1,0 +1,20 @@
+% Short subsection to include in Chapter 5 describing the I2S+filter test
+\subsection{Verifikasi dengan Filter}
+
+Pengujian tambahan dilakukan dengan menyalurkan nada sinus 1 kHz melalui jalur I2S dan
+mengaplikasikan filter digital yang diimplementasikan pada lapisan perangkat lunak. Hasil
+verifikasi menunjukkan bahwa filter memodifikasi konten spektral sesuai rancangan tanpa
+mengganggu timing I2S yang telah diverifikasi sebelumnya (lihat Gambar \ref{fig:ch5-1khz} dan
+Lampiran~\ref{app:arbitrary-fs} untuk detail desain).
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{thesi2s/tex/figures/1khz_filtered.jpeg}{%
+        \includegraphics[width=0.8\textwidth]{thesi2s/tex/figures/1khz_filtered.jpeg}%
+    }{}
+    \caption{Contoh sinyal 1 kHz sebelum dan setelah filter (ilustrasi).}
+    \label{fig:ch5-1khz-filtered}
+\end{figure}
+
+Referensi ke Lampiran~\ref{app:arbitrary-fs} menyediakan diff kode dan penjelasan desain
+untuk varian I2S yang mendukung frekuensi sampling arbitrary sebagai bonus penelitian.

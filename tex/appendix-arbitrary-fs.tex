@@ -1,0 +1,26 @@
+\appendix
+\chapter{Arbitrary-Fs I2S: desain dan diff kode}
+\label{app:arbitrary-fs}
+
+Sebagai tambahan pada desain utama yang menggunakan keluarga frekuensi 44.1/48 kHz,
+penulis mengembangkan varian I2S yang memungkinkan frekuensi sampling arbitrary.
+Lampiran ini merangkum alasan desain, perubahan pada wrapper IP, serta diff kode penting.
+
+Perubahan utama:
+\begin{itemize}
+    \item Menyediakan `audio_clk` tunggal pada level wrapper untuk menghilangkan ketergantungan
+    pada dua port clock legacy (`audio_44_clk` dan `audio_48_clk`).
+    \item Menjaga kompatibilitas block design dengan menambahkan wrapper kompatibilitas yang
+    meneruskan `audio_clk` ke port legacy saat diperlukan.
+    \item Menyimpan clamp `MAX_SAFE_FS_HZ` pada modul DDS untuk memastikan akumulator/DDS
+    bekerja dalam batas aman terhadap clock AXI dan pembagi internal.
+\end{itemize}
+
+Contoh patch singkat (ringkasan):
+\begin{verbatim}
+// wrapper: expose audio_clk, forward to audio_44_clk/audio_48_clk of core
+i2s_wrapper(.audio_clk(audio_clk), .audio_44_clk(audio_clk), .audio_48_clk(audio_clk));
+\end{verbatim}
+
+Untuk patch lengkap dan file XDC/packaging yang perlu diubah jika ingin mengganti
+antarmuka IP secara permanen, lihat repositori dan folder `fix/ready_to_run/ip_repo`.
