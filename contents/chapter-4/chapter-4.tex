@@ -424,6 +424,207 @@ bit delay setelah perubahan \texttt{WS}, dan \texttt{BCLK} berubah mengikuti
 Implementasi akhir membentuk rantai lengkap dari software ke hardware. Firmware
 menulis sampel dan kontrol melalui AXI4-Lite, RTL menyinkronkan register ke
 domain audio, pengambilan sampel dilakukan pada awal frame, dan serializer mengirim
-data dalam format Philips I2S. Testbench memvalidasi perilaku inti serializer,
+data dalam format Philips I2S. Testbench RTL memvalidasi perilaku inti serializer,
 sedangkan pengujian hardware pada Bab V memverifikasi bahwa sinyal tersebut
 dapat diterima oleh DAC PCM5102A.
+
+\section{Optimasi Desain: IP I2S Vendor-Agnostic dengan Clock Synthesis DDS}
+
+Sebagai langkah pengembangan lebih lanjut, dilakukan optimasi pada desain IP I2S untuk mengatasi ketergantungan pada sumber clock audio eksternal dan ketergantungan pada primitif perangkat keras tertentu (\textit{vendor-specific}). Desain baru ini menggunakan teknik \textit{Direct Digital Synthesis} (DDS) pada sisi perangkat keras yang dikhususkan untuk pembangkitan clock audio secara internal langsung dari domain clock sistem AXI (100 MHz).
+
+Penting untuk membedakan dua implementasi DDS dalam sistem ini:
+\begin{itemize}
+    \item \textbf{DDS pada RTL}: Digunakan untuk sintesis frekuensi clock (\texttt{BCLK}, \texttt{MCLK}, \texttt{WS}) agar mendukung frekuensi sampling (\textit{sampling rate}) arbitrer.
+    \item \textbf{DDS pada Software}: Digunakan untuk pembangkitan sinyal audio (misalnya gelombang sinus) yang menghasilkan sampel PCM untuk ditulis ke register hardware.
+\end{itemize}
+
+\subsection{Pembangkitan Clock Berbasis DDS pada RTL}
+
+Berbeda dengan desain awal yang memerlukan input \texttt{audio\_48\_clk} dan \texttt{audio\_44\_clk} dari luar IP, varian teroptimasi ini melakukan sintesis frekuensi secara internal menggunakan akumulator fase 32-bit. Teknik ini memungkinkan pembangkitan \texttt{BCLK} dan \texttt{MCLK} dengan resolusi yang sangat tinggi tanpa memerlukan blok PLL atau MMCM tambahan di luar IP.
+
+Persamaan dasar yang digunakan untuk menghitung nilai penambahan fase (\textit{frequency word}) adalah sebagai berikut:
+
+\begin{equation}
+    \Delta \text{phase} = \frac{f_{\text{target}}}{f_{\text{system}}} \times 2^{32}
+    \label{eq:dds-formula}
+\end{equation}
+
+Dalam implementasi RTL, pembagian clock dilakukan dengan mendeteksi *overflow* pada akumulator fase terhadap frekuensi sistem AXI. Hal ini membuat desain bersifat \textit{vendor-agnostic} karena tidak lagi menggunakan primitif Xilinx seperti \texttt{BUFGMUX} atau \texttt{BUFG}, sehingga kode Verilog dapat langsung diimplementasikan pada FPGA dari manufaktur lain tanpa perubahan.
+
+\subsection{Peta Register Teroptimasi}
+
+Varian ini juga memperkenalkan register \texttt{STATUS} tambahan untuk membantu sinkronisasi perangkat lunak dan mengubah format register \texttt{CONTROL} agar mendukung input frekuensi sampling dalam satuan Hz secara langsung.
+
+\begin{table}[htbp]
+\centering
+\caption{Register map IP I2S varian DDS teroptimasi.}
+\label{tab:ch4-regmap-dds}
+\begin{tabular}{|l|l|>{\raggedright\arraybackslash}p{4.0cm}|>{\raggedright\arraybackslash}p{5.6cm}|}
+\hline
+\textbf{Offset} & \textbf{Nama} & \textbf{Akses} & \textbf{Fungsi} \\
+\hline
+\texttt{0x00} & \texttt{DATA\_LEFT} & Write & Sampel PCM kanal kiri. \\
+\texttt{0x04} & \texttt{DATA\_RIGHT} & Write & Sampel PCM kanal kanan. \\
+\texttt{0x08} & \texttt{CONTROL} & Read/Write & Konfigurasi operasi (Enable, Mute, Width, Fs). \\
+\texttt{0x0C} & \texttt{STATUS} & Read & Status sinkronisasi frame stereo. \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Bitfield register \texttt{CONTROL} pada varian DDS.}
+\label{tab:ch4-control-dds}
+\begin{tabular}{|c|l|p{8.3cm}|}
+\hline
+\textbf{Bit} & \textbf{Field} & \textbf{Keterangan} \\
+\hline
+\texttt{0} & \texttt{ENABLE} & 1 = Output aktif; 0 = Output ditahan rendah. \\
+\texttt{1} & \texttt{MUTE} & 1 = Data dipaksa nol (clocks tetap berjalan). \\
+\texttt{6:2} & \texttt{SAMPLE\_WIDTH} & Lebar data sampel per kanal (1--32 bit). \\
+\texttt{26:7} & \texttt{SAMPLE\_RATE\_HZ} & Target frekuensi sampling dalam Hz (0--1.048.575 Hz). \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Implementasi RTL Varian DDS}
+
+Bagian ini membahas detail implementasi pada berkas \texttt{i2s\_dds\_slave\_lite\_v1\_0\_S00\_AXI.v}. Perubahan mendasar terletak pada cara logika serializer digerakkan oleh akumulator DDS dan penambahan mekanisme *handshake* melalui register status.
+
+\subsubsection{Sintesis Frekuensi Clock Audio}
+
+Logika DDS bekerja dengan menambahkan nilai inkremen (\texttt{toggle\_rate}) ke akumulator setiap siklus clock AXI. Ketika akumulator melewati nilai frekuensi sistem, sinyal clock output dibalik (\textit{toggle}).
+
+\begin{lstlisting}[language=Verilog, caption={Logika perhitungan inkremen DDS untuk BCLK dan MCLK.}, label={lst:ch4-dds-inc}]
+// bclk_toggle_rate = Fs x 64 x 2 (untuk toggle) = Fs x 128
+wire [31:0] bclk_toggle_rate_hz = {sample_rate_sync, 7'b0};
+// mclk_toggle_rate = Fs x 256 x 2 (untuk toggle) = Fs x 512
+wire [31:0] mclk_toggle_rate_hz = {sample_rate_sync, 9'b0};
+
+wire [31:0] bclk_phase_sum = bclk_phase_acc_q + bclk_toggle_rate_hz;
+wire bclk_phase_wrap = (bclk_phase_sum >= AXI_CLK_HZ);
+\end{lstlisting}
+
+Penggunaan operator geser (\texttt{<< 7} dan \texttt{<< 9}) memungkinkan perhitungan rasio clock dilakukan secara efisien dalam hardware tanpa menggunakan pembagi (\textit{divider}) yang berat. Nilai \texttt{bclk\_phase\_wrap} menjadi sinyal kontrol yang memberitahu serializer kapan harus mengubah status bit data atau clock.
+
+\subsubsection{Serializer yang Digerakkan DDS}
+
+Berbeda dengan desain awal yang menggunakan pembagi integer tetap, desain ini menggunakan \texttt{bclk\_phase\_wrap} sebagai \textit{clock enable} di dalam domain \texttt{S\_AXI\_ACLK}.
+
+\begin{lstlisting}[language=Verilog, caption={Sekuenser I2S berbasis DDS.}, label={lst:ch4-dds-seq}]
+always @(posedge S_AXI_ACLK) begin
+    if (!S_AXI_ARESETN) begin
+        // Reset state
+    end else if (enable_sync) begin
+        if (bclk_phase_wrap) begin
+            bclk_phase_acc_q <= bclk_phase_sum - AXI_CLK_HZ;
+            if (bclk_q) begin
+                bclk_q      <= 1'b0; // Falling edge
+                bit_count_q <= bit_count_q + 6'd1;
+                ws_q        <= bit_count_q[5];
+                data_q      <= i2s_next_serial_bit(...);
+            end else begin
+                bclk_q <= 1'b1; // Rising edge
+                if (bit_count_q == 6'd0) begin
+                    sample_left_q  <= slv_reg0;
+                    sample_right_q <= slv_reg1;
+                    current_latch_status_q <= !current_latch_status_q;
+                end
+            end
+        end
+    end
+end
+\end{lstlisting}
+
+Pada Cuplikan \ref{lst:ch4-dds-seq}, terlihat bahwa pengambilan sampel (\textit{latching}) dilakukan tepat saat \texttt{bit\_count\_q == 0} pada sisi naik BCLK pertama dalam satu frame. Hal ini menjamin sinkronisasi yang sempurna antara data yang ditulis perangkat lunak dan data yang dikirimkan secara serial.
+
+\subsubsection{Mekanisme Feedback Status}
+
+Untuk memudahkan sinkronisasi pada sisi perangkat lunak, ditambahkan bit status yang bisa dibaca melalui AXI.
+
+\begin{lstlisting}[language=Verilog, caption={Pemetaan register status untuk feedback ke software.}, label={lst:ch4-dds-status}]
+case (read_addr)
+    REG_DATA_LEFT:  reg_data_out = slv_reg0;
+    REG_DATA_RIGHT: reg_data_out = slv_reg1;
+    REG_CONTROL:    reg_data_out = slv_reg2 & CONTROL_MASK;
+    REG_STATUS:     reg_data_out = {slv_reg3[31:1], current_latch_status_q};
+    default:        reg_data_out = 32'd0;
+endcase
+\end{lstlisting}
+
+Bit \texttt{current\_latch\_status\_q} akan berganti nilai setiap kali IP mengambil pasangan sampel baru dari register data. Perangkat lunak dapat memantau perubahan bit ini untuk memastikan bahwa penulisan sampel berikutnya dilakukan pada waktu yang tepat. Penggunaan register status ini sangat krusial sebagai mekanisme \textit{handshake} untuk mencegah terjadinya \textit{buffer underrun} (suara terputus) atau \textit{buffer overrun} (data tertimpa) karena ketidaksesuaian laju antara eksekusi prosesor dan kecepatan transmisi perangkat keras.
+
+\section{Implementasi Perangkat Lunak Teroptimasi}
+
+Dengan adanya fitur DDS dan register status pada sisi perangkat keras, implementasi perangkat lunak pada Vitis (\texttt{helloworld.c}) juga mengalami perubahan signifikan. Fokus utama perangkat lunak beralih dari sekadar mengatur waktu tunggu statis menjadi sistem yang sinkron terhadap status perangkat keras.
+
+\subsection{Sinkronisasi Berbasis Status Latch}
+
+Berbeda dengan implementasi awal yang menggunakan loop berbasis \textit{deadline} siklus CPU, perangkat lunak terbaru menggunakan metode \textit{polling} pada register status untuk mendeteksi kapan perangkat keras siap menerima sampel baru.
+
+\begin{lstlisting}[language=C, caption={Loop sinkronisasi perangkat lunak terhadap status frame hardware.}, label={lst:ch4-sw-sync}]
+while (1) {
+    uint32_t frame_bit = Xil_In32(STATUS_REG) & 1U;
+
+    // Deteksi perubahan bit status (toggle)
+    if (g_enable && frame_bit != g_last_frame_bit) {
+        g_last_frame_bit = frame_bit;
+        stream_software_dds_sample(); // Kirim sampel berikutnya
+    }
+
+    // Cek input UART tanpa memblokir audio
+    if (!XUartLite_IsReceiveEmpty(STDIN_BASEADDRESS))
+        handle_key((uint8_t)XUartLite_RecvByte(STDIN_BASEADDRESS));
+}
+\end{lstlisting}
+
+Metode ini menjamin bahwa setiap sampel yang dihasilkan oleh perangkat lunak dikirimkan tepat pada saat transisi frame I2S dimulai, sehingga menghasilkan fidelitas audio yang jauh lebih stabil meskipun frekuensi sampling diubah secara dinamis.
+
+\subsection{Pembangkitan Sinyal DDS pada Software}
+
+Pada varian ini, pembangkitan sinyal audio dilakukan sepenuhnya dalam perangkat lunak menggunakan akumulator fase. Hal ini memberikan fleksibilitas bagi peneliti untuk menghasilkan berbagai jenis gelombang (sinus, kotak, dsb.) tanpa harus mengubah desain RTL.
+
+\begin{lstlisting}[language=C, caption={Pembangkitan gelombang audio menggunakan DDS pada software.}, label={lst:ch4-sw-dds}]
+static void stream_software_dds_sample(void) {
+    // Hitung step berdasarkan frekuensi nada dan sampling rate target
+    uint32_t step = (uint32_t)(((uint64_t)g_tone_freq_hz << 32) / g_sample_rate_hz);
+    
+    // Ambil nilai dari tabel sinus atau hasilkan gelombang kotak
+    int16_t sample = g_square
+                   ? (g_phase & 0x80000000U ? AMPLITUDE : -AMPLITUDE)
+                   : (int16_t)(((int32_t)SINE[g_phase >> 27] * AMPLITUDE) / 32767);
+
+    // Kirim ke hardware melalui register data
+    write_channels(pack_sample(sample));
+    g_phase += step; // Update fase untuk sampel berikutnya
+}
+\end{lstlisting}
+
+Kombinasi antara sintesis clock pada hardware dan pembangkitan sinyal pada software membentuk sistem audio SoC yang utuh, di mana hardware menyediakan jalur transmisi yang presisi dan software menyediakan konten audio yang fleksibel.
+
+\subsection{Perbandingan Arsitektur: Fixed-Clock vs DDS}
+
+Sebagai rangkuman, Tabel \ref{tab:ch4-comparison} menyajikan perbedaan teknis antara desain awal yang menggunakan clock audio tetap (*Fixed-Clock*) dengan desain teroptimasi yang menggunakan sintesis DDS.
+
+\begin{table}[htbp]
+\centering
+\caption{Perbandingan desain I2S Fixed-Clock dan DDS.}
+\label{tab:ch4-comparison}
+\begin{tabular}{|l|p{5.5cm}|p{5.5cm}|}
+\hline
+\textbf{Fitur} & \textbf{Desain Fixed-Clock} & \textbf{Desain DDS} \\
+\hline
+\textbf{Sumber Clock} & Eksternal (MMCM/Clocking Wizard) & Internal (Sintesis dari AXI Clock) \\
+\hline
+\textbf{Fleksibilitas Fs} & Terbatas pada mode tetap (44,1/48/88,2/96 kHz) & Arbitrer (Dapat diatur dalam satuan Hz) \\
+\hline
+\textbf{Portabilitas} & Bergantung pada primitif vendor (BUFGMUX) & \textit{Vendor-Agnostic} (Murni RTL) \\
+\hline
+\textbf{Handshake} & Tidak ada (Programmed I/O buta) & Ada (Bit Status Toggle) \\
+\hline
+\textbf{Penggunaan Pin} & Memerlukan input clock audio tambahan & Hanya menggunakan clock sistem AXI \\
+\hline
+\end{tabular}
+\end{table}
+
+Meskipun desain DDS menawarkan fleksibilitas yang lebih tinggi dan portabilitas yang lebih baik, desain awal tetap dipertahankan dalam dokumentasi ini sebagai dasar pemahaman evolusi rancangan. Implementasi DDS menjadi bukti optimasi yang memungkinkan sistem bekerja secara mandiri tanpa ketergantungan pada blok pembangkit clock eksternal yang kompleks.
