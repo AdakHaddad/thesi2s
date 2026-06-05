@@ -54,6 +54,7 @@ Perancangan perangkat keras dilakukan dengan tahapan berikut:
 \begin{enumerate}
     \item Menentukan spesifikasi I2S TX meliputi format data~\citep{philips_i2s_1986}, lebar sampel, mode frekuensi sampling, dan pemetaan register.
     \item Mendesain arsitektur modul yang mencakup AXI4-Lite slave~\citep{arm_amba_axi_2010}, register data dan kontrol, pembagi clock, serta serializer I2S.
+    \item Melakukan optimasi desain menggunakan teknik DDS untuk mendukung frekuensi sampling arbitrer dan membuat IP bersifat \textit{vendor-agnostic}.
     \item Mengimplementasikan RTL dalam Verilog~\citep{palnitkar_verilog_2003} dengan pemisahan blok sekuensial dan kombinasional secara jelas.
     \item Mengintegrasikan peripheral ke dalam Vivado IP Integrator~\citep{xilinx_vivado_design_suite_2021} bersama MicroBlaze V, BRAM, clocking, dan peripheral pendukung.
 \end{enumerate}
@@ -349,7 +350,7 @@ Penelitian ini mengikuti tahapan berikut:
 
     \node[stepbox] (s1) at (0,0) {Analisis kebutuhan sistem dan studi literatur\\I2S, AXI4-Lite, MicroBlaze V};
     \node[stepbox] (s2) at (0,-1.8) {Perancangan spesifikasi peripheral I2S TX\\register map, mode frekuensi, dan format data};
-    \node[stepbox] (s3) at (0,-3.6) {Implementasi RTL Verilog\\wrapper, AXI slave, CDC, dan serializer};
+    \node[stepbox] (s3) at (0,-3.6) {Implementasi RTL Verilog dan optimasi DDS\\wrapper, AXI slave, CDC, dan serializer vendor-agnostic};
     \node[stepbox] (s4) at (0,-5.4) {Integrasi custom IP ke SoC Vivado\\MicroBlaze V, BRAM, clocking, UART, dan constraint};
     \node[stepbox] (s5) at (0,-7.2) {Pengembangan firmware uji di Vitis\\konfigurasi register dan pembangkitan sampel};
     \node[stepbox] (s6) at (0,-9.0) {Bring-up bitstream dan verifikasi perangkat keras\\testbench, osiloskop, dan validasi audio};

@@ -215,6 +215,25 @@ dinyatakan sebagai:
 Dengan $f_{\mathrm{MCLK}} = 24{,}576$ MHz dan divider 8, diperoleh
 $f_{\mathrm{BCLK}} = 3{,}072$ MHz dan $F_s = 48$ kHz.
 
+\subsection{Direct Digital Synthesis (DDS)}
+
+\textit{Direct Digital Synthesis} (DDS) adalah teknik pembangkitan sinyal analog atau digital secara elektronik menggunakan akumulator fase digital~\citep{vankka_dds_2001}. Dalam konteks penelitian ini, DDS digunakan pada sisi perangkat keras untuk melakukan sintesis clock (\textit{clock synthesis}) dan pada sisi perangkat lunak untuk membangkitkan sampel audio.
+
+\subsubsection{Prinsip Kerja Akumulator Fase}
+
+Inti dari sistem DDS adalah akumulator fase yang bekerja dengan menambahkan nilai inkremen (\textit{frequency tuning word}, $\Delta \theta$) ke register fase setiap siklus clock referensi ($f_{clk}$). Nilai output dari akumulator ini mewakili fase sinyal yang dihasilkan. Hubungan antara frekuensi output ($f_{out}$) dan frekuensi clock sistem dinyatakan sebagai:
+
+\begin{equation}
+    f_{out} = \frac{\Delta \theta \times f_{clk}}{2^N}
+    \label{eq:dds_theory}
+\end{equation}
+
+di mana $N$ adalah lebar bit dari akumulator fase. Dalam implementasi RTL pada penelitian ini, teknik DDS digunakan untuk menghasilkan sinyal \texttt{BCLK} dan \texttt{WS} tanpa bergantung pada pembagi integer tetap, sehingga mendukung frekuensi sampling arbitrer.
+
+\subsubsection{Sintesis Clock Vendor-Agnostic}
+
+Pembangkitan clock audio secara tradisional pada FPGA sering kali bergantung pada blok PLL atau MMCM yang bersifat spesifik untuk vendor tertentu (\textit{vendor-specific}). Dengan menggunakan DDS yang diimplementasikan murni dalam logika RTL (Verilog), sistem menjadi bersifat \textit{vendor-agnostic}. Hal ini berarti desain IP core I2S dapat dipindahkan ke berbagai platform FPGA tanpa harus mengubah konfigurasi pembangkit clock eksternal, selama tersedia clock sistem yang cukup tinggi sebagai referensi.
+
 \subsection{DAC audio PCM5102A}
 
 PCM5102A adalah DAC audio stereo yang menerima data digital melalui antarmuka audio serial

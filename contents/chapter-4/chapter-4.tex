@@ -602,6 +602,12 @@ static void stream_software_dds_sample(void) {
 
 Kombinasi antara sintesis clock pada hardware dan pembangkitan sinyal pada software membentuk sistem audio SoC yang utuh, di mana hardware menyediakan jalur transmisi yang presisi dan software menyediakan konten audio yang fleksibel.
 
+\section{Dampak terhadap Arsitektur Sistem Global}
+
+Implementasi varian DDS memberikan dampak signifikan terhadap penyederhanaan arsitektur sistem pada level *Block Design* Vivado. Meskipun gambar integrasi sistem pada bagian awal bab ini (Gambar \ref{fig:ch4-bd-vivado}) masih menampilkan penggunaan \textit{Clocking Wizard} dengan tiga keluaran clock (sistem, 48 kHz family, dan 44,1 kHz family), penggunaan IP I2S berbasis DDS memungkinkan penghapusan dua jalur clock audio tersebut.
+
+Pada sistem yang teroptimasi, \textit{Clocking Wizard} hanya perlu membangkitkan satu clock sistem (100 MHz). Seluruh sinkronisasi frekuensi audio dilakukan secara internal di dalam IP I2S menggunakan logika DDS. Hal ini tidak hanya mengurangi penggunaan sumber daya *clocking* pada FPGA, tetapi juga menyederhanakan proses *routing* dan meminimalisir potensi masalah *timing closure* pada domain clock yang berbeda. Ringkasan perbedaan arsitektur ini dijelaskan lebih lanjut pada bagian perbandingan di bawah ini.
+
 \subsection{Perbandingan Arsitektur: Fixed-Clock vs DDS}
 
 Sebagai rangkuman, Tabel \ref{tab:ch4-comparison} menyajikan perbedaan teknis antara desain awal yang menggunakan clock audio tetap (*Fixed-Clock*) dengan desain teroptimasi yang menggunakan sintesis DDS.
@@ -628,3 +634,7 @@ Sebagai rangkuman, Tabel \ref{tab:ch4-comparison} menyajikan perbedaan teknis an
 \end{table}
 
 Meskipun desain DDS menawarkan fleksibilitas yang lebih tinggi dan portabilitas yang lebih baik, desain awal tetap dipertahankan dalam dokumentasi ini sebagai dasar pemahaman evolusi rancangan. Implementasi DDS menjadi bukti optimasi yang memungkinkan sistem bekerja secara mandiri tanpa ketergantungan pada blok pembangkit clock eksternal yang kompleks.
+
+\section{Ringkasan Implementasi}
+
+Seluruh tahapan perancangan dan implementasi yang telah dijelaskan membentuk sebuah sistem peripheral I2S transmitter yang komplit. Dimulai dari perancangan arsitektur berbasis *fixed-clock* sebagai desain dasar, hingga pengembangan varian DDS yang lebih fleksibel dan mandiri. Meskipun terdapat perbedaan pada mekanisme pembangkitan clock dan sinkronisasi perangkat lunak, kedua desain tetap mematuhi standar protokol Philips I2S yang sama. Dengan demikian, hasil pengujian sinyal dan audio yang disajikan pada Bab V tetap relevan untuk memvalidasi fungsionalitas inti dari IP I2S yang dirancang dalam penelitian ini.
