@@ -428,9 +428,9 @@ data dalam format Philips I2S. Testbench RTL memvalidasi perilaku inti serialize
 sedangkan pengujian hardware pada Bab V memverifikasi bahwa sinyal tersebut
 dapat diterima oleh DAC PCM5102A.
 
-\section{Optimasi Desain: IP I2S Vendor-Agnostic dengan Clock Synthesis DDS}
+\section{Pengembangan dan Peningkatan Fleksibilitas: IP I2S Vendor-Agnostic dengan Clock Synthesis DDS}
 
-Sebagai langkah pengembangan lebih lanjut, dilakukan optimasi pada desain IP I2S untuk mengatasi ketergantungan pada sumber clock audio eksternal dan ketergantungan pada primitif perangkat keras tertentu (\textit{vendor-specific}). Desain baru ini menggunakan teknik \textit{Direct Digital Synthesis} (DDS) pada sisi perangkat keras yang dikhususkan untuk pembangkitan clock audio secara internal langsung dari domain clock sistem AXI (100 MHz).
+Sebagai langkah pengembangan lebih lanjut untuk meningkatkan fleksibilitas sistem, dilakukan perancangan ulang pada beberapa bagian IP I2S guna mengatasi ketergantungan pada sumber clock audio eksternal dan primitif perangkat keras tertentu (\textit{vendor-specific}). Desain baru ini menggunakan teknik \textit{Direct Digital Synthesis} (DDS) pada sisi perangkat keras yang dikhususkan untuk pembangkitan clock audio secara internal langsung dari domain clock sistem AXI (100 MHz).
 
 Penting untuk membedakan dua implementasi DDS dalam sistem ini:
 \begin{itemize}
@@ -633,7 +633,7 @@ Sebagai rangkuman, Tabel \ref{tab:ch4-comparison} menyajikan perbedaan teknis an
 \end{tabular}
 \end{table}
 
-Meskipun desain DDS menawarkan fleksibilitas yang lebih tinggi dan portabilitas yang lebih baik, desain awal tetap dipertahankan dalam dokumentasi ini sebagai dasar pemahaman evolusi rancangan. Implementasi DDS menjadi bukti optimasi yang memungkinkan sistem bekerja secara mandiri tanpa ketergantungan pada blok pembangkit clock eksternal yang kompleks.
+Meskipun desain DDS menawarkan fleksibilitas yang lebih tinggi dan portabilitas yang lebih baik, desain awal tetap dipertahankan dalam dokumentasi ini sebagai dasar pemahaman evolusi rancangan. Tahap pengembangan ini menjadi bukti peningkatan kemampuan sistem yang memungkinkan pengoperasian secara mandiri tanpa ketergantungan pada blok pembangkit clock eksternal yang kompleks.
 
 \section{Ringkasan Implementasi}
 

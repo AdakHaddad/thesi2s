@@ -4,6 +4,9 @@
 
 \subsection{Perangkat keras}
 
+\subsubsection{Laptop pengembangan}
+\textbf{Lenovo ThinkPad T470} digunakan sebagai perangkat utama pengembangan. Laptop ini memiliki spesifikasi prosesor Intel Core i5-6300U @ 2,40 GHz dan menjalankan sistem operasi Microsoft Windows 10 Pro. Perangkat ini digunakan untuk menjalankan seluruh alur desain FPGA, pengembangan perangkat lunak, dan penulisan dokumen.
+
 \subsubsection{Board FPGA}
 \textbf{Basys3} digunakan sebagai platform implementasi utama~\citep{xilinx_basys3_ref}. Board ini berbasis FPGA Xilinx Artix-7 dan menyediakan sumber clock 100 MHz, antarmuka USB-UART, serta header PMOD untuk koneksi ke perangkat eksternal.
 
@@ -33,16 +36,17 @@
 
 \subsubsection{Perangkat bantu}
 \begin{itemize}
-    \item \textbf{Oscilloscope / logic analyzer} untuk memverifikasi sinyal BCLK, WS, dan DATA.
-    \item \textbf{Speaker atau headphone aktif} untuk uji keluaran audio.
+    \item \textbf{Oscilloscope Digital TEXIO DCS-1102B} untuk memverifikasi sinyal BCLK, WS, dan DATA.
+    \item \textbf{Headset DAP} untuk uji keluaran audio.
     \item \textbf{Breadboard dan kabel jumper} untuk koneksi Basys3 ke PCM5102A.
 \end{itemize}
 
 \subsection{Perangkat lunak}
 \begin{itemize}
-    \item \textbf{AMD Vivado Design Suite} untuk RTL design, synthesis, implementation, dan integrasi SoC~\citep{xilinx_vivado_design_suite_2021}.
-    \item \textbf{Xilinx Vitis} untuk pengembangan perangkat lunak uji dalam bahasa C~\citep{xilinx_vitis_embedded_2021}.
-    \item \textbf{Vivado Simulator} atau simulasi lain bila digunakan untuk verifikasi RTL.
+    \item \textbf{AMD Vivado Design Suite 2021.1} untuk RTL design, synthesis, implementation, dan integrasi SoC~\citep{xilinx_vivado_design_suite_2021}.
+    \item \textbf{Xilinx Vitis Embedded Software Development Target} untuk pengembangan perangkat lunak uji dalam bahasa C~\citep{xilinx_vitis_embedded_2021}.
+    \item \textbf{Trae IDE} digunakan sebagai lingkungan pengembangan kode RTL, perangkat lunak C, dan penulisan dokumen LaTeX.
+    \item \textbf{PuTTY} digunakan sebagai terminal serial untuk memantau keluaran debug UART dari MicroBlaze V.
     \item \textbf{LaTeX} untuk penulisan dokumen skripsi.
 \end{itemize}
 
@@ -331,40 +335,87 @@ register AXI, mengatur mode operasi IP I2S, dan membangkitkan sampel audio uji.
 
 \section{Alur Tugas Akhir}
 
-Penelitian ini mengikuti tahapan berikut:
-\begin{enumerate}
-    \item Analisis kebutuhan sistem audio digital dan studi literatur tentang I2S, AXI4-Lite, dan MicroBlaze V.
-    \item Perancangan spesifikasi peripheral I2S TX.
-    \item Implementasi RTL Verilog dan verifikasi awal.
-    \item Integrasi ke dalam SoC pada Vivado Block Design.
-    \item Pengembangan perangkat lunak uji di Vitis.
-    \item Pengujian hardware dengan simulasi \textit{testbench}, pengukuran sinyal, dan validasi audio.
-    \item Analisis hasil, penyusunan dokumen, dan penarikan kesimpulan.
-\end{enumerate}
+Penelitian ini mengikuti alur pengerjaan yang terbagi dalam tiga blok utama: perancangan IP I2S, integrasi SoC MicroBlaze V, serta validasi dan optimasi sistem. Diagram alir lengkap disajikan pada Gambar~\ref{fig:ch3-flow-ta-complex}.
 
 \begin{figure}[htbp]
 \centering
-\begin{tikzpicture}[x=1cm,y=1cm]
-    \tikzstyle{stepbox}=[draw, rounded corners=2pt, align=center, minimum width=10.8cm, minimum height=0.95cm]
-    \tikzstyle{arrowline}=[->, thick]
+\resizebox{0.95\textwidth}{!}{
+\begin{tikzpicture}[
+    node distance=1.2cm and 0.8cm,
+    font=\footnotesize,
+    >=latex,
+    % Styles
+    startstop/.style={draw, ellipse, fill=yellow!30, align=center, minimum width=2cm, minimum height=0.8cm},
+    process/.style={draw, rectangle, fill=orange!20, align=center, minimum width=2.5cm, minimum height=1cm},
+    decision/.style={draw, diamond, aspect=2, fill=purple!20, align=center, minimum width=2.5cm, inner sep=0pt},
+    debug/.style={draw, rectangle, fill=green!20, align=center, minimum width=1.5cm, minimum height=0.6cm},
+    blocklabel/.style={font=\bfseries\small, anchor=north west, xshift=0.2cm, yshift=-0.1cm}
+]
 
-    \node[stepbox] (s1) at (0,0) {Analisis kebutuhan sistem dan studi literatur\\I2S, AXI4-Lite, MicroBlaze V};
-    \node[stepbox] (s2) at (0,-1.8) {Perancangan spesifikasi peripheral I2S TX\\register map, mode frekuensi, dan format data};
-    \node[stepbox] (s3) at (0,-3.6) {Implementasi RTL Verilog dan optimasi DDS\\wrapper, AXI slave, CDC, dan serializer vendor-agnostic};
-    \node[stepbox] (s4) at (0,-5.4) {Integrasi custom IP ke SoC Vivado\\MicroBlaze V, BRAM, clocking, UART, dan constraint};
-    \node[stepbox] (s5) at (0,-7.2) {Pengembangan firmware uji di Vitis\\konfigurasi register dan pembangkitan sampel};
-    \node[stepbox] (s6) at (0,-9.0) {Bring-up bitstream dan verifikasi perangkat keras\\testbench, osiloskop, dan validasi audio};
-    \node[stepbox] (s7) at (0,-10.8) {Penyusunan testbench untuk verifikasi pelengkap\\reproduksi \texttt{enable}, \texttt{mute}, \texttt{fs\_mode}, dan serialisasi data};
-    \node[stepbox] (s8) at (0,-12.6) {Analisis hasil, penulisan skripsi,\\dan penarikan kesimpulan};
+    % --- BLOCK 1: PERANCANGAN IP I2S ---
+    \node [startstop] (start) {Studi Literatur dan\\Tinjauan Pustaka};
+    \node [process, right=of start] (rtl) {Perancangan RTL\\IP I2S Transmitter};
+    \node [decision, right=of rtl] (sim) {Simulasi RTL\\(Testbench)};
+    \node [debug, above=of sim] (debug1) {Debug};
+    \node [decision, right=of sim] (impl) {Implementasi \&\\Sintesis IP};
+    \node [startstop, right=of impl] (ip_ok) {IP I2S\\Berjalan Benar};
 
-    \draw[arrowline] (s1) -- (s2);
-    \draw[arrowline] (s2) -- (s3);
-    \draw[arrowline] (s3) -- (s4);
-    \draw[arrowline] (s4) -- (s5);
-    \draw[arrowline] (s5) -- (s6);
-    \draw[arrowline] (s6) -- (s7);
-    \draw[arrowline] (s7) -- (s8);
+    % Draw Block 1 background
+    \begin{scope}[on background layer]
+        \node[draw, rectangle, rounded corners, fill=blue!10, fit=(rtl) (sim) (debug1) (impl) (ip_ok)] (block1) {};
+        \node[blocklabel] at (block1.north west) {BLOK PERANCANGAN IP I2S TRANSMITTER (AXI4-LITE)};
+    \end{scope}
+
+    % --- BLOCK 2: INTEGRASI SOC MICROBLAZE V ---
+    \node [process, below=3.5cm of rtl] (bd) {Perancangan\\Block Design Vivado};
+    \node [process, right=of bd] (mapping) {Pemetaan Alamat\\\& Constraint XDC};
+    \node [decision, right=of mapping] (bitstream) {Generate Bitstream\\\& Export Hardware};
+    \node [debug, above=of bitstream] (debug2) {Debug};
+    \node [startstop, left=of bd] (soc_ok) {Desain SoC\\Berjalan Benar};
+
+    % Draw Block 2 background
+    \begin{scope}[on background layer]
+        \node[draw, rectangle, rounded corners, fill=gray!10, fit=(bd) (mapping) (bitstream) (debug2) (soc_ok)] (block2) {};
+        \node[blocklabel] at (block2.north west) {BLOK INTEGRASI SOC MICROBLAZE V};
+    \end{scope}
+
+    % --- BLOCK 3: VALIDASI & OPTIMASI ---
+    \node [process, below=3.5cm of bd] (firmware) {Pengembangan\\Firmware C (Vitis)};
+    \node [decision, right=of firmware] (opt) {Optimasi DDS \&\\Arbitrary Fs};
+    \node [debug, above=of opt] (debug3) {Debug};
+    \node [startstop, right=of opt] (valid_ok) {Validasi\\Berjalan Baik};
+    \node [startstop, right=of valid_ok] (end) {Analisis dan\\Penulisan Laporan};
+
+    % Draw Block 3 background
+    \begin{scope}[on background layer]
+        \node[draw, rectangle, rounded corners, fill=red!10, fit=(firmware) (opt) (debug3) (valid_ok)] (block3) {};
+        \node[blocklabel] at (block3.north west) {BLOK VALIDASI DAN OPTIMASI SISTEM};
+    \end{scope}
+
+    % --- Connections ---
+    \draw [->] (start) -- (rtl);
+    \draw [->] (rtl) -- (sim);
+    \draw [->] (sim) -- (impl);
+    \draw [->] (impl) -- (ip_ok);
+    \draw [->] (sim) -- (debug1);
+    \draw [->] (debug1) -| (rtl);
+    
+    \draw [->] (ip_ok) -| ($(block1.east) + (0.5,-0.5)$) |- (bitstream);
+    \draw [->] (bitstream) -- (mapping);
+    \draw [->] (mapping) -- (bd);
+    \draw [->] (bd) -- (soc_ok);
+    \draw [->] (bitstream) -- (debug2);
+    \draw [->] (debug2) -| (mapping);
+
+    \draw [->] (soc_ok) |- (firmware);
+    \draw [->] (firmware) -- (opt);
+    \draw [->] (opt) -- (valid_ok);
+    \draw [->] (valid_ok) -- (end);
+    \draw [->] (opt) -- (debug3);
+    \draw [->] (debug3) -| (firmware);
+
 \end{tikzpicture}
-\caption{Diagram alir tahapan penelitian tugas akhir.}
-\label{fig:ch3-flow-ta}
+}
+\caption{Diagram alir pengerjaan penelitian tugas akhir skripsi.}
+\label{fig:ch3-flow-ta-complex}
 \end{figure}
