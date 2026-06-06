@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import FullFlow from "./FullFlow";
+import I2SAnimation from "./I2SAnimation";
 
 type FsFamily = 0 | 1;
 type FsMode = 0 | 1;
@@ -60,6 +61,7 @@ type SignalTimelineProps = {
 
 const outlineSections = [
   { id: "hero", label: "Overview" },
+  { id: "real-time-flow", label: "Real-time Data Flow" },
   { id: "full-flow", label: "0. Full serialization flow" },
   { id: "clock-generation", label: "1. Clock generation" },
   { id: "clock-divider", label: "2. Divider and BCLK enable" },
@@ -491,8 +493,8 @@ export default function Home() {
                 <span className="chip">hardware ready</span>
               </div>
               <div className="mt-8">
-                <a href="#full-flow" className="action-btn inline-block">
-                  View Full Datapath Animation →
+                <a href="#real-time-flow" className="action-btn inline-block">
+                  View Real-time Animation →
                 </a>
               </div>
             </div>
@@ -512,6 +514,10 @@ export default function Home() {
                 The software-visible CONTROL register chooses the family, mode, sample width, and run state. The audio side uses that selection to create MCLK, BCLK, WS, and the serial payload.
               </p>
             </div>
+          </section>
+
+          <section id="real-time-flow">
+            <I2SAnimation />
           </section>
 
           <FullFlow />
