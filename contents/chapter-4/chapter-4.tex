@@ -602,6 +602,113 @@ static void stream_software_dds_sample(void) {
 
 Kombinasi antara sintesis clock pada hardware dan pembangkitan sinyal pada software membentuk sistem audio SoC yang utuh, di mana hardware menyediakan jalur transmisi yang presisi dan software menyediakan konten audio yang fleksibel.
 
+\section{Analisis Alur Data dan Timing I2S}
+
+Untuk memahami bagaimana sampel audio diproses hingga menjadi sinyal serial, bagian ini menyajikan visualisasi alur data dan diagram timing yang diimplementasikan pada IP I2S.
+
+\subsection{Alur Pemrosesan Sampel Audio}
+
+Alur data dari domain perangkat lunak hingga menjadi bit serial melewati empat tahap utama (Gambar \ref{fig:ch4-data-flow-stages}). Proses ini menjamin bahwa data yang dikirimkan ke DAC bersifat koheren dan bebas dari gangguan (\textit{glitch}).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    node distance=1.5cm,
+    font=\footnotesize,
+    >=latex,
+    stage/.style={draw, rectangle, fill=blue!10, align=center, minimum width=2.5cm, minimum height=1cm, rounded corners},
+    domain/.style={font=\itshape\scriptsize, color=gray}
+]
+    \node [stage] (axi) {AXI Write\\(slv\_reg0/1)};
+    \node [domain, above=0.1cm of axi] {Domain AXI (100 MHz)};
+    
+    \node [stage, right=of axi] (cdc) {CDC Sync\\(2-Stage Flop)};
+    \node [domain, above=0.1cm of cdc] {Domain Audio (DDS)};
+    
+    \node [stage, right=of cdc] (latch) {Frame Latch\\(bit\_count = 0)};
+    
+    \node [stage, right=of latch] (ser) {Serializer\\(Shift Register)};
+    
+    \draw [->, thick] (axi) -- (cdc) node[midway, below] {Async};
+    \draw [->, thick] (cdc) -- (latch) node[midway, below] {Sync};
+    \draw [->, thick] (latch) -- (ser) node[midway, below] {Freeze};
+    
+    \node [right=0.5cm of ser] (out) {\path{i2s_data}};
+    \draw [->, thick] (ser) -- (out);
+\end{tikzpicture}
+\caption{Diagram alur pemrosesan data sampel dari register AXI hingga pin output serial.}
+\label{fig:ch4-data-flow-stages}
+\end{figure}
+
+\begin{enumerate}
+    \item \textbf{AXI Write}: Prosesor menulis sampel 32-bit ke register \texttt{slv\_reg0} (kiri) atau \texttt{slv\_reg1} (kanan).
+    \item \textbf{CDC Sync}: Data melewati dua tingkat flip-flop untuk masuk ke domain clock audio yang dibangkitkan oleh DDS.
+    \item \textbf{Frame Latch}: Pada setiap awal frame stereo (\texttt{bit\_count = 0}), kedua sampel dibekukan ke register internal agar tidak berubah selama proses serialisasi 64-bit berlangsung.
+    \item \textbf{Serializer}: Data dikirimkan bit demi bit, dimulai dengan satu bit delay sesuai standar Philips I2S.
+\end{enumerate}
+
+\subsection{Struktur Frame dan Timing Philips I2S}
+
+Satu frame stereo terdiri dari 64 siklus \texttt{BCLK}. Pembagian slot bit untuk kanal kiri dan kanan serta aturan penempatan data disajikan pada Tabel \ref{tab:ch4-i2s-frame-structure}.
+
+\begin{table}[htbp]
+\centering
+\caption{Struktur segmentasi frame I2S (64-bit per stereo frame).}
+\label{tab:ch4-i2s-frame-structure}
+\begin{tabular}{|c|c|l|p{6cm}|}
+\hline
+\textbf{Kanal} & \textbf{WS} & \textbf{Bit Count} & \textbf{Fungsi / Isi} \\
+\hline
+Kiri (Left) & 0 & 0 & \textit{Delay bit} (selalu 0). \\
+& & 1 -- $W$ & Payload data MSB-first ($W$ = lebar sampel). \\
+& & $(W+1)$ -- 31 & \textit{Padding} nol hingga akhir slot 32-bit. \\
+\hline
+Kanan (Right) & 1 & 32 & \textit{Delay bit} (selalu 0). \\
+& & 33 -- $(32+W)$ & Payload data MSB-first. \\
+& & $(33+W)$ -- 63 & \textit{Padding} nol hingga akhir slot 32-bit. \\
+\hline
+\end{tabular}
+\end{table}
+
+Karakteristik utama dari protokol Philips I2S yang diimplementasikan adalah adanya pergeseran satu siklus \texttt{BCLK} antara perubahan sinyal \texttt{WS} dengan dimulainya bit MSB data. Diagram timing pada Gambar \ref{fig:ch4-timing-diagram} mengilustrasikan hubungan ini.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=0.5cm, y=1cm, font=\scriptsize]
+    % BCLK
+    \draw (0,2.5) node[left] {BCLK};
+    \foreach \x in {0,1,...,12} {
+        \draw (\x,2.3) -- (\x,2.7);
+        \draw (\x,2.5) -- (\x+0.5,2.5) -- (\x+0.5,3) -- (\x+1,3) -- (\x+1,2.5);
+    }
+    
+    % WS
+    \draw (0,1.5) node[left] {WS};
+    \draw[thick, green!60!black] (0,1) -- (4.5,1) -- (4.5,2) -- (13,2);
+    \node[below] at (2.25,1) {Left (WS=0)};
+    \node[above] at (8.75,2) {Right (WS=1)};
+    
+    % DATA
+    \draw (0,0.5) node[left] {DATA};
+    \draw[thick, red] (0,0) -- (4.5,0); % Before edge
+    \draw[thick, red] (4.5,0) -- (5.5,0); % Delay bit
+    \draw[thick, red] (5.5,0) -- (5.5,1) -- (6.5,1) -- (6.5,0) -- (7.5,0) -- (7.5,1) -- (8.5,1); % Bits
+    \draw[thick, red] (8.5,1) -- (13,1);
+    
+    % Annotations
+    \draw[dashed] (4.5,-0.5) -- (4.5,3.2) node[above] {WS Edge};
+    \node[below, color=red] at (5,0) {Delay};
+    \node[below, color=red] at (6,0) {MSB};
+    \node[below, color=red] at (7,0) {MSB-1};
+    
+    \draw[<->] (4.5,3.5) -- (5.5,3.5) node[midway, above] {1 BCLK Delay};
+\end{tikzpicture}
+\caption{Diagram timing Philips I2S yang menunjukkan relasi antara WS, BCLK, dan DATA.}
+\label{fig:ch4-timing-diagram}
+\end{figure}
+
+Pemisahan kanal dilakukan dengan mendeteksi level sinyal \texttt{WS}. Pada sisi penerima (DAC), data disampling pada sisi naik (\textit{rising edge}) \texttt{BCLK}. Oleh karena itu, serializer RTL dirancang untuk memperbarui nilai \texttt{DATA} pada sisi turun (\textit{falling edge}) \texttt{BCLK} guna memastikan pemenuhan waktu \textit{setup} dan \textit{hold} pada sisi DAC.
+
 \section{Dampak terhadap Arsitektur Sistem Global}
 
 Implementasi varian DDS memberikan dampak signifikan terhadap penyederhanaan arsitektur sistem pada level *Block Design* Vivado. Meskipun gambar integrasi sistem pada bagian awal bab ini (Gambar \ref{fig:ch4-bd-vivado}) masih menampilkan penggunaan \textit{Clocking Wizard} dengan tiga keluaran clock (sistem, 48 kHz family, dan 44,1 kHz family), penggunaan IP I2S berbasis DDS memungkinkan penghapusan dua jalur clock audio tersebut.
