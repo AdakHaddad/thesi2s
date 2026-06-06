@@ -94,8 +94,8 @@ export default function LogicExplorer() {
               onClick={() => setSelectedId(s.id)}
               className={`text-left p-4 rounded-lg border transition-all ${
                 selectedId === s.id 
-                ? "bg-[#4fc3f7]/10 border-[#4fc3f7] text-[#4fc3f7]" 
-                : "bg-white/5 border-white/10 hover:bg-white/10 text-gray-400"
+                ? "bg-blue-600/10 border-blue-600 text-blue-700 shadow-sm" 
+                : "bg-white/40 border-black/5 hover:bg-white/60 text-gray-700"
               }`}
             >
               <div className="font-bold">{s.title}</div>
@@ -103,8 +103,8 @@ export default function LogicExplorer() {
             </button>
           ))}
           
-          <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-            <p className="text-xs text-yellow-200/70 italic">
+          <div className="mt-4 p-4 bg-amber-600/10 border border-amber-600/20 rounded-lg">
+            <p className="text-xs text-amber-900/80 italic">
               "Logic in Verilog is like a factory blueprint. Every line defines a wire or a flip-flop that works in parallel."
             </p>
           </div>
@@ -133,49 +133,49 @@ export default function LogicExplorer() {
             </pre>
           </div>
 
-          <div className="bg-[#4fc3f7]/5 border border-[#4fc3f7]/20 rounded-xl p-6">
-            <h4 className="text-[#4fc3f7] font-bold mb-2 flex items-center gap-2">
+          <div className="bg-blue-600/5 border border-blue-600/20 rounded-xl p-6">
+            <h4 className="text-blue-800 font-bold mb-2 flex items-center gap-2">
               <span>🔍</span> What this does in the hardware
             </h4>
-            <p className="text-gray-300 leading-relaxed mb-4">
+            <p className="text-gray-800 leading-relaxed mb-4">
               {activeSnippet.explanation}
             </p>
             
             {/* Dynamic Visualization Area */}
-            <div className="mt-6 mb-6 p-4 bg-black/40 rounded-lg border border-white/10 min-h-[120px] flex flex-col items-center justify-center">
+            <div className="mt-6 mb-6 p-4 bg-black/80 rounded-lg border border-white/10 min-h-[120px] flex flex-col items-center justify-center">
               {selectedId === "dds-calc" && (
                 <div className="flex flex-col items-center gap-4 w-full">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">Fs (Hz)</span>
-                    <div className="bg-[#4fc3f7]/20 px-3 py-1 rounded font-mono text-[#4fc3f7]">48,000</div>
+                    <span className="text-xs text-gray-400">Fs (Hz)</span>
+                    <div className="bg-blue-400/20 px-3 py-1 rounded font-mono text-blue-400">48,000</div>
                     <span className="text-xl">➡️</span>
-                    <span className="text-xs text-gray-500">Shift Left 7</span>
-                    <div className="bg-[#4fc3f7]/40 px-3 py-1 rounded font-mono text-[#4fc3f7] animate-pulse">6,144,000</div>
+                    <span className="text-xs text-gray-400">Shift Left 7</span>
+                    <div className="bg-blue-400/40 px-3 py-1 rounded font-mono text-blue-400 animate-pulse">6,144,000</div>
                   </div>
                   <div className="flex gap-1">
                     {Array.from({length: 20}).map((_, i) => (
-                      <div key={i} className={`w-3 h-6 rounded-sm ${i < 13 ? "bg-[#4fc3f7]" : "bg-white/10"}`} />
+                      <div key={i} className={`w-3 h-6 rounded-sm ${i < 13 ? "bg-blue-400" : "bg-white/10"}`} />
                     ))}
                     <div className="flex gap-1 ml-2 animate-bounce">
-                      {[1,2,3,4,5,6,7].map(i => <div key={i} className="w-3 h-6 bg-yellow-500/40 rounded-sm border border-yellow-500/60" />)}
+                      {[1,2,3,4,5,6,7].map(i => <div key={i} className="w-3 h-6 bg-amber-500/40 rounded-sm border border-amber-500/60" />)}
                     </div>
                   </div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest">Multiplication by shifting wires</p>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest">Multiplication by shifting wires</p>
                 </div>
               )}
 
               {selectedId === "dds-acc" && (
                 <div className="flex items-center gap-8">
                   <div className="relative w-16 h-16">
-                    <div className="absolute inset-0 border-2 border-dashed border-[#4fc3f7]/30 rounded-full animate-spin-slow" />
-                    <div className="absolute inset-2 border-4 border-[#4fc3f7] rounded-full border-t-transparent animate-spin" />
-                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold">WRAP!</div>
+                    <div className="absolute inset-0 border-2 border-dashed border-blue-400/30 rounded-full animate-spin-slow" />
+                    <div className="absolute inset-2 border-4 border-blue-400 rounded-full border-t-transparent animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">WRAP!</div>
                   </div>
                   <div className="flex flex-col gap-1">
                     <div className="h-2 w-48 bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#4fc3f7] animate-progress" style={{width: '100%'}} />
+                      <div className="h-full bg-blue-400 animate-progress" style={{width: '100%'}} />
                     </div>
-                    <div className="flex justify-between text-[10px] text-gray-500 font-mono">
+                    <div className="flex justify-between text-[10px] text-gray-400 font-mono">
                       <span>0</span>
                       <span>100,000,000</span>
                     </div>
@@ -187,16 +187,16 @@ export default function LogicExplorer() {
                 <div className="flex items-center gap-4">
                   <div className="flex flex-col gap-1">
                     {[1,0,1,1].map((b, i) => (
-                      <div key={i} className="w-8 h-4 bg-white/5 border border-white/10 rounded flex items-center justify-center text-[8px]">{b}</div>
+                      <div key={i} className="w-8 h-4 bg-white/10 border border-white/20 rounded flex items-center justify-center text-[8px] text-white">{b}</div>
                     ))}
                   </div>
-                  <div className="text-2xl text-gray-600">➡️</div>
-                  <div className="w-16 h-16 border-2 border-[#e57373] rounded-full flex items-center justify-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[#e57373]/20 animate-pulse" />
-                    <span className="text-xl font-bold text-[#e57373] animate-bounce">1</span>
+                  <div className="text-2xl text-gray-500">➡️</div>
+                  <div className="w-16 h-16 border-2 border-red-400 rounded-full flex items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-red-400/20 animate-pulse" />
+                    <span className="text-xl font-bold text-red-400 animate-bounce">1</span>
                   </div>
-                  <div className="text-2xl text-gray-600">➡️</div>
-                  <div className="text-xs font-mono text-[#e57373]">i2s_data_o</div>
+                  <div className="text-2xl text-gray-500">➡️</div>
+                  <div className="text-xs font-mono text-red-400">i2s_data_o</div>
                 </div>
               )}
 
@@ -204,18 +204,18 @@ export default function LogicExplorer() {
                 <div className="flex flex-col items-center gap-2">
                   <div className="flex gap-4">
                     <div className="text-center">
-                      <p className="text-[8px] text-gray-500 mb-1">AXI Register</p>
-                      <div className="w-20 h-10 bg-white/5 border border-white/20 rounded flex items-center justify-center text-xs">0xABCD</div>
+                      <p className="text-[8px] text-gray-400 mb-1">AXI Register</p>
+                      <div className="w-20 h-10 bg-white/10 border border-white/20 rounded flex items-center justify-center text-xs text-white">0xABCD</div>
                     </div>
-                    <div className="flex items-center text-[#81c784] animate-ping-slow">
+                    <div className="flex items-center text-green-400 animate-ping-slow">
                       <span className="text-xl">📸</span>
                     </div>
                     <div className="text-center">
-                      <p className="text-[8px] text-[#81c784] mb-1">Internal Latch</p>
-                      <div className="w-20 h-10 bg-[#81c784]/20 border border-[#81c784] rounded flex items-center justify-center text-xs font-bold">0xABCD</div>
+                      <p className="text-[8px] text-green-400 mb-1">Internal Latch</p>
+                      <div className="w-20 h-10 bg-green-400/20 border border-green-400 rounded flex items-center justify-center text-xs font-bold text-green-400">0xABCD</div>
                     </div>
                   </div>
-                  <p className="text-[10px] text-gray-500 italic">"Freezing data at Frame Start"</p>
+                  <p className="text-[10px] text-gray-400 italic">"Freezing data at Frame Start"</p>
                 </div>
               )}
 
@@ -231,20 +231,20 @@ export default function LogicExplorer() {
                     </div>
                   </div>
                   <div className="text-center">
-                    <p className="text-[10px] text-[#4fc3f7] mb-2">New: Infinite Flow</p>
-                    <div className="w-12 h-12 border-4 border-[#4fc3f7] rounded-full flex items-center justify-center overflow-hidden">
-                      <div className="w-full bg-[#4fc3f7]/40 animate-wave-slow h-full mt-4" />
+                    <p className="text-[10px] text-blue-400 mb-2">New: Infinite Flow</p>
+                    <div className="w-12 h-12 border-4 border-blue-400 rounded-full flex items-center justify-center overflow-hidden">
+                      <div className="w-full bg-blue-400/40 animate-wave-slow h-full mt-4" />
                     </div>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="flex items-start gap-3 p-3 bg-black/30 rounded-lg border border-white/5">
+            <div className="flex items-start gap-3 p-3 bg-black/5 rounded-lg border border-black/5">
               <span className="text-xl">✨</span>
               <div>
-                <p className="text-sm font-bold text-white">Visual Effect</p>
-                <p className="text-sm text-gray-400">{activeSnippet.visualEffect}</p>
+                <p className="text-sm font-bold text-gray-900">Visual Effect</p>
+                <p className="text-sm text-gray-600">{activeSnippet.visualEffect}</p>
               </div>
             </div>
           </div>
