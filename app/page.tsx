@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import FullFlow from "./FullFlow";
 import I2SAnimation from "./I2SAnimation";
+import LogicExplorer from "./LogicExplorer";
+import DividerComparison from "./DividerComparison";
 
 type FsFamily = 0 | 1;
 type FsMode = 0 | 1;
@@ -62,6 +64,8 @@ type SignalTimelineProps = {
 const outlineSections = [
   { id: "hero", label: "Overview" },
   { id: "real-time-flow", label: "Real-time Data Flow" },
+  { id: "divider-comparison", label: "Divider: Old vs New" },
+  { id: "logic-explorer-nav", label: "Code Logic Explorer" },
   { id: "full-flow", label: "0. Full serialization flow" },
   { id: "clock-generation", label: "1. Clock generation" },
   { id: "clock-divider", label: "2. Divider and BCLK enable" },
@@ -492,9 +496,12 @@ export default function Home() {
                 <span className="chip">waveform preview</span>
                 <span className="chip">hardware ready</span>
               </div>
-              <div className="mt-8">
+              <div className="mt-8 flex gap-4">
                 <a href="#real-time-flow" className="action-btn inline-block">
                   View Real-time Animation →
+                </a>
+                <a href="#divider-comparison" className="action-btn secondary-btn inline-block bg-white/10 hover:bg-white/20 border border-white/20 px-6 py-3 rounded-lg font-bold">
+                  Compare Dividers →
                 </a>
               </div>
             </div>
@@ -518,6 +525,14 @@ export default function Home() {
 
           <section id="real-time-flow">
             <I2SAnimation />
+          </section>
+
+          <section id="divider-comparison">
+            <DividerComparison />
+          </section>
+
+          <section id="logic-explorer-nav">
+            <LogicExplorer />
           </section>
 
           <FullFlow />
