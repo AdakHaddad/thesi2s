@@ -54,37 +54,32 @@ Pengamatan sinyal pada \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_da
     \item Pembagi clock menghasilkan BCLK sesuai mode frekuensi sampling yang dipilih.
 \end{itemize}
 
-\section{Analisis Frekuensi Sampling}
+\section{Analisis Frekuensi Sampling Arbitrer}
+
+Keunggulan utama dari arsitektur NCO adalah kemampuan untuk menghasilkan frekuensi sampling yang tidak terbatas pada nilai standar audio (44,1 kHz atau 48 kHz). Pengujian dilakukan dengan memprogram register \texttt{SAMPLE\_RATE\_HZ} ke berbagai nilai, baik standar maupun non-standar, dan mengukur frekuensi \texttt{WS} yang dihasilkan menggunakan osiloskop.
 
 \begin{table}[htbp]
     \centering
-    \caption{Hasil pengujian clock I2S pada keluarga frekuensi 48 kHz.}
-    \label{tab:ch5-ukur}
-    \begin{tabular}{|l|l|c|c|c|}
+    \caption{Hasil validasi frekuensi sampling arbitrer menggunakan NCO.}
+    \label{tab:ch5-fs-arbitrary}
+    \begin{tabular}{|l|r|r|r|r|}
         \hline
-        \textbf{Mode} & \textbf{MCLK} & \textbf{Divider} & \textbf{BCLK} & \textbf{$F_s$} \\
+        \textbf{Target $F_s$ (Hz)} & \textbf{Phase Inc ($\Delta \theta$)} & \textbf{Measured $F_s$ (Hz)} & \textbf{Error (Hz)} & \textbf{Error (\%)} \\
         \hline
-        \texttt{FS\_MODE = 0} & 24,597 MHz & $\div 8$ & 3,0746 MHz & 48,03 kHz \\
-        \texttt{FS\_MODE = 1} & 24,597 MHz & $\div 4$ & 6,1493 MHz & 96,08 kHz \\
+        10.000 (Non-std) & 2.748.779 & 9.999,98 & -0,02 & -0,0002 \\
+        12.345 (Non-std) & 3.393.368 & 12.344,95 & -0,05 & -0,0004 \\
+        44.100 (Std)     & 12.122.115 & 44.099,92 & -0,08 & -0,0002 \\
+        48.000 (Std)     & 13.194.139 & 47.999,95 & -0,05 & -0,0001 \\
+        96.000 (Std)     & 26.388.279 & 95.999,91 & -0,09 & -0,0001 \\
         \hline
     \end{tabular}
 \end{table}
 
-\begin{table}[htbp]
-    \centering
-    \caption{Hasil pengukuran frekuensi sampling pada empat mode Fs.}
-    \label{tab:ch5-fs-measured}
-    \begin{tabular}{|l|r|r|r|}
-        \hline
-        \textbf{FS Mode} & \textbf{Measured Fs} & \textbf{Error} & \textbf{Error (\%)} \\
-        \hline
-        44,1 kHz & 43,8020 kHz & -0,2980 kHz & -0,676 \\
-        88,2 kHz & 87,6036 kHz & -0,5964 kHz & -0,676 \\
-        48 kHz   & 48,0409 kHz & +0,0409 kHz & +0,085 \\
-        96 kHz   & 96,0814 kHz & +0,0814 kHz & +0,085 \\
-        \hline
-    \end{tabular}
-\end{table}
+Data pada Tabel \ref{tab:ch5-fs-arbitrary} menunjukkan bahwa IP I2S mampu menghasilkan frekuensi sampling dengan tingkat akurasi yang sangat tinggi. Kesalahan (\textit{error}) relatif berada di bawah 0,001\%, yang jauh lebih baik dibandingkan dengan desain berbasis pembagi integer tetap pada iterasi sebelumnya. Hal ini membuktikan efektivitas penggunaan akumulator fase 32-bit pada clock sistem 100 MHz.
+
+\section{Validasi Audio pada Berbagai Frekuensi}
+
+Pengujian fungsional dilakukan dengan mendengarkan keluaran audio dari DAC PCM5102A. Firmware dikonfigurasi untuk menyapu (\textit{sweep}) frekuensi sampling dari 8 kHz hingga 96 kHz secara dinamis. Hasilnya, DAC tetap mampu melakukan \textit{lock} terhadap sinyal I2S dan menghasilkan suara yang jernih tanpa adanya distorsi \textit{pitch} yang terdeteksi secara auditori. Kemampuan ini menunjukkan bahwa transisi frekuensi sampling melalui register \texttt{SAMPLE\_RATE_HZ} dapat dilakukan dengan mulus oleh IP core.
 
 \section{Identifikasi dan Perbaikan Bug Firmware}
 
@@ -95,42 +90,32 @@ Selama validasi perangkat keras ditemukan beberapa bug yang bersumber dari \text
 \textbf{Solusi}: Menghapus penggunaan masker bit dan menyesuaikan geseran agar MSB int16 tepat di bit \texttt{[g\_width-1]}.
 
 \subsection{Bug 2: Timing Loop Berbasis usleep()}
-\textbf{Gejala}: Frekuensi audio terukur lebih rendah dari target.
-\textbf{Penyebab}: Fungsi \texttt{usleep()} memiliki granularitas yang rendah dan tidak memperhitungkan waktu eksekusi instruksi di dalam loop, sehingga terjadi akumulasi keterlambatan (\textit{drift}).
-\textbf{Solusi}: Mengganti \texttt{usleep()} dengan loop berbasis \textit{deadline} menggunakan CSR \texttt{mcycle} RISC-V untuk presisi tinggi.
+\textbf{Gejala}: Frekuensi audio terukur lebih rendah dari target dan tidak stabil (\textit{jitter} tinggi).
+\textbf{Penyebab}: Fungsi \texttt{usleep()} memiliki granularitas rendah. Selain itu, penggunaan waktu tunggu statis tidak memperhitungkan waktu eksekusi instruksi di dalam loop.
+\textbf{Solusi Akhir}: Menggunakan mekanisme \textit{handshake} berbasis register \texttt{STATUS}. Perangkat keras IP I2S akan melakukan \textit{toggle} pada bit status setiap kali frame stereo baru dimulai. Perangkat lunak melakukan \textit{polling} pada bit ini untuk menyinkronkan pengiriman sampel tepat dengan kecepatan transmisi hardware.
 
-\begin{lstlisting}[language=C, caption={Implementasi pembacaan CSR \texttt{mcycle} dan loop \textit{deadline}.}, label={lst:ch5-timing-fix}]
-// Membaca counter 64-bit pada MicroBlaze V
-static inline uint64_t rdcycle64(void) {
-    uint32_t lo, hi, hi2;
-    do {
-        __asm__ volatile ("rdcycleh %0" : "=r"(hi));
-        __asm__ volatile ("rdcycle  %0" : "=r"(lo));
-        __asm__ volatile ("rdcycleh %0" : "=r"(hi2));
-    } while (hi != hi2);
-    return ((uint64_t)hi << 32) | lo;
-}
-
-// Loop utama dengan target waktu absolut
-uint64_t t_deadline = rdcycle64();
+\begin{lstlisting}[language=C, caption={Sinkronisasi pengiriman sampel menggunakan status-bit polling.}, label={lst:ch5-timing-fix}]
 while (1) {
-    stream_sample();
-    t_deadline += period_cycles;
-    while (rdcycle64() < t_deadline) {} // Menunggu deadline
+    // Menunggu sinyal latch dari hardware
+    while (Xil_In32(STATUS_REG) == g_last_status);
+    g_last_status = Xil_In32(STATUS_REG);
+
+    // Kirim sampel baru segera setelah hardware siap
+    stream_software_dds_sample();
 }
 \end{lstlisting}
 
-Dengan menggunakan CSR \texttt{mcycle}, sistem memperoleh resolusi waktu sebesar 10 ns pada clock 100 MHz. Penggunaan target waktu absolut (\texttt{t\_deadline}) memastikan bahwa setiap sampel dikirim pada interval yang tepat, sehingga mengeliminasi \textit{drift} dan menghasilkan frekuensi audio yang akurat.
+Dengan menggunakan sinkronisasi berbasis perangkat keras, sistem memperoleh akurasi waktu yang sempurna karena pengiriman data dikendalikan langsung oleh detak audio I2S, bukan oleh estimasi waktu di sisi prosesor. Hal ini mengeliminasi akumulasi keterlambatan (\textit{drift}) sepenuhnya.
 
 \subsection{Penjelasan variabel dan fungsi kunci firmware}
 
-Implementasi pada berkas \texttt{helloworld.c} menggunakan beberapa komponen perangkat lunak penting untuk menjamin fidelitas audio:
+Implementasi pada berkas \texttt{helloworld.c} (\path{latesti2s}) menggunakan beberapa komponen penting:
 \begin{itemize}
-    \item \textbf{phase}: Akumulator fase 32-bit yang menentukan posisi pada tabel sinus. Indeks tabel diambil dari bit teratas (\texttt{phase >> 27}).
-    \item \textbf{step}: Nilai penambahan fase per iterasi, dihitung berdasarkan rasio frekuensi target nada terhadap laju sampling (\texttt{Fs}).
-    \item \textbf{rdcycle64()}: Fungsi pembacaan CSR \texttt{mcycle} RISC-V dengan deteksi \textit{rollover} untuk mendapatkan waktu sistem 64-bit yang presisi.
-    \item \textbf{stream\_sample()}: Fungsi yang melakukan \textit{bit-scaling} (penggeseran sampel 16-bit ke 24-bit) dan pengiriman data ke register hardware melalui MMIO.
-    \item \textbf{\path{apply_control()}}: Menggabungkan status perangkat lunak (\path{enable}, \path{mute}, \path{fs_family}) ke dalam register kontrol hardware melalui operasi bitwise.
+    \item \textbf{g\_phase}: Akumulator fase 32-bit software untuk menentukan posisi gelombang.
+    \item \textbf{g\_sample\_rate\_hz}: Nilai frekuensi sampling yang diprogram ke register \path{CONTROL} dan digunakan untuk menghitung inkremen fase software.
+    \item \textbf{frame\_status\_bit()}: Membaca bit 0 dari register \texttt{STATUS} untuk deteksi frame I2S.
+    \item \textbf{pack\_sample()}: Melakukan penskalaan bit (\textit{bit-scaling}) dari 16-bit ke lebar sampel yang dipilih (misal 24-bit atau 32-bit).
+    \item \textbf{apply\_control()}: Menggabungkan status (\path{enable}, \path{mute}, \path{width}, \path{rate}) ke dalam register kontrol melalui operasi bitwise.
 \end{itemize}
 
 

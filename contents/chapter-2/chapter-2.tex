@@ -100,13 +100,12 @@ yang berfungsi, tetapi juga uraian langkah integrasi dan validasi yang dapat dir
 Kontribusi penelitian ini adalah:
 \begin{enumerate}
     \item Merancang dan mengimplementasikan \textbf{IP core I2S transmitter} berbasis
-    Verilog dengan antarmuka \textbf{AXI4-Lite} yang kompatibel dengan \textbf{MicroBlaze V}.
-    \item Menyediakan alur lengkap dari desain RTL, integrasi SoC, pengembangan perangkat
-    lunak uji, hingga validasi pada hardware Basys3 dengan PCM5102A.
+    Verilog dengan arsitektur \textbf{NCO/DDS} yang mendukung \textbf{arbitrary sample rate} melalui antarmuka \textbf{AXI4-Lite}.
+    \item Menyediakan alur lengkap dari desain RTL \textit{vendor-agnostic}, integrasi SoC, pengembangan perangkat
+    lunak uji interaktif, hingga validasi pada hardware Basys3 dengan PCM5102A.
     \item Mengidentifikasi dan mendokumentasikan tiga bug firmware (justifikasi bit,
-    masking tanda, timing loop) beserta solusinya yang dapat menjadi referensi praktis.
-    \item Menyajikan analisis akurasi clock audio berbasis Clocking Wizard Artix-7 yang
-    dapat digunakan kembali pada desain serupa.
+    masking tanda, sinkronisasi timing) beserta solusinya menggunakan mekanisme \textit{hardware-software handshake}.
+    \item Menyajikan analisis akurasi pembangkitan clock audio murni digital pada FPGA tanpa bergantung pada blok PLL/MMCM eksternal.
 \end{enumerate}
 
 % ============================================================
@@ -125,9 +124,9 @@ Dalam arsitektur RISC-V, komunikasi dengan peripheral dilakukan melalui mekanism
 
 RISC-V menyediakan kumpulan \textit{Control and Status Registers} (CSR) untuk manajemen sistem dan telemetri. Salah satu CSR yang penting dalam penelitian ini adalah \texttt{mcycle}, yang merupakan counter 64-bit yang menghitung jumlah siklus detak (\textit{clock cycles}) sejak prosesor diaktifkan~\citep{riscv_isa_vol1_2019}. Register ini digunakan untuk mengimplementasikan \textit{timing loop} presisi tinggi pada aplikasi perangkat lunak bare-metal.
 
-\subsubsection{Loop timing berbasis deadline}
+\subsubsection{Sinkronisasi Perangkat Keras-Lunak (Hardware-Software Handshake)}
 
-Pada perangkat lunak penghasil sampel audio, pendekatan \textit{deadline loop} digunakan agar setiap sampel dikirim pada interval waktu yang tetap. Alih-alih menunggu dengan delay relatif, program menghitung target siklus berikutnya sebagai \textit{deadline} absolut berdasarkan nilai \texttt{mcycle}. Setelah sampel diproses dan ditulis ke peripheral, loop menunggu hingga penghitung siklus mencapai target tersebut. Metode ini mengurangi akumulasi \textit{drift} karena jeda antar sampel selalu diukur terhadap jadwal ideal, bukan terhadap durasi iterasi sebelumnya. Dalam konteks penelitian ini, teknik tersebut penting untuk menjaga kestabilan frekuensi nada dan konsistensi aliran data audio pada peripheral berbasis register.
+Pendekatan alternatif dan lebih presisi untuk sinkronisasi aliran data adalah mekanisme \textit{hardware-software handshake}. Pada metode ini, peripheral menyediakan sinyal status (biasanya berupa register yang dapat dibaca) untuk memberi tahu prosesor kapan data baru diperlukan. Dalam konteks transmisi audio I2S, bit status dapat diimplementasikan untuk berpindah logika (\textit{toggle}) setiap kali hardware mengambil sampel dari register ke dalam \textit{buffer} internal di awal frame baru. Keuntungan utama dari pendekatan ini adalah eliminasi akumulasi \textit{drift} sepenuhnya, karena laju produksi data oleh perangkat lunak dikunci (\textit{locked}) secara fisik terhadap laju konsumsi data oleh detak audio perangkat keras.
 
 \subsection{Protokol Komunikasi AXI4-Lite}
 
@@ -215,24 +214,81 @@ dinyatakan sebagai:
 Dengan $f_{\mathrm{MCLK}} = 24{,}576$ MHz dan divider 8, diperoleh
 $f_{\mathrm{BCLK}} = 3{,}072$ MHz dan $F_s = 48$ kHz.
 
-\subsection{Direct Digital Synthesis (DDS)}
+\subsection{Pembangkitan Clock Digital dan NCO}
 
-\textit{Direct Digital Synthesis} (DDS) adalah teknik pembangkitan sinyal analog atau digital secara elektronik menggunakan akumulator fase digital~\citep{vankka_dds_2001}. Dalam konteks penelitian ini, DDS digunakan pada sisi perangkat keras untuk melakukan sintesis clock (\textit{clock synthesis}) dan pada sisi perangkat lunak untuk membangkitkan sampel audio.
+Dalam sistem digital audio, pembangkitan clock yang fleksibel dan presisi sangatlah krusial. Teknik tradisional menggunakan pembagi integer sering kali tidak cukup untuk menghasilkan frekuensi sampling audio standar dari clock sistem yang tersedia.
+
+\subsubsection{Numerically Controlled Oscillator (NCO)}
+
+\textit{Numerically Controlled Oscillator} (NCO) adalah blok digital yang menghasilkan representasi waktu-diskrit dari sinyal periodik (biasanya berupa pulsa detak atau gelombang sinus). NCO merupakan komponen inti dari sistem \textit{Direct Digital Synthesis} (DDS)~\citep{vankka_dds_2001}. Keunggulan utama NCO adalah resolusi frekuensi yang sangat tinggi dan kemampuan untuk mengubah frekuensi secara instan melalui perangkat lunak.
 
 \subsubsection{Prinsip Kerja Akumulator Fase}
 
-Inti dari sistem DDS adalah akumulator fase yang bekerja dengan menambahkan nilai inkremen (\textit{frequency tuning word}, $\Delta \theta$) ke register fase setiap siklus clock referensi ($f_{clk}$). Nilai output dari akumulator ini mewakili fase sinyal yang dihasilkan. Hubungan antara frekuensi output ($f_{out}$) dan frekuensi clock sistem dinyatakan sebagai:
+Inti dari NCO adalah akumulator fase (\textit{phase accumulator}). Akumulator ini bekerja dengan menambahkan nilai inkremen (\textit{frequency tuning word}, $M$ atau $\Delta \theta$) ke sebuah register fase berukuran $N$ bit pada setiap siklus detak referensi $f_{ref}$. Nilai register fase akan bertambah secara linear hingga mencapai nilai maksimum $2^N-1$ dan kemudian meluap (\textit{overflow}) kembali ke nol.
 
+Hubungan antara frekuensi keluaran $f_{out}$ dan frekuensi referensi $f_{ref}$ dinyatakan sebagai:
 \begin{equation}
-    f_{out} = \frac{\Delta \theta \times f_{clk}}{2^N}
-    \label{eq:dds_theory}
+    f_{out} = \frac{\Delta \theta \times f_{ref}}{2^N}
+    \label{eq:nco_theory}
 \end{equation}
 
-di mana $N$ adalah lebar bit dari akumulator fase. Dalam implementasi RTL pada penelitian ini, teknik DDS digunakan untuk menghasilkan sinyal \texttt{BCLK} dan \texttt{WS} tanpa bergantung pada pembagi integer tetap, sehingga mendukung frekuensi sampling arbitrer.
+Resolusi frekuensi minimum yang dapat dicapai oleh NCO adalah:
+\begin{equation}
+    \Delta f = \frac{f_{ref}}{2^N}
+    \label{eq:nco_resolution}
+\end{equation}
 
-\subsubsection{Sintesis Clock Vendor-Agnostic}
+Sebagai contoh, dengan $f_{ref} = 100$ MHz dan akumulator 32 bit, resolusi frekuensinya mencapai $0{,}023$ Hz, yang jauh melampaui kebutuhan presisi audio digital.
 
-Pembangkitan clock audio secara tradisional pada FPGA sering kali bergantung pada blok PLL atau MMCM yang bersifat spesifik untuk vendor tertentu (\textit{vendor-specific}). Dengan menggunakan DDS yang diimplementasikan murni dalam logika RTL (Verilog), sistem menjadi bersifat \textit{vendor-agnostic}. Hal ini berarti desain IP core I2S dapat dipindahkan ke berbagai platform FPGA tanpa harus mengubah konfigurasi pembangkit clock eksternal, selama tersedia clock sistem yang cukup tinggi sebagai referensi.
+\subsubsection{Konsep Fractional Clock Divider}
+
+NCO dapat dipandang sebagai sebuah \textit{fractional clock divider} (pembagi detak fraksional). Berbeda dengan pembagi integer yang hanya bisa membagi dengan bilangan bulat ($f_{out} = f_{ref}/K$), NCO memungkinkan pembagian dengan rasio non-integer. Sinyal \textit{carry-out} atau bit MSB dari akumulator fase digunakan sebagai pemicu (\textit{strobe}) untuk membangkitkan detak serial (\texttt{BCLK}) dan detak kata (\texttt{WS}). Meskipun secara instan periode detak yang dihasilkan dapat bervariasi sebesar satu siklus $f_{ref}$ (\textit{jitter} sebesar $1/f_{ref}$), secara rata-rata frekuensi yang dihasilkan sangat akurat sesuai dengan nilai target.
+
+\subsubsection{Perbandingan PLL-based dan NCO-based Clock Generation}
+
+Pembangkitan clock audio pada FPGA umumnya dilakukan menggunakan blok analog/mixed-signal seperti \textit{Phase-Locked Loop} (PLL) atau \textit{Mixed-Mode Clock Manager} (MMCM). Tabel \ref{tab:pll_vs_nco} menyajikan perbandingan antara kedua pendekatan tersebut.
+
+\begin{table}[ht]
+\centering
+\caption{Perbandingan pembangkitan clock berbasis PLL dan NCO.}
+\label{tab:pll_vs_nco}
+\begin{tabular}{|l|p{5cm}|p{5cm}|}
+\hline
+\textbf{Fitur} & \textbf{PLL / MMCM (Analog)} & \textbf{NCO (Digital)} \\
+\hline
+\textit{Jitter} & Sangat rendah (bersifat analog). & Lebih tinggi (sebesar $1/f_{ref}$). \\
+\hline
+Fleksibilitas & Terbatas pada rasio $M/D$ tertentu. & Sangat fleksibel (arbitrer). \\
+\hline
+Portabilitas & Spesifik vendor (\textit{vendor-specific}). & \textit{Vendor-agnostic} (RTL murni). \\
+\hline
+Waktu Kunci & Memerlukan waktu untuk \textit{lock}. & Instan (tidak ada \textit{lock time}). \\
+\hline
+\end{tabular}
+\end{table}
+
+Dalam penelitian ini, pendekatan NCO dipilih untuk memberikan fleksibilitas penuh kepada pengguna dalam menentukan frekuensi sampling melalui register, tanpa perlu melakukan rekonfigurasi perangkat keras atau menggunakan banyak keluaran clock dari PLL.
+
+\subsection{Hierarki Clock Audio Digital}
+
+Sistem I2S melibatkan beberapa domain detak yang saling terkait secara sinkron.
+
+\subsubsection{Master Clock (MCLK)}
+\textit{Master Clock} adalah detak referensi frekuensi tinggi yang digunakan oleh DAC untuk menjalankan filter digital dan modulator delta-sigma internal. Biasanya frekuensi MCLK merupakan kelipatan dari frekuensi sampling ($256 F_s$, $384 F_s$, atau $512 F_s$).
+
+\subsubsection{Bit Clock (BCLK)}
+\textit{Bit Clock} atau detak serial digunakan untuk memicu perpindahan data bit demi bit pada jalur \texttt{SDATA}. Untuk format stereo 32-bit (64 bit per frame), hubungannya adalah:
+\begin{equation}
+    f_{BCLK} = 64 \times F_s
+\end{equation}
+
+\subsubsection{Word Select (WS) / LRCK}
+\textit{Word Select} menentukan kanal mana (kiri/kanan) yang sedang aktif. Frekuensi \texttt{WS} identik dengan frekuensi sampling $F_s$:
+\begin{equation}
+    f_{WS} = F_s
+\end{equation}
+
+Dalam desain yang diusulkan, NCO menghasilkan pulsa \textit{enable} untuk \texttt{BCLK}, yang kemudian menjadi basis bagi pembagi integer sederhana untuk menghasilkan \texttt{WS}. Seluruh hierarki ini dikendalikan oleh satu nilai parameter frekuensi sampling yang diprogram melalui bus AXI.
 
 \subsection{DAC audio PCM5102A}
 

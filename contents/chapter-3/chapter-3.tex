@@ -114,11 +114,11 @@ Integrasi peripheral ke dalam SoC dilakukan melalui alur berikut:
 
 Perangkat lunak uji dikembangkan dalam bahasa C pada Vitis dengan fungsi utama:
 \begin{itemize}
-    \item menginisialisasi register peripheral I2S;
-    \item menulis sampel audio ke register \texttt{DATA\_LEFT} dan \texttt{DATA\_RIGHT};
-    \item mengaktifkan mode operasi dan memilih frekuensi sampling;
-    \item menyinkronkan waktu penulisan data ke dalam register secara langsung (\textit{programmed I/O});
-    \item menghasilkan sinyal uji sederhana seperti gelombang sinus atau \textit{square wave}.
+    \item menginisialisasi register peripheral I2S melalui antarmuka AXI4-Lite;
+    \item menyinkronkan pengiriman sampel audio menggunakan mekanisme \textit{polling} pada register \texttt{STATUS} (\textit{hardware-software handshake});
+    \item menghasilkan sinyal uji secara digital menggunakan teknik DDS pada sisi software untuk fleksibilitas bentuk gelombang;
+    \item menyediakan antarmuka pengguna interaktif melalui terminal serial (UART) untuk mengubah parameter operasional secara waktu nyata (\textit{runtime});
+    \item mengimplementasikan logika \textit{clamping} dan validasi untuk memastikan parameter \textit{sampling rate} dan lebar bit tetap berada dalam batas aman perangkat keras.
 \end{itemize}
 
 \section{Perancangan Block Design Sistem}
@@ -177,127 +177,62 @@ Reset, serta integrasi AXI SmartConnect sebagai jalur komunikasi antara prosesor
 dan peripheral. Dengan konfigurasi ini, perangkat lunak yang berjalan pada
 MicroBlaze dapat melakukan akses baca dan tulis ke alamat register IP I2S.
 
-\subsection{Perancangan Clocking Audio}
+\subsection{Perancangan Clocking Audio Berbasis DDS}
 
-Clocking Wizard digunakan untuk menghasilkan clock yang diperlukan oleh sistem.
-Clock sistem digunakan untuk domain AXI dan prosesor, sedangkan clock audio
-digunakan sebagai basis pembangkitan sinyal I2S. Sinyal \texttt{MCLK},
-\texttt{BCLK}, dan \texttt{LRCLK} memiliki hubungan langsung dengan frekuensi
-sampling. Oleh karena itu, pemilihan sumber clock dan pembagi clock pada RTL
-disesuaikan agar jumlah pulsa BCLK dalam satu frame stereo tetap mengikuti
-format I2S yang digunakan.
+Rancangan final pada penelitian ini menggunakan pendekatan \textit{Direct Digital Synthesis} (DDS) murni untuk membangkitkan seluruh detak audio. Seluruh logika berjalan pada domain detak sistem \texttt{S\_AXI\_ACLK} 100 MHz. Penggunaan DDS menghilangkan ketergantungan pada blok PLL/MMCM eksternal untuk frekuensi sampling audio, sehingga membuat IP bersifat \textit{vendor-agnostic} dan sangat fleksibel.
 
-Pada rancangan ini, clock audio utama dipilih sebagai \texttt{MCLK} dengan rasio
-512 kali frekuensi sampling. Dengan demikian, frekuensi clock audio yang diminta
-pada Clocking Wizard dihitung menggunakan:
+DDS bekerja dengan akumulator fase yang bertambah setiap siklus detak 100 MHz. Ketika akumulator meluap (\textit{wrap}), sebuah tepi detak (\textit{clock edge}) dibangkitkan. Hubungan antara frekuensi sampling $F_s$, detak sistem $f_{sys}$, dan nilai inkremen fase $\Delta \theta$ dinyatakan sebagai:
 
 \begin{equation}
-    f_{\mathrm{MCLK}} = 512 \times f_s
-    \label{eq:mclk-fs}
+    \Delta \theta_{BCLK} = \frac{F_s \times 64 \times 2}{f_{sys}} \times \text{Modulus}
 \end{equation}
 
-\noindent Untuk keluarga 48 kHz, nilai yang diminta adalah:
+Dalam implementasi Verilog pada \path{i2s_dds.v}, digunakan akumulator modulus terhadap nilai $100.000.000$. Hal ini memungkinkan pembangkitan frekuensi yang sangat presisi karena pembagi disesuaikan langsung dengan jumlah siklus clock sistem per detik. Desain ini membangkitkan dua detak utama:
+\begin{itemize}
+    \item \textbf{BCLK}: Berjalan pada $64 \times F_s$, digunakan untuk serialisasi data.
+    \item \textbf{MCLK}: Berjalan pada $256 \times F_s$, disediakan untuk modul DAC yang membutuhkan detak master eksternal.
+\end{itemize}
 
-\begin{equation}
-    f_{\mathrm{MCLK48}} = 512 \times 48~\mathrm{kHz} = 24{,}576~\mathrm{MHz}
-    \label{eq:mclk-48k}
-\end{equation}
+\subsection{Perancangan Register AXI4-Lite}
 
-\noindent Untuk keluarga 44,1 kHz, nilai yang diminta adalah:
-
-\begin{equation}
-    f_{\mathrm{MCLK44}} = 512 \times 44{,}1~\mathrm{kHz} = 22{,}5792~\mathrm{MHz}
-    \label{eq:mclk-44k}
-\end{equation}
-
-\noindent Karena frame I2S stereo menggunakan dua kanal dengan slot 32 bit,
-frekuensi \texttt{BCLK} nominal dihitung sebagai:
-
-\begin{equation}
-    f_{\mathrm{BCLK}} = 2 \times 32 \times f_s = 64 \times f_s
-    \label{eq:bclk-fs}
-\end{equation}
-
-\noindent Sementara itu, \texttt{LRCLK} atau \texttt{WS} bernilai sama dengan
-frekuensi sampling:
-
-\noindent Nilai frekuensi tersebut dipilih karena rasio \texttt{512Fs} merupakan
-rasio clock master yang umum digunakan pada sistem audio digital. Dengan rasio
-ini, frekuensi yang diminta untuk keluarga 48 kHz menjadi 24,576 MHz, sedangkan
-untuk keluarga 44,1 kHz menjadi 22,5792 MHz. Perbedaan kecil antara nilai
-\textit{requested} dan \textit{actual} pada tabel hasil konfigurasi terjadi
-karena pembangkitan clock di Clocking Wizard mengikuti rasio rasional yang
-tersedia pada FPGA dan kemudian dibulatkan ke konfigurasi terdekat yang valid.
-
-\begin{equation}
-    f_{\mathrm{LRCLK}} = f_s
-    \label{eq:lrclk-fs}
-\end{equation}
-
-\begin{figure}[htbp]
-    \centering
-    \begin{subfigure}[b]{0.42\textwidth}
-        \centering
-        \IfFileExists{contents/figures/clk-wiz-default.png}{%
-            \includegraphics[width=\textwidth]{contents/figures/clk-wiz-default.png}%
-        }{}
-        \caption{Konfigurasi awal satu keluaran clock.}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.42\textwidth}
-        \centering
-        \IfFileExists{contents/figures/clk-wiz-configd.png}{%
-            \includegraphics[width=0.72\textwidth]{contents/figures/clk-wiz-configd.png}%
-        }{}
-        \caption{Konfigurasi tiga keluaran clock.}
-    \end{subfigure}
-    \caption{Perubahan konfigurasi Clocking Wizard untuk menyediakan clock sistem dan clock audio.}
-    \label{fig:ch3-clk-wiz-config}
-\end{figure}
+Register AXI4-Lite dirancang untuk memberikan kendali penuh kepada perangkat lunak terhadap parameter audio secara waktu nyata. Peta register terdiri dari empat register 32-bit utama yang dipetakan pada memori prosesor.
 
 \begin{table}[htbp]
 \centering
-\caption{Konfigurasi keluaran Clocking Wizard.}
-\label{tab:ch3-clk-wiz-output}
-\begin{tabular}{|c|c|c|c|}
+\caption{Peta Register IP I2S Transmitter (latesti2s).}
+\label{tab:ch3-regmap-latest}
+\begin{tabular}{|l|l|c|p{7cm}|}
 \hline
-\textbf{Output clock} & \textbf{Port name} & \textbf{Requested (MHz)} & \textbf{Actual (MHz)} \\
+\textbf{Offset} & \textbf{Nama} & \textbf{Akses} & \textbf{Fungsi} \\
 \hline
-\texttt{clk\_out1} & \texttt{clk\_out1} & 100.000 & 100.00000 \\
-\hline
-\texttt{clk\_out2} & \texttt{clk\_out2} & 24.576 & 24.59677 \\
-\hline
-\texttt{clk\_out3} & \texttt{clk\_out3} & 22.579 & 22.42647 \\
+\texttt{0x00} & \texttt{DATA\_LEFT} & W & Sampel audio kanal kiri (PCM). \\
+\texttt{0x04} & \texttt{DATA\_RIGHT} & W & Sampel audio kanal kanan (PCM). \\
+\texttt{0x08} & \texttt{CONTROL} & R/W & Pengaturan mode operasional, lebar bit, dan frekuensi sampling. \\
+\texttt{0x0C} & \texttt{STATUS} & R & Bit 0: Indikator \textit{latch status} (berubah setiap awal frame). \\
 \hline
 \end{tabular}
 \end{table}
 
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/output-clock-clk-wiz-table-requested-actual-freq.png}{%
-        \includegraphics[width=0.82\textwidth]{contents/figures/output-clock-clk-wiz-table-requested-actual-freq.png}%
-    }{}
-    \caption{Tampilan konfigurasi frekuensi keluaran Clocking Wizard pada Vivado.}
-    \label{fig:ch3-clk-wiz-output-screenshot}
-\end{figure}
+\noindent Struktur bitfield pada register \texttt{CONTROL} dirinci pada Tabel \ref{tab:ch3-control-latest}.
 
-\subsection{Integrasi Peripheral I2S}
+\begin{table}[htbp]
+\centering
+\caption{Struktur Bitfield Register CONTROL (0x08).}
+\label{tab:ch3-control-latest}
+\begin{tabular}{|c|l|p{8cm}|}
+\hline
+\textbf{Bit} & \textbf{Nama Field} & \textbf{Keterangan} \\
+\hline
+\texttt{0} & \texttt{ENABLE} & 1: Aktifkan transmisi I2S; 0: Matikan (\textit{low outputs}). \\
+\texttt{1} & \texttt{MUTE} & 1: Kirim sampel nol (detak tetap berjalan); 0: Kirim data asli. \\
+\texttt{6:2} & \texttt{SAMPLE\_WIDTH} & Lebar bit per kanal (1-31). Nilai 0 diperlakukan sebagai 32 bit. \\
+\texttt{26:7} & \texttt{SAMPLE\_RATE\_HZ} & Target frekuensi sampling dalam Hz (0-1.048.575 Hz). \\
+\texttt{31:27} & \texttt{RESERVED} & Bit cadangan (diabaikan saat tulis, nol saat baca). \\
+\hline
+\end{tabular}
+\end{table}
 
-Custom AXI I2S IP ditambahkan ke dalam Block Design sebagai peripheral yang
-diakses melalui AXI4-Lite. Port AXI dihubungkan ke AXI SmartConnect, sedangkan
-port keluaran audio dihubungkan ke port eksternal Block Design. Sinyal utama
-yang diekspor meliputi \texttt{SDATA}, \texttt{LRCLK}, \texttt{BCLK}, dan
-\texttt{MCLK}. Koneksi ini memungkinkan sinyal digital I2S diteruskan dari FPGA
-ke modul DAC audio.
-
-\subsection{Perancangan Register AXI4-Lite}
-
-Register AXI4-Lite dirancang sebagai \textit{memory-mapped register} agar dapat
-dikendalikan dari perangkat lunak. Register data digunakan untuk kanal kiri dan
-kanal kanan, sedangkan register kontrol digunakan untuk mengatur status
-\textit{enable}, \textit{mute}, keluarga frekuensi sampling, mode frekuensi, dan
-lebar sampel. Address mapping peripheral ditentukan di Vivado sehingga alamat
-dasar IP dapat digunakan pada program C di Vitis.
+\noindent Fitur unik pada rancangan ini adalah register \texttt{STATUS} yang memungkinkan perangkat lunak melakukan sinkronisasi dengan perangkat keras melalui mekanisme \textit{polling}. Setiap kali IP mengambil (\textit{latch}) sampel baru dari register data ke dalam \textit{shadow registers} internal di awal frame stereo, bit 0 pada register \texttt{STATUS} akan berubah logika (\textit{toggle}). Dengan memantau perubahan bit ini, perangkat lunak dapat menjamin bahwa data yang ditulis tidak terlewat atau tertumpuk.
 
 \subsection{Implementasi Signal Generator}
 
