@@ -101,6 +101,8 @@
 \usetikzlibrary{positioning}
 \usetikzlibrary{arrows}
 \usetikzlibrary{shapes}
+\usetikzlibrary{backgrounds}
+\usetikzlibrary{fit}
 \bibliographystyle{IEEEtran}
 
 % Page break for equation
