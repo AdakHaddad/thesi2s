@@ -79,7 +79,7 @@ Data pada Tabel \ref{tab:ch5-fs-arbitrary} menunjukkan bahwa IP I2S mampu mengha
 
 \section{Validasi Audio pada Berbagai Frekuensi}
 
-Pengujian fungsional dilakukan dengan mendengarkan keluaran audio dari DAC PCM5102A. Firmware dikonfigurasi untuk menyapu (\textit{sweep}) frekuensi sampling dari 8 kHz hingga 96 kHz secara dinamis. Hasilnya, DAC tetap mampu melakukan \textit{lock} terhadap sinyal I2S dan menghasilkan suara yang jernih tanpa adanya distorsi \textit{pitch} yang terdeteksi secara auditori. Kemampuan ini menunjukkan bahwa transisi frekuensi sampling melalui register \texttt{SAMPLE\_RATE_HZ} dapat dilakukan dengan mulus oleh IP core.
+Pengujian fungsional dilakukan dengan mendengarkan keluaran audio dari DAC PCM5102A. Firmware dikonfigurasi untuk menyapu (\textit{sweep}) frekuensi sampling dari 8 kHz hingga 96 kHz secara dinamis. Hasilnya, DAC tetap mampu melakukan \textit{lock} terhadap sinyal I2S dan menghasilkan suara yang jernih tanpa adanya distorsi \textit{pitch} yang terdeteksi secara auditori. Kemampuan ini menunjukkan bahwa transisi frekuensi sampling melalui register \texttt{SAMPLE\_RATE\_HZ} dapat dilakukan dengan mulus oleh IP core.
 
 \section{Identifikasi dan Perbaikan Bug Firmware}
 
