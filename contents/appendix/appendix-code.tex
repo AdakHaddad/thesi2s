@@ -4,21 +4,21 @@
 Lampiran ini merangkum kode sumber yang digunakan pada penelitian. Penjelasan
 lengkap potongan kode utama disajikan pada Bab IV, sedangkan lampiran ini
 berfungsi sebagai peta berkas agar pembaca dapat menelusuri implementasi asli
-secara langsung.
+secara langsung. Seluruh rujukan mengacu pada repositori \path{latesti2s}.
 
-\section{Kode RTL IP I2S}
+\section{Kode RTL IP I2S DDS}
 
 \begin{table}[htbp]
 \centering
-\caption{Berkas RTL pada \texttt{ip\_repo/i2s\_1\_0/hdl}.}
+\caption{Berkas RTL pada \texttt{latesti2s/ready\_to\_run/ip\_repo/i2s\_dds\_1\_0/hdl}.}
 \label{tab:app-rtl-files}
-\begin{tabular}{|>{\raggedright\arraybackslash}p{5.0cm}|>{\raggedright\arraybackslash}p{9.0cm}|}
+\begin{tabular}{|>{\raggedright\arraybackslash}p{5.5cm}|>{\raggedright\arraybackslash}p{8.5cm}|}
 \hline
 \textbf{Berkas} & \textbf{Isi utama} \\
 \hline
-\path{i2s.v} & Wrapper IP untuk Vivado IP Packager. Berkas ini meneruskan port clock audio, port output I2S, dan port AXI4-Lite ke modul utama tanpa menambah logika baru. \\
+\path{i2s_dds.v} & Wrapper IP untuk Vivado IP Packager. Meneruskan port AXI4-Lite dan keluaran I2S ke modul inti \path{i2s_dds_slave_lite_v1_0_S00_AXI}. Port \texttt{audio\_48\_clk}/\texttt{audio\_44\_clk} dipertahankan untuk kompatibilitas block design. \\
 \hline
-\path{i2s_slave_lite_v1_0_S00_AXI.v} & Modul utama IP. Berisi state machine AXI4-Lite, register file tiga register, pemilih clock audio, sinkronisasi clock domain, latch sampel, pembagi BCLK, dan serializer Philips I2S. \\
+\path{i2s_dds_slave_lite_v1_0_S00_AXI.v} & Modul utama IP. Berisi state machine AXI4-Lite, empat register (DATA\_LEFT, DATA\_RIGHT, CONTROL, STATUS), akumulator fase DDS untuk BCLK/MCLK, shadow register, dan serializer Philips I2S. Seluruh logika audio berjalan pada \texttt{S\_AXI\_ACLK} 100 MHz. \\
 \hline
 \end{tabular}
 \end{table}
@@ -26,10 +26,10 @@ secara langsung.
 \subsection{Struktur modul utama}
 
 \begin{enumerate}
-    \item \textbf{AXI4-Lite register file}: menerima transaksi tulis/baca dari MicroBlaze V dan menyimpan tiga register aktif, yaitu \texttt{DATA\_LEFT}, \texttt{DATA\_RIGHT}, dan \texttt{CONTROL}.
-    \item \textbf{Clock selection}: memilih \texttt{audio\_48\_clk} atau \texttt{audio\_44\_clk} berdasarkan bit \texttt{FS\_FAMILY}.
-    \item \textbf{CDC}: membawa register dari domain AXI 100 MHz ke domain audio menggunakan sinkronisasi dua tahap.
-    \item \textbf{Sample latch}: mengambil sampel kiri-kanan pada awal frame stereo agar data tidak berubah di tengah transmisi.
+    \item \textbf{AXI4-Lite register file}: menerima transaksi tulis/baca dari MicroBlaze V dan menyimpan empat register, yaitu \texttt{DATA\_LEFT}, \texttt{DATA\_RIGHT}, \texttt{CONTROL}, dan \texttt{STATUS}.
+    \item \textbf{DDS phase accumulator}: membangkitkan tepi \texttt{BCLK} dan \texttt{MCLK} dari clock sistem 100 MHz berdasarkan nilai \texttt{SAMPLE\_RATE\_HZ}.
+    \item \textbf{Sample latch}: mengambil sampel kiri-kanan dari register AXI ke shadow register pada awal frame stereo (\texttt{bit\_count == 0}).
+    \item \textbf{STATUS toggle}: bit 0 pada \texttt{STATUS} berubah setiap latch sehingga firmware dapat melakukan \textit{polling}.
     \item \textbf{Serializer}: mengubah sampel paralel menjadi aliran bit Philips I2S dengan satu bit delay, MSB-first, dan zero padding.
     \item \textbf{Output register}: menggerakkan \texttt{i2s\_mclk}, \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data}.
 \end{enumerate}
@@ -39,50 +39,46 @@ secara langsung.
 Berkas aplikasi berada pada:
 
 \begin{lstlisting}[caption={Lokasi kode aplikasi Vitis.}]
-micblaze/ws/rtlfix/src/helloworld.c
+latesti2s/ready_to_run/sw/helloworld.c
 \end{lstlisting}
 
-Aplikasi ini menjalankan pengujian bare-metal terhadap IP I2S. Fungsi utamanya
-adalah mengatur register kontrol, menerima perintah dari UART, membangkitkan
-sampel sinus, dan menulis sampel ke register
-data dengan timing berbasis counter siklus CPU.
+Aplikasi ini menjalankan pengujian bare-metal terhadap IP I2S DDS. Firmware
+membangkitkan gelombang uji (sinus/kotak) di sisi software, memprogram
+\texttt{SAMPLE\_RATE\_HZ} dan \texttt{SAMPLE\_WIDTH} melalui register
+\texttt{CONTROL}, lalu menulis sampel ke register data dengan sinkronisasi
+berbasis \textit{polling} pada \texttt{STATUS[0]}.
 
 \begin{table}[htbp]
 \centering
 \caption{Ringkasan fungsi penting pada \texttt{helloworld.c}.}
 \label{tab:app-fw-func}
-\begin{tabular}{|>{\raggedright\arraybackslash}p{4.2cm}|>{\raggedright\arraybackslash}p{9.8cm}|}
+\begin{tabular}{|>{\raggedright\arraybackslash}p{4.5cm}|>{\raggedright\arraybackslash}p{9.5cm}|}
 \hline
 \textbf{Fungsi / Bagian} & \textbf{Peran} \\
 \hline
-\path{rdcycle64()} & Membaca CSR \path{mcycle} 64 bit. Digunakan untuk membuat loop sampel berbasis deadline absolut. \\
+\path{frame_status_bit()} & Membaca bit 0 register \texttt{STATUS} untuk mendeteksi awal frame stereo baru. \\
 \hline
-\path{current_sample_rate()} & Mengubah kombinasi \path{FS_FAMILY} dan \path{FS_MODE} menjadi nilai Fs 48 kHz, 44,1 kHz, 96 kHz, atau 88,2 kHz. \\
+\path{control_word()} / \path{apply_control()} & Menyusun dan menulis word \texttt{CONTROL} (ENABLE, MUTE, WIDTH, RATE) ke IP. \\
 \hline
-\path{apply_control()} & Menggabungkan state software menjadi word \path{CONTROL} lalu menulisnya ke IP dengan \path{Xil_Out32}. \\
+\path{clamp_sample_rate()} & Membatasi frekuensi sampling ke rentang aman DDS (maks.\ 195.312 Hz). \\
 \hline
-\path{stream_sample()} & Menghasilkan sampel sinus, menyesuaikan posisi bit terhadap \path{SAMPLE_WIDTH}, lalu menulis \path{DATA_LEFT} dan \path{DATA_RIGHT}. \\
+\path{stream_software_dds_sample()} & Menghitung sampel sinus/kotak dengan akumulator fase software, lalu menulis ke \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT}. \\
 \hline
-\path{handle_key()} & Memproses input UART untuk memilih frekuensi nada, kanal aktif, mute, enable, keluarga Fs, mode Fs, dan lebar sampel. \\
+\path{pack_sample()} & Melakukan penskalaan bit dari int16 ke lebar sampel yang dipilih (16/24/32 bit). \\
 \hline
-\path{main()} & Inisialisasi platform, validasi akses AXI, pencetakan menu, dan loop utama pengiriman sampel. \\
+\path{handle_key()} & Memproses input UART untuk mengubah frekuensi nada, sample rate, lebar bit, kanal, mute, dan enable. \\
+\hline
+\path{main()} & Inisialisasi platform, konfigurasi IP, dan loop utama yang menunggu perubahan \texttt{STATUS} sebelum mengirim sampel berikutnya. \\
 \hline
 \end{tabular}
 \end{table}
 
 \section{Kode Testbench}
 
-Kode testbench berada pada direktori:
-
-\begin{lstlisting}[caption={Lokasi kode testbench.}]
-testblock/testblock.srcs/sources_1/new/i2s_ip.v
-testblock/testblock.srcs/sim_1/new/i2s_tb.v
-\end{lstlisting}
-
-\texttt{i2s\_ip.v} adalah model RTL ringkas yang mempertahankan perilaku utama
-serializer tanpa antarmuka AXI. \texttt{i2s\_tb.v} menghasilkan dua clock audio,
-memberi nilai sampel kiri-kanan, serta mengubah sinyal \texttt{enable},
-\texttt{mute}, dan \texttt{fs\_mode} untuk melihat respons output I2S.
+Kode testbench dapat ditemukan pada direktori proyek simulasi di repositori
+\path{latesti2s}. Testbench memverifikasi serializer I2S, perilaku register
+\texttt{CONTROL} (ENABLE, MUTE, SAMPLE\_RATE\_HZ), serta toggle bit
+\texttt{STATUS} pada berbagai skenario frekuensi sampling.
 
 \begin{table}[htbp]
 \centering
@@ -92,13 +88,13 @@ memberi nilai sampel kiri-kanan, serta mengubah sinyal \texttt{enable},
 \hline
 \textbf{Skenario} & \textbf{Stimulus} & \textbf{Tujuan pengamatan} \\
 \hline
-Idle & \texttt{enable=0} & Memastikan output ditahan rendah dan counter kembali ke awal frame. \\
+Idle & \texttt{ENABLE=0} & Memastikan output ditahan rendah dan counter kembali ke awal frame. \\
 \hline
-Normal & \texttt{enable=1}, \texttt{mute=0} & Memastikan sampel \texttt{AAAA}/\texttt{5555} muncul sebagai data serial kiri-kanan. \\
+Normal & \texttt{ENABLE=1}, \texttt{MUTE=0} & Memastikan sampel muncul sebagai data serial kiri-kanan. \\
 \hline
-Mute & \texttt{mute=1} & Memastikan \texttt{i2s\_data} nol sementara clock tetap berjalan. \\
+Mute & \texttt{MUTE=1} & Memastikan \texttt{i2s\_data} nol sementara clock tetap berjalan. \\
 \hline
-Mode Fs tinggi & \texttt{fs\_mode=1} & Memastikan pembagi BCLK berubah sehingga frame berjalan lebih cepat. \\
+Arbitrary Fs & \texttt{SAMPLE\_RATE\_HZ} diubah & Memastikan frekuensi \texttt{WS} mengikuti nilai yang diprogram. \\
 \hline
 \end{tabular}
 \end{table}
@@ -109,23 +105,18 @@ Proyek Vivado dapat direkonstruksi menggunakan skrip Tcl yang tersedia pada
 repositori proyek:
 
 \begin{lstlisting}[caption={Lokasi skrip rekonstruksi proyek Vivado.}]
-https://github.com/adakhaddad/thesi2s
+latesti2s/ready_to_run/fsi2snfilter.tcl
+latesti2s/ready_to_run/rebuild.tcl
 \end{lstlisting}
 
-Skrip ini merupakan hasil ekspor Vivado 2025.2 untuk rekonstruksi proyek pada
-repositori GitHub ini. Tujuan utamanya adalah membangun ulang proyek secara
-konsisten melalui Tcl, dengan parameter kunci berupa target part, Block Design,
-constraint utama, repository IP, serta konfigurasi run synthesis dan
-implementation. Hubungan antar komponen tersebut dijaga agar proyek dapat
-dibuat ulang tanpa bergantung pada langkah manual di antarmuka Vivado. Skrip
-tidak dicetak penuh karena sebagian besar barisnya berupa metadata otomatis dari
-Vivado. Untuk menjalankan ulang proyek, skrip dapat di-\textit{source} dari
-Vivado Tcl Shell setelah repositori proyek diambil dan dependensi sumber yang
-dirujuk tersedia.
+Skrip ini membangun ulang block design \texttt{bdesign\_clock\_core} dengan IP
+\path{i2s_dds_0}, MicroBlaze V, AXI SmartConnect, UARTLite, dan peripheral
+pendukung. Hubungan antar komponen dijaga agar proyek dapat dibuat ulang tanpa
+bergantung pada langkah manual di antarmuka Vivado.
 
 Bab III menjelaskan metode perancangan dan verifikasi. Bab IV menjelaskan
-arsitektur dan potongan kode inti dari RTL, firmware, dan testbench. Bab V
-menunjukkan hasil pengukuran sinyal serta validasi audio pada perangkat keras.
-Dengan pembagian ini, kode sumber tidak hanya disimpan sebagai lampiran, tetapi
-juga dikaitkan langsung dengan desain, metode pengujian, dan hasil akhir
-peripheral I2S.
+arsitektur dan potongan kode inti dari RTL dan firmware. Bab V menunjukkan
+hasil pengukuran sinyal serta validasi audio pada perangkat keras. Dengan
+pembagian ini, kode sumber tidak hanya disimpan sebagai lampiran, tetapi juga
+dikaitkan langsung dengan desain, metode pengujian, dan hasil akhir peripheral
+I2S DDS.

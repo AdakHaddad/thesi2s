@@ -2,8 +2,8 @@
 \addcontentsline{toc}{chapter}{Ringkasan IP Block Design}
 
 Lampiran ini merangkum IP utama pada Vivado Block Design yang digunakan dalam
-proyek ini. Berkas deskripsi block design utama dan hasil generasi IP tersedia
-di direktori keluaran yang dihasilkan oleh Vivado.
+proyek \path{latesti2s}. Berkas deskripsi block design utama dan hasil generasi IP
+tersedia di direktori \path{latesti2s/ready_to_run}.
 
 \section*{Diagram Block Design}
 
@@ -12,7 +12,7 @@ di direktori keluaran yang dihasilkan oleh Vivado.
 \IfFileExists{contents/figures/color-coded-block-diagram.png}{%
     \includegraphics[width=0.95\textwidth]{contents/figures/color-coded-block-diagram.png}%
 }{}
-\caption{Diagram block design berwarna yang menunjukkan hubungan prosesor, interconnect, clock, dan IP I2S.}
+\caption{Diagram block design berwarna yang menunjukkan hubungan prosesor, interconnect, clock, dan IP I2S DDS.}
 \label{fig:app-block-color}
 \end{figure}
 
@@ -21,7 +21,7 @@ di direktori keluaran yang dihasilkan oleh Vivado.
 \IfFileExists{contents/figures/clocking-view-block-diagram.png}{%
     \includegraphics[width=0.90\textwidth]{contents/figures/clocking-view-block-diagram.png}%
 }{}
-\caption{Tampilan clocking view pada block design untuk pembangkitan domain clock sistem dan audio.}
+\caption{Tampilan clocking view pada block design untuk domain clock sistem dan jalur audio.}
 \label{fig:app-block-clocking}
 \end{figure}
 
@@ -30,7 +30,7 @@ di direktori keluaran yang dihasilkan oleh Vivado.
 \IfFileExists{contents/figures/interface-view-lock-diagram.png}{%
     \includegraphics[width=0.95\textwidth]{contents/figures/interface-view-lock-diagram.png}%
 }{}
-\caption{Tampilan interface view yang memperlihatkan keterhubungan MicroBlaze, UARTLite, dan IP I2S melalui AXI SmartConnect.}
+\caption{Tampilan interface view yang memperlihatkan keterhubungan MicroBlaze, UARTLite, dan IP I2S DDS melalui AXI SmartConnect.}
 \label{fig:app-block-interface}
 \end{figure}
 
@@ -50,7 +50,7 @@ di direktori keluaran yang dihasilkan oleh Vivado.
 \IfFileExists{contents/figures/clk-wiz-configd.png}{%
     \includegraphics[width=0.78\textwidth]{contents/figures/clk-wiz-configd.png}%
 }{}
-\caption{Clocking Wizard setelah dikonfigurasi untuk menghasilkan clock sistem dan clock audio.}
+\caption{Clocking Wizard setelah dikonfigurasi untuk menghasilkan clock sistem 100 MHz.}
 \label{fig:app-clk-wiz-configd}
 \end{figure}
 
@@ -77,7 +77,7 @@ di direktori keluaran yang dihasilkan oleh Vivado.
 \IfFileExists{contents/figures/axi-smartconnect.png}{%
     \includegraphics[width=0.78\textwidth]{contents/figures/axi-smartconnect.png}%
 }{}
-\caption{AXI SmartConnect yang merutekan transaksi dari MicroBlaze ke peripheral I2S dan UARTLite.}
+\caption{AXI SmartConnect yang merutekan transaksi dari MicroBlaze ke peripheral I2S DDS dan UARTLite.}
 \label{fig:app-axi-smartconnect}
 \end{figure}
 
@@ -113,17 +113,17 @@ di direktori keluaran yang dihasilkan oleh Vivado.
 \IfFileExists{contents/figures/i2s-ip-block.png}{%
     \includegraphics[width=0.82\textwidth]{contents/figures/i2s-ip-block.png}%
 }{}
-\caption{Blok internal IP I2S TX yang digunakan sebagai peripheral utama.}
+\caption{Blok internal IP I2S DDS yang digunakan sebagai peripheral utama.}
 \label{fig:app-i2s-ip}
 \end{figure}
 
 \section*{Ringkasan arsitektur}
 \begin{itemize}
-    \item Clock sistem berasal dari \path{sys_clock} 100 MHz dan masuk ke \path{clk_wiz_0}.
-    \item \path{clk_wiz_0} menghasilkan tiga keluaran: 100 MHz untuk domain sistem, 24{,}576 MHz untuk keluarga 48/96 kHz, dan 22{,}579 MHz untuk keluarga 44{,}1/88{,}2 kHz.
+    \item Clock sistem berasal dari \path{sys_clock} 100 MHz dan masuk ke \path{clk_wiz_0}, yang menghasilkan domain 100 MHz untuk MicroBlaze, AXI interconnect, dan IP I2S DDS.
+    \item IP \path{i2s_dds_0} membangkitkan \texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK} secara internal melalui DDS; port \path{audio_48_clk}/\path{audio_44_clk} tetap terhubung pada block design untuk kompatibilitas tetapi tidak digunakan secara fungsional.
     \item \path{microblaze_riscv_0} bertindak sebagai master AXI dan terhubung ke \path{axi_smc}.
-    \item \path{axi_smc} merutekan transaksi ke dua slave: \path{i2s_0} dan \path{axi_uartlite_0}.
-    \item Keluaran audio eksternal yang diekspos block design adalah \path{i2s_mclk_0}, \path{i2s_bclk_0}, \path{i2s_ws_0}, dan \path{i2s_data_0}.
+    \item \path{axi_smc} merutekan transaksi ke slave peripheral, termasuk \path{i2s_dds_0} dan \path{axi_uartlite_0}.
+    \item Keluaran audio eksternal yang diekspos block design adalah \path{i2s_mclk}, \path{i2s_bclk}, \path{i2s_ws}, dan \path{i2s_data}.
 \end{itemize}
 
 \section*{Peta alamat}
@@ -134,7 +134,7 @@ di direktori keluaran yang dihasilkan oleh Vivado.
 \hline
 \textbf{Peripheral} & \textbf{Segmen} & \textbf{Offset basis} \\
 \hline
-\path{i2s_0} & \path{SEG_i2s_0_S00_AXI_reg} & \path{0x00020000} \\
+\path{i2s_dds_0} & \path{S00_AXI_reg} & \path{0x00020000} \\
 \path{axi_uartlite_0} & \path{SEG_axi_uartlite_0_Reg} & \path{0x04060000} \\
 \path{local BRAM} & \path{dlmb/ilmb memory} & \path{0x00000000} \\
 \hline
@@ -143,14 +143,14 @@ di direktori keluaran yang dihasilkan oleh Vivado.
 
 \section*{\path{clk_wiz_0}}
 \begin{description}
-    \item[Purpose] Clocking Wizard untuk membangkitkan domain clock sistem dan dua keluarga clock audio.
-    \item[Key parameters] \path{CLK_IN1=100 MHz}, \path{CLKOUT2=24.576 MHz}, \path{CLKOUT3=22.579 MHz}.
-    \item[Connections] \path{clk_out1} ke domain 100 MHz; \path{clk_out2} ke \path{i2s_0/audio_48_clk}; \path{clk_out3} ke \path{i2s_0/audio_44_clk}.
+    \item[Purpose] Clocking Wizard untuk membangkitkan domain clock sistem 100 MHz.
+    \item[Key parameters] \path{CLK_IN1=100 MHz}, \path{CLKOUT1=100 MHz}. Keluaran audio tambahan (\path{clk_out2}/\path{clk_out3}) dapat dihubungkan ke port legacy IP tetapi tidak diperlukan oleh logika DDS.
+    \item[Connections] \path{clk_out1} ke domain 100 MHz MicroBlaze, SmartConnect, I2S DDS, dan UARTLite.
 \end{description}
 
 \section*{\path{microblaze_riscv_0}}
 \begin{description}
-    \item[Purpose] Soft processor RISC-V untuk menjalankan firmware \path{micblaze/ws/rtlfix/src/helloworld.c}.
+    \item[Purpose] Soft processor RISC-V untuk menjalankan firmware \path{latesti2s/ready_to_run/sw/helloworld.c}.
     \item[Key parameters] Debug aktif, jalur \path{M_AXI_DP} untuk akses peripheral, serta ILMB/DLMB untuk memori lokal.
     \item[Connections] Clock 100 MHz dari \path{clk_wiz_0}; reset dari \path{rst_clk_wiz_0_100M}; master AXI ke \path{axi_smc/S00_AXI}.
 \end{description}
@@ -171,20 +171,20 @@ di direktori keluaran yang dihasilkan oleh Vivado.
 \section*{\path{rst_clk_wiz_0_100M}}
 \begin{description}
     \item[Purpose] Reset controller sinkron untuk domain 100 MHz.
-    \item[Connections] Menghasilkan \path{mb_reset}, \path{bus_struct_reset}, dan \path{peripheral_aresetn} untuk MicroBlaze, SmartConnect, I2S, dan UARTLite.
+    \item[Connections] Menghasilkan \path{mb_reset}, \path{bus_struct_reset}, dan \path{peripheral_aresetn} untuk MicroBlaze, SmartConnect, I2S DDS, dan UARTLite.
 \end{description}
 
 \section*{\path{axi_smc}}
 \begin{description}
-    \item[Purpose] AXI SmartConnect tunggal yang menghubungkan satu master ke dua slave.
-    \item[Connections] \path{S00_AXI} dari \path{microblaze_riscv_0}; \path{M00_AXI} ke \path{i2s_0}; \path{M01_AXI} ke \path{axi_uartlite_0}.
+    \item[Purpose] AXI SmartConnect yang menghubungkan satu master ke beberapa slave.
+    \item[Connections] \path{S00_AXI} dari \path{microblaze_riscv_0}; \path{M00_AXI} ke \path{i2s_dds_0}; \path{M01_AXI} ke \path{axi_uartlite_0}.
 \end{description}
 
-\section*{\path{i2s_0}}
+\section*{\path{i2s_dds_0}}
 \begin{description}
-    \item[Purpose] Custom IP I2S transmitter yang disertakan dalam repository IP proyek.
-    \item[Main interfaces] \path{S00_AXI} untuk kontrol register, \path{audio_48_clk}, \path{audio_44_clk}, dan empat keluaran I2S.
-    \item[Key parameters] Tiga register AXI4-Lite 32-bit, \path{C_S00_AXI_BASEADDR=0x00020000}, domain data 100 MHz dan domain audio terpisah.
+    \item[Purpose] Custom IP I2S transmitter berbasis DDS (\path{xilinx.com:user:i2s_dds:1.0}).
+    \item[Main interfaces] \path{S00_AXI} untuk kontrol register, port legacy \path{audio_48_clk}/\path{audio_44_clk}, dan empat keluaran I2S.
+    \item[Key parameters] Empat register AXI4-Lite 32-bit (\texttt{DATA\_LEFT}, \texttt{DATA\_RIGHT}, \texttt{CONTROL}, \texttt{STATUS}), \path{C_S00_AXI_BASEADDR=0x00020000}, seluruh logika audio pada domain 100 MHz.
 \end{description}
 
 \section*{\path{axi_uartlite_0}}

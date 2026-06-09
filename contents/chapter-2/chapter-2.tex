@@ -55,14 +55,15 @@ metodologi integrasi yang diulas relevan dengan pendekatan yang digunakan pada p
 
 \subsection{Penelitian tentang sinkronisasi antar-domain clock (CDC)}
 
-Dalam sistem digital yang melibatkan lebih dari satu domain clock -- seperti IP I2S yang
-memiliki domain AXI (100 MHz) dan domain audio (${\sim}24$ MHz) -- sinkronisasi lintas
+Dalam sistem digital yang melibatkan lebih dari satu domain clock, sinkronisasi lintas
 domain clock (\textit{Clock Domain Crossing}, CDC) menjadi aspek kritikal.
 
 Ginosar~\citep{ginosar_metastability_2011} memberikan analisis mendalam tentang masalah
 metastabilitas pada sistem digital dan teknik sinkronisasi flip-flop ganda yang umum
-digunakan. Prinsip ini diterapkan langsung pada RTL penelitian ini melalui mekanisme
-sinkronisasi write-counter 4-bit dari domain AXI ke domain audio.
+digunakan. Pada desain akhir \path{latesti2s} (\path{i2s\_dds\_1\_0}), serializer I2S
+berjalan sepenuhnya pada domain \texttt{S\_AXI\_ACLK} 100 MHz sehingga jalur data PCM
+tidak memerlukan CDC antar-domain. Koordinasi perangkat lunak-perangkat keras ditangani
+melalui bit \texttt{STATUS[0]} yang di-\textit{toggle} setiap awal frame stereo.
 
 \subsection{Penelitian tentang penjadwalan firmware berbasis counter siklus}
 
@@ -71,9 +72,10 @@ prosesor karena menawarkan resolusi lebih tinggi daripada delay berbasis waktu d
 Dalam konteks RISC-V, CSR \texttt{mcycle} menyediakan penghitung bebas-jalan yang dapat
 dipakai untuk membangun loop \textit{deadline} absolut~\citep{riscv_isa_vol1_2019}.
 Pendekatan ini relevan untuk pembangkit sampel audio karena jeda antar sampel harus stabil
-agar frekuensi keluaran tetap akurat. Dalam penelitian ini, konsep tersebut diterapkan pada
-firmware pengendali IP I2S sehingga setiap sampel dikirim berdasarkan target siklus berikutnya,
-bukan berdasarkan penundaan relatif yang mudah menimbulkan \textit{drift}.
+agar frekuensi keluaran tetap akurat. Pada tahap awal validasi, firmware sempat menggunakan
+\texttt{mcycle} dan \texttt{usleep()}, tetapi solusi akhir memanfaatkan \textit{polling} pada
+register \texttt{STATUS} sehingga pengiriman sampel disinkronkan langsung dengan detak I2S
+yang dihasilkan DDS, bukan estimasi waktu prosesor.
 
 \subsection{Gap penelitian dan kontribusi}
 
@@ -85,9 +87,9 @@ Berdasarkan tinjauan di atas, dapat diidentifikasi beberapa celah penelitian:
     \item Sebagian besar penelitian yang ada menggunakan platform prosesor yang lebih besar
     (Zynq, Cortex-A) sehingga contoh pada platform sederhana berbasis Basys3 memberikan
     nilai referensi tersendiri.
-    \item Analisis bug pada lapisan firmware -- khususnya justifikasi bit sampel dan timing
-    loop berbasis cycle counter -- belum banyak didokumentasikan secara eksplisit dalam
-    konteks I2S pada FPGA.
+    \item Analisis bug pada lapisan firmware -- khususnya justifikasi bit sampel dan transisi
+    dari timing berbasis \texttt{usleep}/\texttt{mcycle} ke \textit{status polling} -- belum banyak
+    didokumentasikan secara eksplisit dalam konteks I2S pada FPGA.
 \end{enumerate}
 
 \noindent Jika diringkas, penelitian terdahulu telah menunjukkan tiga hal penting: I2S dapat
@@ -122,7 +124,7 @@ Dalam arsitektur RISC-V, komunikasi dengan peripheral dilakukan melalui mekanism
 
 \subsubsection{Register Kontrol dan Status (CSR)}
 
-RISC-V menyediakan kumpulan \textit{Control and Status Registers} (CSR) untuk manajemen sistem dan telemetri. Salah satu CSR yang penting dalam penelitian ini adalah \texttt{mcycle}, yang merupakan counter 64-bit yang menghitung jumlah siklus detak (\textit{clock cycles}) sejak prosesor diaktifkan~\citep{riscv_isa_vol1_2019}. Register ini digunakan untuk mengimplementasikan \textit{timing loop} presisi tinggi pada aplikasi perangkat lunak bare-metal.
+RISC-V menyediakan kumpulan \textit{Control and Status Registers} (CSR) untuk manajemen sistem dan telemetri. Salah satu CSR yang penting pada arsitektur RISC-V adalah \texttt{mcycle}, yang merupakan counter 64-bit yang menghitung jumlah siklus detak (\textit{clock cycles}) sejak prosesor diaktifkan~\citep{riscv_isa_vol1_2019}. Register ini dapat dipakai untuk \textit{timing loop} presisi tinggi, namun pada firmware akhir penelitian ini sinkronisasi audio mengandalkan register \texttt{STATUS} IP I2S DDS.
 
 \subsubsection{Sinkronisasi Perangkat Keras-Lunak (Hardware-Software Handshake)}
 
@@ -341,8 +343,9 @@ dikendalikan melalui \textit{memory-mapped I/O}.
 
 RISC-V menyediakan \textit{Control and Status Register} (CSR) \texttt{mcycle} yang merupakan
 counter siklus CPU 64-bit bebas-jalan (\textit{free-running})~\citep{riscv_isa_vol1_2019}.
-Register ini diakses melalui instruksi \texttt{rdcycle}/\texttt{rdcycleh} dan digunakan pada
-penelitian ini untuk implementasi timing loop dengan presisi 10 ns (pada clock 100 MHz).
+Register ini diakses melalui instruksi \texttt{rdcycle}/\texttt{rdcycleh}. Pada firmware
+\path{latesti2s/ready_to_run/sw/helloworld.c}, loop pengiriman sampel tidak lagi bergantung
+pada \texttt{mcycle}, melainkan menunggu perubahan bit \texttt{STATUS[0]} dari IP I2S DDS.
 
 \subsection{Antarmuka AXI4-Lite}
 
@@ -367,34 +370,29 @@ integrasi pada Vivado IP Integrator dan memudahkan penelusuran bug, meskipun kon
 adalah throughput sistem tetap bergantung pada kecepatan CPU saat menulis sampel secara
 \textit{programmed I/O}.
 
-\subsection{Sinkronisasi lintas domain clock (CDC)}
+\subsection{Integritas data dan sinkronisasi firmware}
 
-Sistem I2S melibatkan dua domain clock yang tidak sinkron: domain AXI (100 MHz) dan domain
-audio (${\approx}24$ MHz). Data yang melintas antara dua domain dapat mengalami metastabilitas
-jika tidak disinkronkan dengan benar~\citep{ginosar_metastability_2011}.
+Pada desain akhir \path{i2s\_dds\_1\_0}, register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT}
+dan serializer I2S berada pada domain \texttt{S\_AXI\_ACLK} yang sama (100 MHz). Sampel yang
+ditulis firmware di-\textit{latch} ke \textit{shadow register} internal tepat pada awal frame
+stereo (\texttt{bit\_count == 0}, tepi naik \texttt{BCLK}) sehingga data tidak berubah di tengah
+serialisasi.
 
-Teknik umum yang digunakan adalah \textbf{sinkronisasi flip-flop ganda}: sinyal dari domain
-sumber disampling dua kali berurutan oleh clock domain tujuan sebelum digunakan. Hal ini
-memberikan waktu yang cukup bagi flip-flop untuk keluar dari kondisi metastabil.
+Koordinasi perangkat lunak-perangkat keras menggunakan register \texttt{STATUS[0]}: bit ini
+berubah logika setiap kali hardware mengambil pasangan sampel terbaru. Firmware melakukan
+\textit{polling} pada bit tersebut sebelum menulis sampel berikutnya, menghasilkan
+\textit{closed-loop handshake} tanpa interrupt maupun DMA. Pendekatan ini menggantikan loop
+timing berbasis \texttt{usleep()} yang tidak akurat karena granularitas rendah dan tidak
+mengikuti kecepatan transmisi I2S yang sebenarnya.
 
-Pada penelitian ini, RTL menggunakan \textbf{write-counter 4-bit} yang bertambah pada setiap
-transaksi AXI write. Domain audio menyinkronkan counter ini dengan dua flip-flop dan mendeteksi
-setiap perubahan, sehingga setiap penulisan register dari CPU dijamin terdeteksi tanpa terlewat.
-Pemilihan clock audio melalui \texttt{BUFGMUX} juga disinkronkan terhadap domain AXI sebelum
-digunakan sebagai sinyal selektor.
-\noindent Pendekatan ini dipilih karena yang perlu dipindahkan antar-domain pada penelitian ini
-bukan aliran data lebar berkecepatan tinggi, melainkan peristiwa pembaruan register yang relatif
-jarang dan terstruktur. Oleh sebab itu, kombinasi write-counter, sinkronisasi dua flip-flop, dan
-\textit{shadow register} pada batas frame sudah memadai untuk menjaga koherensi data tanpa
-kompleksitas FIFO asinkron penuh.
-
-\subsection{Clocking Wizard dan frekuensi aktual}
+\subsection{Clocking Wizard dan pembangkitan detak DDS}
 
 Pada FPGA Xilinx, \textit{Clocking Wizard} memanfaatkan MMCM (\textit{Mixed-Mode Clock Manager})
-untuk menghasilkan clock internal yang mendekati frekuensi target~\citep{xilinx_clocking_wizard_2021}.
-Nilai yang dihasilkan (\textit{actual frequency}) umumnya sedikit berbeda dari nilai nominal
-karena keterbatasan rasio frekuensi MMCM. Selisih ini berpengaruh langsung pada $F_s$ aktual
-dan perlu dicatat saat evaluasi hasil.
+untuk menghasilkan clock sistem 100 MHz~\citep{xilinx_clocking_wizard_2021}. Pada desain akhir,
+\texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK} tidak lagi berasal dari keluaran MMCM audio,
+melainkan disintesis oleh akumulator fase DDS di dalam IP \path{i2s\_dds\_1\_0}. Frekuensi
+sampling aktual ditentukan oleh nilai \texttt{SAMPLE\_RATE\_HZ} pada register \texttt{CONTROL}
+dengan resolusi yang ditetapkan oleh periode clock 100 MHz.
 
 \subsection{Verilog HDL dan perancangan RTL}
 
@@ -402,10 +400,9 @@ Verilog digunakan untuk mendeskripsikan logika perangkat keras pada level RTL~\c
 Pada penelitian ini, Verilog digunakan untuk membangun:
 \begin{itemize}
     \item antarmuka slave AXI4-Lite dengan mesin state tulis dan baca;
-    \item mekanisme CDC berbasis write-counter;
-    \item logika pemilih clock (\texttt{BUFGMUX});
+    \item akumulator fase DDS untuk \texttt{BCLK} dan \texttt{MCLK};
     \item serializer I2S sesuai spesifikasi Philips;
-    \item logika \textit{power-on reset} domain audio.
+    \item \textit{shadow register} dan bit \texttt{STATUS} untuk handshake firmware.
 \end{itemize}
 
 Prinsip desain digital yang digunakan merujuk pada~\citep{harris_harris_digital_2022}
@@ -415,7 +412,7 @@ dan~\citep{chu_fpga_prototyping_2011}.
 
 Sebagai pembanding, AMD menyediakan \textit{LogiCORE} I2S Transmitter dan Receiver untuk integrasi cepat di Vivado~\citep{amd_pg308_i2s_logicore}. IP bawaan ini mendukung antarmuka AXI4-Stream, hingga empat kanal I2S, lebar data 16/24-bit, mode master, kedalaman FIFO yang dapat dikonfigurasi, ekstraksi dan penyisipan status kanal AES, format left/right justified, serta opsi LRCLK 32-bit. Secara umum, fitur tersebut ditujukan untuk aplikasi audio yang berorientasi aliran data dan integrasi sistem yang luas.
 
-Ruang lingkup penelitian ini berbeda karena IP yang dikembangkan berfokus pada \textbf{TX-only} dengan antarmuka \textbf{AXI4-Lite} berbasis register memory-mapped. Pendekatan ini dipilih agar pengendalian dari MicroBlaze V tetap sederhana tanpa DMA, sekaligus membuat mekanisme CDC, pembagian clock, dan pembentukan frame I2S lebih transparan pada level RTL. Dengan demikian, tujuan penelitian bukan menggantikan IP bawaan AMD/Xilinx, melainkan menyediakan alternatif yang lebih kecil, terukur, dan sesuai untuk validasi akademik.
+Ruang lingkup penelitian ini berbeda karena IP yang dikembangkan berfokus pada \textbf{TX-only} dengan antarmuka \textbf{AXI4-Lite} berbasis register memory-mapped. Pendekatan ini dipilih agar pengendalian dari MicroBlaze V tetap sederhana tanpa DMA, sekaligus membuat mekanisme DDS, \textit{shadow register}, dan pembentukan frame I2S lebih transparan pada level RTL. Dengan demikian, tujuan penelitian bukan menggantikan IP bawaan AMD/Xilinx, melainkan menyediakan alternatif yang lebih kecil, terukur, dan sesuai untuk validasi akademik.
 
 \subsection{Analisis pemilihan metode}
 
@@ -434,7 +431,7 @@ Metode yang dipilih pada penelitian ini didasarkan pada beberapa pertimbangan:
 
 \noindent Selain pertimbangan di atas, lingkup penelitian sengaja dibatasi pada jalur
 \textbf{TX-only} tanpa FIFO dan tanpa DMA. Pembatasan ini dilakukan agar fokus penelitian tetap
-berada pada ketepatan protokol I2S, keamanan CDC, dan integrasi peripheral kustom ke SoC
+berada pada ketepatan protokol I2S, integritas data melalui \textit{shadow register}, dan integrasi peripheral kustom ke SoC
 berbasis MicroBlaze V. Konsekuensinya, sistem yang dihasilkan belum ditujukan untuk playback
 audio berdurasi panjang dengan throughput tinggi, melainkan sebagai platform validasi yang
 menekankan kejelasan arsitektur, kemudahan pengendalian, dan keterlacakan bug. Pertimbangan

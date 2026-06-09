@@ -209,7 +209,7 @@ Fitur kontrol diuji dengan mengubah bit pada register \texttt{CONTROL}. Gambar \
     \label{fig:ch5-fixed-both}
 \end{figure}
 
-Dari hasil tersebut teramati bahwa setelah perbaikan firmware, kedua kanal L dan R menghasilkan bentuk gelombang yang identik, menunjukkan bahwa masalah ketidakseimbangan amplitudo telah teratasi. Frekuensi nada sinus juga sesuai dengan target, mengindikasikan bahwa loop timing berbasis \texttt{mcycle} berhasil menghilangkan \textit{drift} yang sebelumnya terjadi. Serta fitur kontrol \texttt{ENABLE} dan \texttt{MUTE} berfungsi sesuai harapan, memberikan fleksibilitas dalam pengembangan sistem.
+Dari hasil tersebut teramati bahwa setelah perbaikan firmware, kedua kanal L dan R menghasilkan bentuk gelombang yang identik, menunjukkan bahwa masalah ketidakseimbangan amplitudo telah teratasi. Frekuensi nada sinus juga sesuai dengan target, mengindikasikan bahwa sinkronisasi berbasis \textit{polling} register \texttt{STATUS} berhasil menghilangkan \textit{drift} yang sebelumnya terjadi. Serta fitur kontrol \texttt{ENABLE} dan \texttt{MUTE} berfungsi sesuai harapan, memberikan fleksibilitas dalam pengembangan sistem.
 
 \section{Analisis Penggunaan Sumber Daya dan Daya}
 
@@ -262,7 +262,7 @@ Hasil penelitian menunjukkan bahwa pendekatan register-mapped AXI4-Lite efektif 
 
 \subsection{Pembahasan perubahan frekuensi sampling}
 
-Pengujian pada mode 44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz menunjukkan bahwa jalur clock dan keluaran analog berubah secara proporsional terhadap konfigurasi \texttt{FS\_FAMILY} dan \texttt{FS\_MODE}. Pada Gambar \ref{fig:ch5-disc-fs}, sinyal \texttt{LRCK} tetap mewakili frekuensi sampling, sedangkan \texttt{BCLK} meningkat sebanding terhadap kebutuhan jumlah bit per frame. Keluaran \texttt{LOUT}/\texttt{ROUT} juga mempertahankan bentuk gelombang yang seragam, sehingga dapat disimpulkan bahwa proses perpindahan keluarga clock tidak menimbulkan gangguan fungsional pada jalur data.
+Pengujian pada mode 44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz dilakukan dengan memprogram register \texttt{SAMPLE\_RATE\_HZ} ke nilai yang sesuai. Pada Gambar \ref{fig:ch5-disc-fs}, sinyal \texttt{LRCK} tetap mewakili frekuensi sampling, sedangkan \texttt{BCLK} meningkat sebanding terhadap kebutuhan jumlah bit per frame ($64 \times F_s$). Keluaran \texttt{LOUT}/\texttt{ROUT} juga mempertahankan bentuk gelombang yang seragam, sehingga dapat disimpulkan bahwa perubahan frekuensi sampling melalui DDS tidak menimbulkan gangguan fungsional pada jalur data.
 
 \begin{landscape}
 \begin{figure}[htbp]

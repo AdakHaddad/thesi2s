@@ -10,7 +10,7 @@
 
 \hspace{1cm}MicroBlaze V sebagai prosesor soft-core berbasis RISC-V~\citep{waterman_riscv_2016} pada ekosistem AMD/Xilinx~\citep{xilinx_microblaze_ref_2021} menyediakan fondasi yang sesuai untuk integrasi peripheral kustom pada Vivado dan Vitis. Melalui antarmuka AXI4-Lite~\citep{arm_amba_axi_2010}, peripheral dapat diakses dengan model memory-mapped I/O yang sederhana namun efektif. Dengan pendekatan ini, prosesor dapat menulis sampel audio, mengatur mode operasi, serta membaca status dari peripheral I2S menggunakan instruksi load/store biasa. Pendekatan tersebut memudahkan pengembangan perangkat lunak uji sekaligus menjaga modularitas desain perangkat keras.
 
-\hspace{1cm}Dalam praktik implementasi audio pada FPGA, permasalahan tidak hanya terletak pada pembangkitan sinyal I2S, tetapi juga pada kestabilan aliran data dan sinkronisasi antar-domain clock. Sampel audio ditulis oleh prosesor pada domain AXI 100 MHz, sedangkan serializer bekerja pada domain clock audio sekitar 22,579 MHz atau 24,576 MHz. Jika sampel berubah ketika word sedang diserialkan, maka keluaran audio dapat korup. Oleh karena itu, sistem membutuhkan mekanisme \textit{clock domain crossing} (CDC), latch sampel pada batas frame stereo, serta pengaturan timing perangkat lunak yang cukup presisi untuk menjaga kontinuitas data. Selain itu, akurasi frekuensi clock hasil Clocking Wizard~\citep{xilinx_clocking_wizard_2021} dan kesesuaian pinout ke modul DAC eksternal~\citep{pcm5102a_datasheet} juga menjadi faktor penting yang memengaruhi keberhasilan sistem secara keseluruhan.
+\hspace{1cm}Dalam praktik implementasi audio pada FPGA, permasalahan tidak hanya terletak pada pembangkitan sinyal I2S, tetapi juga pada kestabilan aliran data dan sinkronisasi antara perangkat lunak dengan serializer. Pada desain akhir \path{latesti2s}, seluruh logika I2S berjalan pada domain \texttt{S\_AXI\_ACLK} 100 MHz sehingga register data dan serializer berada pada domain clock yang sama. Jika sampel berubah ketika word sedang diserialkan, keluaran audio dapat korup; oleh karena itu, sistem membutuhkan \textit{shadow register} yang di-\textit{latch} pada batas frame stereo serta mekanisme \textit{handshake} melalui register \texttt{STATUS} agar firmware dapat mengirim sampel berikutnya tepat waktu. Pembangkitan \texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK} dilakukan oleh akumulator fase DDS internal, sehingga frekuensi sampling dapat diprogram tanpa rekonfigurasi PLL eksternal. Kesesuaian pinout ke modul DAC eksternal~\citep{pcm5102a_datasheet} juga menjadi faktor penting yang memengaruhi keberhasilan sistem secara keseluruhan.
 
 \hspace{1cm}Berdasarkan kebutuhan tersebut, skripsi ini berfokus pada perancangan \textbf{IP core transmitter I2S berbasis Verilog} dengan antarmuka \textbf{AXI4-Lite} yang dapat diintegrasikan ke dalam SoC \textbf{MicroBlaze V} pada board \textbf{Basys3}~\citep{xilinx_basys3_ref}. Kode sumber dan dokumentasi proyek ini tersedia secara terbuka pada repositori GitHub\footnote{\url{https://github.com/adakhaddad/thesi2s}}. Target keluaran audio adalah modul \textbf{PCM5102A} sebagai DAC eksternal. Desain difokuskan pada mode \textbf{TX-only}, format \textbf{Philips I2S}, stereo, dengan \textbf{slot 32 bit} dan lebar sampel yang dapat dipilih hingga 32 bit. Penelitian ini mencakup evolusi rancangan mulai dari desain dasar dengan empat mode frekuensi sampling (44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz) hingga tahap \textbf{pengembangan dan optimasi} menggunakan teknik \textbf{DDS (Direct Digital Synthesis)} untuk mendukung \textbf{frekuensi sampling arbitrer} serta membuat IP bersifat \textbf{vendor-agnostic}. Penelitian ini mencakup perancangan RTL, integrasi Vivado Block Design~\citep{xilinx_vivado_design_suite_2021}, pengembangan perangkat lunak uji di Vitis~\citep{xilinx_vitis_embedded_2021}, pengukuran sinyal, dan bukti keluaran audio.
 
@@ -38,8 +38,8 @@ Tujuan penelitian ini disusun agar selaras dengan rumusan masalah yang telah dit
 
 \subsection{Tujuan perancangan dan integrasi perangkat keras}
 \begin{enumerate}
-	\item Merancang dan mengimplementasikan \textbf{IP komunikasi audio I2S TX} berbasis Verilog dengan antarmuka \textbf{AXI4-Lite slave}, register kontrol dan data, serializer \textbf{Philips I2S}, serta mekanisme \textbf{CDC} dan \textbf{sample latch} untuk pengiriman sampel audio stereo yang aman tanpa memakai IP komunikasi berlisensi dari pihak ketiga.
-	\item Mengimplementasikan pemilihan \textbf{keluarga clock audio} dan pembagi BCLK untuk menghasilkan mode frekuensi sampling yang dibutuhkan, lalu mengintegrasikan IP ke dalam \textbf{Vivado Block Design} pada FPGA \textbf{Basys3} beserta pemetaan pin pada file \texttt{.xdc}.
+	\item Merancang dan mengimplementasikan \textbf{IP komunikasi audio I2S TX} berbasis Verilog dengan antarmuka \textbf{AXI4-Lite slave}, register kontrol dan data, serializer \textbf{Philips I2S}, serta mekanisme \textbf{shadow register} dan \textbf{status handshake} untuk pengiriman sampel audio stereo yang aman tanpa memakai IP komunikasi berlisensi dari pihak ketiga.
+	\item Mengimplementasikan pembangkitan detak audio berbasis \textbf{DDS/NCO} pada domain 100 MHz sehingga mendukung \textbf{frekuensi sampling arbitrer}, lalu mengintegrasikan IP ke dalam \textbf{Vivado Block Design} pada FPGA \textbf{Basys3} beserta pemetaan pin pada file \texttt{.xdc}.
 \end{enumerate}
 
 \subsection{Tujuan integrasi SoC dan perangkat lunak}
@@ -62,7 +62,7 @@ Batasan penelitian dalam pengembangan \textbf{IP core I2S TX AXI4-Lite} ini meli
 \begin{enumerate}
 	\item Modul I2S dirancang sebagai \textbf{transmitter (TX-only)}; tidak mencakup receiver atau mode full-duplex.
 	\item Format audio dibatasi pada \textbf{Philips I2S}, stereo, \textbf{24 bit} per saluran dalam \textbf{slot 32 bit}; tidak mencakup TDM, left-justified, right-justified, atau multi-channel.
-	\item Dukungan frekuensi sampling dibatasi pada \textbf{empat mode}, yaitu 44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz, yang dibentuk dari dua keluarga clock audio dan satu bit pemilih mode.
+	\item Dukungan frekuensi sampling dapat diprogram melalui register \texttt{SAMPLE\_RATE\_HZ} dalam rentang 1--195.312 Hz (batas aman DDS pada clock 100 MHz); pengujian utama difokuskan pada nilai standar 44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz serta beberapa nilai non-standar.
 	\item Transfer data audio ke IP menggunakan \textbf{programmed I/O} berbasis register dan tidak mencakup integrasi \textbf{FIFO} maupun \textbf{DMA}.
 	\item Pengujian perangkat keras dilakukan pada board \textbf{Basys3} dengan modul \textbf{PCM5102A}; hasil pada platform lain dapat berbeda.
 \end{enumerate}
@@ -86,13 +86,13 @@ Batasan penelitian dalam pengembangan \textbf{IP core I2S TX AXI4-Lite} ini meli
 \begin{enumerate}
 	\item Menghasilkan contoh perancangan \textbf{IP I2S TX AXI4-Lite} berbasis Verilog yang dapat digunakan sebagai acuan pembelajaran audio digital pada FPGA.
 	\item Menyediakan studi kasus hardware-software co-design pada FPGA yang melibatkan RTL, integrasi SoC, dan pemrograman embedded C.
-	\item Memberikan dokumentasi register map, strategi CDC, dan validasi sinyal I2S yang dapat digunakan kembali pada penelitian sejenis.
+	\item Memberikan dokumentasi register map, strategi \textit{status handshake}, dan validasi sinyal I2S yang dapat digunakan kembali pada penelitian sejenis.
 \end{enumerate}
 
 \subsection{Manfaat praktis}
 \begin{enumerate}
 	\item Menyediakan dasar untuk proyek \textbf{audio output} berbasis FPGA seperti generator nada, alarm, dan sistem multimedia sederhana.
-	\item Menunjukkan pola desain \textbf{register-mapped I/O + deadline loop} yang dapat diadaptasi pada peripheral streaming sederhana lain.
+	\item Menunjukkan pola desain \textbf{register-mapped I/O + status polling} yang dapat diadaptasi pada peripheral streaming sederhana lain.
 	\item Menjadi fondasi pengembangan lebih lanjut menuju sistem audio digital yang lebih kompleks, misalnya integrasi DMA atau dukungan Linux/ASoC.
 \end{enumerate}
 
@@ -111,7 +111,7 @@ Batasan penelitian dalam pengembangan \textbf{IP core I2S TX AXI4-Lite} ini meli
 
 \noindent\textbf{Bab III} menyajikan metode penelitian yang mencakup alat dan bahan, metode verifikasi, serta alur tahapan tugas akhir secara sistematis.
 
-\noindent\textbf{Bab IV} membahas perancangan dan implementasi yang merinci spesifikasi fungsional IP, arsitektur register map, integrasi pada Vivado Block Design, serta detail logika RTL (CDC dan serializer).
+\noindent\textbf{Bab IV} membahas perancangan dan implementasi yang merinci spesifikasi fungsional IP, arsitektur register map, integrasi pada Vivado Block Design, serta detail logika RTL (DDS dan serializer).
 
 \noindent\textbf{Bab V} menyajikan hasil dan pembahasan yang mencakup pengujian sinyal digital, analisis akurasi frekuensi sampling, identifikasi bug firmware, serta verifikasi akhir sistem.
 

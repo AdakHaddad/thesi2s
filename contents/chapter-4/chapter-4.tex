@@ -87,11 +87,14 @@ end
 
 Logika serialisasi menggunakan fungsi \texttt{i2s\_next\_serial\_bit} untuk menangani urutan bit MSB-first. Pengambilan sampel dari register AXI dilakukan ke dalam \textit{shadow registers} tepat pada awal frame stereo (\texttt{bit\_count == 0}).
 
-\begin{lstlisting}[language=Verilog, caption={Latching sampel ke shadow registers.}]
-if (bit_count_q == 6'd0) begin
-    sample_left_q  <= slv_reg0;
-    sample_right_q <= slv_reg1;
-    current_latch_status_q <= !current_latch_status_q;
+\begin{lstlisting}[language=Verilog, caption={Latching sampel ke shadow registers pada tepi naik BCLK.}]
+if (bclk_q == 1'b0) begin
+    bclk_q <= 1'b1;
+    if (bit_count_q == 6'd0) begin
+        sample_left_q          <= slv_reg0;
+        sample_right_q         <= slv_reg1;
+        current_latch_status_q <= !current_latch_status_q;
+    end
 end
 \end{lstlisting}
 
@@ -99,7 +102,7 @@ Perpindahan logika \texttt{current\_latch\_status\_q} diekspor ke register \text
 
 \section{Implementasi Software Vitis}
 
-Perangkat lunak pada Vitis (\path{helloworld.c}) dirancang untuk menjadi sumber data audio yang fleksibel dan interaktif. Berbeda dengan implementasi sederhana, versi final ini mengadopsi kontrol \textit{closed-loop} terhadap status perangkat keras dan antarmuka pengguna berbasis UART.
+Perangkat lunak pada Vitis (\path{latesti2s/ready_to_run/sw/helloworld.c}) dirancang untuk menjadi sumber data audio yang fleksibel dan interaktif. Berbeda dengan implementasi sederhana, versi final ini mengadopsi kontrol \textit{closed-loop} terhadap status perangkat keras dan antarmuka pengguna berbasis UART.
 
 \subsection{Definisi Alamat dan Masker Bit}
 

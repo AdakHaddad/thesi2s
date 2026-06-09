@@ -6,18 +6,20 @@ Penelitian ini merancang dan mengimplementasikan \textbf{IP core transmitter I2S
 
 \begin{enumerate}
     \item IP berhasil diintegrasikan sebagai peripheral AXI4-Lite dengan peta register aktif
-    \texttt{DATA\_LEFT (0x00)}, \texttt{DATA\_RIGHT (0x04)}, dan \texttt{CONTROL (0x08)}.
-    Desain akhir membatasi antarmuka pada tiga register tersebut, sehingga
-    kontrol software tetap ringkas.
+    \texttt{DATA\_LEFT (0x00)}, \texttt{DATA\_RIGHT (0x04)}, \texttt{CONTROL (0x08)}, dan
+    \texttt{STATUS (0x0C)}. Register \texttt{CONTROL} memuat bit \texttt{ENABLE}, \texttt{MUTE},
+    \texttt{SAMPLE\_WIDTH}, dan \texttt{SAMPLE\_RATE\_HZ}, sedangkan \texttt{STATUS[0]} menyediakan
+    indikator \textit{latch} untuk sinkronisasi firmware.
 
     \item Aplikasi Vitis bare-metal dapat mengendalikan IP melalui
     \textit{memory-mapped I/O} (\texttt{Xil\_Out32}/\texttt{Xil\_In32}) untuk inisialisasi
     register CONTROL dan pengisian sampel kanal kiri-kanan.
 
-    \item Pengujian sinyal mengkonfirmasi sinyal \texttt{BCLK} (3,07 MHz), \texttt{WS} (48,03 kHz),
-    dan \texttt{DATA} mengikuti mekanisme \textbf{Philips I2S}~\citep{philips_i2s_1986}: 1-bit delay setelah setiap
-    peralihan WS, 64 BCLK per frame stereo, dan MSB-first per kanal. Nilai aktual
-    sesuai dengan analisis clock Clocking Wizard~\citep{xilinx_clocking_wizard_2021} (24,597 MHz).
+    \item Pengujian sinyal mengkonfirmasi sinyal \texttt{BCLK} ($\approx 3{,}07$ MHz), \texttt{WS}
+    ($\approx 48$ kHz), dan \texttt{DATA} mengikuti mekanisme \textbf{Philips I2S}~\citep{philips_i2s_1986}:
+    1-bit delay setelah setiap peralihan WS, 64 BCLK per frame stereo, dan MSB-first per kanal.
+    Pada $F_s = 48$ kHz, hubungan $F_{\text{BCLK}} = 64 \times F_s$ dan $F_{\text{WS}} = F_s$
+    sesuai dengan pembangkitan detak berbasis DDS pada clock sistem 100 MHz.
 
     \item Validasi audio pada PCM5102A~\citep{pcm5102a_datasheet} berhasil menghasilkan keluaran suara yang dapat
     didengar. Tiga bug firmware yang ditemukan selama validasi --- yaitu \textit{masker bit
@@ -26,7 +28,7 @@ Penelitian ini merancang dan mengimplementasikan \textbf{IP core transmitter I2S
     berhasil diidentifikasi dan diperbaiki seluruhnya di sisi firmware, tanpa perubahan
     pada RTL.
 
-    \item RTL terbukti benar secara fungsional sejak awal, mencakup mekanisme CDC berbasis write-counter yang robust~\citep{ginosar_metastability_2011}, pemilihan clock melalui \texttt{BUFGMUX}, dan serializer Philips I2S yang sesuai spesifikasi~\citep{philips_i2s_1986}. Pengembangan lebih lanjut menggunakan teknik \textbf{DDS (Direct Digital Synthesis)} berhasil meningkatkan fleksibilitas sistem sehingga bersifat \textbf{vendor-agnostic} dan mendukung frekuensi sampling arbitrer yang dapat dikonfigurasi secara presisi melalui perangkat lunak.
+    \item Desain akhir \path{latesti2s} (\path{i2s\_dds\_1\_0}) menggunakan teknik \textbf{DDS (Direct Digital Synthesis)} untuk membangkitkan \texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK} dari clock sistem 100 MHz, serializer Philips I2S yang sesuai spesifikasi~\citep{philips_i2s_1986}, serta mekanisme \textit{shadow register} dan \textit{status handshake}. Arsitektur ini bersifat \textbf{vendor-agnostic} dan mendukung frekuensi sampling arbitrer hingga 195.312 Hz yang dapat dikonfigurasi melalui register \texttt{SAMPLE\_RATE\_HZ}.
 \end{enumerate}
 
 % ============================================================

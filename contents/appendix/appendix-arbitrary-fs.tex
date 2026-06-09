@@ -1,45 +1,40 @@
-\chapter*{Arbitrary-Fs I2S dan IP komunikasi buatan sendiri}
-\addcontentsline{toc}{chapter}{Arbitrary-Fs I2S dan IP komunikasi buatan sendiri}
-\label{app:arbitrary-fs}
-
-Lampiran ini menjelaskan varian desain I2S yang dibuat sebagai IP komunikasi buatan sendiri agar sistem tidak bergantung pada IP berlisensi dari pihak ketiga. Karena desain utama sudah dijelaskan di bab sebelumnya, lampiran ini hanya menampilkan bagian yang berbeda dari implementasi awal: wrapper terbaru, penyederhanaan antarmuka clock, dan alasan integrasi block design.
-
-\begin{itemize}
-    \item Wrapper IP versi terbaru pada berkas \texttt{i2s.v} dan \texttt{i2s\_dds.v} memakai satu masukan \texttt{audio\_clk}, lalu meneruskannya ke port clock legacy di inti agar desain tetap kompatibel.
-    \item Modul inti tetap menyimpan batas aman frekuensi sampling untuk menjaga kestabilan pembangkit clock internal.
-    \item Filter digital, tangkapan osiloskop manual, dan integrasi block design digunakan sebagai bukti bahwa desain buatan sendiri dapat diintegrasikan ke jalur audio tanpa mengubah struktur I2S dasar.
-    \item Pada bagian integrasi, blok IP komunikasi diletakkan di Vivado Block Design bersama MicroBlaze V, AXI SmartConnect, dan Clocking Wizard.
-\end{itemize}
-
-Potongan kode wrapper terbaru yang menunjukkan perbedaan utama ditampilkan pada Listing~\ref{lst:app-wrapper-arbitrary-fs}.
-
-\begin{lstlisting}[language=Verilog, caption={Potongan wrapper IP I2S terbaru dengan satu masukan clock audio.}, label={lst:app-wrapper-arbitrary-fs}]
-module i2s (
-    input  wire audio_clk,
-    output wire i2s_mclk,
-    output wire i2s_bclk,
-    output wire i2s_ws,
-    output wire i2s_data
-);
-
-    i2s_slave_lite_v1_0_S00_AXI i2s_slave_lite_v1_0_S00_AXI_inst (
-        .audio_48_clk (audio_clk),
-        .audio_44_clk (audio_clk),
-        .i2s_mclk     (i2s_mclk),
-        .i2s_bclk     (i2s_bclk),
-        .i2s_ws       (i2s_ws),
-        .i2s_data     (i2s_data)
-    );
-
-endmodule
-\end{lstlisting}
-
-Perbedaan utama terhadap desain awal adalah sebagai berikut:
-\begin{itemize}
-    \item antarmuka eksternal menyusut dari dua port clock audio menjadi satu port \texttt{audio\_clk};
-    \item wrapper kompatibilitas tetap menjaga nama IP dan integrasi block design lama;
-    \item bagian yang tidak berubah, seperti register interface, serializer, dan batas aman Fs, tidak ditulis ulang di lampiran ini;
-    \item kode lengkap tetap ada di folder \path{fix/ready_to_run/ip_repo}, sedangkan lampiran ini hanya merangkum delta yang relevan.
-\end{itemize}
-
-Rincian kode dan perubahan perangkat lunak pendukung dijelaskan pada berkas sumber terkait di repositori.
+\chapter*{Arbitrary-Fs I2S dan IP komunikasi buatan sendiri}
+\addcontentsline{toc}{chapter}{Arbitrary-Fs I2S dan IP komunikasi buatan sendiri}
+\label{app:arbitrary-fs}
+
+Lampiran ini menjelaskan varian desain I2S DDS (\path{i2s_dds_1_0}) yang menjadi
+implementasi akhir penelitian. IP ini dibuat sebagai peripheral komunikasi buatan
+sendiri agar sistem tidak bergantung pada IP berlisensi dari pihak ketiga.
+
+\begin{itemize}
+    \item Modul inti \path{i2s_dds_slave_lite_v1_0_S00_AXI.v} membangkitkan \texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK} menggunakan akumulator fase DDS pada domain \texttt{S\_AXI\_ACLK} 100 MHz.
+    \item Frekuensi sampling diprogram melalui bitfield \texttt{SAMPLE\_RATE\_HZ} pada register \texttt{CONTROL} (rentang 0--1.048.575 Hz, dibatasi aman hingga 195.312 Hz).
+    \item Register \texttt{STATUS[0]} berubah setiap awal frame stereo sehingga firmware dapat melakukan \textit{polling} tanpa interrupt.
+    \item Wrapper \path{i2s_dds.v} mempertahankan port \texttt{audio\_48\_clk}/\texttt{audio\_44\_clk} untuk kompatibilitas block design, meskipun logika DDS tidak menggunakannya.
+    \item Kode lengkap berada di \path{latesti2s/ready_to_run/ip_repo/i2s_dds_1_0/hdl}; firmware uji di \path{latesti2s/ready_to_run/sw/helloworld.c}.
+\end{itemize}
+
+Potongan kode DDS yang menunjukkan pembangkitan detak BCLK ditampilkan pada Listing~\ref{lst:app-dds-bclk}.
+
+\begin{lstlisting}[language=Verilog, caption={Akumulator fase DDS untuk pembangkitan BCLK pada \path{i2s\_dds\_slave\_lite\_v1\_0\_S00\_AXI.v}.}, label={lst:app-dds-bclk}]
+wire [31:0] bclk_toggle_rate_hz = {sample_rate_sync, 7'b0}; // Fs x 128
+wire bclk_phase_wrap = (bclk_phase_sum >= AXI_CLK_HZ);
+
+always @(posedge S_AXI_ACLK) begin
+    if (bclk_phase_wrap) begin
+        bclk_phase_acc_q <= bclk_phase_sum - AXI_CLK_HZ;
+        bclk_q <= !bclk_q;
+    end else begin
+        bclk_phase_acc_q <= bclk_phase_sum;
+    end
+end
+\end{lstlisting}
+
+Perbedaan utama terhadap desain awal berbasis pembagi clock tetap:
+\begin{itemize}
+    \item frekuensi sampling tidak lagi dibatasi pada empat mode (\texttt{FS\_FAMILY}/\texttt{FS\_MODE}), melainkan dapat diprogram dalam Hz;
+    \item serializer dan register file berada pada domain clock yang sama (100 MHz), sehingga tidak memerlukan CDC antar-domain untuk jalur data;
+    \item \textit{handshake} firmware menggunakan register \texttt{STATUS}, bukan deadline berbasis \texttt{mcycle} atau \texttt{usleep()}.
+\end{itemize}
+
+Rincian kode dan perubahan perangkat lunak pendukung dijelaskan pada Bab IV dan Lampiran~\ref{app:code-summary}.
