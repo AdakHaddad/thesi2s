@@ -276,78 +276,78 @@ Penelitian ini mengikuti alur pengerjaan yang terbagi dalam tiga blok utama: per
 \centering
 \resizebox{0.95\textwidth}{!}{%
 \begin{tikzpicture}[
-    node distance=1.2cm and 0.8cm,
+    node distance=1.1cm and 0.8cm,
     font=\footnotesize,
     >=latex,
     % Styles
-    startstop/.style={draw, ellipse, fill=yellow!30, align=center, minimum width=2cm, minimum height=0.8cm},
-    process/.style={draw, rectangle, fill=orange!20, align=center, minimum width=2.5cm, minimum height=1cm},
-    decision/.style={draw, diamond, aspect=2, fill=purple!20, align=center, minimum width=2.5cm, inner sep=0pt},
-    debug/.style={draw, rectangle, fill=green!20, align=center, minimum width=1.5cm, minimum height=0.6cm},
-    blocklabel/.style={font=\bfseries\small, anchor=north west, xshift=0.2cm, yshift=-0.1cm}
+    startstop/.style={draw, ellipse, fill=yellow!20, align=center, minimum width=2.2cm, minimum height=0.7cm, thick},
+    process/.style={draw, rectangle, fill=blue!10, align=center, minimum width=2.8cm, minimum height=0.9cm, rounded corners, thick},
+    decision/.style={draw, diamond, aspect=2, fill=purple!10, align=center, minimum width=2.8cm, inner sep=0pt, thick},
+    debug/.style={draw, rectangle, fill=red!10, align=center, minimum width=1.6cm, minimum height=0.6cm, dashed, thick},
+    blocklabel/.style={font=\bfseries\sffamily\small, anchor=north west, xshift=0.2cm, yshift=-0.1cm}
 ]
 
     % --- BLOCK 1: PERANCANGAN IP I2S ---
     \node [startstop] (start) {Studi Literatur dan\\Tinjauan Pustaka};
     \node [process, right=of start] (rtl) {Perancangan RTL\\IP I2S Transmitter};
     \node [decision, right=of rtl] (sim) {Simulasi RTL\\(Testbench)};
-    \node [debug, above=of sim] (debug1) {Debug};
-    \node [decision, right=of sim] (impl) {Implementasi \&\\Sintesis IP};
+    \node [debug, above=0.8cm of sim] (debug1) {Debug};
+    \node [process, right=of sim] (impl) {Implementasi \&\\Sintesis IP};
     \node [startstop, right=of impl] (ip_ok) {IP I2S\\Berjalan Benar};
 
     % Draw Block 1 background
     \begin{scope}[on background layer]
-        \node[draw, rectangle, rounded corners, fill=blue!10, fit=(rtl) (sim) (debug1) (impl) (ip_ok)] (block1) {};
+        \node[draw, rectangle, rounded corners, fill=blue!5, fit=(rtl) (sim) (debug1) (impl) (ip_ok)] (block1) {};
         \node[blocklabel] at (block1.north west) {BLOK PERANCANGAN IP I2S TRANSMITTER (AXI4-LITE)};
     \end{scope}
 
     % --- BLOCK 2: INTEGRASI SOC MICROBLAZE V ---
-    \node [process, below=3.5cm of rtl] (bd) {Perancangan\\Block Design Vivado};
+    \node [process, below=3.2cm of rtl] (bd) {Perancangan\\Block Design Vivado};
     \node [process, right=of bd] (mapping) {Pemetaan Alamat\\\& Constraint XDC};
     \node [decision, right=of mapping] (bitstream) {Generate Bitstream\\\& Export Hardware};
-    \node [debug, above=of bitstream] (debug2) {Debug};
+    \node [debug, above=0.8cm of bitstream] (debug2) {Debug};
     \node [startstop, left=of bd] (soc_ok) {Desain SoC\\Berjalan Benar};
 
     % Draw Block 2 background
     \begin{scope}[on background layer]
-        \node[draw, rectangle, rounded corners, fill=gray!10, fit=(bd) (mapping) (bitstream) (debug2) (soc_ok)] (block2) {};
+        \node[draw, rectangle, rounded corners, fill=gray!5, fit=(bd) (mapping) (bitstream) (debug2) (soc_ok)] (block2) {};
         \node[blocklabel] at (block2.north west) {BLOK INTEGRASI SOC MICROBLAZE V};
     \end{scope}
 
     % --- BLOCK 3: VALIDASI & OPTIMASI ---
-    \node [process, below=3.5cm of bd] (firmware) {Pengembangan\\Firmware C (Vitis)};
+    \node [process, below=3.2cm of bd] (firmware) {Pengembangan\\Firmware C (Vitis)};
     \node [decision, right=of firmware] (opt) {Optimasi DDS \&\\Arbitrary Fs};
-    \node [debug, above=of opt] (debug3) {Debug};
+    \node [debug, above=0.8cm of opt] (debug3) {Debug};
     \node [startstop, right=of opt] (valid_ok) {Validasi\\Berjalan Baik};
     \node [startstop, right=of valid_ok] (end) {Analisis dan\\Penulisan Laporan};
 
     % Draw Block 3 background
     \begin{scope}[on background layer]
-        \node[draw, rectangle, rounded corners, fill=red!10, fit=(firmware) (opt) (debug3) (valid_ok)] (block3) {};
+        \node[draw, rectangle, rounded corners, fill=red!5, fit=(firmware) (opt) (debug3) (valid_ok)] (block3) {};
         \node[blocklabel] at (block3.north west) {BLOK VALIDASI DAN OPTIMASI SISTEM};
     \end{scope}
 
     % --- Connections ---
-    \draw [->] (start) -- (rtl);
-    \draw [->] (rtl) -- (sim);
-    \draw [->] (sim) -- (impl);
-    \draw [->] (impl) -- (ip_ok);
-    \draw [->] (sim) -- (debug1);
-    \draw [->] (debug1) -| (rtl);
+    \draw [->, thick] (start) -- (rtl);
+    \draw [->, thick] (rtl) -- (sim);
+    \draw [->, thick] (sim) -- node[above, font=\tiny] {Lulus} (impl);
+    \draw [->, thick] (impl) -- (ip_ok);
+    \draw [->, thick] (sim) -- node[right, font=\tiny] {Gagal} (debug1);
+    \draw [->, thick] (debug1) -| (rtl);
     
-    \draw [->] (ip_ok) -| ($(block1.east) + (0.5,-0.5)$) |- (bitstream);
-    \draw [->] (bitstream) -- (mapping);
-    \draw [->] (mapping) -- (bd);
-    \draw [->] (bd) -- (soc_ok);
-    \draw [->] (bitstream) -- (debug2);
-    \draw [->] (debug2) -| (mapping);
+    \draw [->, thick] (ip_ok) -| ($(block1.east) + (0.4,-0.4)$) |- (bitstream);
+    \draw [->, thick] (bitstream) -- (mapping);
+    \draw [->, thick] (mapping) -- (bd);
+    \draw [->, thick] (bd) -- (soc_ok);
+    \draw [->, thick] (bitstream) -- node[right, font=\tiny] {Gagal} (debug2);
+    \draw [->, thick] (debug2) -| (mapping);
 
-    \draw [->] (soc_ok) |- (firmware);
-    \draw [->] (firmware) -- (opt);
-    \draw [->] (opt) -- (valid_ok);
-    \draw [->] (valid_ok) -- (end);
-    \draw [->] (opt) -- (debug3);
-    \draw [->] (debug3) -| (firmware);
+    \draw [->, thick] (soc_ok) |- (firmware);
+    \draw [->, thick] (firmware) -- (opt);
+    \draw [->, thick] (opt) -- node[above, font=\tiny] {Lulus} (valid_ok);
+    \draw [->, thick] (valid_ok) -- (end);
+    \draw [->, thick] (opt) -- node[right, font=\tiny] {Gagal} (debug3);
+    \draw [->, thick] (debug3) -| (firmware);
 
 \end{tikzpicture}
 }

@@ -15,6 +15,49 @@ Bab ini menjelaskan implementasi peripheral \textit{I2S transmitter} berbasis ar
 
 Alur data dimulai dari aplikasi C yang menulis sampel ke register \path{DATA_LEFT} dan \path{DATA_RIGHT}. Logika DDS internal kemudian membangkitkan detak audio yang diperlukan langsung dari detak sistem 100 MHz, menyederhanakan integrasi pada level SoC.
 
+\section{Alur Pengembangan IP I2S}
+
+Pengembangan IP I2S Transmitter ini mengikuti metodologi perancangan perangkat keras digital yang terstruktur, mulai dari spesifikasi hingga pengemasan IP. Diagram alir pengembangan disajikan pada Gambar \ref{fig:ch4-flow-ip-dev}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    node distance=1.1cm and 1.5cm,
+    font=\footnotesize,
+    >=latex,
+    % Styles
+    startstop/.style={draw, ellipse, fill=yellow!30, align=center, minimum width=2.5cm, minimum height=0.7cm},
+    process/.style={draw, rectangle, fill=blue!10, align=center, minimum width=3.8cm, minimum height=0.9cm, rounded corners},
+    decision/.style={draw, diamond, aspect=2, fill=purple!10, align=center, minimum width=2.8cm, inner sep=0pt},
+    debug/.style={draw, rectangle, fill=red!10, align=center, minimum width=1.8cm, minimum height=0.6cm}
+]
+
+    % --- Nodes ---
+    \node [startstop] (spec) {Spesifikasi Register\\\& Protokol (I2S)};
+    \node [process, below=of spec] (arch) {Perancangan Arsitektur\\(DDS, NCO, \& AXI4-Lite)};
+    \node [process, below=of arch] (hdl) {Implementasi RTL\\(Verilog HDL)};
+    \node [decision, below=of hdl] (sim) {Verifikasi Fungsional\\(Simulasi Testbench)};
+    \node [process, below=of sim, yshift=-0.2cm] (pkg) {Pengemasan IP\\(Vivado IP Packager)};
+    \node [startstop, below=of pkg] (done) {IP Berhasil Dibuat\\(IP Repository)};
+
+    % --- Feedbacks ---
+    \node [debug, left=of sim, xshift=-0.5cm] (fix) {Perbaikan RTL};
+
+    % --- Connections ---
+    \draw [->, thick] (spec) -- (arch);
+    \draw [->, thick] (arch) -- (hdl);
+    \draw [->, thick] (hdl) -- (sim);
+    \draw [->, thick] (sim) -- node[right] {Lulus} (pkg);
+    \draw [->, thick] (pkg) -- (done);
+    
+    \draw [->, thick] (sim) -- node[above] {Gagal} (fix);
+    \draw [->, thick] (fix) |- (hdl);
+
+\end{tikzpicture}
+\caption{Diagram alir pengembangan IP I2S Transmitter.}
+\label{fig:ch4-flow-ip-dev}
+\end{figure}
+
 \section{Spesifikasi IP I2S}
 
 \subsection{Fitur utama}

@@ -120,40 +120,13 @@ Implementasi pada berkas \texttt{helloworld.c} (\path{latesti2s}) menggunakan be
 
 
 
-\section{Verifikasi Setelah Perbaikan}
+\section{Verifikasi Setelah Perbaikan Firmware}
 
 Setelah perbaikan pada lapisan firmware, dilakukan verifikasi ulang untuk memastikan seluruh fitur berjalan sesuai spesifikasi.
 
-\subsection{Verifikasi Frekuensi Audio}
+\subsection{Verifikasi Akurasi Frekuensi}
 
-Pengujian dilakukan dengan membangkitkan nada sinus pada frekuensi 1 kHz, 2 kHz, dan 5 kHz. Untuk memastikan akurasi frekuensi yang dihasilkan, tangkapan osiloskop disajikan dalam ukuran besar agar nilai numerik pada layar instrumen dapat terbaca dengan jelas.
-
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/1khz.jpeg}{%
-        \includegraphics[width=0.9\textwidth]{contents/figures/1khz.jpeg}%
-    }{}
-    \caption{Tangkapan osiloskop untuk nada sinus 1 kHz.}
-    \label{fig:ch5-1khz}
-\end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/2khz.jpeg}{%
-        \includegraphics[width=0.9\textwidth]{contents/figures/2khz.jpeg}%
-    }{}
-    \caption{Tangkapan osiloskop untuk nada sinus 2 kHz.}
-    \label{fig:ch5-2khz}
-\end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/5khz.jpeg}{%
-        \includegraphics[width=0.9\textwidth]{contents/figures/5khz.jpeg}%
-    }{}
-    \caption{Tangkapan osiloskop untuk nada sinus 5 kHz.}
-    \label{fig:ch5-5khz}
-\end{figure}
+Pengujian dilakukan dengan membangkitkan nada sinus pada frekuensi 1 kHz, 2 kHz, dan 5 kHz. Tangkapan osiloskop untuk nada sinus 1 kHz (Gambar \ref{fig:ch5-1khz}) dipisahkan dari nada 2 kHz dan 5 kHz agar nilai numerik pada layar instrumen dapat terbaca dengan jelas.
 
 \input{contents/chapter-5/subsection-i2s-filter}
 
@@ -199,7 +172,9 @@ Fitur kontrol diuji dengan mengubah bit pada register \texttt{CONTROL}. Gambar \
 \end{figure}
 
 \subsection{Verifikasi Setelah Perbaikan Firmware}
-...
+
+Verifikasi akhir dilakukan untuk memastikan sinkronisasi antara perangkat lunak dan perangkat keras berjalan dengan sempurna. Hasilnya menunjukkan bahwa drift frekuensi telah dieliminasi sepenuhnya dan kedua kanal audio (L dan R) menghasilkan amplitudo yang identik, sebagaimana ditunjukkan pada Gambar \ref{fig:ch5-fixed-both}. Selain itu, tangkapan osiloskop untuk nada sinus 1 kHz dipisahkan dari nada 2 kHz dan 5 kHz agar detail parameter pada layar dapat terbaca dengan jelas.
+
 \begin{figure}[htbp]
     \centering
     \IfFileExists{contents/figures/both-channel.jpeg}{%
@@ -576,4 +551,31 @@ Skenario \textit{left-only}, \textit{right-only}, \textit{both}, \texttt{ENABLE}
     }{}
     \caption{Ringkasan timing desain.}
     \label{fig:ch5-timing-summary}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/1khz.jpeg}{%
+        \includegraphics[width=0.9\textwidth]{contents/figures/1khz.jpeg}%
+    }{}
+    \caption{Tangkapan osiloskop untuk nada sinus 1 kHz.}
+    \label{fig:ch5-1khz}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/2khz.jpeg}{%
+        \includegraphics[width=0.9\textwidth]{contents/figures/2khz.jpeg}%
+    }{}
+    \caption{Tangkapan osiloskop untuk nada sinus 2 kHz.}
+    \label{fig:ch5-2khz}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/5khz.jpeg}{%
+        \includegraphics[width=0.9\textwidth]{contents/figures/5khz.jpeg}%
+    }{}
+    \caption{Tangkapan osiloskop untuk nada sinus 5 kHz.}
+    \label{fig:ch5-5khz}
 \end{figure}

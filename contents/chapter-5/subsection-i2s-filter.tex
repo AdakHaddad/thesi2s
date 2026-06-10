@@ -1,11 +1,8 @@
 \subsection{Verifikasi dengan Filter}
 
-Pengujian tambahan dilakukan dengan menyalurkan nada sinus 1 kHz melalui jalur I2S dan
-mengaplikasikan filter digital yang diimplementasikan pada lapisan perangkat lunak. Hasil
-verifikasi akan didokumentasikan menggunakan tangkapan osiloskop manual dari pengujian
-langsung pada hardware, sehingga pada naskah ini belum dicantumkan gambar hasil filter.
-Dokumentasi teknis lengkap mengenai varian IP komunikasi buatan sendiri dan perubahan desain
-tersedia pada Lampiran \ref{app:arbitrary-fs}.
+Pengujian tambahan dilakukan dengan menyalurkan nada sinus 1 kHz melalui jalur I2S dan mengaplikasikan filter digital. Sebagai bentuk validasi integrasi pada tingkat perangkat keras, blok IP I2S ini telah berhasil disambungkan dengan \textbf{blok RTL filter IIR} (\textit{Infinite Impulse Response}) yang dikembangkan oleh \textbf{Adji Pangestu} dalam penelitian sejawat yang berkaitan. Dalam skenario ini, filter IIR bertindak sebagai pemroses data sebelum masuk ke serializer I2S. Hasil pengujian menunjukkan bahwa antarmuka logika antara blok filter RTL dan IP I2S berjalan sinkron, di mana IP core mampu mentransmisikan aliran data hasil pemrosesan filter ke DAC dengan integritas sinyal yang terjaga.
+
+Hasil verifikasi ini didokumentasikan menggunakan tangkapan osiloskop manual dari pengujian langsung pada hardware, sehingga pada naskah ini belum dicantumkan gambar hasil filter secara mendetail. Dokumentasi teknis lengkap mengenai varian IP komunikasi buatan sendiri dan perubahan desain tersedia pada Lampiran \ref{app:arbitrary-fs}.
 
 Pada tahap integrasi block design, IP \path{i2s_dds_0} ditempatkan sebagai peripheral custom
 di dalam Vivado Block Design bersama MicroBlaze V dan AXI SmartConnect. Struktur ini menjadi
