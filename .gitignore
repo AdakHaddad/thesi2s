@@ -1,0 +1,31 @@
+# Vivado
+*.jou
+*.log
+*.str
+
+**/*.cache/
+**/*.gen/
+**/*.runs/
+**/*.sim/
+**/*.hw/
+
+project_1.cache/
+project_1.gen/
+project_1.runs/
+project_1.sim/
+
+# Vitis
+workspace/
+.metadata/
+
+# Bitstreams
+*.bit
+*.bin
+*.ltx
+
+# Editor
+.vscode/
+.idea/
+
+# Windows
+Thumbs.db
