@@ -579,3 +579,27 @@ Skenario \textit{left-only}, \textit{right-only}, \textit{both}, \texttt{ENABLE}
     \caption{Tangkapan osiloskop untuk nada sinus 5 kHz.}
     \label{fig:ch5-5khz}
 \end{figure}
+
+\subsection{Perbandingan dengan Xilinx I2S LogiCORE IP}
+
+Sebagai bagian dari analisis, dilakukan perbandingan antara IP I2S Transmitter hasil perancangan ini dengan IP standar industri, yaitu \textit{Xilinx LogiCORE I2S Transmitter}~\citep{amd_pg308_i2s_logicore}. Perbandingan difokuskan pada kompleksitas antarmuka register dan fitur utama yang ditawarkan.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Perbandingan fitur IP I2S Transmitter.}
+    \label{tab:ch5-comparison-ip}
+    \begin{tabular}{|l|p{4.5cm}|p{4.5cm}|}
+        \hline
+        \textbf{Fitur} & \textbf{Xilinx LogiCORE I2S} & \textbf{Custom IP (Penelitian Ini)} \\
+        \hline
+        Jumlah Register & $> 15$ register (0x00 -- 0x64) & 4 register (0x00 -- 0x0C) \\
+        Antarmuka Data & AXI4-Stream & AXI4-Lite (Direct Register Write) \\
+        Konfigurasi $F_s$ & Membutuhkan clock eksternal/divider statis & Terintegrasi DDS (Arbitrary $F_s$) \\
+        Sinkronisasi & Interupsi \& AXI-Stream backpressure & Status bit polling (\textit{Toggle}) \\
+        Jumlah Kanal & 2, 4, 6, atau 8 kanal & 2 kanal (Stereo) \\
+        Kompleksitas & Tinggi (Mendukung AES status, dsb) & Rendah (Minimalis, fokus pada fungsi inti) \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Tabel \ref{tab:ch5-comparison-ip} menunjukkan bahwa meskipun IP Xilinx memiliki fitur yang jauh lebih luas (seperti dukungan hingga 8 kanal dan status AES), IP yang dirancang dalam penelitian ini menawarkan keunggulan dalam hal kemudahan penggunaan (\textit{ease of use}) dan efisiensi sumber daya untuk kebutuhan audio stereo standar. Pemanfaatan antarmuka data berbasis AXI4-Lite (bukan AXI4-Stream) memungkinkan perangkat lunak pada MicroBlaze V untuk menulis data sampel secara langsung ke register tanpa memerlukan pengontrol DMA (\textit{Direct Memory Access}) atau interkoneksi stream yang kompleks. Selain itu, fitur pembangkitan frekuensi sampling arbitrer berbasis DDS yang terintegrasi langsung di dalam IP memberikan fleksibilitas yang tidak dimiliki secara \textit{native} oleh IP standar tanpa bantuan blok clocking eksternal tambahan.
