@@ -60,7 +60,7 @@ domain clock (\textit{Clock Domain Crossing}, CDC) menjadi aspek kritikal.
 
 Ginosar~\citep{ginosar_metastability_2011} memberikan analisis mendalam tentang masalah
 metastabilitas pada sistem digital dan teknik sinkronisasi flip-flop ganda yang umum
-digunakan. Pada desain akhir \path{latesti2s} (\path{i2s\_dds\_1\_0}), serializer I2S
+digunakan. Pada desain akhir \path{latesti2s} (\texttt{i2s\_dds\_1\_0}), serializer I2S
 berjalan sepenuhnya pada domain \texttt{S\_AXI\_ACLK} 100 MHz sehingga jalur data PCM
 tidak memerlukan CDC antar-domain. Koordinasi perangkat lunak-perangkat keras ditangani
 melalui bit \texttt{STATUS[0]} yang di-\textit{toggle} setiap awal frame stereo.
@@ -372,7 +372,7 @@ adalah throughput sistem tetap bergantung pada kecepatan CPU saat menulis sampel
 
 \subsection{Integritas data dan sinkronisasi firmware}
 
-Pada desain akhir \path{i2s\_dds\_1\_0}, register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT}
+Pada desain akhir \texttt{i2s\_dds\_1\_0}, register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT}
 dan serializer I2S berada pada domain \texttt{S\_AXI\_ACLK} yang sama (100 MHz). Sampel yang
 ditulis firmware di-\textit{latch} ke \textit{shadow register} internal tepat pada awal frame
 stereo (\texttt{bit\_count == 0}, tepi naik \texttt{BCLK}) sehingga data tidak berubah di tengah
@@ -390,7 +390,7 @@ mengikuti kecepatan transmisi I2S yang sebenarnya.
 Pada FPGA Xilinx, \textit{Clocking Wizard} memanfaatkan MMCM (\textit{Mixed-Mode Clock Manager})
 untuk menghasilkan clock sistem 100 MHz~\citep{xilinx_clocking_wizard_2021}. Pada desain akhir,
 \texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK} tidak lagi berasal dari keluaran MMCM audio,
-melainkan disintesis oleh akumulator fase DDS di dalam IP \path{i2s\_dds\_1\_0}. Frekuensi
+melainkan disintesis oleh akumulator fase DDS di dalam IP \texttt{i2s\_dds\_1\_0}. Frekuensi
 sampling aktual ditentukan oleh nilai \texttt{SAMPLE\_RATE\_HZ} pada register \texttt{CONTROL}
 dengan resolusi yang ditetapkan oleh periode clock 100 MHz.
 
