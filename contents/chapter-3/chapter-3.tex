@@ -187,7 +187,7 @@ DDS bekerja dengan akumulator fase yang bertambah setiap siklus detak 100 MHz. K
     \Delta \theta_{BCLK} = \frac{F_s \times 64 \times 2}{f_{sys}} \times \text{Modulus}
 \end{equation}
 
-Dalam implementasi Verilog pada \path{i2s_dds.v}, digunakan akumulator modulus terhadap nilai $100.000.000$. Hal ini memungkinkan pembangkitan frekuensi yang sangat presisi karena pembagi disesuaikan langsung dengan jumlah siklus clock sistem per detik. Desain ini membangkitkan dua detak utama:
+Dalam implementasi Verilog pada \path{i2s.v}, digunakan akumulator modulus terhadap nilai $100.000.000$. Hal ini memungkinkan pembangkitan frekuensi yang sangat presisi karena pembagi disesuaikan langsung dengan jumlah siklus clock sistem per detik. Desain ini membangkitkan dua detak utama:
 \begin{itemize}
     \item \textbf{BCLK}: Berjalan pada $64 \times F_s$, digunakan untuk serialisasi data.
     \item \textbf{MCLK}: Berjalan pada $256 \times F_s$, disediakan untuk modul DAC yang membutuhkan detak master eksternal.
@@ -294,12 +294,14 @@ Penelitian ini mengikuti alur pengerjaan yang terbagi dalam tiga blok utama: per
     \node [debug, above=0.8cm of sim] (debug1) {Debug};
     \node [process, right=of sim] (impl) {Implementasi \&\\Sintesis IP};
     \node [startstop, right=of impl] (ip_ok) {IP I2S\\Berjalan Benar};
+% ← ADD THIS
+\node [above=0.5cm of debug1, minimum width=0pt, minimum height=0pt, inner sep=0pt] (pad1) {};
 
-    % Draw Block 1 background
-    \begin{scope}[on background layer]
-        \node[draw, rectangle, rounded corners, fill=blue!5, fit=(rtl) (sim) (debug1) (impl) (ip_ok)] (block1) {};
-        \node[blocklabel] at (block1.north west) {BLOK PERANCANGAN IP I2S TRANSMITTER (AXI4-LITE)};
-    \end{scope}
+\begin{scope}[on background layer]
+	\node[draw, rectangle, rounded corners, fill=blue!5,
+	fit=(rtl) (sim) (debug1) (impl) (ip_ok) (pad1)] (block1) {}; % ← add pad1
+	\node[blocklabel] at (block1.north west) {BLOK PERANCANGAN IP I2S TRANSMITTER (AXI4-LITE)};
+\end{scope}
 
     % --- BLOCK 2: INTEGRASI SOC MICROBLAZE V ---
     \node [process, below=3.2cm of rtl] (bd) {Perancangan\\Block Design Vivado};
@@ -315,17 +317,19 @@ Penelitian ini mengikuti alur pengerjaan yang terbagi dalam tiga blok utama: per
     \end{scope}
 
     % --- BLOCK 3: VALIDASI & OPTIMASI ---
-    \node [process, below=3.2cm of bd] (firmware) {Pengembangan\\Firmware C (Vitis)};
+    \node [process, below=4cm of bd] (firmware) {Pengembangan\\Firmware C (Vitis)};
     \node [decision, right=of firmware] (opt) {Optimasi DDS \&\\Arbitrary Fs};
     \node [debug, above=0.8cm of opt] (debug3) {Debug};
     \node [startstop, right=of opt] (valid_ok) {Validasi\\Berjalan Baik};
     \node [startstop, right=of valid_ok] (end) {Analisis dan\\Penulisan Laporan};
 
-    % Draw Block 3 background
-    \begin{scope}[on background layer]
-        \node[draw, rectangle, rounded corners, fill=red!5, fit=(firmware) (opt) (debug3) (valid_ok)] (block3) {};
-        \node[blocklabel] at (block3.north west) {BLOK VALIDASI DAN OPTIMASI SISTEM};
-    \end{scope}
+  \node [above=0.5cm of debug3, minimum width=0pt, minimum height=0pt, inner sep=0pt] (pad3) {};
+  
+  \begin{scope}[on background layer]
+  	\node[draw, rectangle, rounded corners, fill=red!5,
+  	fit=(firmware) (opt) (debug3) (valid_ok) (pad3)] (block3) {}; % ← add pad3
+  	\node[blocklabel] at (block3.north west) {BLOK VALIDASI DAN OPTIMASI SISTEM};
+  \end{scope}
 
     % --- Connections ---
     \draw [->, thick] (start) -- (rtl);

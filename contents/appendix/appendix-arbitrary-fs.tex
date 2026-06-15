@@ -2,21 +2,21 @@
 \addcontentsline{toc}{chapter}{Arbitrary-Fs I2S dan IP komunikasi buatan sendiri}
 \label{app:arbitrary-fs}
 
-Lampiran ini menjelaskan varian desain I2S DDS (\path{i2s_dds_1_0}) yang menjadi
+Lampiran ini menjelaskan varian desain I2S (\path{i2s_1_0}) yang menjadi
 implementasi akhir penelitian. IP ini dibuat sebagai peripheral komunikasi buatan
 sendiri agar sistem tidak bergantung pada IP berlisensi dari pihak ketiga.
 
 \begin{itemize}
-    \item Modul inti \path{i2s_dds_slave_lite_v1_0_S00_AXI.v} membangkitkan \texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK} menggunakan akumulator fase DDS pada domain \texttt{S\_AXI\_ACLK} 100 MHz.
+    \item Modul inti \path{i2s_slave_lite_v1_0_S00_AXI.v} membangkitkan \texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK} menggunakan akumulator fase DDS pada domain \texttt{S\_AXI\_ACLK} 100 MHz.
     \item Frekuensi sampling diprogram melalui bitfield \texttt{SAMPLE\_RATE\_HZ} pada register \texttt{CONTROL} (rentang 0--1.048.575 Hz, dibatasi aman hingga 195.312 Hz).
     \item Register \texttt{STATUS[0]} berubah setiap awal frame stereo sehingga firmware dapat melakukan \textit{polling} tanpa interrupt.
-    \item Wrapper \path{i2s_dds.v} mempertahankan port \texttt{audio\_48\_clk}/\texttt{audio\_44\_clk} untuk kompatibilitas block design, meskipun logika DDS tidak menggunakannya.
-    \item Kode lengkap berada di \path{latesti2s/ready_to_run/ip_repo/i2s_dds_1_0/hdl}; firmware uji di \path{latesti2s/ready_to_run/sw/helloworld.c}.
+    \item Wrapper \path{i2s.v} mempertahankan port \texttt{audio\_48\_clk}/\texttt{audio\_44\_clk} untuk kompatibilitas block design, meskipun logika DDS tidak menggunakannya.
+    \item Kode lengkap berada di \path{latesti2s/ready_to_run/ip_repo/i2s_1_0/hdl}; firmware uji di \path{latesti2s/ready_to_run/sw/helloworld.c}.
 \end{itemize}
 
 Potongan kode DDS yang menunjukkan pembangkitan detak BCLK ditampilkan pada Listing~\ref{lst:app-dds-bclk}.
 
-\begin{lstlisting}[language=Verilog, caption={Akumulator fase DDS untuk pembangkitan BCLK pada \texttt{i2s\_dds\_slave\_lite\_v1\_0\_S00\_AXI.v}.}, label={lst:app-dds-bclk}]
+\begin{lstlisting}[language=Verilog, caption={Akumulator fase DDS untuk pembangkitan BCLK pada \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v}.}, label={lst:app-dds-bclk}]
 wire [31:0] bclk_toggle_rate_hz = {sample_rate_sync, 7'b0}; // Fs x 128
 wire bclk_phase_wrap = (bclk_phase_sum >= AXI_CLK_HZ);
 

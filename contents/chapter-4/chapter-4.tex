@@ -2,7 +2,7 @@
 
 \section{Ringkasan Sistem}
 
-Bab ini menjelaskan implementasi peripheral \textit{I2S transmitter} berbasis arsitektur \textit{Direct Digital Synthesis} (DDS) yang dirancang sebagai custom IP AXI4-Lite. Fokus rancangan adalah mengubah sampel PCM stereo yang ditulis oleh MicroBlaze V melalui register menjadi sinyal serial \path{i2s_mclk}, \path{i2s_bclk}, \path{i2s_ws}, dan \path{i2s_data} dengan fleksibilitas frekuensi sampling yang dapat diprogram secara arbitrer. Implementasi utama merujuk pada desain \path{latesti2s} (\path{i2s_dds_1_0}).
+Bab ini menjelaskan implementasi peripheral \textit{I2S transmitter} berbasis arsitektur \textit{Direct Digital Synthesis} (DDS) yang dirancang sebagai custom IP AXI4-Lite. Fokus rancangan adalah mengubah sampel PCM stereo yang ditulis oleh MicroBlaze V melalui register menjadi sinyal serial \path{i2s_mclk}, \path{i2s_bclk}, \path{i2s_ws}, dan \path{i2s_data} dengan fleksibilitas frekuensi sampling yang dapat diprogram secara arbitrer. Implementasi utama merujuk pada desain \path{latesti2s} (\path{i2s_1_0}).
 
 \begin{figure}[htbp]
     \centering
@@ -104,7 +104,7 @@ Pengembangan IP I2S Transmitter ini mengikuti metodologi perancangan perangkat k
 \end{tabular}
 \end{table}
 
-\section{Implementasi RTL IP I2S DDS}
+\section{Implementasi RTL IP I2S}
 
 Implementasi RTL menggunakan akumulator fase yang berjalan pada domain 100 MHz.
 
@@ -112,7 +112,7 @@ Implementasi RTL menggunakan akumulator fase yang berjalan pada domain 100 MHz.
 
 Desain ini menggunakan akumulator modulus terhadap $100.000.000$. Setiap kali akumulator meluap, register detak berpindah logika (\textit{toggle}).
 
-\begin{lstlisting}[language=Verilog, caption={Logika mesin DDS pada \texttt{i2s\_dds\_slave\_lite\_v1\_0\_S00\_AXI.v}.}]
+\begin{lstlisting}[language=Verilog, caption={Logika mesin DDS pada \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v}.}]
 wire [31:0] bclk_toggle_rate_hz = {sample_rate_sync, 7'b0}; // Fs x 128
 wire bclk_phase_wrap = (bclk_phase_sum >= AXI_CLK_HZ);
 
@@ -149,7 +149,7 @@ Perangkat lunak pada Vitis (\path{latesti2s/ready_to_run/sw/helloworld.c}) diran
 
 \subsection{Definisi Alamat dan Masker Bit}
 
-Aplikasi mendefinisikan konstanta alamat register yang sesuai dengan peta register IP I2S DDS.
+Aplikasi mendefinisikan konstanta alamat register yang sesuai dengan peta register IP I2S.
 
 \begin{lstlisting}[language=C, caption={Konfigurasi register dan masker bit pada software.}]
 #define DATA_LEFT   (I2S_BASE + 0x00U)

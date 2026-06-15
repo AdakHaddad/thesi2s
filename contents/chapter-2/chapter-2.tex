@@ -60,7 +60,7 @@ domain clock (\textit{Clock Domain Crossing}, CDC) menjadi aspek kritikal.
 
 Ginosar~\citep{ginosar_metastability_2011} memberikan analisis mendalam tentang masalah
 metastabilitas pada sistem digital dan teknik sinkronisasi flip-flop ganda yang umum
-digunakan. Pada desain akhir \path{latesti2s} (\texttt{i2s\_dds\_1\_0}), serializer I2S
+digunakan. Pada desain akhir \path{latesti2s} (\texttt{i2s\_1\_0}), serializer I2S
 berjalan sepenuhnya pada domain \texttt{S\_AXI\_ACLK} 100 MHz sehingga jalur data PCM
 tidak memerlukan CDC antar-domain. Koordinasi perangkat lunak-perangkat keras ditangani
 melalui bit \texttt{STATUS[0]} yang di-\textit{toggle} setiap awal frame stereo.
@@ -124,7 +124,7 @@ Dalam arsitektur RISC-V, komunikasi dengan peripheral dilakukan melalui mekanism
 
 \subsubsection{Register Kontrol dan Status (CSR)}
 
-RISC-V menyediakan kumpulan \textit{Control and Status Registers} (CSR) untuk manajemen sistem dan telemetri. Salah satu CSR yang penting pada arsitektur RISC-V adalah \texttt{mcycle}, yang merupakan counter 64-bit yang menghitung jumlah siklus detak (\textit{clock cycles}) sejak prosesor diaktifkan~\citep{riscv_isa_vol1_2019}. Register ini dapat dipakai untuk \textit{timing loop} presisi tinggi, namun pada firmware akhir penelitian ini sinkronisasi audio mengandalkan register \texttt{STATUS} IP I2S DDS.
+RISC-V menyediakan kumpulan \textit{Control and Status Registers} (CSR) untuk manajemen sistem dan telemetri. Salah satu CSR yang penting pada arsitektur RISC-V adalah \texttt{mcycle}, yang merupakan counter 64-bit yang menghitung jumlah siklus detak (\textit{clock cycles}) sejak prosesor diaktifkan~\citep{riscv_isa_vol1_2019}. Register ini dapat dipakai untuk \textit{timing loop} presisi tinggi, namun pada firmware akhir penelitian ini sinkronisasi audio mengandalkan register \texttt{STATUS} IP I2S.
 
 \subsubsection{Sinkronisasi Perangkat Keras-Lunak (Hardware-Software Handshake)}
 
@@ -345,7 +345,7 @@ RISC-V menyediakan \textit{Control and Status Register} (CSR) \texttt{mcycle} ya
 counter siklus CPU 64-bit bebas-jalan (\textit{free-running})~\citep{riscv_isa_vol1_2019}.
 Register ini diakses melalui instruksi \texttt{rdcycle}/\texttt{rdcycleh}. Pada firmware
 \path{latesti2s/ready_to_run/sw/helloworld.c}, loop pengiriman sampel tidak lagi bergantung
-pada \texttt{mcycle}, melainkan menunggu perubahan bit \texttt{STATUS[0]} dari IP I2S DDS.
+pada \texttt{mcycle}, melainkan menunggu perubahan bit \texttt{STATUS[0]} dari IP I2S.
 
 \subsection{Antarmuka AXI4-Lite}
 
@@ -372,7 +372,7 @@ adalah throughput sistem tetap bergantung pada kecepatan CPU saat menulis sampel
 
 \subsection{Integritas data dan sinkronisasi firmware}
 
-Pada desain akhir \texttt{i2s\_dds\_1\_0}, register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT}
+Pada desain akhir \texttt{i2s\_1\_0}, register \texttt{DATA\_LEFT}/\texttt{DATA\_RIGHT}
 dan serializer I2S berada pada domain \texttt{S\_AXI\_ACLK} yang sama (100 MHz). Sampel yang
 ditulis firmware di-\textit{latch} ke \textit{shadow register} internal tepat pada awal frame
 stereo (\texttt{bit\_count == 0}, tepi naik \texttt{BCLK}) sehingga data tidak berubah di tengah
@@ -390,7 +390,7 @@ mengikuti kecepatan transmisi I2S yang sebenarnya.
 Pada FPGA Xilinx, \textit{Clocking Wizard} memanfaatkan MMCM (\textit{Mixed-Mode Clock Manager})
 untuk menghasilkan clock sistem 100 MHz~\citep{xilinx_clocking_wizard_2021}. Pada desain akhir,
 \texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK} tidak lagi berasal dari keluaran MMCM audio,
-melainkan disintesis oleh akumulator fase DDS di dalam IP \texttt{i2s\_dds\_1\_0}. Frekuensi
+melainkan disintesis oleh akumulator fase DDS di dalam IP \texttt{i2s\_1\_0}. Frekuensi
 sampling aktual ditentukan oleh nilai \texttt{SAMPLE\_RATE\_HZ} pada register \texttt{CONTROL}
 dengan resolusi yang ditetapkan oleh periode clock 100 MHz.
 

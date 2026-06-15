@@ -1,6 +1,6 @@
-# I2S DDS Visualization
+# I2S Visualization
 
-This directory contains animations and visualizers to explain the I2S DDS (Direct Digital Synthesis) mechanism and data movement.
+This directory contains animations and visualizers to explain the I2S (Direct Digital Synthesis) mechanism and data movement.
 
 ## Interactive Web Visualizer
 - **File**: `i2s_animation.html`

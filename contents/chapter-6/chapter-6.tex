@@ -28,7 +28,7 @@ Penelitian ini merancang dan mengimplementasikan \textbf{IP core transmitter I2S
     berhasil diidentifikasi dan diperbaiki seluruhnya di sisi firmware, tanpa perubahan
     pada RTL.
 
-    \item Desain akhir \path{latesti2s} (\texttt{i2s\_dds\_1\_0}) menggunakan teknik \textbf{DDS (Direct Digital Synthesis)} untuk membangkitkan \texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK} dari clock sistem 100 MHz, serializer Philips I2S yang sesuai spesifikasi~\citep{philips_i2s_1986}, serta mekanisme \textit{shadow register} dan \textit{status handshake}. Arsitektur ini bersifat \textbf{vendor-agnostic} dan mendukung frekuensi sampling arbitrer hingga 195.312 Hz yang dapat dikonfigurasi melalui register \texttt{SAMPLE\_RATE\_HZ}.
+    \item Desain akhir \path{latesti2s} (\texttt{i2s\_1\_0}) menggunakan teknik \textbf{DDS (Direct Digital Synthesis)} untuk membangkitkan \texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK} dari clock sistem 100 MHz, serializer Philips I2S yang sesuai spesifikasi~\citep{philips_i2s_1986}, serta mekanisme \textit{shadow register} dan \textit{status handshake}. Arsitektur ini bersifat \textbf{vendor-agnostic} dan mendukung frekuensi sampling arbitrer hingga 195.312 Hz yang dapat dikonfigurasi melalui register \texttt{SAMPLE\_RATE\_HZ}.
 \end{enumerate}
 
 % ============================================================
