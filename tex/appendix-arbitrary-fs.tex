@@ -1,26 +1,14 @@
 \appendix
-\chapter{Arbitrary-Fs I2S: desain dan diff kode}
+\chapter{Arbitrary-Fs I2S: Desain dan Penghapusan Port Legacy}
 \label{app:arbitrary-fs}
 
-Sebagai tambahan pada desain utama yang menggunakan keluarga frekuensi 44.1/48 kHz,
-penulis mengembangkan varian I2S yang memungkinkan frekuensi sampling arbitrary.
-Lampiran ini merangkum alasan desain, perubahan pada wrapper IP, serta diff kode penting.
+Lampiran ini merangkum perubahan desain pada IP core I2S transmitter untuk menghapus port clock eksternal legacy (\texttt{audio\_44\_clk} dan \texttt{audio\_48\_clk}) sepenuhnya. Seluruh proses penyintesisan clock audio (\texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK}) kini dilakukan secara murni digital menggunakan akumulator fase NCO (\textit{Numerically Controlled Oscillator}) yang berjalan pada domain clock sistem 100 MHz.
 
-Perubahan utama:
+Perubahan utama pada perancangan perangkat keras:
 \begin{itemize}
-    \item Menyediakan `audio_clk` tunggal pada level wrapper untuk menghilangkan ketergantungan
-    pada dua port clock legacy (`audio_44_clk` dan `audio_48_clk`).
-    \item Menjaga kompatibilitas block design dengan menambahkan wrapper kompatibilitas yang
-    meneruskan `audio_clk` ke port legacy saat diperlukan.
-    \item Menyimpan clamp `MAX_SAFE_FS_HZ` pada modul DDS untuk memastikan akumulator/DDS
-    bekerja dalam batas aman terhadap clock AXI dan pembagi internal.
+    \item Menghapus port input \texttt{audio\_44\_clk} dan \texttt{audio\_48\_clk} dari daftar port modul level teratas (\texttt{i2s\_dds.v}) dan modul slave AXI (\texttt{i2s\_dds\_slave\_lite\_v1\_0\_S00\_AXI.v}).
+    \item Menghapus logika suppression lint untuk port clock legacy tersebut pada bagian akhir kode Verilog modul slave.
+    \item Menjaga keamanan akumulator NCO dengan tetap menyertakan batas atas frekuensi (\texttt{MAX\_SAFE\_FS\_HZ}) pada modul register control untuk menghindari nilai increment yang tidak aman.
 \end{itemize}
 
-Contoh patch singkat (ringkasan):
-\begin{verbatim}
-// wrapper: expose audio_clk, forward to audio_44_clk/audio_48_clk of core
-i2s_wrapper(.audio_clk(audio_clk), .audio_44_clk(audio_clk), .audio_48_clk(audio_clk));
-\end{verbatim}
-
-Untuk patch lengkap dan file XDC/packaging yang perlu diubah jika ingin mengganti
-antarmuka IP secara permanen, lihat repositori dan folder `fix/ready_to_run/ip_repo`.
+Dengan modifikasi ini, arsitektur IP core menjadi lebih sederhana, bersih, dan sepenuhnya bersifat \textit{vendor-agnostic} karena tidak lagi memerlukan clock generator analog/wizard clock tambahan untuk audio di luar clock AXI standar.

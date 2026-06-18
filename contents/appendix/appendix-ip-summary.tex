@@ -2,8 +2,8 @@
 \addcontentsline{toc}{chapter}{Ringkasan IP Block Design}
 
 Lampiran ini merangkum IP utama pada Vivado Block Design yang digunakan dalam
-proyek \path{latesti2s}. Berkas deskripsi block design utama dan hasil generasi IP
-tersedia di direktori \path{latesti2s/ready_to_run}.
+proyek. Berkas deskripsi block design utama dan hasil generasi IP
+tersedia di direktori \path{ready_to_run}.
 
 \section*{Diagram Block Design}
 
@@ -120,7 +120,7 @@ tersedia di direktori \path{latesti2s/ready_to_run}.
 \section*{Ringkasan arsitektur}
 \begin{itemize}
     \item Clock sistem berasal dari \path{sys_clock} 100 MHz dan masuk ke \path{clk_wiz_0}, yang menghasilkan domain 100 MHz untuk MicroBlaze, AXI interconnect, dan IP I2S.
-    \item IP \path{i2s_0} membangkitkan \texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK} secara internal melalui DDS; port \path{audio_48_clk}/\path{audio_44_clk} tetap terhubung pada block design untuk kompatibilitas tetapi tidak digunakan secara fungsional.
+    \item IP \path{i2s_0} membangkitkan \texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK} secara internal menggunakan akumulator fase NCO secara murni digital dari clock sistem 100 MHz.
     \item \path{microblaze_riscv_0} bertindak sebagai master AXI dan terhubung ke \path{axi_smc}.
     \item \path{axi_smc} merutekan transaksi ke slave peripheral, termasuk \path{i2s_0} dan \path{axi_uartlite_0}.
     \item Keluaran audio eksternal yang diekspos block design adalah \path{i2s_mclk}, \path{i2s_bclk}, \path{i2s_ws}, dan \path{i2s_data}.
@@ -150,7 +150,7 @@ tersedia di direktori \path{latesti2s/ready_to_run}.
 
 \section*{\path{microblaze_riscv_0}}
 \begin{description}
-    \item[Purpose] Soft processor RISC-V untuk menjalankan firmware \path{latesti2s/ready_to_run/sw/helloworld.c}.
+    \item[Purpose] Soft processor RISC-V untuk menjalankan firmware \path{ready_to_run/sw/helloworld.c}.
     \item[Key parameters] Debug aktif, jalur \path{M_AXI_DP} untuk akses peripheral, serta ILMB/DLMB untuk memori lokal.
     \item[Connections] Clock 100 MHz dari \path{clk_wiz_0}; reset dari \path{rst_clk_wiz_0_100M}; master AXI ke \path{axi_smc/S00_AXI}.
 \end{description}
@@ -182,8 +182,8 @@ tersedia di direktori \path{latesti2s/ready_to_run}.
 
 \section*{\path{i2s_0}}
 \begin{description}
-    \item[Purpose] Custom IP I2S transmitter berbasis DDS (\path{xilinx.com:user:i2s:1.0}).
-    \item[Main interfaces] \path{S00_AXI} untuk kontrol register, port legacy \path{audio_48_clk}/\path{audio_44_clk}, dan empat keluaran I2S.
+    \item[Purpose] Custom IP I2S transmitter berbasis NCO (\path{xilinx.com:user:i2s:1.0}).
+    \item[Main interfaces] \path{S00_AXI} untuk kontrol register dan empat keluaran I2S.
     \item[Key parameters] Empat register AXI4-Lite 32-bit (\texttt{DATA\_LEFT}, \texttt{DATA\_RIGHT}, \texttt{CONTROL}, \texttt{STATUS}), \path{C_S00_AXI_BASEADDR=0x00020000}, seluruh logika audio pada domain 100 MHz.
 \end{description}
 

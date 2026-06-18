@@ -2,18 +2,18 @@
 
 \section{Ringkasan Sistem}
 
-Bab ini menjelaskan implementasi peripheral \textit{I2S transmitter} berbasis arsitektur \textit{Direct Digital Synthesis} (DDS) yang dirancang sebagai custom IP AXI4-Lite. Fokus rancangan adalah mengubah sampel PCM stereo yang ditulis oleh MicroBlaze V melalui register menjadi sinyal serial \path{i2s_mclk}, \path{i2s_bclk}, \path{i2s_ws}, dan \path{i2s_data} dengan fleksibilitas frekuensi sampling yang dapat diprogram secara arbitrer. Implementasi utama merujuk pada desain \path{latesti2s} (\path{i2s_1_0}).
+Bab ini menjelaskan implementasi peripheral \textit{I2S transmitter} berbasis arsitektur \textit{Numerically Controlled Oscillator} (NCO) yang dirancang sebagai custom IP AXI4-Lite. Fokus rancangan adalah mengubah sampel PCM stereo yang ditulis oleh MicroBlaze V melalui register menjadi sinyal serial \path{i2s_mclk}, \path{i2s_bclk}, \path{i2s_ws}, dan \path{i2s_data} dengan fleksibilitas frekuensi sampling yang dapat diprogram secara arbitrer. Implementasi utama merujuk pada desain proyek (\path{i2s_1_0}).
 
 \begin{figure}[htbp]
     \centering
     \IfFileExists{contents/figures/i2s-ip-block.png}{%
         \includegraphics[width=0.92\textwidth]{contents/figures/i2s-ip-block.png}%
     }{}
-    \caption{Blok internal IP I2S TX berbasis DDS dan AXI4-Lite.}
+    \caption{Blok internal IP I2S TX berbasis NCO dan AXI4-Lite.}
     \label{fig:ch4-block-ip}
 \end{figure}
 
-Alur data dimulai dari aplikasi C yang menulis sampel ke register \path{DATA_LEFT} dan \path{DATA_RIGHT}. Logika DDS internal kemudian membangkitkan detak audio yang diperlukan langsung dari detak sistem 100 MHz, menyederhanakan integrasi pada level SoC.
+Alur data dimulai dari aplikasi C yang menulis sampel ke register \path{DATA_LEFT} dan \path{DATA_RIGHT}. Logika NCO internal kemudian membangkitkan detak audio yang diperlukan langsung dari detak sistem 100 MHz, menyederhanakan integrasi pada level SoC.
 
 \section{Alur Pengembangan IP I2S}
 
@@ -34,7 +34,7 @@ Pengembangan IP I2S Transmitter ini mengikuti metodologi perancangan perangkat k
 
     % --- Nodes ---
     \node [startstop] (spec) {Spesifikasi Register\\\& Protokol (I2S)};
-    \node [process, below=of spec] (arch) {Perancangan Arsitektur\\(DDS, NCO, \& AXI4-Lite)};
+    \node [process, below=of spec] (arch) {Perancangan Arsitektur\\(NCO \& AXI4-Lite)};
     \node [process, below=of arch] (hdl) {Implementasi RTL\\(Verilog HDL)};
     \node [decision, below=of hdl] (sim) {Verifikasi Fungsional\\(Simulasi Testbench)};
     \node [process, below=of sim, yshift=-0.2cm] (pkg) {Pengemasan IP\\(Vivado IP Packager)};
@@ -63,7 +63,7 @@ Pengembangan IP I2S Transmitter ini mengikuti metodologi perancangan perangkat k
 \subsection{Fitur utama}
 \begin{itemize}
     \item Antarmuka kontrol \textbf{AXI4-Lite 32 bit} untuk akses dari MicroBlaze V.
-    \item Pembangkitan detak audio murni digital (\textbf{DDS/NCO}), bersifat \textbf{vendor-agnostic}.
+    \item Pembangkitan detak audio murni digital (\textbf{NCO}), bersifat \textbf{vendor-agnostic}.
     \item Mendukung \textbf{frekuensi sampling arbitrer} yang dapat diatur melalui register dalam satuan Hz.
     \item Format \textbf{Philips I2S} standar (stereo, MSB-first, one-bit delay).
     \item Lebar sampel dinamis (1--32 bit) dan mekanisme \textit{shadow registers} untuk integritas data.
@@ -112,7 +112,7 @@ Implementasi RTL menggunakan akumulator fase yang berjalan pada domain 100 MHz.
 
 Desain ini menggunakan akumulator modulus terhadap $100.000.000$. Setiap kali akumulator meluap, register detak berpindah logika (\textit{toggle}).
 
-\begin{lstlisting}[language=Verilog, caption={Logika mesin DDS pada \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v}.}]
+\begin{lstlisting}[language=Verilog, caption={Logika mesin NCO pada \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v}.}]
 wire [31:0] bclk_toggle_rate_hz = {sample_rate_sync, 7'b0}; // Fs x 128
 wire bclk_phase_wrap = (bclk_phase_sum >= AXI_CLK_HZ);
 
@@ -145,7 +145,7 @@ Perpindahan logika \texttt{current\_latch\_status\_q} diekspor ke register \text
 
 \section{Implementasi Software Vitis}
 
-Perangkat lunak pada Vitis (\path{latesti2s/ready_to_run/sw/helloworld.c}) dirancang untuk menjadi sumber data audio yang fleksibel dan interaktif. Berbeda dengan implementasi sederhana, versi final ini mengadopsi kontrol \textit{closed-loop} terhadap status perangkat keras dan antarmuka pengguna berbasis UART.
+Perangkat lunak pada Vitis (\path{ready_to_run/sw/helloworld.c}) dirancang untuk menjadi sumber data audio yang fleksibel dan interaktif. Berbeda dengan implementasi sederhana, versi final ini mengadopsi kontrol \textit{closed-loop} terhadap status perangkat keras dan antarmuka pengguna berbasis UART.
 
 \subsection{Definisi Alamat dan Masker Bit}
 
@@ -183,7 +183,7 @@ void handle_key(uint8_t key) {
 }
 \end{lstlisting}
 
-\subsection{Pembangkitan Gelombang DDS dan Sinkronisasi Frame}
+\subsection{Pembangkitan Gelombang via Software DDS dan Sinkronisasi Frame}
 
 Inti dari proses pengiriman audio terletak pada loop utama yang menunggu perubahan bit status dari hardware. Ketika hardware melakukan \textit{latch} pada sampel sebelumnya, software segera menghitung dan menulis sampel berikutnya.
 
@@ -228,4 +228,4 @@ Sesuai standar Philips, transisi \texttt{WS} terjadi satu periode \texttt{BCLK} 
 
 \section{Ringkasan Bab}
 
-Implementasi final menggunakan arsitektur DDS murni digital yang menawarkan presisi frekuensi tinggi dan kemudahan integrasi. Mekanisme \textit{shadow register} dan \textit{status polling} menjamin integritas transmisi audio stereo pada berbagai \textit{sampling rate} yang dapat diprogram.
+Implementasi final menggunakan arsitektur NCO murni digital yang menawarkan presisi frekuensi tinggi dan kemudahan integrasi. Mekanisme \textit{shadow register} dan \textit{status polling} menjamin integritas transmisi audio stereo pada berbagai \textit{sampling rate} yang dapat diprogram.

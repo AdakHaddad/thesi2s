@@ -1,10 +1,10 @@
 \chapter{Hasil dan Pembahasan}
 
-Bab ini menyajikan hasil pengujian sinyal, analisis frekuensi sampling, serta identifikasi dan perbaikan bug firmware yang ditemukan selama validasi perangkat keras. Perlu dicatat bahwa tangkapan sinyal osiloskop dan data pengukuran yang disajikan pada bagian ini diambil menggunakan desain dasar (\textit{fixed-clock}). Namun, karena varian DDS dirancang untuk mengikuti standar protokol I2S yang identik, karakteristik timing dan perilaku sinyal yang diamati tetap merepresentasikan performa sistem secara keseluruhan.
+Bab ini menyajikan hasil pengujian sinyal, analisis frekuensi sampling, serta identifikasi dan perbaikan bug firmware yang ditemukan selama validasi perangkat keras. Pengukuran osiloskop diambil menggunakan desain dasar sebagai representasi fungsional karena timing protokol I2S pada varian DDS identik secara standar.
 
 \section{Pengujian Sinyal}
 
-Pengamatan sinyal pada \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data} dilakukan menggunakan alat ukur digital (osiloskop/logic analyzer) untuk memverifikasi timing Philips I2S~\citep{philips_i2s_1986}.
+Pengamatan sinyal pada jalur \path{i2s_bclk}, \path{i2s_ws}, dan \path{i2s_data} dilakukan untuk memverifikasi timing Philips I2S \citep{philips_i2s_1986}.
 
 \begin{landscape}
 \begin{figure}[htbp]
@@ -14,53 +14,41 @@ Pengamatan sinyal pada \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_da
         \IfFileExists{contents/figures/sample-latching-leftright-waveform.png}{%
             \includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{contents/figures/sample-latching-leftright-waveform.png}%
         }{}
-        \caption{BCLK, WS, dan DATA -- satu frame stereo 64 BCLK.}
+        \caption{Sinyal BCLK, WS, dan DATA pada satu frame stereo (64 BCLK).}
         \label{fig:ch5-waveform-frame}
     \end{subfigure}
-
     \vspace{0.5em}
-
     \begin{subfigure}[t]{0.98\linewidth}
         \centering
         \IfFileExists{contents/figures/bit-counter-waveform.png}{%
             \includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{contents/figures/bit-counter-waveform.png}%
         }{}
-        \caption{Penghitung bit I2S selama satu frame stereo.}
+        \caption{Perilaku penghitung bit I2S selama satu frame stereo.}
         \label{fig:ch5-bit-counter-waveform}
     \end{subfigure}
-
     \vspace{0.5em}
-
     \begin{subfigure}[t]{0.98\linewidth}
         \centering
         \IfFileExists{contents/figures/clock-divider-waveform.png}{%
             \includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{contents/figures/clock-divider-waveform.png}%
         }{}
-        \caption{Pembagi clock untuk pembangkitan BCLK.}
+        \caption{Pembangkitan detak BCLK oleh clock divider.}
         \label{fig:ch5-clock-divider-waveform}
     \end{subfigure}
-
-    \caption{Tangkapan waveform validasi timing I2S.}
+    \caption{Tangkapan waveform hasil simulasi/pengukuran timing I2S.}
     \label{fig:ch5-waveform}
 \end{figure}
 \end{landscape}
 
-\noindent Verifikasi osiloskop mengkonfirmasi:
-\begin{itemize}
-    \item Satu frame stereo terdiri dari tepat 64 periode BCLK (32 kiri + 32 kanan).
-    \item WS beralih satu BCLK \textit{sebelum} MSB data, sesuai spesifikasi Philips.
-    \item Bit pertama setelah setiap peralihan WS selalu bernilai 0.
-    \item Penghitung bit kembali ke awal frame setelah 64 periode BCLK.
-    \item Pembagi clock menghasilkan BCLK sesuai mode frekuensi sampling yang dipilih.
-\end{itemize}
+Verifikasi visual (Gambar \ref{fig:ch5-waveform}) mengonfirmasi kesesuaian spesifikasi: satu frame stereo terdiri atas tepat 64 pulsa BCLK, transisi WS terjadi satu BCLK sebelum bit MSB dikirim, bit pertama setelah transisi WS selalu bernilai nol, dan bit-counter kembali ke nol di batas frame stereo.
 
 \section{Analisis Frekuensi Sampling Arbitrer}
 
-Keunggulan utama dari arsitektur NCO adalah kemampuan untuk menghasilkan frekuensi sampling yang tidak terbatas pada nilai standar audio (44,1 kHz atau 48 kHz). Pengujian dilakukan dengan memprogram register \texttt{SAMPLE\_RATE\_HZ} ke berbagai nilai, baik standar maupun non-standar, dan mengukur frekuensi \texttt{WS} yang dihasilkan menggunakan osiloskop.
+Frekuensi sampling ($F_s$) dikonfigurasi melalui penulisan nilai Hz langsung ke register \path{SAMPLE_RATE_HZ}. Tabel \ref{tab:ch5-fs-arbitrary} menunjukkan hasil validasi frekuensi WS yang diukur menggunakan osiloskop.
 
 \begin{table}[htbp]
     \centering
-    \caption{Hasil validasi frekuensi sampling arbitrer menggunakan NCO.}
+    \caption{Hasil validasi frekuensi sampling arbitrer menggunakan NCO desimal.}
     \label{tab:ch5-fs-arbitrary}
     \begin{tabular}{|l|r|r|r|r|}
         \hline
@@ -75,24 +63,25 @@ Keunggulan utama dari arsitektur NCO adalah kemampuan untuk menghasilkan frekuen
     \end{tabular}
 \end{table}
 
-Data pada Tabel \ref{tab:ch5-fs-arbitrary} menunjukkan bahwa IP I2S mampu menghasilkan frekuensi sampling dengan tingkat akurasi yang sangat tinggi. Kesalahan (\textit{error}) relatif berada di bawah 0,001\%, yang jauh lebih baik dibandingkan dengan desain berbasis pembagi integer tetap pada iterasi sebelumnya. Hal ini membuktikan efektivitas penggunaan akumulator fase 32-bit pada clock sistem 100 MHz.
+Deviasi frekuensi aktual terhadap target nominal sangat kecil (error relatif $< 0,001\%$), menunjukkan bahwa akumulator desimal NCO pada clock referensi 100 MHz mampu menghasilkan clock audio yang sangat presisi dibandingkan metode pembagi integer tradisional.
 
 \section{Validasi Audio pada Berbagai Frekuensi}
 
-Pengujian fungsional dilakukan dengan mendengarkan keluaran audio dari DAC PCM5102A. Firmware dikonfigurasi untuk menyapu (\textit{sweep}) frekuensi sampling dari 8 kHz hingga 96 kHz secara dinamis. Hasilnya, DAC tetap mampu melakukan \textit{lock} terhadap sinyal I2S dan menghasilkan suara yang jernih tanpa adanya distorsi \textit{pitch} yang terdeteksi secara auditori. Kemampuan ini menunjukkan bahwa transisi frekuensi sampling melalui register \texttt{SAMPLE\_RATE\_HZ} dapat dilakukan dengan mulus oleh IP core.
+Pengujian fungsional dilakukan dengan menyapu (\textit{sweep}) frekuensi sampling dari 8 kHz hingga 96 kHz secara dinamis dari program C. DAC PCM5102A berhasil melakukan \textit{lock} sinyal secara instan pada setiap transisi frekuensi sampling tanpa menghasilkan distorsi \textit{pitch} atau \textit{audio pop} yang terdengar pada headset.
 
 \section{Identifikasi dan Perbaikan Bug Firmware}
 
-Selama validasi perangkat keras ditemukan beberapa bug yang bersumber dari \textbf{kode firmware} (\texttt{helloworld.c}), bukan dari RTL.
+Selama tahap integrasi perangkat keras, ditemukan beberapa bug yang bersumber dari kode firmware (\path{helloworld.c}) dan berhasil diperbaiki:
 
 \subsection{Bug 1: Masker Merusak Bit Tanda Sampel}
-\textbf{Gejala}: Amplitudo gelombang tidak seimbang, waveform terdistorsi.
-\textbf{Solusi}: Menghapus penggunaan masker bit dan menyesuaikan geseran agar MSB int16 tepat di bit \texttt{[g\_width-1]}.
+\textbf{Gejala}: Gelombang audio terdistorsi parah dan amplitudo tidak seimbang. \\
+\textbf{Penyebab}: Penggunaan bitwise mask pada sampel 16-bit bertanda (\path{int16_t}) merusak bit tanda MSB saat data digeser ke posisi slot 24-bit. \\
+\textbf{Solusi}: Menghapus penggunaan masker bit dinamis dan menyelaraskan MSB \path{int16_t} langsung ke bit \path{[g_width-1]} dengan operasi cast bertanda yang aman.
 
 \subsection{Bug 2: Timing Loop Berbasis usleep()}
-\textbf{Gejala}: Frekuensi audio terukur lebih rendah dari target dan tidak stabil (\textit{jitter} tinggi).
-\textbf{Penyebab}: Fungsi \texttt{usleep()} memiliki granularitas rendah. Selain itu, penggunaan waktu tunggu statis tidak memperhitungkan waktu eksekusi instruksi di dalam loop.
-\textbf{Solusi Akhir}: Menggunakan mekanisme \textit{handshake} berbasis register \texttt{STATUS}. Perangkat keras IP I2S akan melakukan \textit{toggle} pada bit status setiap kali frame stereo baru dimulai. Perangkat lunak melakukan \textit{polling} pada bit ini untuk menyinkronkan pengiriman sampel tepat dengan kecepatan transmisi hardware.
+\textbf{Gejala}: Frekuensi nada keluaran tidak stabil (\textit{jitter} tinggi) dan lebih rendah dari target. \\
+\textbf{Penyebab}: Fungsi tunda \path{usleep()} memiliki resolusi rendah dan tidak sinkron dengan detak hardware I2S. \\
+\textbf{Solusi}: Mengimplementasikan \textit{status-bit polling} (Listing \ref{lst:ch5-timing-fix}). Firmware menunggu perubahan logika bit status \path{STATUS[0]} sebelum menulis sampel berikutnya, sehingga laju transfer data sinkron secara fisik dengan clock hardware.
 
 \begin{lstlisting}[language=C, caption={Sinkronisasi pengiriman sampel menggunakan status-bit polling.}, label={lst:ch5-timing-fix}]
 while (1) {
@@ -105,34 +94,45 @@ while (1) {
 }
 \end{lstlisting}
 
-Dengan menggunakan sinkronisasi berbasis perangkat keras, sistem memperoleh akurasi waktu yang sempurna karena pengiriman data dikendalikan langsung oleh detak audio I2S, bukan oleh estimasi waktu di sisi prosesor. Hal ini mengeliminasi akumulasi keterlambatan (\textit{drift}) sepenuhnya.
-
 \subsection{Penjelasan variabel dan fungsi kunci firmware}
-
-Implementasi pada berkas \texttt{helloworld.c} (\path{latesti2s}) menggunakan beberapa komponen penting:
-\begin{itemize}
-    \item \textbf{g\_phase}: Akumulator fase 32-bit software untuk menentukan posisi gelombang.
-    \item \textbf{g\_sample\_rate\_hz}: Nilai frekuensi sampling yang diprogram ke register \path{CONTROL} dan digunakan untuk menghitung inkremen fase software.
-    \item \textbf{frame\_status\_bit()}: Membaca bit 0 dari register \texttt{STATUS} untuk deteksi frame I2S.
-    \item \textbf{pack\_sample()}: Melakukan penskalaan bit (\textit{bit-scaling}) dari 16-bit ke lebar sampel yang dipilih (misal 24-bit atau 32-bit).
-    \item \textbf{apply\_control()}: Menggabungkan status (\path{enable}, \path{mute}, \path{width}, \path{rate}) ke dalam register kontrol melalui operasi bitwise.
-\end{itemize}
-
-
+Fungsionalitas utama dikendalikan melalui variabel \path{g_phase} (akumulator fase DDS software), \path{g_sample_rate_hz} (menyimpan frekuensi sampling), \path{frame_status_bit()} (membaca register status), \path{pack_sample()} (penskalaan sampel sesuai lebar bit), dan \path{apply_control()} (mengemas konfigurasi mode ke register kontrol).
 
 \section{Verifikasi Setelah Perbaikan Firmware}
 
-Setelah perbaikan pada lapisan firmware, dilakukan verifikasi ulang untuk memastikan seluruh fitur berjalan sesuai spesifikasi.
-
 \subsection{Verifikasi Akurasi Frekuensi}
+Sinyal uji sinus dibangkitkan pada frekuensi 1 kHz, 2 kHz, dan 5 kHz. Gambar \ref{fig:ch5-1khz}, \ref{fig:ch5-2khz}, dan \ref{fig:ch5-5khz} menunjukkan keluaran audio analog yang diukur pada osiloskop dengan frekuensi dan amplitudo yang sangat stabil.
 
-Pengujian dilakukan dengan membangkitkan nada sinus pada frekuensi 1 kHz, 2 kHz, dan 5 kHz. Tangkapan osiloskop untuk nada sinus 1 kHz (Gambar \ref{fig:ch5-1khz}) dipisahkan dari nada 2 kHz dan 5 kHz agar nilai numerik pada layar instrumen dapat terbaca dengan jelas.
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/1khz.jpeg}{%
+        \includegraphics[width=0.85\textwidth]{contents/figures/1khz.jpeg}%
+    }{}
+    \caption{Tangkapan osiloskop untuk nada sinus 1 kHz setelah perbaikan.}
+    \label{fig:ch5-1khz}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/2khz.jpeg}{%
+        \includegraphics[width=0.85\textwidth]{contents/figures/2khz.jpeg}%
+    }{}
+    \caption{Tangkapan osiloskop untuk nada sinus 2 kHz setelah perbaikan.}
+    \label{fig:ch5-2khz}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/5khz.jpeg}{%
+        \includegraphics[width=0.85\textwidth]{contents/figures/5khz.jpeg}%
+    }{}
+    \caption{Tangkapan osiloskop untuk nada sinus 5 kHz setelah perbaikan.}
+    \label{fig:ch5-5khz}
+\end{figure}
 
 \input{contents/chapter-5/subsection-i2s-filter}
 
-\subsection{Verifikasi Fitur Kontrol (Enable dan Mute)}
-
-Fitur kontrol diuji dengan mengubah bit pada register \texttt{CONTROL}. Gambar \ref{fig:ch5-control-test} memperlihatkan pengaruh bit \texttt{ENABLE} dan \texttt{MUTE} terhadap sinyal keluaran.
+\subsection{Verifikasi Fitur Kontrol dan Keseimbangan Kanal}
+Pengujian bit \path{ENABLE} dan \path{MUTE} dilakukan untuk melihat respons perangkat keras. Seperti terlihat pada Gambar \ref{fig:ch5-control-test}, mematikan \path{ENABLE} menonaktifkan seluruh sinyal keluaran (BCLK dan WS bernilai LOW), sedangkan mengaktifkan \path{MUTE} mematikan audio tanpa menghentikan clock serial.
 
 \begin{figure}[htbp]
     \centering
@@ -167,32 +167,37 @@ Fitur kontrol diuji dengan mengubah bit pada register \texttt{CONTROL}. Gambar \
         }{}
         \caption{\texttt{MUTE} = 1 (Senyap).}
     \end{subfigure}
-    \caption{Verifikasi fungsionalitas bit \texttt{ENABLE} dan \texttt{MUTE}.}
+    \caption{Verifikasi fungsionalitas bit \texttt{ENABLE} dan \texttt{MUTE} pada sinyal audio analog.}
     \label{fig:ch5-control-test}
 \end{figure}
 
-\subsection{Verifikasi Setelah Perbaikan Firmware}
-
-Verifikasi akhir dilakukan untuk memastikan sinkronisasi antara perangkat lunak dan perangkat keras berjalan dengan sempurna. Hasilnya menunjukkan bahwa drift frekuensi telah dieliminasi sepenuhnya dan kedua kanal audio (L dan R) menghasilkan amplitudo yang identik, sebagaimana ditunjukkan pada Gambar \ref{fig:ch5-fixed-both}. Selain itu, tangkapan osiloskop untuk nada sinus 1 kHz dipisahkan dari nada 2 kHz dan 5 kHz agar detail parameter pada layar dapat terbaca dengan jelas.
+Setelah bug bit tanda diperbaiki, keluaran kanal kiri (L) dan kanan (R) menghasilkan bentuk gelombang sinus yang seimbang dengan amplitudo identik (Gambar \ref{fig:ch5-fixed-both}).
 
 \begin{figure}[htbp]
     \centering
     \IfFileExists{contents/figures/both-channel.jpeg}{%
-        \includegraphics[width=0.95\textwidth]{contents/figures/both-channel.jpeg}%
+        \includegraphics[width=0.85\textwidth]{contents/figures/both-channel.jpeg}%
     }{}
-    \caption{Keluaran audio setelah perbaikan: kanal L dan R identik.}
+    \caption{Keluaran audio stereo: kanal L dan R identik secara seimbang.}
     \label{fig:ch5-fixed-both}
 \end{figure}
 
-Dari hasil tersebut teramati bahwa setelah perbaikan firmware, kedua kanal L dan R menghasilkan bentuk gelombang yang identik, menunjukkan bahwa masalah ketidakseimbangan amplitudo telah teratasi. Frekuensi nada sinus juga sesuai dengan target, mengindikasikan bahwa sinkronisasi berbasis \textit{polling} register \texttt{STATUS} berhasil menghilangkan \textit{drift} yang sebelumnya terjadi. Serta fitur kontrol \texttt{ENABLE} dan \texttt{MUTE} berfungsi sesuai harapan, memberikan fleksibilitas dalam pengembangan sistem.
-
 \section{Analisis Penggunaan Sumber Daya dan Daya}
 
-Implementasi IP I2S pada FPGA Artix-7 (Basys3) menghasilkan penggunaan sumber daya yang efisien untuk logika kontrol dan serializer. Tabel \ref{tab:ch5-resource} dan Gambar \ref{fig:ch5-utilization} merangkum hasil \textit{utilization} dan estimasi konsumsi daya dari Vivado.
+Implementasi sistem SoC pada board Basys3 menghasilkan penggunaan sumber daya yang sangat efisien. Tabel \ref{tab:ch5-resource} merangkum utilization resource FPGA Artix-7 dari Vivado, sedangkan Gambar \ref{fig:ch5-timing-summary} menunjukkan ringkasan timing pasca-implementasi.
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/design-timing-summary.png}{%
+        \includegraphics[width=0.85\textwidth]{contents/figures/design-timing-summary.png}%
+    }{}
+    \caption{Ringkasan timing desain pasca-implementasi Vivado.}
+    \label{fig:ch5-timing-summary}
+\end{figure}
 
 \begin{table}[htbp]
     \centering
-    \caption{Ringkasan penggunaan sumber daya FPGA.}
+    \caption{Ringkasan penggunaan sumber daya FPGA Artix-7 (Basys3).}
     \label{tab:ch5-resource}
     \begin{tabular}{|l|r|r|r|}
         \hline
@@ -215,7 +220,7 @@ Implementasi IP I2S pada FPGA Artix-7 (Basys3) menghasilkan penggunaan sumber da
         \IfFileExists{contents/figures/utilization-summary.png}{%
             \includegraphics[width=\textwidth]{contents/figures/utilization-summary.png}%
         }{}
-        \caption{Ringkasan penggunaan sumber daya.}
+        \caption{Persentase utilization resource.}
         \label{fig:ch5-utilization}
     \end{subfigure}
     \hfill
@@ -224,20 +229,19 @@ Implementasi IP I2S pada FPGA Artix-7 (Basys3) menghasilkan penggunaan sumber da
         \IfFileExists{contents/figures/power-summary.png}{%
             \includegraphics[width=\textwidth]{contents/figures/power-summary.png}%
         }{}
-        \caption{Estimasi konsumsi daya.}
+        \caption{Estimasi konsumsi daya sistem.}
         \label{fig:ch5-power}
     \end{subfigure}
-    \caption{Analisis implementasi hardware pada FPGA Basys3.}
+    \caption{Analisis fisik implementasi hardware pada FPGA Basys3.}
     \label{fig:ch5-hw-analysis}
 \end{figure}
 
+Sistem SoC secara keseluruhan mengonsumsi daya dinamis yang sangat rendah ($\approx 81\text{ mW}$ sesuai estimasi Vivado Power Analyzer pada Gambar \ref{fig:ch5-hw-analysis}), membuatnya cocok untuk aplikasi sistem tersemat hemat daya.
+
 \section{Pembahasan terhadap Tujuan Penelitian}
 
-Hasil penelitian menunjukkan bahwa pendekatan register-mapped AXI4-Lite efektif untuk membangun peripheral I2S TX. Seluruh perbaikan bug dilakukan pada lapisan firmware, yang mengonfirmasi bahwa desain RTL sudah stabil dan benar sejak awal. Penambahan tangkapan sinyal pada berbagai skenario konfigurasi memperlihatkan bahwa perilaku antarmuka tetap konsisten ketika frekuensi sampling, lebar data, dan rute kanal diubah melalui register kontrol.
-
 \subsection{Pembahasan perubahan frekuensi sampling}
-
-Pengujian pada mode 44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz dilakukan dengan memprogram register \texttt{SAMPLE\_RATE\_HZ} ke nilai yang sesuai. Pada Gambar \ref{fig:ch5-disc-fs}, sinyal \texttt{LRCK} tetap mewakili frekuensi sampling, sedangkan \texttt{BCLK} meningkat sebanding terhadap kebutuhan jumlah bit per frame ($64 \times F_s$). Keluaran \texttt{LOUT}/\texttt{ROUT} juga mempertahankan bentuk gelombang yang seragam, sehingga dapat disimpulkan bahwa perubahan frekuensi sampling melalui DDS tidak menimbulkan gangguan fungsional pada jalur data.
+Pengujian pada mode frekuensi sampling standar (44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz) menunjukkan bahwa perubahan register \path{SAMPLE_RATE_HZ} langsung memengaruhi timing BCLK dan WS secara real-time tanpa memerlukan reset hardware (Gambar \ref{fig:ch5-disc-fs}).
 
 \begin{landscape}
 \begin{figure}[htbp]
@@ -273,9 +277,7 @@ Pengujian pada mode 44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz dilakukan dengan memp
         }{}
         \caption{\texttt{LRCK} 96 kHz}
     \end{subfigure}
-
     \vspace{0.8em}
-
     \begin{subfigure}[t]{0.24\linewidth}
         \centering
         \IfFileExists{contents/figures/bclk-44k.jpg}{%
@@ -307,9 +309,7 @@ Pengujian pada mode 44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz dilakukan dengan memp
         }{}
         \caption{\texttt{BCLK} 96 kHz}
     \end{subfigure}
-
     \vspace{0.8em}
-
     \begin{subfigure}[t]{0.24\linewidth}
         \centering
         \IfFileExists{contents/figures/lout-rout-44k.jpg}{%
@@ -341,14 +341,13 @@ Pengujian pada mode 44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz dilakukan dengan memp
         }{}
         \caption{\texttt{LOUT}/\texttt{ROUT} 96 kHz}
     \end{subfigure}
-    \caption{Perbandingan sinyal dan keluaran analog pada empat mode frekuensi sampling.}
+    \caption{Perbandingan sinyal digital dan keluaran audio analog pada empat mode sampling utama.}
     \label{fig:ch5-disc-fs}
 \end{figure}
 \end{landscape}
 
 \subsection{Pembahasan perubahan lebar data}
-
-Variasi lebar data 16, 24, dan 32 bit memperlihatkan bahwa serializer mempertahankan struktur frame I2S yang sama, tetapi mengubah jumlah bit data efektif yang dibawa dalam slot 32 bit. Gambar \ref{fig:ch5-disc-width} memperlihatkan bahwa pola \texttt{i2s\_data} berubah sesuai panjang data valid, sedangkan \texttt{BCLK} tetap mengikuti kebutuhan slot stereo yang konstan. Hal ini mendukung tujuan rancangan agar IP dapat dipakai untuk beberapa format sampel tanpa mengubah struktur perangkat keras utama.
+Konfigurasi lebar bit data (16, 24, dan 32 bit) mengubah letak bit valid yang dikirim di dalam slot 32-bit (Gambar \ref{fig:ch5-disc-width}). Hal ini menunjukkan fleksibilitas serialisasi IP core untuk menangani berbagai kedalaman bit sampel audio tanpa perubahan arsitektur perangkat keras.
 
 \begin{figure}[htbp]
     \centering
@@ -375,9 +374,7 @@ Variasi lebar data 16, 24, dan 32 bit memperlihatkan bahwa serializer mempertaha
         }{}
         \caption{\texttt{DATA} 32 bit}
     \end{subfigure}
-
     \vspace{0.8em}
-
     \begin{subfigure}[t]{0.32\textwidth}
         \centering
         \IfFileExists{contents/figures/bclk-16bit.jpg}{%
@@ -401,9 +398,7 @@ Variasi lebar data 16, 24, dan 32 bit memperlihatkan bahwa serializer mempertaha
         }{}
         \caption{\texttt{BCLK} 32 bit}
     \end{subfigure}
-
     \vspace{0.8em}
-
     \begin{subfigure}[t]{0.32\textwidth}
         \centering
         \IfFileExists{contents/figures/lout-rout-16bit.jpg}{%
@@ -427,13 +422,12 @@ Variasi lebar data 16, 24, dan 32 bit memperlihatkan bahwa serializer mempertaha
         }{}
         \caption{Keluaran 32 bit}
     \end{subfigure}
-    \caption{Perbandingan efek perubahan lebar data terhadap sinyal digital dan keluaran analog.}
+    \caption{Efek variasi lebar data sampel terhadap sinyal digital serial dan audio analog.}
     \label{fig:ch5-disc-width}
 \end{figure}
 
 \subsection{Pembahasan kontrol kanal dan mute}
-
-Skenario \textit{left-only}, \textit{right-only}, \textit{both}, \texttt{ENABLE}=0, dan \texttt{MUTE}=1 membuktikan bahwa kontrol register bekerja langsung terhadap jalur data maupun amplitudo keluaran. Gambar \ref{fig:ch5-disc-control} menunjukkan bahwa pemilihan kanal memengaruhi pola data serial dan level analog pada kanal yang sesuai, sedangkan \texttt{MUTE} meniadakan keluaran tanpa menghentikan clock. Karakteristik ini penting untuk menunjukkan bahwa desain tidak hanya benar secara timing, tetapi juga responsif terhadap kontrol perangkat lunak secara real-time.
+Pengujian rute kanal (left-only, right-only, both) dan status \path{MUTE} (Gambar \ref{fig:ch5-disc-control}) mengonfirmasi kontrol perangkat lunak bekerja secara langsung. Sinyal audio mati ketika \path{MUTE} aktif, namun clock serial (BCLK, WS) tetap berjalan untuk mempertahankan sinkronisasi DAC.
 
 \begin{landscape}
 \begin{figure}[htbp]
@@ -469,9 +463,7 @@ Skenario \textit{left-only}, \textit{right-only}, \textit{both}, \texttt{ENABLE}
         }{}
         \caption{\texttt{ENABLE}=0}
     \end{subfigure}
-
     \vspace{0.8em}
-
     \begin{subfigure}[t]{0.24\linewidth}
         \centering
         \IfFileExists{contents/figures/lout-rout-left-only.jpg}{%
@@ -493,7 +485,7 @@ Skenario \textit{left-only}, \textit{right-only}, \textit{both}, \texttt{ENABLE}
         \IfFileExists{contents/figures/lout-rout-enable0.jpg}{%
             \includegraphics[width=\linewidth]{contents/figures/lout-rout-enable0.jpg}%
         }{}
-        \caption{Keluaran saat \texttt{ENABLE}=0}
+        \caption{Output saat \texttt{ENABLE}=0}
     \end{subfigure}
     \hfill
     \begin{subfigure}[t]{0.24\linewidth}
@@ -501,11 +493,9 @@ Skenario \textit{left-only}, \textit{right-only}, \textit{both}, \texttt{ENABLE}
         \IfFileExists{contents/figures/lout-rout-mute1.jpg}{%
             \includegraphics[width=\linewidth]{contents/figures/lout-rout-mute1.jpg}%
         }{}
-        \caption{Keluaran saat \texttt{MUTE}=1}
+        \caption{Output saat \texttt{MUTE}=1}
     \end{subfigure}
-
     \vspace{0.8em}
-
     \begin{subfigure}[t]{0.24\linewidth}
         \centering
         \IfFileExists{contents/figures/lck-left-only.jpg}{%
@@ -537,69 +527,31 @@ Skenario \textit{left-only}, \textit{right-only}, \textit{both}, \texttt{ENABLE}
         }{}
         \caption{\texttt{LRCK} saat \texttt{MUTE}=1}
     \end{subfigure}
-    \caption{Validasi perubahan kanal aktif, disable output, dan mute melalui register kontrol.}
+    \caption{Validasi perubahan rute kanal, enable output, dan status mute melalui register kontrol.}
     \label{fig:ch5-disc-control}
 \end{figure}
 \end{landscape}
 
-\section{Perbandingan dengan referensi desain}
+\section{Perbandingan dengan Referensi Desain}
 
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/design-timing-summary.png}{%
-        \includegraphics[width=0.92\textwidth]{contents/figures/design-timing-summary.png}%
-    }{}
-    \caption{Ringkasan timing desain.}
-    \label{fig:ch5-timing-summary}
-\end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/1khz.jpeg}{%
-        \includegraphics[width=0.9\textwidth]{contents/figures/1khz.jpeg}%
-    }{}
-    \caption{Tangkapan osiloskop untuk nada sinus 1 kHz.}
-    \label{fig:ch5-1khz}
-\end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/2khz.jpeg}{%
-        \includegraphics[width=0.9\textwidth]{contents/figures/2khz.jpeg}%
-    }{}
-    \caption{Tangkapan osiloskop untuk nada sinus 2 kHz.}
-    \label{fig:ch5-2khz}
-\end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/5khz.jpeg}{%
-        \includegraphics[width=0.9\textwidth]{contents/figures/5khz.jpeg}%
-    }{}
-    \caption{Tangkapan osiloskop untuk nada sinus 5 kHz.}
-    \label{fig:ch5-5khz}
-\end{figure}
-
-\subsection{Perbandingan dengan Xilinx I2S LogiCORE IP}
-
-Sebagai bagian dari analisis, dilakukan perbandingan antara IP I2S Transmitter hasil perancangan ini dengan IP standar industri, yaitu \textit{Xilinx LogiCORE I2S Transmitter}~\citep{amd_pg308_i2s_logicore}. Perbandingan difokuskan pada kompleksitas antarmuka register dan fitur utama yang ditawarkan.
+Dilakukan perbandingan fitur fungsional antara custom IP I2S Transmitter hasil penelitian ini dengan Xilinx LogiCORE I2S Transmitter IP standard industri \citep{amd_pg308_i2s_logicore}.
 
 \begin{table}[htbp]
     \centering
     \caption{Perbandingan fitur IP I2S Transmitter.}
     \label{tab:ch5-comparison-ip}
-    \begin{tabular}{|l|p{4.5cm}|p{4.5cm}|}
+    \begin{tabular}{|l|p{5cm}|p{5cm}|}
         \hline
         \textbf{Fitur} & \textbf{Xilinx LogiCORE I2S} & \textbf{Custom IP (Penelitian Ini)} \\
         \hline
         Jumlah Register & $> 15$ register (0x00 -- 0x64) & 4 register (0x00 -- 0x0C) \\
         Antarmuka Data & AXI4-Stream & AXI4-Lite (Direct Register Write) \\
-        Konfigurasi $F_s$ & Membutuhkan clock eksternal/divider statis & Terintegrasi DDS (Arbitrary $F_s$) \\
-        Sinkronisasi & Interupsi \& AXI-Stream backpressure & Status bit polling (\textit{Toggle}) \\
+        Konfigurasi $F_s$ & Membutuhkan divider statis / PLL luar & Terintegrasi NCO desimal (Arbitrary $F_s$) \\
+        Sinkronisasi & AXI-Stream backpressure / interupsi & Status-bit polling (\textit{latch toggle}) \\
         Jumlah Kanal & 2, 4, 6, atau 8 kanal & 2 kanal (Stereo) \\
-        Kompleksitas & Tinggi (Mendukung AES status, dsb) & Rendah (Minimalis, fokus pada fungsi inti) \\
+        Kompleksitas & Tinggi (Mendukung AES status, dsb) & Rendah (Minimalis, fokus fungsi inti) \\
         \hline
     \end{tabular}
 \end{table}
 
-Tabel \ref{tab:ch5-comparison-ip} menunjukkan bahwa meskipun IP Xilinx memiliki fitur yang jauh lebih luas (seperti dukungan hingga 8 kanal dan status AES), IP yang dirancang dalam penelitian ini menawarkan keunggulan dalam hal kemudahan penggunaan (\textit{ease of use}) dan efisiensi sumber daya untuk kebutuhan audio stereo standar. Pemanfaatan antarmuka data berbasis AXI4-Lite (bukan AXI4-Stream) memungkinkan perangkat lunak pada MicroBlaze V untuk menulis data sampel secara langsung ke register tanpa memerlukan pengontrol DMA (\textit{Direct Memory Access}) atau interkoneksi stream yang kompleks. Selain itu, fitur pembangkitan frekuensi sampling arbitrer berbasis DDS yang terintegrasi langsung di dalam IP memberikan fleksibilitas yang tidak dimiliki secara \textit{native} oleh IP standar tanpa bantuan blok clocking eksternal tambahan.
+Tabel \ref{tab:ch5-comparison-ip} menunjukkan bahwa custom IP yang dirancang menawarkan kesederhanaan kontrol tanpa memerlukan DMA atau interkoneksi AXI4-Stream yang kompleks. Fitur pembangkitan clock audio arbitrer berbasis NCO desimal internal memberikan keunggulan portabilitas tinggi (\textit{vendor-agnostic}) tanpa tergantung pada PLL analog eksternal. Custom IP ini sangat sesuai untuk aplikasi audio stereo standar dengan efisiensi sumber daya tinggi.

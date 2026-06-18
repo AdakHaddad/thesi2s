@@ -2,16 +2,16 @@
 
 \section{Alat dan Bahan}
 
+Penelitian ini menggunakan kombinasi perangkat keras dan perangkat lunak untuk perancangan, integrasi SoC, dan validasi fisik sistem I2S Transmitter.
+
 \subsection{Perangkat keras}
 
-\subsubsection{Laptop pengembangan}
-\textbf{Lenovo ThinkPad T470} digunakan sebagai perangkat utama pengembangan. Laptop ini memiliki spesifikasi prosesor Intel Core i5-6300U @ 2,40 GHz dan menjalankan sistem operasi Microsoft Windows 10 Pro. Perangkat ini digunakan untuk menjalankan seluruh alur desain FPGA, pengembangan perangkat lunak, dan penulisan dokumen.
-
-\subsubsection{Board FPGA}
-\textbf{Basys3} digunakan sebagai platform implementasi utama~\citep{xilinx_basys3_ref}. Board ini berbasis FPGA Xilinx Artix-7 dan menyediakan sumber clock 100 MHz, antarmuka USB-UART, serta header PMOD untuk koneksi ke perangkat eksternal.
-
-\subsubsection{Modul DAC audio}
-\textbf{PCM5102A Audio DAC Module} digunakan sebagai penerima data I2S~\citep{pcm5102a_datasheet}. Modul ini mendukung antarmuka audio serial, berbagai \textit{sample rate} hingga 384 kHz, dan keluaran analog stereo untuk verifikasi suara.
+\subsubsection{Perangkat pengembangan dan target hardware}
+\begin{itemize}
+    \item \textbf{Laptop Lenovo ThinkPad}: Intel Core i5, RAM 8 GB, Windows 10 Pro. Digunakan untuk merancang RTL, menulis kode driver, dan menyusun laporan.
+    \item \textbf{Board FPGA Basys3}: Berbasis AMD/Xilinx Artix-7 (XC7A35T), sebagai platform SoC soft-core utama \citep{xilinx_basys3_ref}.
+    \item \textbf{Modul DAC Audio PCM5102A}: Berperan sebagai receiver I2S eksternal yang dihubungkan ke PMOD Basys3 untuk menghasilkan sinyal audio analog \citep{pcm5102a_datasheet}.
+\end{itemize}
 
 \begin{figure}[htbp]
     \centering
@@ -30,122 +30,40 @@
         }{}
         \caption{Implementasi fisik.}
     \end{subfigure}
-    \caption{Koneksi antara Basys3 dan modul DAC PCM5102A.}
+    \caption{Koneksi antarmuka pin antara FPGA Basys3 dan modul DAC PCM5102A.}
     \label{fig:ch3-wiring-dac}
 \end{figure}
 
-\subsubsection{Perangkat bantu}
+\subsubsection{Perangkat pengukuran dan pembantu}
 \begin{itemize}
-    \item \textbf{Oscilloscope Digital TEXIO DCS-1102B} untuk memverifikasi sinyal BCLK, WS, dan DATA.
-    \item \textbf{Headset DAP} untuk uji keluaran audio.
-    \item \textbf{Breadboard dan kabel jumper} untuk koneksi Basys3 ke PCM5102A.
+    \item \textbf{Osiloskop Digital TEXIO DCS-1102B}: Mengukur dan memverifikasi integritas sinyal BCLK, WS, dan DATA.
+    \item \textbf{Headset stereo dan kabel jumper}: Untuk pengujian dengar audio analog langsung dari keluaran DAC.
 \end{itemize}
 
 \subsection{Perangkat lunak}
 \begin{itemize}
-    \item \textbf{AMD Vivado Design Suite 2021.1} untuk RTL design, synthesis, implementation, dan integrasi SoC~\citep{xilinx_vivado_design_suite_2021}.
-    \item \textbf{Xilinx Vitis Embedded Software Development Target} untuk pengembangan perangkat lunak uji dalam bahasa C~\citep{xilinx_vitis_embedded_2021}.
-    \item \textbf{Trae IDE} digunakan sebagai lingkungan pengembangan kode RTL, perangkat lunak C, dan penulisan dokumen LaTeX.
-    \item \textbf{PuTTY} digunakan sebagai terminal serial untuk memantau keluaran debug UART dari MicroBlaze V.
-    \item \textbf{LaTeX} untuk penulisan dokumen skripsi.
+    \item \textbf{AMD Vivado 2021.1}: Tool utama untuk perancangan RTL Verilog, simulasi behavioral (XSim), sintesis, implementasi, dan perancangan SoC (Block Design) \citep{xilinx_vivado_design_suite_2021}.
+    \item \textbf{AMD Vitis 2021.1}: Platform pengembangan perangkat lunak C bare-metal untuk prosesor MicroBlaze V \citep{xilinx_vitis_embedded_2021}.
+    \item \textbf{PuTTY dan Trae IDE}: PuTTY digunakan sebagai terminal UART logging, sedangkan Trae IDE untuk penyuntingan kode sumber dan penyusunan naskah LaTeX.
 \end{itemize}
 
 \section{Metode yang Digunakan}
 
 \subsection{Metode perancangan hardware}
-
-Perancangan perangkat keras dilakukan dengan tahapan berikut:
-\begin{enumerate}
-    \item Menentukan spesifikasi I2S TX meliputi format data~\citep{philips_i2s_1986}, lebar sampel, mode frekuensi sampling, dan pemetaan register.
-    \item Mendesain arsitektur modul yang mencakup AXI4-Lite slave~\citep{arm_amba_axi_2010}, register data dan kontrol, pembagi clock, serta serializer I2S.
-    \item Melakukan optimasi desain menggunakan teknik DDS untuk mendukung frekuensi sampling arbitrer dan membuat IP bersifat \textit{vendor-agnostic}.
-    \item Mengimplementasikan RTL dalam Verilog~\citep{palnitkar_verilog_2003} dengan pemisahan blok sekuensial dan kombinasional secara jelas.
-    \item Mengintegrasikan peripheral ke dalam Vivado IP Integrator~\citep{xilinx_vivado_design_suite_2021} bersama MicroBlaze V, BRAM, clocking, dan peripheral pendukung.
-\end{enumerate}
-
-\noindent Alur tersebut sejalan dengan pendekatan pengembangan sistem FPGA embedded
-yang menempatkan definisi spesifikasi, implementasi RTL, integrasi IP, dan
-validasi perangkat lunak sebagai tahapan yang saling terkait, bukan pekerjaan
-yang berdiri sendiri~\citep{lafosse_embedded_2018}.
+RTL dirancang secara modular menggunakan Verilog HDL yang memisahkan bagian datapath dan control path \citep{palnitkar_verilog_2003}. Desain difokuskan pada serializer I2S standar Philips, register data, shadow register untuk perlindungan data, serta modul clock desimal NCO agar rancangan bersifat \textit{vendor-agnostic} dan mendukung \textit{sample rate} arbitrer.
 
 \subsection{Metode verifikasi dan simulasi}
+Verifikasi dilakukan lewat simulasi testbench di Vivado Simulator untuk memastikan fungsionalitas sinyal I2S. Selanjutnya dilakukan validasi fisik dengan mengamati timing clock dan bit data serial pada osiloskop serta mendengarkan hasil reproduksi suara dari DAC.
 
-Verifikasi dilakukan pada dua level:
-\begin{enumerate}
-    \item \textbf{Validasi hardware}, untuk memastikan desain tetap bekerja setelah \textit{synthesis} dan \textit{implementation} pada FPGA nyata.
-    \item \textbf{Verifikasi fungsional RTL}, untuk mereproduksi perilaku sinyal I2S, urutan bit, dan logika \texttt{DATA}/\texttt{CONTROL} secara terkontrol melalui simulasi.
-\end{enumerate}
-
-Parameter yang diamati meliputi:
-\begin{itemize}
-    \item relasi timing \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data};
-    \item kontinuitas aliran sampel pada skenario uji;
-    \item akurasi frekuensi sampling nominal rendah dan tinggi;
-    \item keberhasilan keluaran audio pada DAC.
-\end{itemize}
-
-\noindent Suatu pengujian dinyatakan lulus apabila empat syarat utama terpenuhi, yaitu:
-struktur frame terdiri dari 64 pulsa BCLK per sampel stereo, transisi \texttt{WS} terjadi satu
-BCLK sebelum MSB kanal berikutnya, bit tunda setelah transisi \texttt{WS} bernilai nol, dan
-DAC mampu menghasilkan audio yang konsisten dengan mode kanal serta frekuensi yang dipilih.
-Dengan definisi ini, verifikasi tidak berhenti pada kecocokan waveform semata, tetapi juga
-menilai apakah perilaku sistem sudah sesuai dengan tujuan operasional peripheral.
-
-\noindent Pada alur kerja aktual penelitian ini, verifikasi perilaku dasar terlebih dahulu
-dilakukan melalui \textit{bitstream bring-up}, simulasi \textit{testbench}, dan pengukuran pada perangkat
-keras. Setelah hubungan timing utama telah teridentifikasi pada FPGA nyata, dibuat
-\textit{testbench} Vivado/XSim pada proyek uji
-untuk mereproduksi kondisi \texttt{enable}, \texttt{mute}, pemrograman \texttt{SAMPLE\_RATE\_HZ}, dan
-serialisasi sampel kiri-kanan secara lebih formal. Dengan demikian, simulasi pada penelitian ini
-berfungsi sebagai verifikasi pelengkap yang mendokumentasikan ulang perilaku yang telah diamati
-pada perangkat keras, bukan sebagai satu-satunya sumber validasi.
-
-\subsection{Metode integrasi SoC}
-
-Integrasi peripheral ke dalam SoC dilakukan melalui alur berikut:
-\begin{enumerate}
-    \item \textbf{IP Packaging}: mengemas modul I2S sebagai custom IP menggunakan Vivado IP Integrator~\citep{xilinx_vivado_design_suite_2021}.
-    \item \textbf{Block Design}: menghubungkan MicroBlaze V~\citep{xilinx_microblaze_ref_2021}, AXI interconnect~\citep{xilinx_axi_ref_2017}, BRAM, Clocking Wizard~\citep{xilinx_clocking_wizard_2021}, UART, dan IP I2S.
-    \item \textbf{Address Allocation}: menetapkan base address peripheral agar dapat diakses dari Vitis~\citep{xilinx_vitis_embedded_2021}.
-    \item \textbf{Constraint Management}: memetakan pin I2S ke konektor board sesuai file \texttt{.xdc}~\citep{xilinx_basys3_ref}.
-\end{enumerate}
-
-\subsection{Metode pengembangan software}
-
-Perangkat lunak uji dikembangkan dalam bahasa C pada Vitis dengan fungsi utama:
-\begin{itemize}
-    \item menginisialisasi register peripheral I2S melalui antarmuka AXI4-Lite;
-    \item menyinkronkan pengiriman sampel audio menggunakan mekanisme \textit{polling} pada register \texttt{STATUS} (\textit{hardware-software handshake});
-    \item menghasilkan sinyal uji secara digital menggunakan teknik DDS pada sisi software untuk fleksibilitas bentuk gelombang;
-    \item menyediakan antarmuka pengguna interaktif melalui terminal serial (UART) untuk mengubah parameter operasional secara waktu nyata (\textit{runtime});
-    \item mengimplementasikan logika \textit{clamping} dan validasi untuk memastikan parameter \textit{sampling rate} dan lebar bit tetap berada dalam batas aman perangkat keras.
-\end{itemize}
+\subsection{Metode integrasi SoC dan pengembangan software}
+IP kustom dikemas menggunakan Vivado IP Packager lalu dimasukkan ke dalam Block Design untuk dihubungkan dengan MicroBlaze V melalui AXI Interconnect \citep{xilinx_axi_ref_2017}. Firmware bare-metal dikembangkan di Vitis untuk mengontrol peripheral, menginisialisasi parameter register, melakukan generator DDS software, dan mengelola sinkronisasi pengiriman data lewat status polling.
 
 \section{Perancangan Block Design Sistem}
 
-Perancangan \textit{Block Design} dilakukan untuk mengintegrasikan custom IP I2S
-dengan sistem embedded berbasis MicroBlaze V. Tahapan ini diperlukan agar
-peripheral yang dirancang pada level RTL dapat diakses melalui bus AXI4-Lite,
-dikendalikan oleh perangkat lunak, serta dihubungkan ke pin keluaran FPGA.
-Dokumentasi berkas sumber dan skrip rekonstruksi proyek disajikan pada
-Lampiran, sedangkan bagian ini menjelaskan alur perancangannya secara runtut.
+Perancangan Block Design dilakukan untuk menyatukan custom IP I2S ke dalam sistem SoC berbasis prosesor MicroBlaze V agar dapat diakses oleh program perangkat lunak.
 
-\subsection{Pembuatan Project Vivado}
-
-Tahap awal dilakukan dengan membuat project baru pada Vivado sebagai RTL
-Project. Board FPGA dipilih sesuai perangkat yang digunakan, yaitu Basys3
-berbasis Artix-7. Setelah project dibuat, source Verilog untuk custom IP I2S
-ditambahkan ke dalam lingkungan kerja Vivado agar dapat dikemas dan
-diintegrasikan ke dalam sistem.
-
-\subsection{Perancangan Block Design}
-
-Block Design dibuat menggunakan Vivado IP Integrator. Pada tahap ini, komponen
-sistem yang diperlukan dihubungkan dalam satu rancangan, meliputi prosesor
-soft-core, memori lokal, interkoneksi AXI, modul reset, Clocking Wizard, UART,
-serta custom IP I2S. Integrasi antarkomponen dilakukan dengan memperhatikan
-kebutuhan antarmuka AXI4-Lite, domain clock, dan jalur reset agar seluruh IP
-dapat bekerja dalam satu sistem yang konsisten.
+\subsection{Integrasi SoC MicroBlaze V}
+Vivado IP Integrator digunakan untuk menghubungkan komponen SoC: prosesor soft-core MicroBlaze V \citep{xilinx_microblaze_ref_2021}, memori lokal BRAM, Processor System Reset, AXI SmartConnect, AXI UARTLite untuk komunikasi terminal, dan custom IP I2S. Alamat dasar (Base Address) peripheral ditentukan secara otomatis oleh Vivado dan dipetakan ke dalam header file \path{xparameters.h} di Vitis.
 
 \begin{figure}[htbp]
     \centering
@@ -164,109 +82,20 @@ dapat bekerja dalam satu sistem yang konsisten.
         }{}
         \caption{IP AXI UARTLite.}
     \end{subfigure}
-    \caption{Contoh komponen IP pendukung pada Block Design Vivado.}
+    \caption{Komponen IP pendukung utama pada Block Design Vivado.}
     \label{fig:ch3-bd-support-ip}
 \end{figure}
 
-\subsection{Integrasi MicroBlaze}
-
-MicroBlaze V digunakan sebagai prosesor utama untuk mengendalikan peripheral I2S
-melalui transaksi register. Konfigurasi sistem mencakup penambahan local memory
-berbasis BRAM, koneksi bus instruksi dan data, konfigurasi Processor System
-Reset, serta integrasi AXI SmartConnect sebagai jalur komunikasi antara prosesor
-dan peripheral. Dengan konfigurasi ini, perangkat lunak yang berjalan pada
-MicroBlaze dapat melakukan akses baca dan tulis ke alamat register IP I2S.
-
-\subsection{Perancangan Clocking Audio Berbasis DDS}
-
-Rancangan final pada penelitian ini menggunakan pendekatan \textit{Direct Digital Synthesis} (DDS) murni untuk membangkitkan seluruh detak audio. Seluruh logika berjalan pada domain detak sistem \texttt{S\_AXI\_ACLK} 100 MHz. Penggunaan DDS menghilangkan ketergantungan pada blok PLL/MMCM eksternal untuk frekuensi sampling audio, sehingga membuat IP bersifat \textit{vendor-agnostic} dan sangat fleksibel.
-
-DDS bekerja dengan akumulator fase yang bertambah setiap siklus detak 100 MHz. Ketika akumulator meluap (\textit{wrap}), sebuah tepi detak (\textit{clock edge}) dibangkitkan. Hubungan antara frekuensi sampling $F_s$, detak sistem $f_{sys}$, dan nilai inkremen fase $\Delta \theta$ dinyatakan sebagai:
-
-\begin{equation}
-    \Delta \theta_{BCLK} = \frac{F_s \times 64 \times 2}{f_{sys}} \times \text{Modulus}
-\end{equation}
-
-Dalam implementasi Verilog pada \path{i2s.v}, digunakan akumulator modulus terhadap nilai $100.000.000$. Hal ini memungkinkan pembangkitan frekuensi yang sangat presisi karena pembagi disesuaikan langsung dengan jumlah siklus clock sistem per detik. Desain ini membangkitkan dua detak utama:
-\begin{itemize}
-    \item \textbf{BCLK}: Berjalan pada $64 \times F_s$, digunakan untuk serialisasi data.
-    \item \textbf{MCLK}: Berjalan pada $256 \times F_s$, disediakan untuk modul DAC yang membutuhkan detak master eksternal.
-\end{itemize}
+\subsection{Perancangan Clocking Audio Berbasis NCO}
+Clock audio diturunkan secara sinkron dari clock sistem AXI 100 MHz menggunakan teknik \textit{Numerically Controlled Oscillator} (NCO) desimal modulo 100.000.000 (penjelasan matematis rinci dibahas pada Bab~II). Sinyal detak yang dihasilkan meliputi \textbf{BCLK} ($64 \times F_s$) untuk serializer, serta \textbf{MCLK} ($256 \times F_s$) sebagai referensi clock DAC eksternal.
 
 \subsection{Perancangan Register AXI4-Lite}
+Akses register IP I2S oleh MicroBlaze V dilakukan melalui alamat memory-mapped (MMIO) berbasis antarmuka bus AXI4-Lite. Register internal IP terdiri dari \path{DATA_LEFT} (0x00), \path{DATA_RIGHT} (0x04), \path{CONTROL} (0x08), dan \path{STATUS} (0x0C). Peta register dan penjelasan fungsi bitfield sepenuhnya identik dengan detail perancangan yang disajikan pada Tabel~\ref{tab:ch4-regmap} dan Tabel~\ref{tab:ch4-control} di Bab~IV (halaman~\pageref{tab:ch4-regmap}).
 
-Register AXI4-Lite dirancang untuk memberikan kendali penuh kepada perangkat lunak terhadap parameter audio secara waktu nyata. Peta register terdiri dari empat register 32-bit utama yang dipetakan pada memori prosesor.
+Untuk sinkronisasi pengiriman data, firmware melakukan polling terhadap bit status \path{STATUS[0]} yang berubah logika setiap kali perangkat keras memindahkan sampel dari register AXI ke shadow register internal di awal frame I2S.
 
-\begin{table}[htbp]
-\centering
-\caption{Peta Register IP I2S Transmitter (latesti2s).}
-\label{tab:ch3-regmap-latest}
-\begin{tabular}{|l|l|c|p{7cm}|}
-\hline
-\textbf{Offset} & \textbf{Nama} & \textbf{Akses} & \textbf{Fungsi} \\
-\hline
-\texttt{0x00} & \texttt{DATA\_LEFT} & W & Sampel audio kanal kiri (PCM). \\
-\texttt{0x04} & \texttt{DATA\_RIGHT} & W & Sampel audio kanal kanan (PCM). \\
-\texttt{0x08} & \texttt{CONTROL} & R/W & Pengaturan mode operasional, lebar bit, dan frekuensi sampling. \\
-\texttt{0x0C} & \texttt{STATUS} & R & Bit 0: Indikator \textit{latch status} (berubah setiap awal frame). \\
-\hline
-\end{tabular}
-\end{table}
-
-\noindent Struktur bitfield pada register \texttt{CONTROL} dirinci pada Tabel \ref{tab:ch3-control-latest}.
-
-\begin{table}[htbp]
-\centering
-\caption{Struktur Bitfield Register CONTROL (0x08).}
-\label{tab:ch3-control-latest}
-\begin{tabular}{|c|l|p{8cm}|}
-\hline
-\textbf{Bit} & \textbf{Nama Field} & \textbf{Keterangan} \\
-\hline
-\texttt{0} & \texttt{ENABLE} & 1: Aktifkan transmisi I2S; 0: Matikan (\textit{low outputs}). \\
-\texttt{1} & \texttt{MUTE} & 1: Kirim sampel nol (detak tetap berjalan); 0: Kirim data asli. \\
-\texttt{6:2} & \texttt{SAMPLE\_WIDTH} & Lebar bit per kanal (1-31). Nilai 0 diperlakukan sebagai 32 bit. \\
-\texttt{26:7} & \texttt{SAMPLE\_RATE\_HZ} & Target frekuensi sampling dalam Hz (0-1.048.575 Hz). \\
-\texttt{31:27} & \texttt{RESERVED} & Bit cadangan (diabaikan saat tulis, nol saat baca). \\
-\hline
-\end{tabular}
-\end{table}
-
-\noindent Fitur unik pada rancangan ini adalah register \texttt{STATUS} yang memungkinkan perangkat lunak melakukan sinkronisasi dengan perangkat keras melalui mekanisme \textit{polling}. Setiap kali IP mengambil (\textit{latch}) sampel baru dari register data ke dalam \textit{shadow registers} internal di awal frame stereo, bit 0 pada register \texttt{STATUS} akan berubah logika (\textit{toggle}). Dengan memantau perubahan bit ini, perangkat lunak dapat menjamin bahwa data yang ditulis tidak terlewat atau tertumpuk.
-
-\subsection{Implementasi Signal Generator}
-
-Signal generator digital diimplementasikan pada sisi perangkat lunak sebagai
-sumber sampel uji. Program menghasilkan sampel audio periodik, kemudian menulis
-nilai tersebut ke register kanal kiri dan kanal kanan melalui AXI4-Lite.
-Pengaturan parameter seperti frekuensi nada, kanal aktif, mode mute, dan mode
-frekuensi sampling dilakukan melalui register kontrol sehingga respons IP dapat
-diamati pada sinyal keluaran maupun keluaran audio DAC.
-
-\subsection{Konfigurasi Constraint FPGA}
-
-Constraint FPGA ditulis dalam file \texttt{.xdc} untuk memetakan sinyal I2S ke
-pin FPGA yang terhubung dengan modul DAC. Selain penentuan pin, konfigurasi
-\textit{I/O standard} juga ditetapkan agar sesuai dengan level tegangan pada
-board dan modul eksternal. Tahap ini memastikan keluaran \texttt{MCLK},
-\texttt{BCLK}, \texttt{LRCLK}, dan \texttt{SDATA} dapat diamati dan digunakan
-oleh DAC.
-
-\subsection{Validasi dan Generate Bitstream}
-
-Setelah Block Design selesai, dilakukan validasi rancangan untuk memastikan
-tidak ada koneksi atau konfigurasi IP yang bermasalah. Tahapan selanjutnya
-adalah synthesis, implementation, dan generate bitstream. Bitstream yang
-dihasilkan digunakan untuk memprogram FPGA sehingga rancangan dapat diuji pada
-perangkat keras.
-
-\subsection{Export Hardware ke Vitis}
-
-Setelah bitstream berhasil dibuat, hardware platform diekspor ke Vitis dalam
-bentuk file \texttt{.xsa}. File ini memuat informasi perangkat keras, address
-map, konfigurasi prosesor, serta peripheral yang tersedia. Platform tersebut
-kemudian digunakan sebagai dasar pembuatan aplikasi embedded untuk mengakses
-register AXI, mengatur mode operasi IP I2S, dan membangkitkan sampel audio uji.
+\subsection{Signal Generator dan Constraint FPGA}
+Signal generator digital dibangun pada sisi software untuk menghasilkan sampel sinus atau kotak yang kemudian disalurkan ke register data peripheral. Pin eksternal I2S dipetakan ke port PMOD Basys3 menggunakan file constraint \path{.xdc} dengan standar level tegangan LVCMOS33. Setelah Block Design divalidasi, dilakukan sintesis, implementasi, generate bitstream, dan ekspor hardware platform (\path{.xsa}) ke Vitis.
 
 \section{Alur Tugas Akhir}
 

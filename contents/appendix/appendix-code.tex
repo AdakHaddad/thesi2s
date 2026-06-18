@@ -4,13 +4,13 @@
 Lampiran ini merangkum kode sumber yang digunakan pada penelitian. Penjelasan
 lengkap potongan kode utama disajikan pada Bab IV, sedangkan lampiran ini
 berfungsi sebagai peta berkas agar pembaca dapat menelusuri implementasi asli
-secara langsung. Seluruh rujukan mengacu pada repositori \path{latesti2s}.
+secara langsung. Seluruh rujukan mengacu pada repositori.
 
 \section{Kode RTL IP I2S}
 
 \begin{table}[htbp]
 \centering
-\caption{Berkas RTL pada \texttt{latesti2s/ready\_to\_run/ip\_repo/i2s\_1\_0/hdl}.}
+\caption{Berkas RTL pada \texttt{ready\_to\_run/ip\_repo/i2s\_1\_0/hdl}.}
 \label{tab:app-rtl-files}
 \begin{tabular}{|>{\raggedright\arraybackslash}p{5.5cm}|>{\raggedright\arraybackslash}p{8.5cm}|}
 \hline
@@ -39,7 +39,7 @@ secara langsung. Seluruh rujukan mengacu pada repositori \path{latesti2s}.
 Berkas aplikasi berada pada:
 
 \begin{lstlisting}[caption={Lokasi kode aplikasi Vitis.}]
-latesti2s/ready_to_run/sw/helloworld.c
+ready_to_run/sw/helloworld.c
 \end{lstlisting}
 
 Aplikasi ini menjalankan pengujian bare-metal terhadap IP I2S. Firmware
@@ -76,7 +76,7 @@ berbasis \textit{polling} pada \texttt{STATUS[0]}.
 \section{Kode Testbench}
 
 Kode testbench dapat ditemukan pada direktori proyek simulasi di repositori
-\path{latesti2s}. Testbench memverifikasi serializer I2S, perilaku register
+proyek. Testbench memverifikasi serializer I2S, perilaku register
 \texttt{CONTROL} (ENABLE, MUTE, SAMPLE\_RATE\_HZ), serta toggle bit
 \texttt{STATUS} pada berbagai skenario frekuensi sampling.
 
@@ -105,8 +105,8 @@ Proyek Vivado dapat direkonstruksi menggunakan skrip Tcl yang tersedia pada
 repositori proyek:
 
 \begin{lstlisting}[caption={Lokasi skrip rekonstruksi proyek Vivado.}]
-latesti2s/ready_to_run/fsi2snfilter.tcl
-latesti2s/ready_to_run/rebuild.tcl
+ready_to_run/fsi2snfilter.tcl
+ready_to_run/rebuild.tcl
 \end{lstlisting}
 
 Skrip ini membangun ulang block design \texttt{bdesign\_clock\_core} dengan IP
