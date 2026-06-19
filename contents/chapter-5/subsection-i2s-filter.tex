@@ -1,9 +1,85 @@
-\subsection{Verifikasi dengan Filter}
+\subsection{Modul RTL \texttt{i2s\_filter\_bridge}}
 
-Pengujian tambahan dilakukan dengan menyalurkan nada sinus 1 kHz melalui jalur I2S dan mengaplikasikan filter digital. Sebagai bentuk validasi integrasi pada tingkat perangkat keras, blok IP I2S ini telah berhasil disambungkan dengan \textbf{blok RTL filter IIR} (\textit{Infinite Impulse Response}) yang dikembangkan oleh \textbf{Adji Pangestu} dalam penelitian sejawat yang berkaitan. Dalam skenario ini, filter IIR bertindak sebagai pemroses data sebelum masuk ke serializer I2S. Hasil pengujian menunjukkan bahwa antarmuka logika antara blok filter RTL dan IP I2S berjalan sinkron, di mana IP core mampu mentransmisikan aliran data hasil pemrosesan filter ke DAC dengan integritas sinyal yang terjaga.
+IP \path{i2s_0} menerima sampel PCM melalui register AXI4-Lite dan menghasilkan aliran serial I2S, sedangkan modul \path{filter_coeff} memakai antarmuka paralel 16 bit berupa \path{x_in}, \path{valid}, dan \path{y_out}. Kedua antarmuka tersebut tidak dapat dihubungkan dengan sebuah net pada block design. Penelitian ini menambahkan modul \path{i2s_filter_bridge} pada keluaran serial IP I2S tanpa mengubah RTL IP I2S maupun RTL filter.
 
-Hasil verifikasi ini didokumentasikan menggunakan tangkapan osiloskop manual dari pengujian langsung pada hardware, sehingga pada naskah ini belum dicantumkan gambar hasil filter secara mendetail. Dokumentasi teknis lengkap mengenai varian IP komunikasi buatan sendiri dan perubahan desain tersedia pada Lampiran \ref{app:arbitrary-fs}.
+Pada tepi naik BCLK, bridge mendeteksi transisi WS, membuang satu bit tunda sesuai format Philips I2S, lalu menggeser 16 bit payload ke register sampel. Bridge membangkitkan \path{left_valid} atau \path{right_valid} setelah menerima satu word kanal. Block design memakai dua instans \path{filter_coeff} agar kanal kiri dan kanan memiliki state biquad yang terpisah.
 
-Pada tahap integrasi block design, IP \path{i2s_0} ditempatkan sebagai peripheral custom
-di dalam Vivado Block Design bersama MicroBlaze V dan AXI SmartConnect. Struktur ini menjadi
-dasar pengujian saat sinyal audio 1 kHz dikirim dan diamati melalui keluaran audio.
+Bridge menyimpan keluaran filter dan mengirimkannya pada frame berikutnya melalui \path{i2s_data_out}. Proses serialisasi memperbarui SDATA pada tepi turun BCLK agar DAC membaca nilai yang stabil pada tepi naik. Jalur MCLK, BCLK, dan WS menggunakan koneksi tembus; bridge hanya mengganti SDATA dengan data hasil filter. Konsekuensinya, integrasi menambah latensi satu frame stereo tanpa mengubah frekuensi sampling atau relasi fase antarsinyal I2S.
+
+Tiga switch pemilih koefisien berasal dari pin FPGA yang asinkron terhadap clock sistem. Dua tingkat flip-flop pada bridge menyinkronkan nilai switch sebelum kedua filter membacanya. Listing~\ref{lst:ch5-i2s-filter-bridge} memperlihatkan antarmuka dan bagian utama jalur data bridge.
+
+\begin{lstlisting}[
+	language=Verilog,
+	caption={Bagian utama RTL \texttt{i2s\_filter\_bridge}.},
+	label={lst:ch5-i2s-filter-bridge}
+]
+module i2s_filter_bridge (
+    input  wire               clk,
+    input  wire               resetn,
+    input  wire [2:0]         filter_sw_in,
+    input  wire               i2s_bclk_in,
+    input  wire               i2s_ws_in,
+    input  wire               i2s_data_in,
+    output reg                i2s_data_out,
+    output reg                left_valid,
+    output reg signed [15:0]  left_sample,
+    input  wire signed [15:0] left_filtered,
+    output reg                right_valid,
+    output reg signed [15:0]  right_sample,
+    input  wire signed [15:0] right_filtered
+);
+
+wire bclk_rise =  i2s_bclk_in & ~bclk_d;
+wire bclk_fall = ~i2s_bclk_in &  bclk_d;
+
+always @(posedge clk) begin
+    if (!resetn) begin
+        left_valid  <= 1'b0;
+        right_valid <= 1'b0;
+        i2s_data_out <= 1'b0;
+    end else begin
+        bclk_d      <= i2s_bclk_in;
+        left_valid  <= 1'b0;
+        right_valid <= 1'b0;
+
+        /* Deserialisasi: abaikan bit tunda, ambil 16 bit payload. */
+        if (bclk_rise) begin
+            if (i2s_ws_in != rx_ws) begin
+                rx_ws      <= i2s_ws_in;
+                rx_bit_pos <= 6'd0;
+            end else if (rx_bit_pos < 6'd16) begin
+                rx_shift   <= {rx_shift[14:0], i2s_data_in};
+                rx_bit_pos <= rx_bit_pos + 6'd1;
+                if (rx_bit_pos == 6'd15) begin
+                    if (!i2s_ws_in) begin
+                        left_sample <= {rx_shift[14:0], i2s_data_in};
+                        left_valid  <= 1'b1;
+                    end else begin
+                        right_sample <= {rx_shift[14:0], i2s_data_in};
+                        right_valid  <= 1'b1;
+                    end
+                end
+            end
+        end
+
+        /* Serialisasi hasil filter pada tepi turun BCLK. */
+        if (bclk_fall) begin
+            if (i2s_ws_in != tx_ws) begin
+                tx_ws        <= i2s_ws_in;
+                tx_bit_pos   <= 6'd0;
+                i2s_data_out <= 1'b0;
+            end else if (tx_bit_pos < 6'd16) begin
+                i2s_data_out <= i2s_ws_in
+                              ? tx_right[15-tx_bit_pos]
+                              : tx_left[15-tx_bit_pos];
+                tx_bit_pos <= tx_bit_pos + 6'd1;
+            end else begin
+                i2s_data_out <= 1'b0;
+            end
+        end
+    end
+end
+endmodule
+\end{lstlisting}
+
+Pengujian mengirim nada sinus 1~kHz dari firmware ke register data IP I2S. Capture timing menunjukkan pulsa \path{left_valid} dan \path{right_valid} muncul satu kali per kanal pada setiap frame, sedangkan BCLK dan WS pada sisi DAC tetap mengikuti keluaran IP I2S. Pengamatan keluaran DAC mengonfirmasi bahwa bridge mempertahankan batas kanal dan urutan bit selama filter memproses aliran audio.

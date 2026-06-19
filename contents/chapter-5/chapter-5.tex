@@ -1,12 +1,12 @@
 \chapter{Hasil dan Pembahasan}
 
-Bab ini menyajikan hasil pengujian fungsional sistem IP I2S Transmitter yang dikembangkan, mencakup verifikasi timing protokol, analisis akurasi frekuensi sampling, identifikasi dan perbaikan bug firmware, serta pengujian integrasi dengan blok pemrosesan sinyal digital eksternal. Seluruh pengukuran dilakukan pada perangkat keras target Basys3 (FPGA Artix-7 XC7A35T) menggunakan osiloskop digital untuk sinyal analog dan Vivado Integrated Logic Analyzer (ILA) untuk sinyal digital internal.
+Bab ini menyajikan hasil pengujian fungsional sistem IP I2S Transmitter yang dikembangkan, mencakup verifikasi timing protokol, analisis akurasi frekuensi sampling, identifikasi dan perbaikan bug firmware, serta pengujian integrasi dengan blok pemrosesan sinyal digital eksternal. Seluruh pengukuran dilakukan pada perangkat keras target Basys3 (FPGA Artix-7 XC7A35T) menggunakan osiloskop digital untuk sinyal analog dan capture timing digital untuk sinyal internal.
 
 % ============================================================
 \section{Pengujian Sinyal I2S}
 % ============================================================
 
-Verifikasi timing dilakukan dengan mengamati sinyal \path{i2s\_bclk}, \path{i2s\_ws}, dan \path{i2s\_data} secara langsung menggunakan ILA yang ditambahkan ke dalam desain RTL. Probe dihubungkan ke sinyal internal \path{bclk\_q}, \path{ws\_q}, \path{data\_q}, dan \path{bit\_count\_q} agar seluruh relasi timing antar sinyal dapat diamati dalam satu domain waktu yang konsisten.
+Verifikasi timing dilakukan dengan mengamati sinyal \path{i2s\_bclk}, \path{i2s\_ws}, dan \path{i2s\_data} melalui capture timing internal dari desain RTL. Sinyal internal \path{bclk\_q}, \path{ws\_q}, \path{data\_q}, dan \path{bit\_count\_q} dipantau agar seluruh relasi timing antar sinyal dapat diamati dalam satu domain waktu yang konsisten.
 
 \begin{landscape}
 	\begin{figure}[htbp]
@@ -40,7 +40,7 @@ Verifikasi timing dilakukan dengan mengamati sinyal \path{i2s\_bclk}, \path{i2s\
 			\caption{Pembangkitan strobe \texttt{bclk\_en\_w} oleh clock divider tiga-bit.}
 			\label{fig:ch5-clock-divider-waveform}
 		\end{subfigure}
-		\caption{Tangkapan ILA timing internal I2S: frame stereo, penghitung bit, dan clock divider.}
+		\caption{Tangkapan timing internal I2S: frame stereo, penghitung bit, dan clock divider.}
 		\label{fig:ch5-waveform}
 	\end{figure}
 \end{landscape}
@@ -236,7 +236,7 @@ Setelah perbaikan bug bit tanda, kanal kiri (L) dan kanan (R) menghasilkan bentu
 
 \input{contents/chapter-5/subsection-i2s-filter}
 
-Sebagai validasi kompatibilitas antarmuka pada tingkat perangkat keras, IP I2S yang dikembangkan diintegrasikan dengan blok filter IIR (\textit{Infinite Impulse Response}) berbasis RTL yang dikembangkan oleh Adji Pangestu pada penelitian terkait \citep{pangestu_iir_filter}. Tujuan pengujian ini bukan untuk mengevaluasi karakteristik filter, melainkan untuk memverifikasi bahwa IP I2S dapat menerima dan mentransmisikan data dari modul RTL eksternal tanpa kehilangan sinkronisasi.
+Pengujian integrasi memakai blok filter IIR (\textit{Infinite Impulse Response}) berbasis RTL yang dikembangkan oleh Adji Pangestu pada penelitian terkait \citep{pangestu_iir_filter}. Pengujian berfokus pada pertukaran data antara aliran serial I2S dan antarmuka paralel filter serta pemeliharaan sinkronisasi frame.
 
 
 \begin{landscape}
@@ -253,11 +253,11 @@ Sebagai validasi kompatibilitas antarmuka pada tingkat perangkat keras, IP I2S y
 \end{landscape}
 \clearpage
 
-Konfigurasi sistem pada Gambar~\ref{fig:ch5-filter-integration} terdiri atas prosesor MicroBlaze V, AXI SmartConnect, IP I2S hasil penelitian ini, modul \textit{i2s\_filter\_bridge}, serta dua blok \textit{filter\_coeff} yang memproses kanal kiri dan kanan secara independen. Data audio hasil pemrosesan filter diteruskan melalui \textit{i2s\_filter\_bridge} ke IP I2S, yang kemudian menghasilkan sinyal BCLK, WS, dan DATA menuju DAC PCM5102A.
+Konfigurasi sistem pada Gambar~\ref{fig:ch5-filter-integration} terdiri atas prosesor MicroBlaze V, AXI SmartConnect, IP I2S hasil penelitian ini, modul \textit{i2s\_filter\_bridge}, serta dua blok \textit{filter\_coeff} untuk kanal kiri dan kanan. IP I2S menghasilkan stream mentah. Bridge mengubah stream tersebut menjadi sampel paralel, menyalurkan setiap kanal ke filter, lalu menyusun keluaran filter menjadi SDATA menuju DAC PCM5102A.
 
-Pengujian menggunakan sinyal sinus 1~kHz sebagai masukan. Hasil pengamatan menunjukkan bahwa data keluaran filter ditransmisikan dengan benar melalui jalur I2S tanpa kehilangan sinkronisasi pada sinyal BCLK, WS, maupun DATA. Seluruh blok RTL beroperasi pada domain clock yang sama dan tidak ditemukan kegagalan komunikasi antarblok selama pengujian.
+Pengujian menggunakan sinyal sinus 1~kHz sebagai masukan. Capture timing menunjukkan data keluaran filter pada jalur I2S dengan batas kanal yang sama pada setiap frame. Seluruh blok RTL memakai clock sistem 100~MHz, sedangkan bridge memperlakukan BCLK sebagai clock-enable untuk deserialisasi dan serialisasi.
 
-Keberhasilan integrasi ini membuktikan dua hal. Pertama, IP I2S yang dirancang tidak hanya berfungsi sebagai transmitter audio mandiri, tetapi juga dapat digunakan sebagai komponen komunikasi dalam rantai pemrosesan sinyal digital yang lebih kompleks. Kedua, mekanisme konfigurasi $F_s$ berbasis register AXI4-Lite tetap bekerja dengan benar setelah integrasi ke sistem yang lebih besar, tanpa memerlukan perubahan struktur perangkat keras maupun rekonfigurasi clock eksternal.
+Hasil pengujian menunjukkan bahwa IP I2S dapat menjadi sumber timing dan data bagi rantai pemrosesan sinyal digital eksternal. Konfigurasi $F_s$ melalui register AXI4-Lite tetap menentukan BCLK dan WS karena bridge meneruskan kedua sinyal tersebut tanpa pembangkitan clock tambahan.
 
 % ============================================================
 \section{Analisis Penggunaan Sumber Daya dan Daya}
