@@ -171,7 +171,7 @@
       \begin{enumerate}\small
         \item \textbf{AXI4-Lite slave} -- register write/read state machine.
         \item \textbf{CDC write-counter} -- sinkronisasi 2-FF dari domain AXI ke domain audio.
-        \item \textbf{BUFGMUX} -- pilih \texttt{audio\_48\_clk} atau \texttt{audio\_44\_clk}.
+        \item \textbf{Seleksi clock internal} -- pilih \texttt{audio\_48\_clk} atau \texttt{audio\_44\_clk}.
         \item \textbf{Clock divider} -- \texttt{bclk\_en\_w} setiap 4 atau 8 siklus MCLK.
         \item \textbf{Serializer} -- Philips I2S, delay-bit, MSB-first, lebar variabel.
       \end{enumerate}

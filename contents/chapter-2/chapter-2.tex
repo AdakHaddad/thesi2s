@@ -166,6 +166,26 @@ FPGA (\textit{Field-Programmable Gate Array}) memungkinkan kustomisasi jalur dat
 
 Board Basys3 (Gambar \ref{fig:basys3_board}) menyediakan osilator clock 100 MHz, koneksi micro-USB untuk pemograman JTAG dan UART, serta empat port PMOD standar 12-pin untuk ekspansi periferal eksternal seperti DAC.
 
+\subsection{Alur Pengembangan Vivado dan Vitis}
+
+AMD Vivado Design Suite digunakan untuk membangun bagian perangkat keras sistem FPGA, mulai dari penulisan dan simulasi RTL, pengemasan custom IP, penyusunan Block Design, hingga pemetaan pin melalui file constraint \path{.xdc} \citep{xilinx_vivado_design_suite_2021}. Setelah rancangan hardware selesai, Vivado menjalankan tiga tahap utama:
+\begin{enumerate}
+    \item \textbf{Synthesis}: menerjemahkan RTL dan Block Design menjadi netlist yang tersusun dari sumber daya logika FPGA, seperti LUT, flip-flop, BRAM, dan DSP.
+    \item \textbf{Implementation}: menempatkan sumber daya hasil sintesis pada FPGA (\textit{placement}), menghubungkan jalurnya (\textit{routing}), dan memeriksa pemenuhan batasan timing.
+    \item \textbf{Generate Bitstream}: menghasilkan file konfigurasi \path{.bit} yang digunakan untuk memprogram FPGA.
+\end{enumerate}
+
+Untuk pengembangan perangkat lunak, Vivado mengekspor deskripsi hardware sebagai file \path{.xsa} (\textit{Xilinx Support Archive}). File ini memuat informasi prosesor MicroBlaze V, peta alamat peripheral AXI4-Lite, konfigurasi interrupt, clock, serta bitstream yang terkait dengan platform hardware. AMD Vitis mengimpor file \path{.xsa} tersebut untuk membentuk \textit{platform project} dan \textit{Board Support Package} (BSP) \citep{xilinx_vitis_embedded_2021}. Berdasarkan platform itu, aplikasi bare-metal ditulis dalam bahasa C pada file \path{.c}, lalu dikompilasi menjadi berkas executable \path{.elf}. Saat pengujian, FPGA diprogram menggunakan bitstream dan Vitis memuat aplikasi \path{.elf} ke memori sistem melalui JTAG.
+
+Dengan demikian, alur pengembangan hardware dan software pada penelitian ini adalah:
+\begin{equation}
+    \begin{aligned}
+        \text{RTL/Block Design} &\rightarrow \text{Synthesis} \rightarrow \text{Implementation} \\
+        &\rightarrow \text{Bitstream dan XSA} \rightarrow \text{Platform Vitis} \rightarrow \text{Aplikasi C}
+    \end{aligned}
+    \label{eq:vivado_vitis_flow}
+\end{equation}
+
 \subsection{Verilog HDL, Perbandingan IP, dan Analisis Metode}
 
 Logika IP core diimplementasikan menggunakan Verilog HDL untuk mendeskripsikan register kontrol, mesin NCO, serializer, dan bus interface slave AXI4-Lite \citep{palnitkar_verilog_2003}. Desain modular ini bersifat \textit{vendor-agnostic} karena ditulis dalam RTL standar tanpa memakai pustaka hardware proprietari. 

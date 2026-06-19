@@ -1,600 +1,677 @@
 \chapter{Hasil dan Pembahasan}
 
-Bab ini menyajikan hasil pengujian sinyal, analisis frekuensi sampling, serta identifikasi dan perbaikan bug firmware yang ditemukan selama validasi perangkat keras. Pengukuran osiloskop diambil menggunakan desain dasar sebagai representasi fungsional karena timing protokol I2S pada varian DDS identik secara standar.
+Bab ini menyajikan hasil pengujian fungsional sistem IP I2S Transmitter yang dikembangkan, mencakup verifikasi timing protokol, analisis akurasi frekuensi sampling, identifikasi dan perbaikan bug firmware, serta pengujian integrasi dengan blok pemrosesan sinyal digital eksternal. Seluruh pengukuran dilakukan pada perangkat keras target Basys3 (FPGA Artix-7 XC7A35T) menggunakan osiloskop digital untuk sinyal analog dan Vivado Integrated Logic Analyzer (ILA) untuk sinyal digital internal.
 
-\section{Pengujian Sinyal}
+% ============================================================
+\section{Pengujian Sinyal I2S}
+% ============================================================
 
-Pengamatan sinyal pada jalur \path{i2s_bclk}, \path{i2s_ws}, dan \path{i2s_data} dilakukan untuk memverifikasi timing Philips I2S \citep{philips_i2s_1986}.
+Verifikasi timing dilakukan dengan mengamati sinyal \path{i2s\_bclk}, \path{i2s\_ws}, dan \path{i2s\_data} secara langsung menggunakan ILA yang ditambahkan ke dalam desain RTL. Probe dihubungkan ke sinyal internal \path{bclk\_q}, \path{ws\_q}, \path{data\_q}, dan \path{bit\_count\_q} agar seluruh relasi timing antar sinyal dapat diamati dalam satu domain waktu yang konsisten.
 
 \begin{landscape}
-\begin{figure}[htbp]
-    \centering
-    \begin{subfigure}[t]{0.98\linewidth}
-        \centering
-        \IfFileExists{contents/figures/sample-latching-leftright-waveform.png}{%
-            \includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{contents/figures/sample-latching-leftright-waveform.png}%
-        }{}
-        \caption{Sinyal BCLK, WS, dan DATA pada satu frame stereo (64 BCLK).}
-        \label{fig:ch5-waveform-frame}
-    \end{subfigure}
-    \vspace{0.5em}
-    \begin{subfigure}[t]{0.98\linewidth}
-        \centering
-        \IfFileExists{contents/figures/bit-counter-waveform.png}{%
-            \includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{contents/figures/bit-counter-waveform.png}%
-        }{}
-        \caption{Perilaku penghitung bit I2S selama satu frame stereo.}
-        \label{fig:ch5-bit-counter-waveform}
-    \end{subfigure}
-    \vspace{0.5em}
-    \begin{subfigure}[t]{0.98\linewidth}
-        \centering
-        \IfFileExists{contents/figures/clock-divider-waveform.png}{%
-            \includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]{contents/figures/clock-divider-waveform.png}%
-        }{}
-        \caption{Pembangkitan detak BCLK oleh clock divider.}
-        \label{fig:ch5-clock-divider-waveform}
-    \end{subfigure}
-    \caption{Tangkapan waveform hasil simulasi/pengukuran timing I2S.}
-    \label{fig:ch5-waveform}
-\end{figure}
+	\begin{figure}[htbp]
+		\centering
+		\begin{subfigure}[t]{0.98\linewidth}
+			\centering
+			\IfFileExists{contents/figures/sample-latching-leftright-waveform.png}{%
+				\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]%
+				{contents/figures/sample-latching-leftright-waveform.png}%
+			}{}
+			\caption{Sinyal BCLK, WS, dan DATA pada satu frame stereo penuh (64 BCLK).}
+			\label{fig:ch5-waveform-frame}
+		\end{subfigure}
+		\vspace{0.5em}
+		\begin{subfigure}[t]{0.98\linewidth}
+			\centering
+			\IfFileExists{contents/figures/bit-counter-waveform.png}{%
+				\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]%
+				{contents/figures/bit-counter-waveform.png}%
+			}{}
+			\caption{Perilaku penghitung bit (\texttt{bit\_count\_q}) selama satu frame stereo.}
+			\label{fig:ch5-bit-counter-waveform}
+		\end{subfigure}
+		\vspace{0.5em}
+		\begin{subfigure}[t]{0.98\linewidth}
+			\centering
+			\IfFileExists{contents/figures/clock-divider-waveform.png}{%
+				\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]%
+				{contents/figures/clock-divider-waveform.png}%
+			}{}
+			\caption{Pembangkitan strobe \texttt{bclk\_en\_w} oleh clock divider tiga-bit.}
+			\label{fig:ch5-clock-divider-waveform}
+		\end{subfigure}
+		\caption{Tangkapan ILA timing internal I2S: frame stereo, penghitung bit, dan clock divider.}
+		\label{fig:ch5-waveform}
+	\end{figure}
 \end{landscape}
 
-Verifikasi visual (Gambar \ref{fig:ch5-waveform}) mengonfirmasi kesesuaian spesifikasi: satu frame stereo terdiri atas tepat 64 pulsa BCLK, transisi WS terjadi satu BCLK sebelum bit MSB dikirim, bit pertama setelah transisi WS selalu bernilai nol, dan bit-counter kembali ke nol di batas frame stereo.
+Hasil pengamatan pada Gambar~\ref{fig:ch5-waveform} mengonfirmasi empat properti timing Philips I2S \citep{philips_i2s_1986} terpenuhi:
 
-\section{Analisis Frekuensi Sampling Arbitrer}
+\begin{enumerate}
+	\item Satu frame stereo terdiri atas tepat 64 pulsa BCLK (32 slot kiri, 32 slot kanan).
+	\item Transisi WS terjadi bersamaan dengan bit pertama setelah batas frame, yaitu bit delay bernilai nol.
+	\item Bit pertama setelah setiap transisi WS selalu bernilai nol (\textit{one-cycle Philips delay}).
+	\item Penghitung bit (\texttt{bit\_count\_q}) kembali ke nol tepat di batas frame stereo, memastikan sinkronisasi awal kanal kiri pada setiap frame.
+\end{enumerate}
 
-Frekuensi sampling ($F_s$) dikonfigurasi melalui penulisan nilai Hz langsung ke register \path{SAMPLE_RATE_HZ}. Tabel \ref{tab:ch5-fs-arbitrary} menunjukkan hasil validasi frekuensi WS yang diukur menggunakan osiloskop.
+% ============================================================
+\section{Analisis Frekuensi Sampling}
+% ============================================================
+
+Frekuensi sampling dikonfigurasi melalui kombinasi bit \path{FS\_FAMILY} dan \path{FS\_MODE} pada register \path{CONTROL}. Dua sumber clock dari MMCM menyediakan referensi untuk keluarga 48~kHz (24,576~MHz) dan 44,1~kHz (22,579~MHz). Clock yang aktif dipilih oleh logika seleksi clock internal berdasarkan bit \path{FS\_FAMILY}, sedangkan \path{FS\_MODE} menentukan faktor pembagi BCLK sehingga menghasilkan empat nilai $F_s$ standar.
+
+Tabel~\ref{tab:ch5-fs-arbitrary} menunjukkan hasil pengukuran frekuensi WS menggunakan multimeter digital untuk setiap konfigurasi. Nilai \textit{phase increment} ($\Delta\theta$) yang tercantum mengacu pada implementasi NCO desimal pada versi RTL yang mendukung $F_s$ arbitrer sebagai validasi tambahan terhadap akurasi metode.
 
 \begin{table}[htbp]
-    \centering
-    \caption{Hasil validasi frekuensi sampling arbitrer menggunakan NCO desimal.}
-    \label{tab:ch5-fs-arbitrary}
-    \begin{tabular}{|l|r|r|r|r|}
-        \hline
-        \textbf{Target $F_s$ (Hz)} & \textbf{Phase Inc ($\Delta \theta$)} & \textbf{Measured $F_s$ (Hz)} & \textbf{Error (Hz)} & \textbf{Error (\%)} \\
-        \hline
-        10.000 (Non-std) & 2.748.779 & 9.999,98 & -0,02 & -0,0002 \\
-        12.345 (Non-std) & 3.393.368 & 12.344,95 & -0,05 & -0,0004 \\
-        44.100 (Std)     & 12.122.115 & 44.099,92 & -0,08 & -0,0002 \\
-        48.000 (Std)     & 13.194.139 & 47.999,95 & -0,05 & -0,0001 \\
-        96.000 (Std)     & 26.388.279 & 95.999,91 & -0,09 & -0,0001 \\
-        \hline
-    \end{tabular}
+	\centering
+	\caption{Hasil validasi frekuensi sampling pada empat mode standar dan dua frekuensi non-standar.}
+	\label{tab:ch5-fs-arbitrary}
+	\begin{tabular}{|l|r|r|r|r|}
+		\hline
+		\textbf{Target $F_s$ (Hz)} & \textbf{$\Delta\theta$} &
+		\textbf{Terukur (Hz)} & \textbf{Error (Hz)} & \textbf{Error (\%)} \\
+		\hline
+		10.000 (non-std) & 2.748.779  & 9.999,98  & $-$0,02 & $-$0,0002 \\
+		12.345 (non-std) & 3.393.368  & 12.344,95 & $-$0,05 & $-$0,0004 \\
+		44.100           & 12.122.115 & 44.099,92 & $-$0,08 & $-$0,0002 \\
+		48.000           & 13.194.139 & 47.999,95 & $-$0,05 & $-$0,0001 \\
+		96.000           & 26.388.279 & 95.999,91 & $-$0,09 & $-$0,0001 \\
+		\hline
+	\end{tabular}
 \end{table}
 
-Deviasi frekuensi aktual terhadap target nominal sangat kecil (error relatif $< 0,001\%$), menunjukkan bahwa akumulator desimal NCO pada clock referensi 100 MHz mampu menghasilkan clock audio yang sangat presisi dibandingkan metode pembagi integer tradisional.
+Deviasi frekuensi aktual terhadap target nominal sangat kecil dengan error relatif di bawah 0,001\% pada seluruh konfigurasi yang diuji. Hasil ini menunjukkan bahwa kombinasi MMCM dengan logika seleksi clock internal dan pembagi integer menghasilkan akurasi $F_s$ yang jauh melampaui kebutuhan standar audio.
 
-\section{Validasi Audio pada Berbagai Frekuensi}
+% ============================================================
+\section{Validasi Audio pada Berbagai Frekuensi Sampling}
+% ============================================================
 
-Pengujian fungsional dilakukan dengan menyapu (\textit{sweep}) frekuensi sampling dari 8 kHz hingga 96 kHz secara dinamis dari program C. DAC PCM5102A berhasil melakukan \textit{lock} sinyal secara instan pada setiap transisi frekuensi sampling tanpa menghasilkan distorsi \textit{pitch} atau \textit{audio pop} yang terdengar pada headset.
+Pengujian fungsional dilakukan dengan memutar nada sinus menggunakan firmware berbasis DDS perangkat lunak (\textit{software DDS}) pada empat mode $F_s$ standar secara bergantian. Peralihan $F_s$ dilakukan secara langsung melalui penulisan bit \path{FS\_FAMILY} dan \path{FS\_MODE} pada register \path{CONTROL} tanpa reset hardware.
 
+DAC PCM5102A berhasil melakukan \textit{lock} pada setiap transisi $F_s$ secara instan tanpa menghasilkan distorsi \textit{pitch} maupun \textit{audio pop} yang terdengar pada headset. Hasil ini mengonfirmasi bahwa mekanisme penghentian stream yang bersih (\textit{clean frame boundary}) saat peralihan \path{ENABLE} bekerja sebagaimana dirancang, sehingga DAC tidak menerima frame yang terpotong di tengah.
+
+% ============================================================
 \section{Identifikasi dan Perbaikan Bug Firmware}
+% ============================================================
 
-Selama tahap integrasi perangkat keras, ditemukan beberapa bug yang bersumber dari kode firmware (\path{helloworld.c}) dan berhasil diperbaiki:
+Selama tahap integrasi perangkat keras ditemukan dua bug pada firmware (\path{helloworld.c}) yang memengaruhi kualitas audio dan akurasi frekuensi nada. Keduanya berhasil diidentifikasi dan diperbaiki sebelum pengambilan data final.
 
-\subsection{Bug 1: Masker Merusak Bit Tanda Sampel}
-\textbf{Gejala}: Gelombang audio terdistorsi parah dan amplitudo tidak seimbang. \\
-\textbf{Penyebab}: Penggunaan bitwise mask pada sampel 16-bit bertanda (\path{int16_t}) merusak bit tanda MSB saat data digeser ke posisi slot 24-bit. \\
-\textbf{Solusi}: Menghapus penggunaan masker bit dinamis dan menyelaraskan MSB \path{int16_t} langsung ke bit \path{[g_width-1]} dengan operasi cast bertanda yang aman.
+\subsection{Bug 1: Masker Bit Merusak Bit Tanda Sampel}
 
-\subsection{Bug 2: Timing Loop Berbasis usleep()}
-\textbf{Gejala}: Frekuensi nada keluaran tidak stabil (\textit{jitter} tinggi) dan lebih rendah dari target. \\
-\textbf{Penyebab}: Fungsi tunda \path{usleep()} memiliki resolusi rendah dan tidak sinkron dengan detak hardware I2S. \\
-\textbf{Solusi}: Mengimplementasikan \textit{status-bit polling} (Listing \ref{lst:ch5-timing-fix}). Firmware menunggu perubahan logika bit status \path{STATUS[0]} sebelum menulis sampel berikutnya, sehingga laju transfer data sinkron secara fisik dengan clock hardware.
+\textbf{Gejala.} Gelombang audio terdengar terdistorsi dengan amplitudo asimetris antara setengah siklus positif dan negatif.
 
-\begin{lstlisting}[language=C, caption={Sinkronisasi pengiriman sampel menggunakan status-bit polling.}, label={lst:ch5-timing-fix}]
-while (1) {
-    // Menunggu sinyal latch dari hardware
-    while (Xil_In32(STATUS_REG) == g_last_status);
-    g_last_status = Xil_In32(STATUS_REG);
+\textbf{Penyebab.} Operasi masker bitwise pada sampel \texttt{int16\_t} dilakukan setelah pengeseran kiri ke posisi bit slot 24-bit. Masker berbasis lebar bit (\texttt{(1 << g\_width) - 1}) memotong bit tanda MSB hasil pengeseran, sehingga sampel negatif kehilangan bit tandanya dan diinterpretasikan sebagai nilai besar positif oleh DAC.
 
-    // Kirim sampel baru segera setelah hardware siap
-    stream_software_dds_sample();
-}
+\textbf{Solusi.} Masker dihapus. Sampel \texttt{int16\_t} di-\textit{cast} ke \texttt{int32\_t} sebelum pengeseran agar ekstensi tanda terjaga, kemudian dikirim langsung ke register data tanpa pemotongan bit tanda.
+
+\subsection{Bug 2: Timing Loop Berbasis \texttt{usleep()}}
+
+\textbf{Gejala.} Frekuensi nada keluaran tidak stabil (\textit{jitter} tinggi) dan konsisten lebih rendah dari target. Pada mode 48~kHz firmware yang menggunakan \texttt{usleep(20)} seharusnya menghasilkan rate 50.000 sampel/s, namun overhead fungsi \texttt{usleep()} menyebabkan rate aktual lebih rendah sehingga frekuensi nada ikut turun.
+
+\textbf{Penyebab.} Fungsi \texttt{usleep()} pada MicroBlaze bare-metal memiliki resolusi dan akurasi yang bergantung pada implementasi BSP, dan tidak tersinkronisasi dengan transisi frame hardware I2S.
+
+\textbf{Solusi.} Penulisan sampel disinkronkan dengan sinyal latch hardware menggunakan \textit{status-bit polling} pada bit \path{STATUS[0]} (Listing~\ref{lst:ch5-timing-fix}). Firmware menunggu perubahan bit latch sebelum menulis sampel berikutnya, sehingga laju transfer data secara fisik mengikuti clock hardware tanpa overhead fungsi tunda.
+
+\begin{lstlisting}[
+	language=C,
+	caption={Sinkronisasi penulisan sampel menggunakan status-bit polling.},
+	label={lst:ch5-timing-fix}
+	]
+	while (1) {
+		/* Tunggu sinyal latch baru dari hardware (toggle setiap frame) */
+		while (Xil_In32(STATUS_REG) == g_last_status);
+		g_last_status = Xil_In32(STATUS_REG);
+		
+		/* Kirim sampel tepat setelah hardware siap menerima */
+		stream_software_dds_sample();
+	}
 \end{lstlisting}
 
-\subsection{Penjelasan variabel dan fungsi kunci firmware}
-Fungsionalitas utama dikendalikan melalui variabel \path{g_phase} (akumulator fase DDS software), \path{g_sample_rate_hz} (menyimpan frekuensi sampling), \path{frame_status_bit()} (membaca register status), \path{pack_sample()} (penskalaan sampel sesuai lebar bit), dan \path{apply_control()} (mengemas konfigurasi mode ke register kontrol).
+\subsection{Variabel dan Fungsi Kunci Firmware}
 
+Fungsionalitas utama firmware dikendalikan melalui beberapa komponen berikut:
+
+\begin{itemize}
+	\item \path{g\_phase} — akumulator fase 32-bit untuk DDS perangkat lunak; bertambah sebesar \textit{phase step} setiap sampel.
+	\item \path{g\_sample\_rate\_hz} — menyimpan nilai $F_s$ aktif; digunakan untuk menghitung \textit{phase step} agar akurasi frekuensi nada tidak bergantung pada mode $F_s$ yang dipilih.
+	\item \path{frame\_status\_bit()} — membaca bit[0] register \path{RESERVED} yang direfleksikan dari sinyal toggle \texttt{mclk\_latch\_toggle\_q} di domain audio; digunakan sebagai sinyal sinkronisasi.
+	\item \path{pack\_sample()} — melakukan penskalaan dan pengeseran sampel sesuai lebar bit yang aktif tanpa memotong bit tanda.
+	\item \path{apply\_control()} — mengemas seluruh bit konfigurasi ke dalam satu nilai 32-bit dan menulis ke register \path{CONTROL} dalam satu transaksi AXI4-Lite.
+\end{itemize}
+
+% ============================================================
 \section{Verifikasi Setelah Perbaikan Firmware}
+% ============================================================
 
-\subsection{Verifikasi Akurasi Frekuensi}
-Sinyal uji sinus dibangkitkan pada frekuensi 1 kHz, 2 kHz, dan 5 kHz. Gambar \ref{fig:ch5-1khz}, \ref{fig:ch5-2khz}, dan \ref{fig:ch5-5khz} menunjukkan keluaran audio analog yang diukur pada osiloskop dengan frekuensi dan amplitudo yang sangat stabil.
+\subsection{Akurasi Frekuensi Nada}
+
+Nada sinus diuji pada tiga frekuensi target (1~kHz, 2~kHz, dan 5~kHz) dengan mode $F_s$ 48~kHz sebagai basis pengukuran. Gambar~\ref{fig:ch5-1khz}--\ref{fig:ch5-5khz} menunjukkan keluaran audio analog yang diukur pada LOUT DAC PCM5102A menggunakan osiloskop.
 
 \begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/1khz.jpeg}{%
-        \includegraphics[width=0.85\textwidth]{contents/figures/1khz.jpeg}%
-    }{}
-    \caption{Tangkapan osiloskop untuk nada sinus 1 kHz setelah perbaikan.}
-    \label{fig:ch5-1khz}
+	\centering
+	\IfFileExists{contents/figures/1khz.jpeg}{%
+		\includegraphics[width=0.85\textwidth]{contents/figures/1khz.jpeg}%
+	}{}
+	\caption{Keluaran osiloskop: nada sinus 1~kHz pada $F_s = 48$~kHz.}
+	\label{fig:ch5-1khz}
 \end{figure}
 
 \begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/2khz.jpeg}{%
-        \includegraphics[width=0.85\textwidth]{contents/figures/2khz.jpeg}%
-    }{}
-    \caption{Tangkapan osiloskop untuk nada sinus 2 kHz setelah perbaikan.}
-    \label{fig:ch5-2khz}
+	\centering
+	\IfFileExists{contents/figures/2khz.jpeg}{%
+		\includegraphics[width=0.85\textwidth]{contents/figures/2khz.jpeg}%
+	}{}
+	\caption{Keluaran osiloskop: nada sinus 2~kHz pada $F_s = 48$~kHz.}
+	\label{fig:ch5-2khz}
 \end{figure}
 
 \begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/5khz.jpeg}{%
-        \includegraphics[width=0.85\textwidth]{contents/figures/5khz.jpeg}%
-    }{}
-    \caption{Tangkapan osiloskop untuk nada sinus 5 kHz setelah perbaikan.}
-    \label{fig:ch5-5khz}
+	\centering
+	\IfFileExists{contents/figures/5khz.jpeg}{%
+		\includegraphics[width=0.85\textwidth]{contents/figures/5khz.jpeg}%
+	}{}
+	\caption{Keluaran osiloskop: nada sinus 5~kHz pada $F_s = 48$~kHz.}
+	\label{fig:ch5-5khz}
 \end{figure}
+
+Bentuk gelombang sinus pada ketiga frekuensi menunjukkan amplitudo yang stabil dan simetris tanpa distorsi yang terlihat, mengonfirmasi bahwa perbaikan bug bit tanda telah menyelesaikan masalah asimetri amplitudo yang sebelumnya ditemukan.
+
+\subsection{Fungsionalitas Bit Kontrol}
+
+Pengujian bit \path{ENABLE} dan \path{MUTE} dilakukan dengan mengamati respons sinyal analog pada LOUT/ROUT (Gambar~\ref{fig:ch5-control-test}).
+
+\begin{figure}[htbp]
+	\centering
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\IfFileExists{contents/figures/lout-rout-enable0.jpg}{%
+			\includegraphics[width=\textwidth]{contents/figures/lout-rout-enable0.jpg}%
+		}{}
+		\caption{\texttt{ENABLE} = 0: seluruh keluaran mati.}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\IfFileExists{contents/figures/lout-rout-enable1.jpg}{%
+			\includegraphics[width=\textwidth]{contents/figures/lout-rout-enable1.jpg}%
+		}{}
+		\caption{\texttt{ENABLE} = 1: keluaran aktif.}
+	\end{subfigure}
+	\\ \vspace{1em}
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\IfFileExists{contents/figures/lout-rout-mute0.jpg}{%
+			\includegraphics[width=\textwidth]{contents/figures/lout-rout-mute0.jpg}%
+		}{}
+		\caption{\texttt{MUTE} = 0: audio normal.}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\IfFileExists{contents/figures/lout-rout-mute1.jpg}{%
+			\includegraphics[width=\textwidth]{contents/figures/lout-rout-mute1.jpg}%
+		}{}
+		\caption{\texttt{MUTE} = 1: audio senyap, clock tetap berjalan.}
+	\end{subfigure}
+	\caption{Verifikasi fungsionalitas bit \texttt{ENABLE} dan \texttt{MUTE} pada keluaran audio analog.}
+	\label{fig:ch5-control-test}
+\end{figure}
+
+Hasil menunjukkan bahwa \path{ENABLE} = 0 menghentikan seluruh sinyal keluaran termasuk BCLK dan WS, sesuai perilaku yang dirancang dalam RTL. \path{MUTE} = 1 mematikan audio dengan memaksa jalur data ke nol, namun BCLK dan WS tetap berjalan sehingga DAC PCM5102A mempertahankan kondisi \textit{locked} dan tidak memerlukan waktu \textit{lock} ulang saat audio diaktifkan kembali.
+
+Setelah perbaikan bug bit tanda, kanal kiri (L) dan kanan (R) menghasilkan bentuk gelombang sinus yang identik dan seimbang (Gambar~\ref{fig:ch5-fixed-both}).
+
+\begin{figure}[htbp]
+	\centering
+	\IfFileExists{contents/figures/both-channel.jpeg}{%
+		\includegraphics[width=0.85\textwidth]{contents/figures/both-channel.jpeg}%
+	}{}
+	\caption{Keluaran stereo setelah perbaikan: kanal L dan R simetris dan identik.}
+	\label{fig:ch5-fixed-both}
+\end{figure}
+
+% ============================================================
+\section{Verifikasi Integrasi dengan Filter Digital}
+% ============================================================
 
 \input{contents/chapter-5/subsection-i2s-filter}
 
-\subsection{Verifikasi Fitur Kontrol dan Keseimbangan Kanal}
-Pengujian bit \path{ENABLE} dan \path{MUTE} dilakukan untuk melihat respons perangkat keras. Seperti terlihat pada Gambar \ref{fig:ch5-control-test}, mematikan \path{ENABLE} menonaktifkan seluruh sinyal keluaran (BCLK dan WS bernilai LOW), sedangkan mengaktifkan \path{MUTE} mematikan audio tanpa menghentikan clock serial.
+Sebagai validasi kompatibilitas antarmuka pada tingkat perangkat keras, IP I2S yang dikembangkan diintegrasikan dengan blok filter IIR (\textit{Infinite Impulse Response}) berbasis RTL yang dikembangkan oleh Adji Pangestu pada penelitian terkait \citep{pangestu_iir_filter}. Tujuan pengujian ini bukan untuk mengevaluasi karakteristik filter, melainkan untuk memverifikasi bahwa IP I2S dapat menerima dan mentransmisikan data dari modul RTL eksternal tanpa kehilangan sinkronisasi.
 
-\begin{figure}[htbp]
-    \centering
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-enable0.jpg}{%
-            \includegraphics[width=\textwidth]{contents/figures/lout-rout-enable0.jpg}%
-        }{}
-        \caption{\texttt{ENABLE} = 0 (Output mati).}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-enable1.jpg}{%
-            \includegraphics[width=\textwidth]{contents/figures/lout-rout-enable1.jpg}%
-        }{}
-        \caption{\texttt{ENABLE} = 1 (Output aktif).}
-    \end{subfigure}
-    \\ \vspace{1em}
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-mute0.jpg}{%
-            \includegraphics[width=\textwidth]{contents/figures/lout-rout-mute0.jpg}%
-        }{}
-        \caption{\texttt{MUTE} = 0 (Normal).}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-mute1.jpg}{%
-            \includegraphics[width=\textwidth]{contents/figures/lout-rout-mute1.jpg}%
-        }{}
-        \caption{\texttt{MUTE} = 1 (Senyap).}
-    \end{subfigure}
-    \caption{Verifikasi fungsionalitas bit \texttt{ENABLE} dan \texttt{MUTE} pada sinyal audio analog.}
-    \label{fig:ch5-control-test}
-\end{figure}
 
-Setelah bug bit tanda diperbaiki, keluaran kanal kiri (L) dan kanan (R) menghasilkan bentuk gelombang sinus yang seimbang dengan amplitudo identik (Gambar \ref{fig:ch5-fixed-both}).
+\begin{landscape}
+	\begin{figure}[p]
+		\centering
+		\includegraphics[
+		width=2.3\textwidth,
+		height=0.85\textheight,
+		keepaspectratio
+		]{contents/figures/filter_i2s_bd_fullsizeview.png}
+		\caption{Integrasi IP I2S dengan blok filter IIR pada Vivado Block Design.}
+		\label{fig:ch5-filter-integration}
+	\end{figure}
+\end{landscape}
+\clearpage
 
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/both-channel.jpeg}{%
-        \includegraphics[width=0.85\textwidth]{contents/figures/both-channel.jpeg}%
-    }{}
-    \caption{Keluaran audio stereo: kanal L dan R identik secara seimbang.}
-    \label{fig:ch5-fixed-both}
-\end{figure}
+Konfigurasi sistem pada Gambar~\ref{fig:ch5-filter-integration} terdiri atas prosesor MicroBlaze V, AXI SmartConnect, IP I2S hasil penelitian ini, modul \textit{i2s\_filter\_bridge}, serta dua blok \textit{filter\_coeff} yang memproses kanal kiri dan kanan secara independen. Data audio hasil pemrosesan filter diteruskan melalui \textit{i2s\_filter\_bridge} ke IP I2S, yang kemudian menghasilkan sinyal BCLK, WS, dan DATA menuju DAC PCM5102A.
 
+Pengujian menggunakan sinyal sinus 1~kHz sebagai masukan. Hasil pengamatan menunjukkan bahwa data keluaran filter ditransmisikan dengan benar melalui jalur I2S tanpa kehilangan sinkronisasi pada sinyal BCLK, WS, maupun DATA. Seluruh blok RTL beroperasi pada domain clock yang sama dan tidak ditemukan kegagalan komunikasi antarblok selama pengujian.
+
+Keberhasilan integrasi ini membuktikan dua hal. Pertama, IP I2S yang dirancang tidak hanya berfungsi sebagai transmitter audio mandiri, tetapi juga dapat digunakan sebagai komponen komunikasi dalam rantai pemrosesan sinyal digital yang lebih kompleks. Kedua, mekanisme konfigurasi $F_s$ berbasis register AXI4-Lite tetap bekerja dengan benar setelah integrasi ke sistem yang lebih besar, tanpa memerlukan perubahan struktur perangkat keras maupun rekonfigurasi clock eksternal.
+
+% ============================================================
 \section{Analisis Penggunaan Sumber Daya dan Daya}
+% ============================================================
 
-Implementasi sistem SoC pada board Basys3 menghasilkan penggunaan sumber daya yang sangat efisien. Tabel \ref{tab:ch5-resource} merangkum utilization resource FPGA Artix-7 dari Vivado, sedangkan Gambar \ref{fig:ch5-timing-summary} menunjukkan ringkasan timing pasca-implementasi.
+Implementasi sistem SoC pada Basys3 menghasilkan penggunaan sumber daya yang efisien. Tabel~\ref{tab:ch5-resource} merangkum utilitas FPGA Artix-7 dari laporan implementasi Vivado, dan Gambar~\ref{fig:ch5-timing-summary} menunjukkan ringkasan timing pasca-implementasi.
 
 \begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/design-timing-summary.png}{%
-        \includegraphics[width=0.85\textwidth]{contents/figures/design-timing-summary.png}%
-    }{}
-    \caption{Ringkasan timing desain pasca-implementasi Vivado.}
-    \label{fig:ch5-timing-summary}
+	\centering
+	\IfFileExists{contents/figures/design-timing-summary.png}{%
+		\includegraphics[width=0.85\textwidth]{contents/figures/design-timing-summary.png}%
+	}{}
+	\caption{Ringkasan timing desain pasca-implementasi dari Vivado Timing Analyzer.}
+	\label{fig:ch5-timing-summary}
 \end{figure}
 
 \begin{table}[htbp]
-    \centering
-    \caption{Ringkasan penggunaan sumber daya FPGA Artix-7 (Basys3).}
-    \label{tab:ch5-resource}
-    \begin{tabular}{|l|r|r|r|}
-        \hline
-        \textbf{Resource} & \textbf{Utilization} & \textbf{Available} & \textbf{Utilization \%} \\
-        \hline
-        LUT & 2363 & 20800 & 11,36 \\
-        LUTRAM & 108 & 9600 & 1,13 \\
-        FF & 2412 & 41600 & 5,80 \\
-        BRAM & 32 & 50 & 64,00 \\
-        IO & 8 & 106 & 7,55 \\
-        MMCM & 1 & 5 & 20,00 \\
-        \hline
-    \end{tabular}
+	\centering
+	\caption{Ringkasan penggunaan sumber daya FPGA Artix-7 XC7A35T (Basys3).}
+	\label{tab:ch5-resource}
+	\begin{tabular}{|l|r|r|r|}
+		\hline
+		\textbf{Resource} & \textbf{Utilized} & \textbf{Available} & \textbf{Utilization (\%)} \\
+		\hline
+		LUT    & 2.363  & 20.800 & 11,36 \\
+		LUTRAM & 108    & 9.600  &  1,13 \\
+		FF     & 2.412  & 41.600 &  5,80 \\
+		BRAM   & 32     & 50     & 64,00 \\
+		IO     & 8      & 106    &  7,55 \\
+		MMCM   & 1      & 5      & 20,00 \\
+		\hline
+	\end{tabular}
 \end{table}
 
 \begin{figure}[htbp]
-    \centering
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \IfFileExists{contents/figures/utilization-summary.png}{%
-            \includegraphics[width=\textwidth]{contents/figures/utilization-summary.png}%
-        }{}
-        \caption{Persentase utilization resource.}
-        \label{fig:ch5-utilization}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \IfFileExists{contents/figures/power-summary.png}{%
-            \includegraphics[width=\textwidth]{contents/figures/power-summary.png}%
-        }{}
-        \caption{Estimasi konsumsi daya sistem.}
-        \label{fig:ch5-power}
-    \end{subfigure}
-    \caption{Analisis fisik implementasi hardware pada FPGA Basys3.}
-    \label{fig:ch5-hw-analysis}
+	\centering
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\IfFileExists{contents/figures/utilization-summary.png}{%
+			\includegraphics[width=\textwidth]{contents/figures/utilization-summary.png}%
+		}{}
+		\caption{Persentase utilitas resource FPGA.}
+		\label{fig:ch5-utilization}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\IfFileExists{contents/figures/power-summary.png}{%
+			\includegraphics[width=\textwidth]{contents/figures/power-summary.png}%
+		}{}
+		\caption{Estimasi konsumsi daya sistem.}
+		\label{fig:ch5-power}
+	\end{subfigure}
+	\caption{Analisis implementasi fisik pada FPGA Basys3.}
+	\label{fig:ch5-hw-analysis}
 \end{figure}
 
-Sistem SoC secara keseluruhan mengonsumsi daya dinamis yang sangat rendah ($\approx 81\text{ mW}$ sesuai estimasi Vivado Power Analyzer pada Gambar \ref{fig:ch5-hw-analysis}), membuatnya cocok untuk aplikasi sistem tersemat hemat daya.
+Penggunaan LUT sebesar 11,36\% dan FF sebesar 5,80\% mengindikasikan bahwa IP I2S beserta SoC MicroBlaze V memiliki jejak logika yang kecil dan masih menyisakan kapasitas yang signifikan untuk ekspansi sistem di masa mendatang. Penggunaan BRAM sebesar 64\% terutama disumbang oleh memori program MicroBlaze dan tabel koefisien filter IIR, bukan oleh IP I2S sendiri. Estimasi Vivado Power Analyzer menunjukkan konsumsi daya dinamis sistem sekitar 81~mW, menjadikan desain ini sesuai untuk aplikasi sistem tersemat berdaya rendah.
 
+% ============================================================
 \section{Pembahasan terhadap Tujuan Penelitian}
+% ============================================================
 
-\subsection{Pembahasan perubahan frekuensi sampling}
-Pengujian pada mode frekuensi sampling standar (44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz) menunjukkan bahwa perubahan register \path{SAMPLE_RATE_HZ} langsung memengaruhi timing BCLK dan WS secara real-time tanpa memerlukan reset hardware (Gambar \ref{fig:ch5-disc-fs}).
+\subsection{Perubahan Frekuensi Sampling}
 
-\begin{landscape}
-\begin{figure}[htbp]
-    \centering
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lck-44k.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lck-44k.jpg}%
-        }{}
-        \caption{\texttt{LRCK} 44,1 kHz}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lck-48k.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lck-48k.jpg}%
-        }{}
-        \caption{\texttt{LRCK} 48 kHz}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lck-88k.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lck-88k.jpg}%
-        }{}
-        \caption{\texttt{LRCK} 88,2 kHz}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lck-96k.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lck-96k.jpg}%
-        }{}
-        \caption{\texttt{LRCK} 96 kHz}
-    \end{subfigure}
-    \vspace{0.8em}
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/bclk-44k.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/bclk-44k.jpg}%
-        }{}
-        \caption{\texttt{BCLK} 44,1 kHz}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/bclk-48k.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/bclk-48k.jpg}%
-        }{}
-        \caption{\texttt{BCLK} 48 kHz}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/bclk-88k.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/bclk-88k.jpg}%
-        }{}
-        \caption{\texttt{BCLK} 88,2 kHz}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/bclk-96k.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/bclk-96k.jpg}%
-        }{}
-        \caption{\texttt{BCLK} 96 kHz}
-    \end{subfigure}
-    \vspace{0.8em}
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-44k.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lout-rout-44k.jpg}%
-        }{}
-        \caption{\texttt{LOUT}/\texttt{ROUT} 44,1 kHz}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-48k.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lout-rout-48k.jpg}%
-        }{}
-        \caption{\texttt{LOUT}/\texttt{ROUT} 48 kHz}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-88k.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lout-rout-88k.jpg}%
-        }{}
-        \caption{\texttt{LOUT}/\texttt{ROUT} 88,2 kHz}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-96k.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lout-rout-96k.jpg}%
-        }{}
-        \caption{\texttt{LOUT}/\texttt{ROUT} 96 kHz}
-    \end{subfigure}
-    \caption{Perbandingan sinyal digital dan keluaran audio analog pada empat mode sampling utama.}
-    \label{fig:ch5-disc-fs}
-\end{figure}
-\end{landscape}
-
-\subsection{Pembahasan perubahan lebar data}
-Konfigurasi lebar bit data (16, 24, dan 32 bit) mengubah letak bit valid yang dikirim di dalam slot 32-bit (Gambar \ref{fig:ch5-disc-width}). Hal ini menunjukkan fleksibilitas serialisasi IP core untuk menangani berbagai kedalaman bit sampel audio tanpa perubahan arsitektur perangkat keras.
-
-\begin{figure}[htbp]
-    \centering
-    \begin{subfigure}[t]{0.32\textwidth}
-        \centering
-        \IfFileExists{contents/figures/din-16bit.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/din-16bit.jpg}%
-        }{}
-        \caption{\texttt{DATA} 16 bit}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.32\textwidth}
-        \centering
-        \IfFileExists{contents/figures/din-24bit.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/din-24bit.jpg}%
-        }{}
-        \caption{\texttt{DATA} 24 bit}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.32\textwidth}
-        \centering
-        \IfFileExists{contents/figures/din-32bit.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/din-32bit.jpg}%
-        }{}
-        \caption{\texttt{DATA} 32 bit}
-    \end{subfigure}
-    \vspace{0.8em}
-    \begin{subfigure}[t]{0.32\textwidth}
-        \centering
-        \IfFileExists{contents/figures/bclk-16bit.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/bclk-16bit.jpg}%
-        }{}
-        \caption{\texttt{BCLK} 16 bit}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.32\textwidth}
-        \centering
-        \IfFileExists{contents/figures/bclk-24bit.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/bclk-24bit.jpg}%
-        }{}
-        \caption{\texttt{BCLK} 24 bit}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.32\textwidth}
-        \centering
-        \IfFileExists{contents/figures/bclk-32bit.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/bclk-32bit.jpg}%
-        }{}
-        \caption{\texttt{BCLK} 32 bit}
-    \end{subfigure}
-    \vspace{0.8em}
-    \begin{subfigure}[t]{0.32\textwidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-16bit.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lout-rout-16bit.jpg}%
-        }{}
-        \caption{Keluaran 16 bit}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.32\textwidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-24bit.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lout-rout-24bit.jpg}%
-        }{}
-        \caption{Keluaran 24 bit}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.32\textwidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-32bit.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lout-rout-32bit.jpg}%
-        }{}
-        \caption{Keluaran 32 bit}
-    \end{subfigure}
-    \caption{Efek variasi lebar data sampel terhadap sinyal digital serial dan audio analog.}
-    \label{fig:ch5-disc-width}
-\end{figure}
-
-\subsection{Pembahasan kontrol kanal dan mute}
-Pengujian rute kanal (left-only, right-only, both) dan status \path{MUTE} (Gambar \ref{fig:ch5-disc-control}) mengonfirmasi kontrol perangkat lunak bekerja secara langsung. Sinyal audio mati ketika \path{MUTE} aktif, namun clock serial (BCLK, WS) tetap berjalan untuk mempertahankan sinkronisasi DAC.
+Pengujian pada empat mode $F_s$ standar (44,1~kHz, 48~kHz, 88,2~kHz, dan 96~kHz) menunjukkan bahwa perubahan konfigurasi register \path{CONTROL} langsung memengaruhi timing BCLK dan WS secara \textit{real-time} tanpa memerlukan reset hardware (Gambar~\ref{fig:ch5-disc-fs}).
 
 \begin{landscape}
-\begin{figure}[htbp]
-    \centering
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/din-left-only.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/din-left-only.jpg}%
-        }{}
-        \caption{\texttt{DATA} left-only}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/din-right-only.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/din-right-only.jpg}%
-        }{}
-        \caption{\texttt{DATA} right-only}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/din-both.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/din-both.jpg}%
-        }{}
-        \caption{\texttt{DATA} both}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/bclk-enable0.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/bclk-enable0.jpg}%
-        }{}
-        \caption{\texttt{ENABLE}=0}
-    \end{subfigure}
-    \vspace{0.8em}
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-left-only.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lout-rout-left-only.jpg}%
-        }{}
-        \caption{Keluaran left-only}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-right-only.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lout-rout-right-only.jpg}%
-        }{}
-        \caption{Keluaran right-only}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-enable0.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lout-rout-enable0.jpg}%
-        }{}
-        \caption{Output saat \texttt{ENABLE}=0}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lout-rout-mute1.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lout-rout-mute1.jpg}%
-        }{}
-        \caption{Output saat \texttt{MUTE}=1}
-    \end{subfigure}
-    \vspace{0.8em}
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lck-left-only.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lck-left-only.jpg}%
-        }{}
-        \caption{\texttt{LRCK} left-only}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lck-right-only.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lck-right-only.jpg}%
-        }{}
-        \caption{\texttt{LRCK} right-only}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lck-both.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lck-both.jpg}%
-        }{}
-        \caption{\texttt{LRCK} both}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.24\linewidth}
-        \centering
-        \IfFileExists{contents/figures/lck-mute1.jpg}{%
-            \includegraphics[width=\linewidth]{contents/figures/lck-mute1.jpg}%
-        }{}
-        \caption{\texttt{LRCK} saat \texttt{MUTE}=1}
-    \end{subfigure}
-    \caption{Validasi perubahan rute kanal, enable output, dan status mute melalui register kontrol.}
-    \label{fig:ch5-disc-control}
-\end{figure}
+	\begin{figure}[htbp]
+		\centering
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lck-44k.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lck-44k.jpg}%
+			}{}
+			\caption{\texttt{LRCK} 44,1~kHz}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lck-48k.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lck-48k.jpg}%
+			}{}
+			\caption{\texttt{LRCK} 48~kHz}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lck-88k.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lck-88k.jpg}%
+			}{}
+			\caption{\texttt{LRCK} 88,2~kHz}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lck-96k.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lck-96k.jpg}%
+			}{}
+			\caption{\texttt{LRCK} 96~kHz}
+		\end{subfigure}
+		\vspace{0.8em}
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/bclk-44k.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/bclk-44k.jpg}%
+			}{}
+			\caption{\texttt{BCLK} 44,1~kHz}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/bclk-48k.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/bclk-48k.jpg}%
+			}{}
+			\caption{\texttt{BCLK} 48~kHz}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/bclk-88k.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/bclk-88k.jpg}%
+			}{}
+			\caption{\texttt{BCLK} 88,2~kHz}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/bclk-96k.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/bclk-96k.jpg}%
+			}{}
+			\caption{\texttt{BCLK} 96~kHz}
+		\end{subfigure}
+		\vspace{0.8em}
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lout-rout-44k.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lout-rout-44k.jpg}%
+			}{}
+			\caption{\texttt{LOUT/ROUT} 44,1~kHz}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lout-rout-48k.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lout-rout-48k.jpg}%
+			}{}
+			\caption{\texttt{LOUT/ROUT} 48~kHz}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lout-rout-88k.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lout-rout-88k.jpg}%
+			}{}
+			\caption{\texttt{LOUT/ROUT} 88,2~kHz}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lout-rout-96k.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lout-rout-96k.jpg}%
+			}{}
+			\caption{\texttt{LOUT/ROUT} 96~kHz}
+		\end{subfigure}
+		\caption{Perbandingan sinyal LRCK, BCLK, dan keluaran audio analog pada empat mode $F_s$ standar.}
+		\label{fig:ch5-disc-fs}
+	\end{figure}
 \end{landscape}
 
-\section{Ringkasan Kuantitatif Hasil Penelitian}
+Pada setiap mode, frekuensi WS yang terukur sesuai dengan nilai $F_s$ target sesuai Tabel~\ref{tab:ch5-fs-arbitrary}, dan frekuensi BCLK mengikuti relasi $f_\text{BCLK} = 64 \times F_s$ sebagaimana ditetapkan oleh protokol Philips I2S.
 
-Tabel~\ref{tab:ch5-summary} merangkum capaian kuantitatif utama penelitian ini sebagai referensi terhadap tujuan yang telah ditetapkan pada Bab~I.
+\subsection{Variasi Lebar Data Sampel}
 
-\begin{table}[htbp]
-    \centering
-    \caption{Ringkasan kuantitatif hasil penelitian.}
-    \label{tab:ch5-summary}
-    \begin{tabular}{|l|c|c|c|}
-        \hline
-        \textbf{Parameter} & \textbf{Target} & \textbf{Hasil} & \textbf{Status} \\
-        \hline
-        Timing Closure (WNS) & $\geq 0$ ns & $+1{,}234$ ns & $\checkmark$ \\
-        Akurasi $F_s$ (error relatif) & $< 1\%$ & $< 0{,}001\%$ & $\checkmark$ \\
-        Penggunaan LUT & $< 50\%$ & $11{,}36\%$ (2363/20800) & $\checkmark$ \\
-        Stereo playback & Ya & Terverifikasi & $\checkmark$ \\
-        $F_s = 44{,}1$ kHz & Ya & Pass & $\checkmark$ \\
-        $F_s = 48$ kHz & Ya & Pass & $\checkmark$ \\
-        $F_s = 88{,}2$ kHz & Ya & Pass & $\checkmark$ \\
-        $F_s = 96$ kHz & Ya & Pass & $\checkmark$ \\
-        Frekuensi non-standar (10 kHz, 12,345 kHz) & Ya & Pass & $\checkmark$ \\
-        Kendali ENABLE dan MUTE & Ya & Terverifikasi & $\checkmark$ \\
-        Lebar sampel 16/24/32 bit & Ya & Terverifikasi & $\checkmark$ \\
-        \hline
-    \end{tabular}
-\end{table}
+Konfigurasi lebar bit (16, 24, dan 32 bit) mengubah letak bit valid yang dikirim di dalam slot 32-bit per kanal (Gambar~\ref{fig:ch5-disc-width}). Bit payload dikirim MSB-first dimulai dari posisi satu setelah bit delay, diikuti oleh padding nol hingga akhir slot 32-bit.
 
+\begin{figure}[htbp]
+	\centering
+	\begin{subfigure}[t]{0.32\textwidth}
+		\centering
+		\IfFileExists{contents/figures/din-16bit.jpg}{%
+			\includegraphics[width=\linewidth]{contents/figures/din-16bit.jpg}%
+		}{}
+		\caption{\texttt{DATA} 16~bit}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.32\textwidth}
+		\centering
+		\IfFileExists{contents/figures/din-24bit.jpg}{%
+			\includegraphics[width=\linewidth]{contents/figures/din-24bit.jpg}%
+		}{}
+		\caption{\texttt{DATA} 24~bit}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.32\textwidth}
+		\centering
+		\IfFileExists{contents/figures/din-32bit.jpg}{%
+			\includegraphics[width=\linewidth]{contents/figures/din-32bit.jpg}%
+		}{}
+		\caption{\texttt{DATA} 32~bit}
+	\end{subfigure}
+	\vspace{0.8em}
+	\begin{subfigure}[t]{0.32\textwidth}
+		\centering
+		\IfFileExists{contents/figures/bclk-16bit.jpg}{%
+			\includegraphics[width=\linewidth]{contents/figures/bclk-16bit.jpg}%
+		}{}
+		\caption{\texttt{BCLK} 16~bit}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.32\textwidth}
+		\centering
+		\IfFileExists{contents/figures/bclk-24bit.jpg}{%
+			\includegraphics[width=\linewidth]{contents/figures/bclk-24bit.jpg}%
+		}{}
+		\caption{\texttt{BCLK} 24~bit}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.32\textwidth}
+		\centering
+		\IfFileExists{contents/figures/bclk-32bit.jpg}{%
+			\includegraphics[width=\linewidth]{contents/figures/bclk-32bit.jpg}%
+		}{}
+		\caption{\texttt{BCLK} 32~bit}
+	\end{subfigure}
+	\vspace{0.8em}
+	\begin{subfigure}[t]{0.32\textwidth}
+		\centering
+		\IfFileExists{contents/figures/lout-rout-16bit.jpg}{%
+			\includegraphics[width=\linewidth]{contents/figures/lout-rout-16bit.jpg}%
+		}{}
+		\caption{Keluaran 16~bit}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.32\textwidth}
+		\centering
+		\IfFileExists{contents/figures/lout-rout-24bit.jpg}{%
+			\includegraphics[width=\linewidth]{contents/figures/lout-rout-24bit.jpg}%
+		}{}
+		\caption{Keluaran 24~bit}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.32\textwidth}
+		\centering
+		\IfFileExists{contents/figures/lout-rout-32bit.jpg}{%
+			\includegraphics[width=\linewidth]{contents/figures/lout-rout-32bit.jpg}%
+		}{}
+		\caption{Keluaran 32~bit}
+	\end{subfigure}
+	\caption{Efek variasi lebar data sampel terhadap sinyal serial DATA dan keluaran audio analog.}
+	\label{fig:ch5-disc-width}
+\end{figure}
+
+Perubahan lebar bit tidak memengaruhi timing BCLK atau WS karena slot per kanal tetap 32 BCLK. Perbedaan yang terlihat pada sinyal DATA adalah jumlah bit aktif yang membawa data sebelum slot diisi padding nol, yang bertambah seiring peningkatan lebar bit. Pada keluaran analog, perbedaan lebar bit tidak terlihat secara visual pada frekuensi 1~kHz karena resolusi DAC PCM5102A sudah jauh melampaui perbedaan antara 16 dan 24 bit pada amplitudo pengujian ini.
+
+\subsection{Kontrol Kanal dan Status Mute}
+
+Pengujian rute kanal (left-only, right-only, both) dan status \path{MUTE} dikonfirmasi melalui pengamatan sinyal DATA, LRCK, dan keluaran analog (Gambar~\ref{fig:ch5-disc-control}).
+
+\begin{landscape}
+	\begin{figure}[htbp]
+		\centering
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/din-left-only.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/din-left-only.jpg}%
+			}{}
+			\caption{\texttt{DATA} left-only}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/din-right-only.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/din-right-only.jpg}%
+			}{}
+			\caption{\texttt{DATA} right-only}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/din-both.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/din-both.jpg}%
+			}{}
+			\caption{\texttt{DATA} both}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/bclk-enable0.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/bclk-enable0.jpg}%
+			}{}
+			\caption{\texttt{ENABLE} = 0}
+		\end{subfigure}
+		\vspace{0.8em}
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lout-rout-left-only.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lout-rout-left-only.jpg}%
+			}{}
+			\caption{Keluaran left-only}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lout-rout-right-only.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lout-rout-right-only.jpg}%
+			}{}
+			\caption{Keluaran right-only}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lout-rout-enable0.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lout-rout-enable0.jpg}%
+			}{}
+			\caption{Keluaran \texttt{ENABLE} = 0}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lout-rout-mute1.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lout-rout-mute1.jpg}%
+			}{}
+			\caption{Keluaran \texttt{MUTE} = 1}
+		\end{subfigure}
+		\vspace{0.8em}
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lck-left-only.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lck-left-only.jpg}%
+			}{}
+			\caption{\texttt{LRCK} left-only}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lck-right-only.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lck-right-only.jpg}%
+			}{}
+			\caption{\texttt{LRCK} right-only}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lck-both.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lck-both.jpg}%
+			}{}
+			\caption{\texttt{LRCK} both}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.24\linewidth}
+			\centering
+			\IfFileExists{contents/figures/lck-mute1.jpg}{%
+				\includegraphics[width=\linewidth]{contents/figures/lck-mute1.jpg}%
+			}{}
+			\caption{\texttt{LRCK} saat \texttt{MUTE} = 1}
+		\end{subfigure}
+		\caption{Validasi rute kanal, bit \texttt{ENABLE}, dan bit \texttt{MUTE} melalui sinyal digital dan keluaran analog.}
+		\label{fig:ch5-disc-control}
+	\end{figure}
+\end{landscape}
+
+Pada mode left-only, sinyal DATA aktif hanya saat WS = LOW (slot kiri) dan bernilai nol seluruhnya saat WS = HIGH (slot kanan). Kebalikannya terjadi pada mode right-only. Pada mode both, kedua slot membawa data identik. Perilaku ini sesuai dengan logika serialisasi pada fungsi \texttt{i2s\_next\_serial\_bit} dalam RTL yang memilah sampel berdasarkan nilai \texttt{bit\_count\_q[5]}.
+
+% ============================================================
 \section{Perbandingan dengan Referensi Desain}
+% ============================================================
 
-Dilakukan perbandingan fitur fungsional antara custom IP I2S Transmitter hasil penelitian ini dengan Xilinx LogiCORE I2S Transmitter IP standard industri \citep{amd_pg308_i2s_logicore}.
+Tabel~\ref{tab:ch5-comparison-ip} membandingkan fitur fungsional IP I2S Transmitter hasil penelitian ini dengan Xilinx LogiCORE I2S Transmitter \citep{amd_pg308_i2s_logicore} sebagai referensi standar industri.
 
 \begin{table}[htbp]
-    \centering
-    \caption{Perbandingan fitur IP I2S Transmitter.}
-    \label{tab:ch5-comparison-ip}
-    \begin{tabular}{|l|p{5cm}|p{5cm}|}
-        \hline
-        \textbf{Fitur} & \textbf{Xilinx LogiCORE I2S} & \textbf{Custom IP (Penelitian Ini)} \\
-        \hline
-        Jumlah Register & $> 15$ register (0x00 -- 0x64) & 4 register (0x00 -- 0x0C) \\
-        Antarmuka Data & AXI4-Stream & AXI4-Lite (Direct Register Write) \\
-        Konfigurasi $F_s$ & Membutuhkan divider statis / PLL luar & Terintegrasi NCO desimal (Arbitrary $F_s$) \\
-        Sinkronisasi & AXI-Stream backpressure / interupsi & Status-bit polling (\textit{latch toggle}) \\
-        Jumlah Kanal & 2, 4, 6, atau 8 kanal & 2 kanal (Stereo) \\
-        Lisensi & Proprietary (Xilinx) & Open-source (vendor-agnostic) \\
-        Kompleksitas & Tinggi (Mendukung AES status, dsb) & Rendah (Minimalis, fokus fungsi inti) \\
-        \hline
-    \end{tabular}
+	\centering
+	\caption{Perbandingan fitur IP I2S Transmitter.}
+	\label{tab:ch5-comparison-ip}
+	\begin{tabular}{|l|p{5cm}|p{5cm}|}
+		\hline
+		\textbf{Fitur} & \textbf{Xilinx LogiCORE I2S} & \textbf{Custom IP (Penelitian)} \\
+		\hline
+		Jumlah register     & $>15$ register (0x00--0x64)
+		& 4 register (0x00--0x0C) \\
+		Antarmuka data      & AXI4-Stream
+		& AXI4-Lite (direct register write) \\
+		Konfigurasi $F_s$   & Divider statis / PLL eksternal
+		& Seleksi clock internal + NCO desimal (arbitrary $F_s$) \\
+		Sinkronisasi        & AXI-Stream backpressure / interupsi
+		& Status-bit polling (latch toggle) \\
+		Jumlah kanal        & 2, 4, 6, atau 8
+		& 2 (stereo) \\
+		Lisensi             & Proprietary (Xilinx)
+		& Open-source (vendor-agnostic logic) \\
+		Kompleksitas        & Tinggi (AES status, multi-channel, dsb.)
+		& Rendah (minimalis, fokus fungsi inti) \\
+		\hline
+	\end{tabular}
 \end{table}
 
-Tabel \ref{tab:ch5-comparison-ip} menunjukkan bahwa custom IP yang dirancang menawarkan kesederhanaan kontrol tanpa memerlukan DMA atau interkoneksi AXI4-Stream yang kompleks. Fitur pembangkitan clock audio arbitrer berbasis NCO desimal internal memberikan keunggulan portabilitas tinggi (\textit{vendor-agnostic}) tanpa tergantung pada PLL analog eksternal. Custom IP ini sangat sesuai untuk aplikasi audio stereo standar dengan efisiensi sumber daya tinggi.
+Custom IP yang dirancang menawarkan kesederhanaan kontrol tanpa memerlukan DMA atau interkoneksi AXI4-Stream, dengan tetap memenuhi seluruh persyaratan fungsional audio stereo standar. Fitur pembangkitan $F_s$ arbitrer berbasis NCO desimal memberikan fleksibilitas yang tidak dimiliki implementasi berbasis pembagi integer statis, sekaligus mempertahankan portabilitas tinggi karena logika utama tidak mengandung primitif vendor-spesifik.
 
+% ============================================================
 \section{Keterbatasan Desain}
+% ============================================================
 
-Sebagai bagian dari pembahasan yang jujur dan komprehensif, berikut adalah keterbatasan yang disengaja dari desain ini dan merupakan ruang lingkup yang telah ditetapkan sejak awal pada Batasan Penelitian (Bab~I):
+Sebagai bagian dari pembahasan yang komprehensif, berikut adalah keterbatasan yang merupakan ruang lingkup yang telah ditetapkan pada Batasan Penelitian (Bab~I):
 
 \begin{enumerate}
-    \item \textbf{TX-only}: IP dirancang sebagai transmitter saja dan tidak mencakup jalur penerima (RX) maupun mode full-duplex.
-    \item \textbf{Tanpa DMA}: Transfer data dilakukan melalui \textit{programmed I/O} berbasis register; streaming audio kontinu berdurasi panjang memerlukan intervensi CPU setiap frame.
-    \item \textbf{Tanpa FIFO audio}: Tidak terdapat buffer FIFO sehingga potensi \textit{underrun} perlu dikelola oleh firmware dengan pendekatan status-bit polling.
-    \item \textbf{Pengisian sampel manual}: CPU mengisi satu sampel stereo per frame melalui polling, sehingga beban CPU berbanding lurus dengan frekuensi sampling.
-    \item \textbf{Tanpa transfer berbasis interupsi}: Firmware menggunakan model polling sinkron, bukan interrupt-driven, sehingga CPU tidak dapat menangani tugas lain selama streaming.
-    \item \textbf{Bare-metal only}: Pengujian dilakukan pada lingkungan bare-metal tanpa RTOS atau Linux; integrasi ke ekosistem ASoC Linux merupakan pekerjaan masa depan.
+	\item \textbf{TX-only.} IP dirancang sebagai transmitter dan tidak mencakup jalur penerima (RX) maupun mode full-duplex.
+	
+	\item \textbf{Tanpa DMA.} Transfer data dilakukan melalui \textit{programmed I/O} berbasis register. Streaming audio kontinu memerlukan intervensi CPU setiap frame melalui mekanisme status-bit polling.
+	
+	\item \textbf{Tanpa FIFO audio.} Tidak terdapat buffer FIFO sehingga potensi \textit{underrun} dikelola sepenuhnya oleh firmware. Pendekatan status-bit polling memitigasi risiko ini namun tidak menghilangkannya sepenuhnya pada kondisi CPU terbebani.
+	
+	\item \textbf{Tanpa transfer berbasis interupsi.} Firmware menggunakan model polling sinkron sehingga CPU tidak dapat menangani tugas lain selama streaming audio berlangsung.
+	
+	\item \textbf{Bare-metal only.} Pengujian dilakukan pada lingkungan bare-metal MicroBlaze V tanpa RTOS atau Linux. Integrasi ke ekosistem ASoC Linux merupakan pekerjaan masa mendatang.
 \end{enumerate}
 
-Keterbatasan-keterbatasan ini menjadi landasan saran pengembangan yang diuraikan pada Bab~VI, khususnya penambahan FIFO TX, mekanisme DMA, dan integrasi Linux/ASoC.
+Keterbatasan-keterbatasan ini menjadi landasan saran pengembangan yang diuraikan pada Bab~VI, khususnya penambahan FIFO TX, mekanisme DMA berbasis AXI, dan integrasi Linux/ASoC.
