@@ -63,7 +63,7 @@
 \usepackage{geometry}% easy layouting
 %\usepackage{hyperref}% hyperlink
 \usepackage{subcaption} % subfigure
-\usepackage[figurewithin=none]{caption}
+\usepackage[figurewithin=chapter,tablewithin=chapter]{caption}
 \usepackage{tocloft}% edit font toc
 \usepackage{fancyhdr}% page number
 \usepackage[cmex10]{amsmath}

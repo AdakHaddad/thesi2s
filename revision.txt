@@ -1,0 +1,269 @@
+"PERANCANGAN IP I2S TRANSMITTER AXI4-LITE PADA SOC MICROBLAZE V MENGGUNAKAN VERILOG"
+
+But Kata Pengantar:
+
+> "Perancangan Peripheral I2S dengan AXI4-Lite Interface menggunakan Verilog" 
+
+Use **one title everywhere**:
+
+* Cover
+* Approval page
+* Abstract
+* Intisari
+* Kata Pengantar
+* Metadata
+
+---
+
+### 2. Clarify novelty/contribution earlier
+
+Current abstract says:
+
+> custom I2S IP, AXI4-Lite, MicroBlaze integration, arbitrary sampling rate via NCO. 
+
+But novelty is still somewhat hidden.
+
+I would explicitly state:
+
+> Kontribusi utama penelitian ini adalah perancangan IP I2S transmitter yang mendukung frekuensi sampling arbitrer berbasis NCO dan dapat diintegrasikan sebagai peripheral AXI4-Lite pada SoC MicroBlaze V tanpa ketergantungan pada IP audio berlisensi pihak ketiga.
+
+Put this:
+
+* end of Latar Belakang
+* Gap Penelitian
+* Intisari
+* Abstract
+
+---
+
+### 3. Add quantitative success metrics
+
+Many examiners ask:
+
+> "Berhasilnya seberapa?"
+
+Need a summary table:
+
+| Parameter       | Target    | Hasil |
+| --------------- | --------- | ----- |
+| Timing Closure  | WNS ≥ 0   | xx ns |
+| Fs Accuracy     | <1% error | xx%   |
+| Resource Usage  | <5% LUT   | xx%   |
+| Stereo Playback | Yes       | Pass  |
+| 44.1 kHz        | Yes       | Pass  |
+| 48 kHz          | Yes       | Pass  |
+
+Currently results are spread across Chapter 5. Centralize them.
+
+---
+
+### 4. Strengthen comparison section
+
+Chapter 5.8 exists. 
+
+But likely needs stronger comparison:
+
+Compare against:
+
+* Xilinx I2S Transmitter IP
+* OpenCores I2S
+* FPGA4Fun I2S examples
+* Literature references
+
+Table:
+
+| Feature      | This Work | Ref A | Ref B |
+| ------------ | --------- | ----- | ----- |
+| AXI4-Lite    | ✓         | ✓     | ✗     |
+| Arbitrary Fs | ✓         | ✗     | ✗     |
+| Open Source  | ✓         | ✓     | ✗     |
+| MicroBlaze V | ✓         | ✗     | ✗     |
+
+This is examiner bait. They love it.
+
+---
+
+### 5. Add design limitations
+
+Current thesis emphasizes successes.
+
+Need one subsection:
+
+#### Limitations
+
+* TX only
+* No RX path
+* No DMA
+* CPU still loads samples manually
+* No audio buffering FIFO
+* No interrupt-based transfer
+* No real-time streaming
+
+This makes the thesis look more mature.
+
+---
+
+# Medium Priority
+
+### 6. Figure numbering
+
+You have:
+
+* Gambar 1.1
+* Gambar 2.2
+* Gambar 2.3
+* Gambar 2.4
+* Gambar 3.5
+* Gambar 3.6
+
+This indicates **continuous numbering across chapters**. 
+
+Check FT UGM format.
+
+Usually preferred:
+
+* Gambar 2.1
+* Gambar 2.2
+* Gambar 2.3
+
+per chapter.
+
+Same for tables.
+
+---
+
+### 7. Table numbering in appendix
+
+Appendix has:
+
+* Tabel L.1
+* Tabel L.2
+* Tabel L.3
+
+then again
+
+* Tabel L.1
+* Tabel L.2
+* Tabel L.3
+
+Duplicate numbering detected. 
+
+Need renumbering:
+
+* Tabel L.1
+* Tabel L.2
+* Tabel L.3
+* Tabel L.4
+* Tabel L.5
+* ...
+
+---
+
+
+### 9. Consistent terminology
+
+Choose one:
+
+* Peripheral
+* IP Core
+* Custom IP
+* IP Block
+
+Currently several terms appear.
+
+I recommend:
+
+> "Custom IP I2S Transmitter"
+
+throughout.
+
+---
+
+### 10. Explain why MicroBlaze V
+
+Many students use MicroBlaze.
+
+You use MicroBlaze V (RISC-V).
+
+Add one paragraph:
+
+Why not:
+
+* ARM SoC
+* MicroBlaze Classic
+* Bare FPGA
+
+Why MicroBlaze V?
+
+This strengthens design choices.
+
+---
+
+# Technical Improvements (Good for Viva)
+
+### 11. Mention future DMA architecture
+
+In Chapter 6:
+
+Future work:
+
+* AXI DMA
+* Audio FIFO
+* Interrupt-driven streaming
+* WAV playback from SD card
+* I2S Receiver
+* Full-duplex audio
+
+Examiners often ask:
+
+> "Kalau ingin memutar lagu sungguhan bagaimana?"
+
+This answers before they ask.
+
+---
+
+### 12. Add clock error equation
+
+Since NCO is one of your selling points.
+
+Add formula:
+
+[
+f_{out}=f_{clk}\frac{phase_increment}{2^N}
+]
+
+and derive frequency error.
+
+Makes the arbitrary-Fs claim much stronger.
+
+---
+
+### 13. Add block-level timing explanation
+
+You already discuss timing. 
+
+I would add one concise figure showing:
+
+```
+CPU
+ ↓ AXI Write
+DATA_REG
+ ↓
+Shadow Register
+ ↓
+Serializer
+ ↓
+I2S Output
+```
+
+This will make the architecture instantly understandable during defense.
+
+---
+
+
+
+1. Explicit novelty statement.
+2. Quantitative result summary table.
+3. Stronger comparison with existing I2S IPs.
+4. Appendix/table numbering consistency.
+5. Clear limitations and future DMA/FIFO work.

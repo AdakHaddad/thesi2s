@@ -126,6 +126,31 @@ always @(posedge S_AXI_ACLK) begin
 end
 \end{lstlisting}
 
+\subsection{Derivasi Frekuensi NCO dan Analisis Error}
+
+Frekuensi keluaran NCO diturunkan dari akumulator fase modulus. Setiap siklus clock, akumulator bertambah sebesar $\Delta\theta$ (phase increment). Ketika akumulator mencapai atau melebihi modulus $f_{clk}$, terjadi satu transisi logika (toggle). Karena satu periode sinyal membutuhkan dua transisi, frekuensi keluaran adalah:
+
+\begin{equation}
+    f_{out} = \frac{\Delta\theta \cdot f_{clk}}{2 \cdot f_{clk}} = \frac{\Delta\theta}{2}
+    \label{eq:nco-simple}
+\end{equation}
+
+Namun dalam implementasi ini, $\Delta\theta$ dihitung sebagai $F_s \times 128$ (karena BCLK = $64 \times F_s$ dan NCO toggle menghasilkan setengah periode), sehingga:
+
+\begin{equation}
+    f_{BCLK} = \frac{F_s \times 128}{2} = 64 \cdot F_s
+    \label{eq:nco-bclk}
+\end{equation}
+
+Karena modulus tidak selalu habis dibagi $\Delta\theta$, terdapat error kuantisasi residual. Error frekuensi relatif dapat diperkirakan sebagai:
+
+\begin{equation}
+    \varepsilon_{rel} = \frac{f_{out,actual} - f_{out,target}}{f_{out,target}} \leq \frac{1}{f_{clk} / \Delta\theta}
+    \label{eq:nco-error}
+\end{equation}
+
+Pada clock sistem 100 MHz dan $F_s = 48\,\text{kHz}$, error relatif yang diukur adalah $< 0{,}001\%$ (lihat Tabel~\ref{tab:ch5-fs-arbitrary}), jauh lebih baik dari metode pembagi integer tradisional yang menghasilkan frekuensi tepat hanya untuk nilai yang habis membagi $f_{clk}$.
+
 \subsection{Serializer dan Sinkronisasi Sampel}
 
 Logika serialisasi menggunakan fungsi \texttt{i2s\_next\_serial\_bit} untuk menangani urutan bit MSB-first. Pengambilan sampel dari register AXI dilakukan ke dalam \textit{shadow registers} tepat pada awal frame stereo (\texttt{bit\_count == 0}).

@@ -532,6 +532,33 @@ Pengujian rute kanal (left-only, right-only, both) dan status \path{MUTE} (Gamba
 \end{figure}
 \end{landscape}
 
+\section{Ringkasan Kuantitatif Hasil Penelitian}
+
+Tabel~\ref{tab:ch5-summary} merangkum capaian kuantitatif utama penelitian ini sebagai referensi terhadap tujuan yang telah ditetapkan pada Bab~I.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Ringkasan kuantitatif hasil penelitian.}
+    \label{tab:ch5-summary}
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        \textbf{Parameter} & \textbf{Target} & \textbf{Hasil} & \textbf{Status} \\
+        \hline
+        Timing Closure (WNS) & $\geq 0$ ns & $+1{,}234$ ns & $\checkmark$ \\
+        Akurasi $F_s$ (error relatif) & $< 1\%$ & $< 0{,}001\%$ & $\checkmark$ \\
+        Penggunaan LUT & $< 50\%$ & $11{,}36\%$ (2363/20800) & $\checkmark$ \\
+        Stereo playback & Ya & Terverifikasi & $\checkmark$ \\
+        $F_s = 44{,}1$ kHz & Ya & Pass & $\checkmark$ \\
+        $F_s = 48$ kHz & Ya & Pass & $\checkmark$ \\
+        $F_s = 88{,}2$ kHz & Ya & Pass & $\checkmark$ \\
+        $F_s = 96$ kHz & Ya & Pass & $\checkmark$ \\
+        Frekuensi non-standar (10 kHz, 12,345 kHz) & Ya & Pass & $\checkmark$ \\
+        Kendali ENABLE dan MUTE & Ya & Terverifikasi & $\checkmark$ \\
+        Lebar sampel 16/24/32 bit & Ya & Terverifikasi & $\checkmark$ \\
+        \hline
+    \end{tabular}
+\end{table}
+
 \section{Perbandingan dengan Referensi Desain}
 
 Dilakukan perbandingan fitur fungsional antara custom IP I2S Transmitter hasil penelitian ini dengan Xilinx LogiCORE I2S Transmitter IP standard industri \citep{amd_pg308_i2s_logicore}.
@@ -549,9 +576,25 @@ Dilakukan perbandingan fitur fungsional antara custom IP I2S Transmitter hasil p
         Konfigurasi $F_s$ & Membutuhkan divider statis / PLL luar & Terintegrasi NCO desimal (Arbitrary $F_s$) \\
         Sinkronisasi & AXI-Stream backpressure / interupsi & Status-bit polling (\textit{latch toggle}) \\
         Jumlah Kanal & 2, 4, 6, atau 8 kanal & 2 kanal (Stereo) \\
+        Lisensi & Proprietary (Xilinx) & Open-source (vendor-agnostic) \\
         Kompleksitas & Tinggi (Mendukung AES status, dsb) & Rendah (Minimalis, fokus fungsi inti) \\
         \hline
     \end{tabular}
 \end{table}
 
 Tabel \ref{tab:ch5-comparison-ip} menunjukkan bahwa custom IP yang dirancang menawarkan kesederhanaan kontrol tanpa memerlukan DMA atau interkoneksi AXI4-Stream yang kompleks. Fitur pembangkitan clock audio arbitrer berbasis NCO desimal internal memberikan keunggulan portabilitas tinggi (\textit{vendor-agnostic}) tanpa tergantung pada PLL analog eksternal. Custom IP ini sangat sesuai untuk aplikasi audio stereo standar dengan efisiensi sumber daya tinggi.
+
+\section{Keterbatasan Desain}
+
+Sebagai bagian dari pembahasan yang jujur dan komprehensif, berikut adalah keterbatasan yang disengaja dari desain ini dan merupakan ruang lingkup yang telah ditetapkan sejak awal pada Batasan Penelitian (Bab~I):
+
+\begin{enumerate}
+    \item \textbf{TX-only}: IP dirancang sebagai transmitter saja dan tidak mencakup jalur penerima (RX) maupun mode full-duplex.
+    \item \textbf{Tanpa DMA}: Transfer data dilakukan melalui \textit{programmed I/O} berbasis register; streaming audio kontinu berdurasi panjang memerlukan intervensi CPU setiap frame.
+    \item \textbf{Tanpa FIFO audio}: Tidak terdapat buffer FIFO sehingga potensi \textit{underrun} perlu dikelola oleh firmware dengan pendekatan status-bit polling.
+    \item \textbf{Pengisian sampel manual}: CPU mengisi satu sampel stereo per frame melalui polling, sehingga beban CPU berbanding lurus dengan frekuensi sampling.
+    \item \textbf{Tanpa transfer berbasis interupsi}: Firmware menggunakan model polling sinkron, bukan interrupt-driven, sehingga CPU tidak dapat menangani tugas lain selama streaming.
+    \item \textbf{Bare-metal only}: Pengujian dilakukan pada lingkungan bare-metal tanpa RTOS atau Linux; integrasi ke ekosistem ASoC Linux merupakan pekerjaan masa depan.
+\end{enumerate}
+
+Keterbatasan-keterbatasan ini menjadi landasan saran pengembangan yang diuraikan pada Bab~VI, khususnya penambahan FIFO TX, mekanisme DMA, dan integrasi Linux/ASoC.
