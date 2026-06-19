@@ -1,13 +1,14 @@
 {
   "design": {
     "design_info": {
-      "boundary_crc": "0xD5441A45DDECF862",
+      "boundary_crc": "0x466EA8FD9628B765",
       "device": "xc7a35tcpg236-1",
       "gen_directory": "../../../../project_1.gen/sources_1/bd/design_1",
       "name": "design_1",
       "rev_ctrl_bd_flag": "RevCtrlBdOff",
       "synth_flow_mode": "Hierarchical",
-      "tool_version": "2025.2"
+      "tool_version": "2025.2",
+      "validated": "true"
     },
     "design_tree": {
       "clk_wiz_0": "",
@@ -23,7 +24,10 @@
       "rst_clk_wiz_0_100M": "",
       "axi_uartlite_0": "",
       "axi_smc": "",
-      "i2s_0": ""
+      "i2s_0": "",
+      "filter_coeff_0": "",
+      "filter_coeff_1": "",
+      "i2s_filter_bridge_0": ""
     },
     "interface_ports": {
       "usb_uart": {
@@ -53,8 +57,20 @@
         "type": "clk",
         "direction": "I",
         "parameters": {
+          "CLK_DOMAIN": {
+            "value": "design_1_sys_clock",
+            "value_src": "default"
+          },
           "FREQ_HZ": {
             "value": "100000000"
+          },
+          "FREQ_TOLERANCE_HZ": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
           },
           "PHASE": {
             "value": "0.0"
@@ -65,6 +81,10 @@
         "type": "rst",
         "direction": "I",
         "parameters": {
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
           "POLARITY": {
             "value": "ACTIVE_HIGH"
           }
@@ -81,6 +101,11 @@
       },
       "i2s_data_0": {
         "direction": "O"
+      },
+      "filter_sw": {
+        "direction": "I",
+        "left": "2",
+        "right": "0"
       }
     },
     "components": {
@@ -499,6 +524,14 @@
             "mode": "Slave",
             "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
             "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+            "parameters": {
+              "NUM_READ_OUTSTANDING": {
+                "value": "1"
+              },
+              "NUM_WRITE_OUTSTANDING": {
+                "value": "1"
+              }
+            },
             "bridges": [
               "M00_AXI",
               "M01_AXI"
@@ -518,6 +551,26 @@
             "mode": "Master",
             "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
             "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+            "parameters": {
+              "NUM_READ_OUTSTANDING": {
+                "value": "1"
+              },
+              "NUM_READ_THREADS": {
+                "value": "1"
+              },
+              "NUM_WRITE_OUTSTANDING": {
+                "value": "1"
+              },
+              "NUM_WRITE_THREADS": {
+                "value": "1"
+              },
+              "RUSER_BITS_PER_BYTE": {
+                "value": "0"
+              },
+              "WUSER_BITS_PER_BYTE": {
+                "value": "0"
+              }
+            },
             "bd_attributes": {
               "TYPE": {
                 "value": "interior",
@@ -529,6 +582,26 @@
             "mode": "Master",
             "vlnv_bus_definition": "xilinx.com:interface:aximm:1.0",
             "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+            "parameters": {
+              "NUM_READ_OUTSTANDING": {
+                "value": "1"
+              },
+              "NUM_READ_THREADS": {
+                "value": "1"
+              },
+              "NUM_WRITE_OUTSTANDING": {
+                "value": "1"
+              },
+              "NUM_WRITE_THREADS": {
+                "value": "1"
+              },
+              "RUSER_BITS_PER_BYTE": {
+                "value": "0"
+              },
+              "WUSER_BITS_PER_BYTE": {
+                "value": "0"
+              }
+            },
             "bd_attributes": {
               "TYPE": {
                 "value": "interior",
@@ -541,10 +614,219 @@
       "i2s_0": {
         "vlnv": "xilinx.com:user:i2s:1.0",
         "ip_revision": "2",
-        "xci_name": "design_1_i2s_0_0",
-        "xci_path": "ip\\design_1_i2s_0_0\\design_1_i2s_0_0.xci",
+        "xci_name": "design_1_i2s_0_1",
+        "xci_path": "ip\\design_1_i2s_0_1\\design_1_i2s_0_1.xci",
         "inst_hier_path": "i2s_0",
         "has_run_ip_tcl": "true"
+      },
+      "filter_coeff_0": {
+        "vlnv": "xilinx.com:module_ref:filter_coeff:1.0",
+        "ip_revision": "1",
+        "xci_name": "design_1_filter_coeff_0_1",
+        "xci_path": "ip\\design_1_filter_coeff_0_1\\design_1_filter_coeff_0_1.xci",
+        "inst_hier_path": "filter_coeff_0",
+        "has_run_ip_tcl": "true",
+        "reference_info": {
+          "ref_type": "hdl",
+          "ref_name": "filter_coeff",
+          "boundary_crc": "0x0"
+        },
+        "ports": {
+          "clk": {
+            "type": "clk",
+            "direction": "I",
+            "parameters": {
+              "FREQ_HZ": {
+                "value": "100000000",
+                "value_src": "ip_prop"
+              },
+              "PHASE": {
+                "value": "0.0",
+                "value_src": "ip_prop"
+              },
+              "CLK_DOMAIN": {
+                "value": "/clk_wiz_0_clk_out1",
+                "value_src": "ip_prop"
+              }
+            }
+          },
+          "valid": {
+            "direction": "I"
+          },
+          "sw": {
+            "direction": "I",
+            "left": "2",
+            "right": "0"
+          },
+          "x_in": {
+            "direction": "I",
+            "left": "15",
+            "right": "0"
+          },
+          "y_out": {
+            "direction": "O",
+            "left": "15",
+            "right": "0"
+          }
+        }
+      },
+      "filter_coeff_1": {
+        "vlnv": "xilinx.com:module_ref:filter_coeff:1.0",
+        "ip_revision": "1",
+        "xci_name": "design_1_filter_coeff_1_0",
+        "xci_path": "ip\\design_1_filter_coeff_1_0\\design_1_filter_coeff_1_0.xci",
+        "inst_hier_path": "filter_coeff_1",
+        "has_run_ip_tcl": "true",
+        "reference_info": {
+          "ref_type": "hdl",
+          "ref_name": "filter_coeff",
+          "boundary_crc": "0x0"
+        },
+        "ports": {
+          "clk": {
+            "type": "clk",
+            "direction": "I",
+            "parameters": {
+              "FREQ_HZ": {
+                "value": "100000000",
+                "value_src": "ip_prop"
+              },
+              "PHASE": {
+                "value": "0.0",
+                "value_src": "ip_prop"
+              },
+              "CLK_DOMAIN": {
+                "value": "/clk_wiz_0_clk_out1",
+                "value_src": "ip_prop"
+              }
+            }
+          },
+          "valid": {
+            "direction": "I"
+          },
+          "sw": {
+            "direction": "I",
+            "left": "2",
+            "right": "0"
+          },
+          "x_in": {
+            "direction": "I",
+            "left": "15",
+            "right": "0"
+          },
+          "y_out": {
+            "direction": "O",
+            "left": "15",
+            "right": "0"
+          }
+        }
+      },
+      "i2s_filter_bridge_0": {
+        "vlnv": "xilinx.com:module_ref:i2s_filter_bridge:1.0",
+        "ip_revision": "1",
+        "xci_name": "design_1_i2s_filter_bridge_0_0",
+        "xci_path": "ip\\design_1_i2s_filter_bridge_0_0\\design_1_i2s_filter_bridge_0_0.xci",
+        "inst_hier_path": "i2s_filter_bridge_0",
+        "has_run_ip_tcl": "true",
+        "reference_info": {
+          "ref_type": "hdl",
+          "ref_name": "i2s_filter_bridge",
+          "boundary_crc": "0x0"
+        },
+        "ports": {
+          "clk": {
+            "type": "clk",
+            "direction": "I",
+            "parameters": {
+              "ASSOCIATED_RESET": {
+                "value": "resetn",
+                "value_src": "constant"
+              },
+              "FREQ_HZ": {
+                "value": "100000000",
+                "value_src": "ip_prop"
+              },
+              "PHASE": {
+                "value": "0.0",
+                "value_src": "ip_prop"
+              },
+              "CLK_DOMAIN": {
+                "value": "/clk_wiz_0_clk_out1",
+                "value_src": "ip_prop"
+              }
+            }
+          },
+          "resetn": {
+            "type": "rst",
+            "direction": "I",
+            "parameters": {
+              "POLARITY": {
+                "value": "ACTIVE_LOW",
+                "value_src": "constant"
+              }
+            }
+          },
+          "filter_sw_in": {
+            "direction": "I",
+            "left": "2",
+            "right": "0"
+          },
+          "filter_sw_out": {
+            "direction": "O",
+            "left": "2",
+            "right": "0"
+          },
+          "i2s_mclk_in": {
+            "direction": "I"
+          },
+          "i2s_bclk_in": {
+            "direction": "I"
+          },
+          "i2s_ws_in": {
+            "direction": "I"
+          },
+          "i2s_data_in": {
+            "direction": "I"
+          },
+          "i2s_mclk_out": {
+            "direction": "O"
+          },
+          "i2s_bclk_out": {
+            "direction": "O"
+          },
+          "i2s_ws_out": {
+            "direction": "O"
+          },
+          "i2s_data_out": {
+            "direction": "O"
+          },
+          "left_valid": {
+            "direction": "O"
+          },
+          "left_sample": {
+            "direction": "O",
+            "left": "15",
+            "right": "0"
+          },
+          "left_filtered": {
+            "direction": "I",
+            "left": "15",
+            "right": "0"
+          },
+          "right_valid": {
+            "direction": "O"
+          },
+          "right_sample": {
+            "direction": "O",
+            "left": "15",
+            "right": "0"
+          },
+          "right_filtered": {
+            "direction": "I",
+            "left": "15",
+            "right": "0"
+          }
+        }
       }
     },
     "interface_nets": {
@@ -598,28 +880,101 @@
           "rst_clk_wiz_0_100M/dcm_locked"
         ]
       },
+      "filter_coeff_0_y_out": {
+        "ports": [
+          "filter_coeff_0/y_out",
+          "i2s_filter_bridge_0/left_filtered"
+        ]
+      },
+      "filter_coeff_1_y_out": {
+        "ports": [
+          "filter_coeff_1/y_out",
+          "i2s_filter_bridge_0/right_filtered"
+        ]
+      },
+      "filter_sw_1": {
+        "ports": [
+          "filter_sw",
+          "i2s_filter_bridge_0/filter_sw_in"
+        ]
+      },
       "i2s_0_i2s_bclk": {
         "ports": [
-          "i2s_0/i2s_bclk",
+          "i2s_filter_bridge_0/i2s_bclk_out",
           "i2s_bclk_0"
+        ]
+      },
+      "i2s_0_i2s_bclk1": {
+        "ports": [
+          "i2s_0/i2s_bclk",
+          "i2s_filter_bridge_0/i2s_bclk_in"
         ]
       },
       "i2s_0_i2s_data": {
         "ports": [
-          "i2s_0/i2s_data",
+          "i2s_filter_bridge_0/i2s_data_out",
           "i2s_data_0"
+        ]
+      },
+      "i2s_0_i2s_data1": {
+        "ports": [
+          "i2s_0/i2s_data",
+          "i2s_filter_bridge_0/i2s_data_in"
         ]
       },
       "i2s_0_i2s_mclk": {
         "ports": [
-          "i2s_0/i2s_mclk",
+          "i2s_filter_bridge_0/i2s_mclk_out",
           "i2s_mclk_0"
+        ]
+      },
+      "i2s_0_i2s_mclk1": {
+        "ports": [
+          "i2s_0/i2s_mclk",
+          "i2s_filter_bridge_0/i2s_mclk_in"
         ]
       },
       "i2s_0_i2s_ws": {
         "ports": [
-          "i2s_0/i2s_ws",
+          "i2s_filter_bridge_0/i2s_ws_out",
           "i2s_ws_0"
+        ]
+      },
+      "i2s_0_i2s_ws1": {
+        "ports": [
+          "i2s_0/i2s_ws",
+          "i2s_filter_bridge_0/i2s_ws_in"
+        ]
+      },
+      "i2s_filter_bridge_0_filter_sw_out": {
+        "ports": [
+          "i2s_filter_bridge_0/filter_sw_out",
+          "filter_coeff_0/sw",
+          "filter_coeff_1/sw"
+        ]
+      },
+      "i2s_filter_bridge_0_left_sample": {
+        "ports": [
+          "i2s_filter_bridge_0/left_sample",
+          "filter_coeff_0/x_in"
+        ]
+      },
+      "i2s_filter_bridge_0_left_valid": {
+        "ports": [
+          "i2s_filter_bridge_0/left_valid",
+          "filter_coeff_0/valid"
+        ]
+      },
+      "i2s_filter_bridge_0_right_sample": {
+        "ports": [
+          "i2s_filter_bridge_0/right_sample",
+          "filter_coeff_1/x_in"
+        ]
+      },
+      "i2s_filter_bridge_0_right_valid": {
+        "ports": [
+          "i2s_filter_bridge_0/right_valid",
+          "filter_coeff_1/valid"
         ]
       },
       "mdm_1_debug_sys_rst": {
@@ -637,7 +992,10 @@
           "axi_smc/aclk",
           "axi_uartlite_0/s_axi_aclk",
           "i2s_0/audio_clk",
-          "i2s_0/s00_axi_aclk"
+          "i2s_0/s00_axi_aclk",
+          "filter_coeff_0/clk",
+          "filter_coeff_1/clk",
+          "i2s_filter_bridge_0/clk"
         ]
       },
       "reset_1": {
@@ -664,7 +1022,8 @@
           "rst_clk_wiz_0_100M/peripheral_aresetn",
           "axi_uartlite_0/s_axi_aresetn",
           "axi_smc/aresetn",
-          "i2s_0/s00_axi_aresetn"
+          "i2s_0/s00_axi_aresetn",
+          "i2s_filter_bridge_0/resetn"
         ]
       },
       "sys_clock_1": {
