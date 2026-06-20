@@ -110,21 +110,29 @@ Implementasi RTL menggunakan akumulator fase yang berjalan pada domain 100 MHz.
 
 \subsection{Pembangkitan Clock Berbasis Modulus NCO}
 
-Desain ini menggunakan akumulator modulus terhadap $100.000.000$. Setiap kali akumulator meluap, register detak berpindah logika (\textit{toggle}).
+Desain ini menggunakan akumulator modulus terhadap $100.000.000$. Setiap kali akumulator meluap, register detak berpindah logika (\textit{toggle}). Kode RTL lengkap untuk modul wrapper dan inti IP disisipkan langsung dari repositori \texttt{latesti2s}, sehingga naskah tidak perlu menyalin ulang isi file secara manual.
 
-\begin{lstlisting}[language=Verilog, caption={Logika mesin NCO pada \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v}.}]
-wire [31:0] bclk_toggle_rate_hz = {sample_rate_sync, 7'b0}; // Fs x 128
-wire bclk_phase_wrap = (bclk_phase_sum >= AXI_CLK_HZ);
+\lstinputlisting[
+    language=Verilog,
+    basicstyle=\ttfamily\scriptsize,
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    columns=fullflexible,
+    caption={Kode lengkap wrapper IP \texttt{i2s.v} dari repositori \texttt{latesti2s}.},
+    label={lst:ch4-i2s-wrapper}
+]{../latesti2s/ready_to_run/ip_repo/i2s/hdl/i2s.v}
 
-always @(posedge S_AXI_ACLK) begin
-    if (bclk_phase_wrap) begin
-        bclk_phase_acc_q <= bclk_phase_sum - AXI_CLK_HZ;
-        bclk_q <= !bclk_q;
-    end else begin
-        bclk_phase_acc_q <= bclk_phase_sum;
-    end
-end
-\end{lstlisting}
+\lstinputlisting[
+    language=Verilog,
+    basicstyle=\ttfamily\scriptsize,
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    columns=fullflexible,
+    caption={Kode lengkap modul utama \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v} dari repositori \texttt{latesti2s}.},
+    label={lst:ch4-i2s-core}
+]{../latesti2s/ready_to_run/ip_repo/i2s/hdl/i2s_slave_lite_v1_0_S00_AXI.v}
 
 \subsection{Derivasi Frekuensi NCO dan Analisis Error}
 
@@ -153,40 +161,28 @@ Pada clock sistem 100 MHz dan $F_s = 48\,\text{kHz}$, error relatif yang diukur 
 
 \subsection{Serializer dan Sinkronisasi Sampel}
 
-Logika serialisasi menggunakan fungsi \texttt{i2s\_next\_serial\_bit} untuk menangani urutan bit MSB-first. Pengambilan sampel dari register AXI dilakukan ke dalam \textit{shadow registers} tepat pada awal frame stereo (\texttt{bit\_count == 0}).
-
-\begin{lstlisting}[language=Verilog, caption={Latching sampel ke shadow registers pada tepi naik BCLK.}]
-if (bclk_q == 1'b0) begin
-    bclk_q <= 1'b1;
-    if (bit_count_q == 6'd0) begin
-        sample_left_q          <= slv_reg0;
-        sample_right_q         <= slv_reg1;
-        current_latch_status_q <= !current_latch_status_q;
-    end
-end
-\end{lstlisting}
+Logika serialisasi menggunakan fungsi \texttt{i2s\_next\_serial\_bit} untuk menangani urutan bit MSB-first. Pengambilan sampel dari register AXI dilakukan ke dalam \textit{shadow registers} tepat pada awal frame stereo (\texttt{bit\_count == 0}), dan detail implementasinya dapat ditelusuri langsung pada listing RTL utuh di atas.
 
 Perpindahan logika \texttt{current\_latch\_status\_q} diekspor ke register \texttt{STATUS}, memungkinkan perangkat lunak untuk mengetahui kapan hardware telah mengonsumsi sampel sebelumnya.
 
 \section{Implementasi Software Vitis}
 
-Perangkat lunak pada Vitis (\path{ready_to_run/sw/helloworld.c}) dirancang untuk menjadi sumber data audio yang fleksibel dan interaktif. Berbeda dengan implementasi sederhana, versi final ini mengadopsi kontrol \textit{closed-loop} terhadap status perangkat keras dan antarmuka pengguna berbasis UART.
+Perangkat lunak pada Vitis (\path{../latesti2s/ready_to_run/sw/helloworld.c}) dirancang untuk menjadi sumber data audio yang fleksibel dan interaktif. Berbeda dengan implementasi sederhana, versi final ini mengadopsi kontrol \textit{closed-loop} terhadap status perangkat keras dan antarmuka pengguna berbasis UART. Kode lengkap firmware disisipkan langsung dari repositori yang sama agar naskah tidak perlu menyalin ulang isi file.
 
 \subsection{Definisi Alamat dan Masker Bit}
 
 Aplikasi mendefinisikan konstanta alamat register yang sesuai dengan peta register IP I2S.
 
-\begin{lstlisting}[language=C, caption={Konfigurasi register dan masker bit pada software.}]
-#define DATA_LEFT   (I2S_BASE + 0x00U)
-#define DATA_RIGHT  (I2S_BASE + 0x04U)
-#define CONTROL     (I2S_BASE + 0x08U)
-#define STATUS_REG  (I2S_BASE + 0x0CU)
-
-#define CTRL_ENABLE      (1U << 0)
-#define CTRL_MUTE        (1U << 1)
-#define CTRL_WIDTH(w)    (((uint32_t)((w) >= 32U ? 0U : ((w) & 0x1FU))) << 2U)
-#define CTRL_RATE(hz)    (((uint32_t)(hz) & 0x000FFFFFU) << 7U)
-\end{lstlisting}
+\lstinputlisting[
+    language=C,
+    basicstyle=\ttfamily\scriptsize,
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    columns=fullflexible,
+    caption={Kode lengkap firmware \texttt{helloworld.c} dari repositori \texttt{latesti2s}.},
+    label={lst:ch4-helloworld}
+]{../latesti2s/ready_to_run/sw/helloworld.c}
 
 \subsection{Logika Validasi dan \textit{Clamping} Parameter}
 
@@ -196,36 +192,9 @@ Untuk menjamin stabilitas sistem, perangkat lunak melakukan validasi terhadap se
 
 Perangkat lunak mengimplementasikan penanganan \textit{asynchronous input} melalui terminal serial. Pengguna dapat mengubah parameter secara langsung dengan menekan tombol pada keyboard.
 
-\begin{lstlisting}[language=C, caption={Penanganan input UART untuk kontrol interaktif.}]
-void handle_key(uint8_t key) {
-    switch (tolower(key)) {
-        case 'e': set_enable(!g_enable); break;
-        case 'm': set_mute(!g_mute);     break;
-        case 'w': set_width(g_width == 16 ? 24 : g_width == 24 ? 32 : 16); break;
-        case 'f': set_sample_rate(prompt_value("New Fs (Hz): ")); break;
-        case 't': set_tone_freq(prompt_value("New Tone (Hz): "));  break;
-    }
-}
-\end{lstlisting}
-
 \subsection{Pembangkitan Gelombang via Software DDS dan Sinkronisasi Frame}
 
 Inti dari proses pengiriman audio terletak pada loop utama yang menunggu perubahan bit status dari hardware. Ketika hardware melakukan \textit{latch} pada sampel sebelumnya, software segera menghitung dan menulis sampel berikutnya.
-
-\begin{lstlisting}[language=C, caption={Loop utama pengiriman sampel dengan sinkronisasi status hardware.}]
-while (1) {
-    // 1. Polling bit status untuk sinkronisasi frame
-    while (frame_status_bit() == g_last_frame_bit) {
-        // Cek input UART tanpa mengganggu audio
-        if (!XUartLite_IsReceiveEmpty(STDIN_BASEADDRESS))
-            handle_key(XUartLite_RecvByte(STDIN_BASEADDRESS));
-    }
-    g_last_frame_bit = frame_status_bit();
-
-    // 2. Hitung sampel sinus/square menggunakan DDS software
-    stream_software_dds_sample();
-}
-\end{lstlisting}
 
 Teknik DDS software menggunakan akumulator fase 32-bit (\path{g_phase}) yang bertambah sebesar \path{step} setiap sampel. Nilai \path{step} dihitung berdasarkan rasio frekuensi nada terhadap frekuensi sampling target. Hal ini memungkinkan perubahan nada yang sangat halus dan akurat tanpa memerlukan tabel gelombang yang sangat besar.
 
