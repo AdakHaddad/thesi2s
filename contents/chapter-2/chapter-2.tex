@@ -100,10 +100,12 @@ Untuk Master Clock (MCLK) sebesar $256 \times F_s$, inkremennya adalah:
 \end{equation}
 
 Dalam kode RTL Verilog, perkalian ini diimplementasikan secara efisien lewat pergeseran bit (\textit{bit-shift}):
-\begin{verbatim}
-    wire [31:0] bclk_toggle_rate_hz = {sample_rate_sync, 7'b0}; // Fs * 128
-    wire [31:0] mclk_toggle_rate_hz = {sample_rate_sync, 9'b0}; // Fs * 512
-\end{verbatim}
+\usepackage{listings}
+
+\begin{lstlisting}[breaklines=true]
+	wire [31:0] bclk_toggle_rate_hz = {sample_rate_sync, 7'b0}; // Fs * 128
+	wire [31:0] mclk_toggle_rate_hz = {sample_rate_sync, 9'b0}; // Fs * 512
+\end{lstlisting}
 
 \begin{table}[htbp]
 \centering
