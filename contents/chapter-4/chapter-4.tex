@@ -157,7 +157,7 @@ reg [C_S_AXI_DATA_WIDTH-1:0] slv_reg2;
 reg [C_S_AXI_DATA_WIDTH-1:0] slv_reg3;
 \end{lstlisting}
 
-`slv_reg0` dan `slv_reg1` menyimpan sampel kanal kiri dan kanan. `slv_reg2` menyimpan register kontrol, sedangkan `slv_reg3` digunakan sebagai register status. Dengan struktur ini, semua komunikasi firmware-ke-hardware berlangsung melalui memory-mapped I/O, sehingga firmware tidak perlu mengakses sinyal internal secara langsung.
+\texttt{slv\_reg0} dan \texttt{slv\_reg1} menyimpan sampel kanal kiri dan kanan. \texttt{slv\_reg2} menyimpan register kontrol, sedangkan \texttt{slv\_reg3} digunakan sebagai register status. Dengan struktur ini, semua komunikasi firmware-ke-hardware berlangsung melalui memory-mapped I/O, sehingga firmware tidak perlu mengakses sinyal internal secara langsung.
 
 Keluaran AXI hanya merupakan penyalinan dari register internal.
 
