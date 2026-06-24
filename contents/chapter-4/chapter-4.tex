@@ -349,11 +349,11 @@ always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN) begin
 end
 \end{lstlisting}
 
-Keputusan ini menghilangkan kebutuhan synchronizer dua flip-flop atau FIFO asinkron antara domain AXI dan domain audio. Dari sisi implementasi, hasilnya lebih sederhana dan lebih mudah diverifikasi, karena setiap perubahan register kontrol dan sampel terjadi pada clock yang sama dengan logika keluaran I2S.
+Implementasi ini menghilangkan kebutuhan synchronizer dua flip-flop atau FIFO asinkron antara domain AXI dan domain audio. Dari sisi implementasi, hasilnya lebih sederhana dan lebih mudah diverifikasi, karena setiap perubahan register kontrol dan sampel terjadi pada clock yang sama dengan logika keluaran I2S.
 
 \subsection{Implementasi Generator Clock Berbasis NCO}
 
-Generator clock audio direalisasikan memakai akumulator fasa. Nilai referensi clock sistem adalah 100 MHz, sesuai asumsi pada source code.
+Generator clock audio direalisasikan memakai akumulator fasa. Nilai referensi clock sistem adalah 100 MHz, sesuai asumsi pada source code, dan struktur dasarnya telah dijelaskan pada Bab~II melalui Persamaan~\eqref{eq:nco_freq_general} serta Gambar~\ref{fig:nco_fs_flow} dan Gambar~\ref{fig:nco_architecture}.
 
 \begin{lstlisting}[language=Verilog,caption={Parameter clock sistem dan batas sample rate.},label={lst:ch4-clock-param}]
 localparam [31:0] AXI_CLK_HZ = 32'd100_000_000;
@@ -387,7 +387,7 @@ end else begin
 end
 \end{lstlisting}
 
-Keputusan memakai NCO membuat laju sampling dapat diprogram secara arbitrer tanpa PLL audio tambahan. Dari sudut implementasi, ini menyederhanakan block design dan mengurangi ketergantungan pada clocking IP vendor-spesifik.
+Penggunaan NCO membuat laju sampling dapat diprogram secara arbitrer tanpa PLL audio tambahan. Dari sudut implementasi, ini menyederhanakan block design dan mengurangi ketergantungan pada clocking IP vendor-spesifik, sementara relasi matematisnya tetap konsisten dengan persamaan pada Bab~II yang menghubungkan inkremen fase, modulus, dan frekuensi keluaran.
 
 \subsection{Implementasi Serializer Philips I2S}
 
