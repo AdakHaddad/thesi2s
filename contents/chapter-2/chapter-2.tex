@@ -81,7 +81,7 @@ Pada format Philips I2S standar, transisi \texttt{WS} terjadi satu pulsa BCLK se
 
 \subsection{Pembangkitan Clock Audio Berbasis NCO}
 
-Pembangkitan detak audio murni digital dilakukan menggunakan \textit{Numerically Controlled Oscillator} (NCO) untuk menghindari ketergantungan pada unit analog PLL/MMCM vendor FPGA \citep{vankka_dds_2001}. Akumulator fase biner beralih dengan modulus $2^N$, tetapi pembulatan nilai increment dapat menyebabkan deviasi frekuensi kumulatif. Untuk mengatasinya, diimplementasikan \textbf{Akumulator Fase Desimal} dengan modulus $M$ yang nilainya disesuaikan dengan frekuensi clock referensi sistem ($f_{\mathrm{ref}} = 100\text{ MHz}$), sehingga $M = 100.000.000$.
+Pembangkitan detak audio murni digital dilakukan menggunakan \textit{Numerically Controlled Oscillator} (NCO) untuk menghindari ketergantungan pada unit analog PLL/MMCM vendor FPGA \citep{vankka_dds_2001,ao2012nco}. Akumulator fase biner beralih dengan modulus $2^N$, tetapi pembulatan nilai increment dapat menyebabkan deviasi frekuensi kumulatif. Untuk mengatasinya, diimplementasikan \textbf{Akumulator Fase Desimal} dengan modulus $M$ yang nilainya disesuaikan dengan frekuensi clock referensi sistem ($f_{\mathrm{ref}} = 100\text{ MHz}$), sehingga $M = 100.000.000$.
 
 Persamaan pembaruan fase pada setiap siklus clock sistem adalah:
 \begin{equation}
