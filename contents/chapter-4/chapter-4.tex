@@ -661,24 +661,6 @@ int main(void)
 
 Urutan tersebut menunjukkan bahwa firmware memastikan konfigurasi aman sebelum streaming dimulai. Sampel data ditulis nol terlebih dahulu, lalu kontrol diterapkan, dan status frame awal dibaca agar sinkronisasi berikutnya memiliki referensi yang benar.
 
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/clocking-view-block-diagram.png}{%
-        \includegraphics[width=0.85\textwidth]{contents/figures/clocking-view-block-diagram.png}%
-    }{}
-    \caption{Pandangan blok clocking yang relevan dengan pembangkitan BCLK dan MCLK pada IP.}
-    \label{fig:ch4-clocking-view}
-\end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{contents/figures/processor-uart-timer-axi-i2s-architecture-whole-diagram.png}{%
-        \includegraphics[width=0.95\textwidth]{contents/figures/processor-uart-timer-axi-i2s-architecture-whole-diagram.png}%
-    }{}
-    \caption{Relasi antara prosesor, UART, timer, dan IP I2S pada sistem akhir.}
-    \label{fig:ch4-fw-system}
-\end{figure}
-
 \subsection{Konfigurasi Register I2S}
 
 Firmware membentuk sebuah control word dari state global, lalu menulisnya ke register \path{CONTROL}. Fungsi ini menjadi titik utama interaksi firmware dengan IP.
