@@ -1,0 +1,123 @@
+\chapter{Pendahuluan}
+
+\section{Latar Belakang}
+
+\hspace{1cm}Perkembangan sistem embedded modern mendorong kebutuhan akan antarmuka audio digital yang fleksibel, dapat dikonfigurasi melalui perangkat lunak, dan mudah diintegrasikan ke dalam arsitektur System-on-Chip (SoC). Pada berbagai aplikasi seperti audio playback, perangkat edukasi, synthesizer sederhana, sistem notifikasi suara, dan eksperimen digital signal processing, data audio perlu dikirim dari prosesor ke perangkat audio eksternal secara sinkron dan andal. Dalam konteks ini, I2S (Inter-IC Sound) menjadi protokol yang sangat relevan karena dirancang khusus untuk transmisi data audio digital antarchip.
+
+\hspace{1cm}I2S merupakan standar antarmuka serial audio yang dikembangkan oleh Philips dan banyak digunakan untuk menghubungkan prosesor, codec, DAC, dan perangkat audio digital lain~\citep{philips_i2s_1986}. Protokol ini menggunakan tiga sinyal utama, yaitu \textit{bit clock} (BCLK), \textit{word select} (WS/LRCLK), dan \textit{serial data} (SD). Relasi timing antar sinyal tersebut harus dipenuhi dengan ketat agar penerima audio dapat merekonstruksi sampel digital dengan benar. Dukungan terhadap berbagai \textit{sample rate} dan \textit{bit depth} membuat I2S cocok untuk implementasi audio pada FPGA, terutama ketika dibutuhkan fleksibilitas desain pada level register transfer.
+
+\hspace{1cm}FPGA menawarkan keunggulan utama dalam pengembangan sistem audio digital karena logika perangkat kerasnya dapat dikustomisasi sesuai kebutuhan aplikasi~\citep{trimberger_history_fpga_2018}. Dibandingkan pendekatan berbasis perangkat keras tetap, FPGA memungkinkan perancangan antarmuka komunikasi, logika buffer, pembagi clock, dan jalur data serial secara langsung dalam Verilog atau VHDL~\citep{palnitkar_verilog_2003}. Ketika dikombinasikan dengan soft processor seperti MicroBlaze V, FPGA juga memberikan model kerja hardware-software co-design: fungsi real-time dan timing kritis ditangani oleh perangkat keras, sementara konfigurasi, pengiriman data, dan pengujian dikendalikan oleh perangkat lunak~\citep{crockett_zynq_book_2014}.
+
+\hspace{1cm}MicroBlaze V sebagai prosesor soft-core berbasis RISC-V~\citep{waterman_riscv_2016} pada ekosistem AMD/Xilinx~\citep{xilinx_microblaze_ref_2021} menyediakan fondasi yang sesuai untuk integrasi peripheral kustom pada Vivado dan Vitis. Melalui antarmuka AXI4-Lite~\citep{arm_amba_axi_2010}, peripheral dapat diakses dengan model memory-mapped I/O yang sederhana namun efektif. Dengan pendekatan ini, prosesor dapat menulis sampel audio, mengatur mode operasi, serta membaca status dari peripheral I2S menggunakan instruksi load/store biasa. Pendekatan tersebut memudahkan pengembangan perangkat lunak uji sekaligus menjaga modularitas desain perangkat keras.
+
+\hspace{1cm}Pemilihan \textbf{MicroBlaze V} sebagai prosesor pada penelitian ini didasarkan pada beberapa pertimbangan teknis yang relevan. Dibandingkan dengan \textit{ARM SoC} seperti Zynq-7000, MicroBlaze V tidak memerlukan lisensi prosesor ARM dan seluruh desain dapat berjalan pada FPGA seri Artix-7 yang lebih terjangkau seperti Basys3 tanpa \textit{hard processor}. Dibandingkan dengan \textit{MicroBlaze Classic} berbasis ISA Xilinx proprietary, MicroBlaze V menggunakan arsitektur \textbf{RISC-V} standar terbuka sehingga memudahkan migrasi ke toolchain open-source di masa depan. Dibandingkan pendekatan \textit{bare-FPGA} (tanpa prosesor), penggunaan MicroBlaze V memungkinkan konfigurasi register dan pembangkitan sinyal uji audio dikendalikan oleh perangkat lunak C tanpa memerlukan finite-state-machine kustom yang lebih kompleks. Kombinasi MicroBlaze V dan AXI4-Lite pada FPGA Artix-7 dengan tool Vivado dan Vitis juga mewakili ekosistem yang umum digunakan pada penelitian sistem tertanam akademik.
+
+\hspace{1cm}Dalam praktik implementasi audio pada FPGA, permasalahan tidak hanya terletak pada pembangkitan sinyal I2S, tetapi juga pada kestabilan aliran data dan sinkronisasi antara perangkat lunak dengan serializer. Pada desain akhir, seluruh logika I2S berjalan pada domain \texttt{S\_AXI\_ACLK} 100 MHz sehingga register data dan serializer berada pada domain clock yang sama. Jika sampel berubah ketika word sedang diserialkan, keluaran audio dapat korup; oleh karena itu, sistem membutuhkan \textit{shadow register} yang di-\textit{latch} pada batas frame stereo serta mekanisme \textit{handshake} melalui register \texttt{STATUS} agar firmware dapat mengirim sampel berikutnya tepat waktu. Pembangkitan \texttt{BCLK}, \texttt{WS}, dan \texttt{MCLK} dilakukan oleh akumulator fase DDS internal, sehingga frekuensi sampling dapat diprogram tanpa rekonfigurasi PLL eksternal. Kesesuaian pinout ke modul DAC eksternal~\citep{pcm5102a_datasheet} juga menjadi faktor penting yang memengaruhi keberhasilan sistem secara keseluruhan.
+
+\hspace{1cm}Berdasarkan kebutuhan tersebut, skripsi ini berfokus pada perancangan \textbf{IP core transmitter I2S berbasis Verilog} dengan antarmuka \textbf{AXI4-Lite} yang dapat diintegrasikan ke dalam SoC \textbf{MicroBlaze V} pada board \textbf{Basys3}~\citep{xilinx_basys3_ref}. Kode sumber dan dokumentasi proyek ini tersedia secara terbuka pada repositori GitHub\footnote{\url{https://github.com/adakhaddad/thesi2s}}. Target keluaran audio adalah modul \textbf{PCM5102A} sebagai DAC eksternal. Desain difokuskan pada mode \textbf{TX-only}, format \textbf{Philips I2S}, stereo, dengan \textbf{slot 32 bit} dan lebar sampel yang dapat dipilih hingga 32 bit. Penelitian ini mencakup evolusi rancangan mulai dari desain dasar dengan empat mode frekuensi sampling (44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz) hingga tahap \textbf{pengembangan dan optimasi} menggunakan teknik \textbf{DDS (Direct Digital Synthesis)} untuk mendukung \textbf{frekuensi sampling arbitrer} serta membuat IP bersifat \textbf{vendor-agnostic}. Penelitian ini mencakup perancangan RTL, integrasi Vivado Block Design~\citep{xilinx_vivado_design_suite_2021}, pengembangan perangkat lunak uji di Vitis~\citep{xilinx_vitis_embedded_2021}, pengukuran sinyal, dan bukti keluaran audio.
+
+\hspace{1cm}\textbf{Kontribusi utama penelitian ini} adalah perancangan \textbf{Custom IP I2S Transmitter} yang mendukung frekuensi sampling arbitrer berbasis NCO dan dapat diintegrasikan sebagai peripheral AXI4-Lite pada SoC MicroBlaze V tanpa ketergantungan pada IP audio berlisensi pihak ketiga. Dengan demikian, sistem yang dibangun bersifat \textit{open-source}, \textit{vendor-agnostic}, dan dapat direplikasi pada platform FPGA lain tanpa biaya lisensi tambahan.
+
+\begin{figure}[htbp]
+    \centering
+	\IfFileExists{contents/figures/processor-uart-timer-axi-i2s-architecture-whole-diagram.png}{%
+		\includegraphics[width=0.95\textwidth]{contents/figures/processor-uart-timer-axi-i2s-architecture-whole-diagram.png}%
+	}{}
+	\caption{Diagram arsitektur lengkap sistem SoC dengan IP I2S TX AXI4-Lite dan DAC PCM5102A.}
+    
+\end{figure}
+
+\section{Rumusan Masalah}
+
+Berdasarkan latar belakang tersebut, rumusan masalah penelitian ini adalah:
+
+\begin{enumerate}
+	\item Bagaimana merancang \textbf{IP core transmitter I2S} berbasis Verilog dengan antarmuka \textbf{AXI4-Lite} sehingga dapat dikontrol dari program Vitis melalui register memory-mapped, serta mendukung \textbf{frekuensi sampling arbitrer} dan bersifat \textbf{vendor-agnostic} melalui teknik DDS?
+	\item Bagaimana melakukan \textbf{verifikasi fungsional dan timing} melalui simulasi bila tersedia, pengukuran sinyal, dan uji keluaran audio pada PCM5102A?
+\end{enumerate}
+
+\section{Tujuan Penelitian}
+
+Tujuan penelitian ini disusun agar selaras dengan rumusan masalah yang telah ditetapkan, sekaligus menegaskan bahwa skripsi ini menghasilkan \textbf{IP komunikasi sendiri} sehingga sistem tidak bergantung pada \textit{license} atau IP komersial pihak ketiga.
+
+\subsection{Tujuan perancangan dan integrasi perangkat keras}
+\begin{enumerate}
+	\item Merancang dan mengimplementasikan \textbf{IP komunikasi audio I2S TX} berbasis Verilog dengan antarmuka \textbf{AXI4-Lite slave}, register kontrol dan data, serializer \textbf{Philips I2S}, serta mekanisme \textbf{shadow register} dan \textbf{status handshake} untuk pengiriman sampel audio stereo yang aman tanpa memakai IP komunikasi berlisensi dari pihak ketiga.
+	\item Mengimplementasikan pembangkitan detak audio berbasis \textbf{DDS/NCO} pada domain 100 MHz sehingga mendukung \textbf{frekuensi sampling arbitrer}, lalu mengintegrasikan IP ke dalam \textbf{Vivado Block Design} pada FPGA \textbf{Basys3} beserta pemetaan pin pada file \texttt{.xdc}.
+\end{enumerate}
+
+\subsection{Tujuan integrasi SoC dan perangkat lunak}
+\begin{enumerate}
+	\item Membangun SoC berbasis \textbf{MicroBlaze V} dengan AXI interconnect, BRAM, Clocking Wizard, dan akses ke peripheral I2S hasil rancangan sendiri melalui \textbf{Vitis}.
+	\item Mengembangkan aplikasi \textbf{Vitis} dalam bahasa C untuk konfigurasi register, pembangkitan sinyal uji audio, pengaturan kanal dan mode sampling, serta pengiriman sampel berbasis memory-mapped I/O ke IP komunikasi yang dibuat sendiri.
+\end{enumerate}
+
+\subsection{Tujuan verifikasi dan validasi}
+\begin{enumerate}
+	\item Memverifikasi sistem melalui pengamatan sinyal \texttt{i2s\_bclk}, \texttt{i2s\_ws}, \texttt{i2s\_data}, status latch, serta bukti keluaran audio pada PCM5102A.
+	\item Melakukan synthesis dan implementation pada FPGA Xilinx Artix-7 serta menganalisis \textit{resource utilization} seperti LUT, FF, dan BRAM.
+\end{enumerate}
+
+\section{Batasan Penelitian}
+
+Batasan penelitian dalam pengembangan \textbf{IP core I2S TX AXI4-Lite} ini meliputi:
+
+\subsection{Batasan perangkat keras dan RTL}
+\begin{enumerate}
+	\item Modul I2S dirancang sebagai \textbf{transmitter (TX-only)}; tidak mencakup receiver atau mode full-duplex.
+	\item Format audio dibatasi pada \textbf{Philips I2S}, stereo, \textbf{24 bit} per saluran dalam \textbf{slot 32 bit}; tidak mencakup TDM, left-justified, right-justified, atau multi-channel.
+	\item Dukungan frekuensi sampling dapat diprogram melalui register \texttt{SAMPLE\_RATE\_HZ} dalam rentang 1--195.312 Hz (batas aman DDS pada clock 100 MHz); pengujian utama difokuskan pada nilai standar 44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz serta beberapa nilai non-standar.
+	\item Transfer data audio ke IP menggunakan \textbf{programmed I/O} berbasis register dan tidak mencakup integrasi \textbf{FIFO} maupun \textbf{DMA}.
+	\item Pengujian perangkat keras dilakukan pada board \textbf{Basys3} dengan modul \textbf{PCM5102A}; hasil pada platform lain dapat berbeda.
+\end{enumerate}
+
+\subsection{Batasan SoC dan perangkat lunak}
+\begin{enumerate}
+	\item Prosesor yang digunakan adalah \textbf{MicroBlaze V} pada ekosistem Vivado dan Vitis.
+	\item Lingkungan perangkat lunak yang digunakan adalah \textbf{bare-metal} tanpa RTOS atau Linux pada ruang lingkup utama.
+	\item UART digunakan untuk debug dan logging, bukan sebagai jalur streaming audio utama.
+\end{enumerate}
+
+\subsection{Batasan pengujian dan dokumentasi}
+\begin{enumerate}
+	\item Pengujian dibatasi pada simulasi \textit{testbench}, osiloskop, dan uji dengar sederhana pada keluaran audio.
+	\item Dokumentasi disusun untuk kebutuhan skripsi dan tidak dimaksudkan sebagai datasheet komersial lengkap.
+\end{enumerate}
+
+\section{Manfaat Penelitian}
+
+\subsection{Manfaat akademik}
+\begin{enumerate}
+	\item Menghasilkan contoh perancangan \textbf{IP I2S TX AXI4-Lite} berbasis Verilog yang dapat digunakan sebagai acuan pembelajaran audio digital pada FPGA.
+	\item Menyediakan studi kasus hardware-software co-design pada FPGA yang melibatkan RTL, integrasi SoC, dan pemrograman embedded C.
+	\item Memberikan dokumentasi register map, strategi \textit{status handshake}, dan validasi sinyal I2S yang dapat digunakan kembali pada penelitian sejenis.
+\end{enumerate}
+
+\subsection{Manfaat praktis}
+\begin{enumerate}
+	\item Menyediakan dasar untuk proyek \textbf{audio output} berbasis FPGA seperti generator nada, alarm, dan sistem multimedia sederhana.
+	\item Menunjukkan pola desain \textbf{register-mapped I/O + status polling} yang dapat diadaptasi pada peripheral streaming sederhana lain.
+	\item Menjadi fondasi pengembangan lebih lanjut menuju sistem audio digital yang lebih kompleks, misalnya integrasi DMA atau dukungan Linux/ASoC.
+\end{enumerate}
+
+\subsection{Manfaat pengembangan keahlian}
+\begin{enumerate}
+	\item Memberikan pengalaman praktis dalam Verilog HDL, AXI4-Lite, integrasi Vivado Block Design, dan pengembangan aplikasi Vitis.
+	\item Mengembangkan kemampuan debugging hardware-software melalui simulasi \textit{testbench}, pengukuran sinyal, dan analisis hasil implementasi.
+	\item Menjadi portofolio yang relevan untuk bidang FPGA, embedded systems, dan desain SoC.
+\end{enumerate}
+
+\section{Sistematika Penulisan}
+
+\noindent\textbf{Bab I} membahas pendahuluan yang mencakup latar belakang, rumusan masalah, tujuan, batasan, manfaat, dan sistematika penulisan.
+
+\noindent\textbf{Bab II} memuat tinjauan pustaka dan dasar teori mengenai audio digital, protokol I2S, antarmuka AXI4-Lite, sinkronisasi lintas domain clock, Clocking Wizard, MicroBlaze V, dan PCM5102A.
+
+\noindent\textbf{Bab III} menyajikan metode penelitian yang mencakup alat dan bahan, metode verifikasi, serta alur tahapan tugas akhir secara sistematis.
+
+\noindent\textbf{Bab IV} membahas perancangan dan implementasi yang merinci spesifikasi fungsional IP, arsitektur register map, integrasi pada Vivado Block Design, serta detail logika RTL (DDS dan serializer).
+
+\noindent\textbf{Bab V} menyajikan hasil dan pembahasan yang mencakup pengujian sinyal digital, analisis akurasi frekuensi sampling, identifikasi bug firmware, serta verifikasi akhir sistem.
+
+\noindent\textbf{Bab VI} berisi kesimpulan dan saran pengembangan.
+

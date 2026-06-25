@@ -1,0 +1,158 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Filename: main.tex
+%%%  ---
+%%%  Template for Bachelor Thesis at DTETI UGM   		
+%%%  Created using thesisdtetiugm.cls
+%%%  --- 
+%%%  Original Written by Canggih Puspo Wibowo
+%%%  [canggihpw@gmail.com]
+%%%
+%%% Developed by Dr.-Ing. Yohan Fajar Sidik [DTETI FT UGM]
+%%% [yohanfajarsidik@ugm.ac.id]
+%%% Github repo: https://github.com/Dr-Sidik/template_thesis_latex_dteti
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Use option "bahasa" or "english" 
+%%    to change the basic language used
+\documentclass[bachelor,bahasa]{thesisdtetiugm}
+%======================================
+% Information Input
+%======================================
+% Input author's name and ID number
+\author{Muhammad Muqtada Alhaddad}{22/500341/TK/54841}
+% Input the thesis' title
+\title{Perancangan IP I2S Transmitter AXI4-Lite pada SoC MicroBlaze V menggunakan Verilog}
+% Program and the head of the program
+\program{Teknologi Informasi}{}{ }
+% Name of department head and NIP
+\departmenthead{Dr. Ahmad Nasikun, S.T., M.Sc.}{196404091990011001}
+\major{Teknologi Informasi}
+\yearsubmit{2026}
+\examdate{26 Mei 2026}
+% Name of thesis supervisors/promotors
+\addsupervisor{Ir. Agus Bejo, S.T., M.Eng., D.Eng., IPM.}{198001012015041002}
+\addsupervisor{Ir. Wahyu Dewanto, M.T.}{196111091986011001}
+
+%======================================
+
+\usepackage{pdflscape}
+\usepackage{subcaption}
+\usepackage{array}
+\usetikzlibrary{backgrounds,fit}
+
+\Urlmuskip=0mu plus 2mu
+\emergencystretch=2em
+
+\begin{document}
+%======================================
+% Create cover etc
+%======================================
+
+%---- COVER ----
+\printcover{sample/logougm.png}{Bachelor}
+
+%---- ENDORSEMENT PAGE ----
+\cleardoublepage \phantomsection
+\printendorsement
+
+%---- DEDICATION PAGE ----
+\cleardoublepage \phantomsection
+\chapterstatement{contents/statement/statement}
+
+\cleardoublepage \phantomsection
+\chapterdedication{contents/dedication/dedication}
+
+
+%---- PREFACE PAGE ----
+\cleardoublepage \phantomsection
+\chapterpreface{contents/preface/preface}
+
+%======================================
+% Create Table of Contents, List of Figures, List of Tables
+%======================================
+\cleardoublepage \phantomsection
+\thetoc
+\onehalfspacing
+\tableofcontents
+\singlespacing
+\cleardoublepage \phantomsection
+\thelot
+\listoftables
+\cleardoublepage \phantomsection
+\thelof
+\listoffigures
+
+%======================================
+
+%---- NOMENCLATURE PAGE ----
+\cleardoublepage \phantomsection
+\chapternomenclature{contents/nomenclature/nomenclature}
+
+%---- INTISARI PAGE----
+\cleardoublepage \phantomsection
+\chapterintisari{contents/abstract/intisari}
+
+%---- ABSTRACT PAGE----
+\cleardoublepage \phantomsection
+\chapterabstract{contents/abstract/abstract}
+
+
+%======================================
+
+
+
+%======================================
+%  MAIN TEXT
+%======================================
+\startmain
+
+\cleardoublepage \phantomsection
+\\include{contents_docx/chapter-1/chapter-1}
+\cleardoublepage \phantomsection
+\\include{contents_docx/chapter-2/chapter-2}
+\cleardoublepage \phantomsection
+\\include{contents_docx/chapter-3/chapter-3}
+\cleardoublepage \phantomsection
+\\include{contents_docx/chapter-4/chapter-4}
+\cleardoublepage \phantomsection
+\\include{contents_docx/chapter-5/chapter-5}
+\cleardoublepage \phantomsection
+\\include{contents_docx/chapter-6/chapter-6}
+
+%======================================
+
+%======================================
+%  References
+%======================================
+\cleardoublepage \phantomsection
+\thereferences
+\nocite{opencores_i2s_interface}
+\nocite{ultraembedded_i2s}
+\nocite{ultraembedded_i2s_tb}
+\nocite{xilinx_ug1118}
+\bibliography{references}
+
+%======================================
+
+%======================================
+%  Appendix
+%======================================
+
+\appendix
+\appendixtables
+\appendixfigures
+
+\cleardoublepage \phantomsection
+\chapterappendix{contents/appendix/appendix-isi-lampiran}
+\chapterappendixadd{contents/appendix/appendix-ip-summary}
+\chapterappendixadd{contents/appendix/appendix-code}
+
+
+
+
+%======================================
+
+\end{document}
+
+
+

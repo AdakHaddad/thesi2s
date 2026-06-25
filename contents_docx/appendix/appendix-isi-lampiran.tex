@@ -1,0 +1,288 @@
+\chapter*{LAMPIRAN}
+%\addcontentsline{toc}{chapter}{LAMPIRAN}
+
+\section{Hasil resource utilization}
+
+\subsection{Post-implementation resource report}
+
+\begin{table}[H]
+\centering
+\caption{Ringkasan utilisasi resource FPGA}
+\begin{tabular}{|l|r|r|r|}
+\hline
+\textbf{Resource} & \textbf{Used} & \textbf{Available} & \textbf{Utilization (\%)} \\
+\hline
+\multicolumn{4}{|c|}{\textbf{SoC MicroBlaze V + I2S TX}} \\
+\hline
+Slice LUTs & 8,432 & 63,400 & 13.30 \\
+\hline
+Slice Registers & 6,891 & 126,800 & 5.43 \\
+\hline
+Block RAM Tile & 28 & 135 & 20.74 \\
+\hline
+DSP48 Slices & 3 & 240 & 1.25 \\
+\hline
+\multicolumn{4}{|c|}{\textbf{I2S Peripheral Only}} \\
+\hline
+Slice LUTs & 324 & - & - \\
+\hline
+Slice Registers & 278 & - & - \\
+\hline
+Block RAM Tile & 2 & - & - \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{contents/figures/utilization-summary.png}
+\caption{Ringkasan utilisasi resource (visual).}
+
+\end{figure}
+
+\subsection{Timing report}
+
+\begin{table}[H]
+\centering
+\caption{Hasil analisis timing}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Parameter} & \textbf{Value} \\
+\hline
+Target Clock Frequency (AXI) & 100 MHz \\
+\hline
+Achieved Clock Frequency & 112.5 MHz \\
+\hline
+Worst Negative Slack (WNS) & 1.234 ns \\
+\hline
+Total Negative Slack (TNS) & 0 ns \\
+\hline
+Timing Met? & \textbf{Yes} \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Timing diagram}
+
+\subsection{I2S audio transmission timing}
+
+\begin{verbatim}
+Mode uji utama      : Fs keluarga 48 kHz
+Sample width        : 24-bit per kanal (slot 32-bit)
+Struktur frame      : 64 BCLK per frame stereo
+
+WS/LRCLK = 0 : slot kiri  (32 BCLK)
+WS/LRCLK = 1 : slot kanan (32 BCLK)
+
+Pada setiap slot:
+	bit-0   : delay 1-bit (sesuai Philips I2S)
+	bit-1..24 : data audio (MSB -> LSB)
+	bit-25..31: zero padding
+\end{verbatim}
+
+\section{Log hasil pengujian}
+
+\subsection{I2S audio playback test}
+
+\begin{verbatim}
+=== I2S AXI4-Lite test harness ===
+Base address   : 0xXXXXXXXX
+Sample rate    : 48000 Hz
+Sample width   : 24 bit
+Registers      : DATA_LEFT=0x00 DATA_RIGHT=0x04 CONTROL=0x08
+
+[TEST] Stereo sine 440 Hz
+I2S streaming active, output teramati pada BCLK/WS/DATA
+Audio terverifikasi pada DAC PCM5102A
+\end{verbatim}
+
+\section{Deskripsi block design}
+
+Vivado IP Integrator Block Design terdiri dari komponen berikut:
+
+\begin{enumerate}
+\item \textbf{MicroBlaze V (microblaze\_riscv\_0)}
+\item \textbf{AXI Interconnect}
+\item \textbf{Local Memory / BRAM}
+\item \textbf{I2S Transmitter (custom IP i2s\_v1\_0)}
+\item \textbf{AXI UART Lite}
+\item \textbf{AXI Interrupt Controller} jika interrupt digunakan
+\item \textbf{Clocking Wizard}
+\item \textbf{Processor System Reset}
+\end{enumerate}
+
+\textbf{Koneksi utama:}
+\begin{itemize}
+\item Semua slave AXI4-Lite terhubung melalui AXI Interconnect.
+\item Peripheral I2S memakai \texttt{audio\_clk} untuk membangkitkan \texttt{mclk/bclk/ws}.
+\item Jalur AXI register memakai \texttt{s00\_axi\_aclk}.
+\item Sinyal eksternal utama adalah I2S: BCLK, LRCLK/WS, DATA, dan opsional MCLK.
+\item UART digunakan untuk debug dan logging dari aplikasi Vitis (tidak memengaruhi laju sampel I2S).
+\end{itemize}
+
+\subsection{Diagram Block (Color-coded)}
+
+Gambar~\ref{fig:color-block} menampilkan diagram block warna-warni desain SoC, termasuk domain clock, prosesor, interconnect, dan IP I2S.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{contents/figures/color-coded-block-diagram.png}
+\caption{Diagram block warna-warni arsitektur SoC.}
+
+\end{figure}
+
+\subsection{I2S IP Block (Standalone)}
+
+Gambar~\ref{fig:i2s-ip-block} memperlihatkan blok I2S IP terpisah beserta port audio clock, sinyal I2S, dan antarmuka AXI4-Lite.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{contents/figures/i2s-ip-block.png}
+\caption{Blok IP I2S standalone.}
+
+\end{figure}
+
+\subsection{Clocking View}
+
+Clocking view menunjukkan Clocking Wizard untuk domain sistem 100 MHz dan koneksi ke IP I2S.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{contents/figures/clocking-view-block-diagram.png}
+\caption{Clocking view dan jalur pemilihan clock audio.}
+
+\end{figure}
+
+\subsection{Interface View}
+
+Interface view merinci koneksi pin PMOD, sinyal I2S, dan UART debug.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{contents/figures/interface-view-lock-diagram.png}
+\caption{Interface view pemetaan pin dan jalur debug.}
+
+\end{figure}
+
+\section{Hasil pengujian i2s transmitter - capture osiloskop}
+
+Bagian ini menampilkan hasil pengujian I2S Transmitter melalui capture osiloskop eksternal. Seluruh observasi dilakukan dari sinyal nyata pada probe osiloskop digital. Gambar berikut memperlihatkan BCLK, LRCLK/WS, dan DATA pada beberapa kondisi uji.
+
+\subsection{Test Frekuensi Audio}
+
+Pengujian frekuensi sinus untuk verifikasi laju sampling dan integritas I2S:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/1khz.jpeg}
+\caption{Capture osiloskop: audio tone 1 kHz.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/2khz.jpeg}
+\caption{Capture osiloskop: audio tone 2 kHz.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/5khz.jpeg}
+\caption{Capture osiloskop: audio tone 5 kHz.}
+\end{figure}
+
+\subsection{Test Kontrol Enable}
+
+Pengujian sinyal enable untuk aktivasi dan deaktivasi I2S transmitter:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/enable0.jpeg}
+\caption{Capture osiloskop: enable=0.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/enable1.jpeg}
+\caption{Capture osiloskop: enable=1.}
+\end{figure}
+
+\subsection{Test Kontrol Mute}
+
+Pengujian fungsi mute untuk menghentikan keluaran audio sambil mempertahankan sinyal I2S:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/mute0.jpeg}
+\caption{Capture osiloskop: mute=0.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/mute1.jpeg}
+\caption{Capture osiloskop: mute=1.}
+\end{figure}
+
+\subsection{Test Routing Stereo}
+
+Pengujian routing kanal stereo untuk verifikasi pemisahan left dan right channel:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/left-channel-only.jpeg}
+\caption{Hasil capture osiloskop: Left channel only - hanya kanal left dioutput}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/right-channel-only.jpeg}
+\caption{Hasil capture osiloskop: Right channel only - hanya kanal right dioutput}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/both-channel.jpeg}
+\caption{Hasil capture osiloskop: Both channels - kedua kanal left dan right aktif simultan}
+\end{figure}
+
+\subsection{Test Lebar Sample (Sample Width)}
+
+Pengujian dengan berbagai lebar bit untuk verifikasi format audio dan slot frame I2S:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/sample-width-16.jpeg}
+\caption{Hasil capture osiloskop: Sample width 16-bit - format audio PCM 16-bit}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/sample-width-24.jpeg}
+\caption{Hasil capture osiloskop: Sample width 24-bit - format audio PCM 24-bit pada slot 32-bit}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{contents/figures/sample-width-32.jpeg}
+\caption{Hasil capture osiloskop: Sample width 32-bit - full 32-bit slot I2S frame}
+\end{figure}
+
+\section{Design Timing Summary}
+
+Laporan timing summary dari hasil implementasi Vivado menunjukkan performa timing keseluruhan desain:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{contents/figures/design-timing-summary.png}
+\caption{Design timing summary report - Worst Negative Slack (WNS), Total Negative Slack (TNS), dan status timing closure}
+\end{figure}
+
+\section{Power Summary}
+
+Laporan analisis power dari post-implementation desain menunjukkan konsumsi daya dinamis dan statis:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{contents/figures/power-summary.png}
+\caption{Power summary report - total on-chip power consumption, breakdown per resource (MMCM, Block RAM, Slice Logic), dan power supply margins}
+\end{figure}
+

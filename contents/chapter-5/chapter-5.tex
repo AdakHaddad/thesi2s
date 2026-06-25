@@ -56,11 +56,28 @@ Hasil pengamatan pada Gambar~\ref{fig:ch5-waveform} mengonfirmasi empat properti
 
 % ============================================================
 \section{Analisis Frekuensi Sampling}
-% ============================================================
 
-Frekuensi sampling dikonfigurasi melalui kombinasi bit \path{FS\_FAMILY} dan \path{FS\_MODE} pada register \path{CONTROL}. Dua sumber clock dari MMCM menyediakan referensi untuk keluarga 48~kHz (24,576~MHz) dan 44,1~kHz (22,579~MHz). Clock yang aktif dipilih oleh logika seleksi clock internal berdasarkan bit \path{FS\_FAMILY}, sedangkan \path{FS\_MODE} menentukan faktor pembagi BCLK sehingga menghasilkan empat nilai $F_s$ standar.
+Frekuensi sampling dibangkitkan menggunakan sebuah \textit{Numerically Controlled Oscillator} (NCO) berbasis \textit{phase accumulator}. Nilai frekuensi sampling ditentukan oleh parameter \textit{phase increment} ($\Delta\theta$) yang disimpan pada register konfigurasi dan diperbarui melalui antarmuka AXI4-Lite.
 
-Tabel~\ref{tab:ch5-fs-arbitrary} menunjukkan hasil pengukuran frekuensi WS menggunakan multimeter digital untuk setiap konfigurasi. Nilai \textit{phase increment} ($\Delta\theta$) yang tercantum mengacu pada implementasi NCO desimal pada versi RTL yang mendukung $F_s$ arbitrer sebagai validasi tambahan terhadap akurasi metode.
+Pada setiap siklus clock sistem 100~MHz, phase accumulator dijumlahkan dengan nilai \textit{phase increment}. Ketika hasil penjumlahan mencapai atau melebihi nilai clock referensi, accumulator melakukan proses \textit{wrap-around} dan menghasilkan sinyal \textit{overflow}. Sinyal \textit{overflow} tersebut digunakan untuk melakukan \textit{toggle} sinyal BCLK. Selanjutnya, penghitung bit membentuk satu frame stereo yang terdiri atas 64 pulsa BCLK sehingga sinyal WS secara otomatis memiliki frekuensi yang sama dengan frekuensi sampling ($F_s$).
+
+Hubungan antara frekuensi sampling dan nilai \textit{phase increment} dinyatakan sebagai
+
+\begin{equation}
+	\Delta\theta = F_s \times 128
+\end{equation}
+
+dengan faktor 128 berasal dari dua kali frekuensi BCLK ($2 \times 64$), karena BCLK berubah keadaan (\textit{toggle}) pada setiap \textit{overflow} accumulator.
+
+Sebagai contoh, untuk menghasilkan frekuensi sampling sebesar 15~kHz digunakan nilai
+
+\[
+\Delta\theta = 15\,000 \times 128 = 1\,920\,000.
+\]
+
+Pada setiap siklus clock 100~MHz, accumulator bertambah sebesar 1.920.000. Setelah nilainya mencapai atau melampaui 100.000.000, accumulator melakukan \textit{wrap-around} dan menghasilkan satu pulsa \textit{overflow}. Pulsa tersebut menyebabkan BCLK berubah keadaan, sedangkan penghitung bit membentuk satu frame stereo setiap 64 pulsa BCLK sehingga diperoleh sinyal WS dengan frekuensi 15~kHz.
+
+Tabel~\ref{tab:ch5-fs-arbitrary} menunjukkan hasil pengukuran frekuensi sampling untuk beberapa nilai \textit{phase increment}. Pengujian dilakukan pada frekuensi standar maupun non-standar untuk memverifikasi akurasi metode phase accumulator dalam membangkitkan frekuensi sampling.
 
 \begin{table}[htbp]
 	\centering
@@ -80,7 +97,7 @@ Tabel~\ref{tab:ch5-fs-arbitrary} menunjukkan hasil pengukuran frekuensi WS mengg
 	\end{tabular}
 \end{table}
 
-Deviasi frekuensi aktual terhadap target nominal sangat kecil dengan error relatif di bawah 0,001\% pada seluruh konfigurasi yang diuji. Hasil ini menunjukkan bahwa kombinasi MMCM dengan logika seleksi clock internal dan pembagi integer menghasilkan akurasi $F_s$ yang jauh melampaui kebutuhan standar audio.
+Deviasi frekuensi aktual terhadap nilai target berada di bawah 0,001\% pada seluruh konfigurasi yang diuji. Hasil tersebut menunjukkan bahwa metode phase accumulator mampu menghasilkan frekuensi sampling dengan akurasi tinggi menggunakan clock referensi 100~MHz. Selain mendukung frekuensi sampling standar seperti 44,1~kHz, 48~kHz, dan 96~kHz, pendekatan ini juga memungkinkan pembangkitan frekuensi sampling arbitrer, misalnya 10~kHz dan 12,345~kHz, hanya dengan mengubah nilai \textit{phase increment} tanpa memerlukan perubahan struktur RTL.
 
 % ============================================================
 \section{Validasi Audio pada Berbagai Frekuensi Sampling}
@@ -324,7 +341,7 @@ Pengujian mengirim nada sinus 1~kHz dari firmware ke register data IP I2S. Captu
 \begin{figure}[p]
 \centering
 \includegraphics[
-width=2.3\textwidth,
+width=2.0\textwidth,
 height=0.85\textheight,
 keepaspectratio
 ]{contents/figures/filter_i2s_bd_fullsizeview.jpg}

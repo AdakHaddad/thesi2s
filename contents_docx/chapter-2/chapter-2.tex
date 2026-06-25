@@ -1,0 +1,288 @@
+\chapter{Tinjauan Pustaka dan Dasar Teori}
+
+\section{Tinjauan Pustaka}
+
+Bagian ini membahas penelitian terdahulu yang relevan dengan implementasi protokol I2S pada FPGA, integrasi peripheral kustom pada SoC berbasis prosesor soft-core, serta penggunaan bus AXI4-Lite dan sinkronisasi lintas domain clock.
+
+\subsection{Penelitian tentang implementasi I2S pada FPGA}
+
+Implementasi antarmuka I2S pada FPGA telah dilaporkan dalam beberapa konteks. \citep{sang_i2s_codec_2020} merancang antarmuka I2S pada FPGA untuk menghubungkan prosesor dengan codec audio, menunjukkan dukungan \textit{sample rate} hingga 96 kHz menggunakan pendekatan RTL langsung tanpa bus sistem. Sementara itu, \citep{kaviani_i2s_fpga_2017} mengintegrasikan logika I2S bersama logic analyzer pada FPGA berbiaya rendah untuk kebutuhan instrumentasi.
+
+Penelitian-penelitian tersebut mengonfirmasi kelayakan pembangkitan sinyal I2S pada FPGA, namun sebagian besar masih terbatas pada level simulasi atau pengujian RTL terisolasi. Penelitian ini berfokus pada pendekatan \textit{hardware-software co-design} secara sistemik, yang mengintegrasikan register map, interkoneksi bus, dan validasi fungsional menggunakan perangkat lunak yang berjalan pada prosesor soft-core \citep{lafosse_embedded_2018}.
+
+\subsection{Penelitian tentang prosesor soft-core dan integrasi SoC}
+
+Pengembangan arsitektur RISC-V sebagai ISA terbuka \citep{waterman_riscv_2016} mendasari perancangan prosesor soft-core modern seperti MicroBlaze V pada ekosistem AMD/Xilinx \citep{xilinx_microblaze_ref_2021}. Integrasi peripheral kustom ke dalam SoC berbasis bus AXI dieksplorasi oleh \citep{sklyarov_axi_peripheral_2014}, yang menekankan aspek modularitas dan skalabilitas interkoneksi. Metodologi hardware-software co-design dan pengembangan driver bare-metal untuk peripheral kustom pada FPGA diulas secara komprehensif oleh \citep{crockett_zynq_book_2014}.
+
+\subsection{Penelitian tentang sinkronisasi lintas domain clock (CDC)}
+
+Dalam sistem multi-clock, sinkronisasi data antar-domain (\textit{Clock Domain Crossing}, CDC) sangat krusial. \citep{ginosar_metastability_2011} menganalisis masalah metastabilitas dan memaparkan solusi flip-flop ganda. Pada rancangan final penelitian ini (\texttt{i2s\_1\_0}), serializer I2S berjalan sepenuhnya pada domain clock bus AXI 100 MHz, sehingga masalah CDC pada jalur data audio ditiadakan. Koordinasi aliran data diselesaikan melalui status handshake berbasis register.
+
+\subsection{Penelitian tentang penjadwalan firmware berbasis counter siklus}
+
+Penjadwalan periodik pada bare-metal sering kali memanfaatkan CSR \texttt{mcycle} pada arsitektur RISC-V sebagai referensi timing presisi tinggi \citep{riscv_isa_vol1_2019}. Pada tahap awal penelitian ini, fungsi tunda \texttt{usleep()} dan register \texttt{mcycle} sempat digunakan untuk pengiriman sampel. Namun, sistem akhir beralih menggunakan polling bit register \texttt{STATUS} yang menyinkronkan pengiriman data secara fisik dengan detak konsumsi perangkat keras untuk mengeliminasi akumulasi keterlambatan (\textit{drift}).
+
+\subsection{Gap penelitian dan kontribusi}
+
+Penelitian ini mengisi celah dokumentasi perancangan IP core I2S TX kustom untuk SoC MicroBlaze V yang mencakup seluruh alur RTL, register map, perangkat lunak bare-metal, analisis bug firmware (seperti kesalahan justifikasi bit dan sinkronisasi timing), serta verifikasi fisik pada platform hemat daya berbasis Basys3. 
+
+Kontribusi utama penelitian ini adalah:
+\begin{enumerate}
+    \item Merancang IP core I2S transmitter AXI4-Lite berbasis \textbf{NCO} (\textit{Numerically Controlled Oscillator}) desimal yang mendukung \textbf{arbitrary sample rate} tanpa PLL eksternal.
+    \item Mengintegrasikan sistem SoC berbasis MicroBlaze V pada FPGA Artix-7 secara hemat sumber daya.
+    \item Menyediakan solusi hardware-software handshake berbasis status-polling untuk mencegah data corruption dan drift.
+    \item Mengidentifikasi dan mendokumentasikan penyelesaian tiga bug kritis pada lapisan firmware.
+\end{enumerate}
+
+% ============================================================
+\section{Dasar Teori}
+% ============================================================
+
+\subsection{Arsitektur MicroBlaze V dan Memory-Mapped I/O}
+
+MicroBlaze V adalah soft-core processor 32-bit berbasis arsitektur RISC-V (RV32I) dari AMD/Xilinx \citep{xilinx_microblaze_ref_2021}. Prosesor berkomunikasi dengan peripheral melalui model \textit{Memory-Mapped I/O} (MMIO), di mana register kontrol dan data peripheral dipetakan ke alamat memori unik. Akses register dilakukan menggunakan instruksi load/store standar (\texttt{lw} / \texttt{sw}) melalui perantara fungsi pustaka \path{xil_io.h} seperti \path{Xil_Out32} dan \path{Xil_In32}. 
+
+Untuk menjaga integritas data tanpa FIFO atau DMA, dikembangkan mekanisme \textit{Hardware-Software Handshake}. IP I2S Transmitter menyediakan bit status (\texttt{STATUS[0]}) yang berubah logika (\textit{toggle}) setiap kali perangkat keras selesai memindahkan sampel dari register AXI ke \textit{shadow register} internal untuk diserialisasikan. Perangkat lunak melakukan polling terhadap bit status ini sebelum mengirimkan sampel berikutnya, sehingga laju transfer data terkunci secara fisik dengan laju transmisi clock audio eksternal.
+
+\subsection{Protokol Komunikasi AXI4-Lite}
+
+AXI4-Lite adalah varian sederhana dari protokol AMBA AXI4 yang dioptimalkan untuk akses register kontrol dan status \citep{arm_amba_axi_2010}. Transaksi AXI4-Lite bersifat synchronous dan menggunakan mekanisme jabat tangan (\textit{handshake}) dua arah berbasis sinyal \texttt{VALID} (dinyalakan oleh pengirim) dan \texttt{READY} (dinyalakan oleh penerima). Protokol ini terdiri atas lima kanal transaksi independen:
+\begin{enumerate}
+    \item \textbf{Write Address (AW)}: Mengirimkan alamat tujuan penulisan.
+    \item \textbf{Write Data (W)}: Mengirimkan data yang akan ditulis.
+    \item \textbf{Write Response (B)}: Mengirimkan status respon penulisan dari slave ke master.
+    \item \textbf{Read Address (AR)}: Mengirimkan alamat data yang akan dibaca.
+    \item \textbf{Read Data (R)}: Mengirimkan data hasil pembacaan beserta status respon.
+\end{enumerate}
+
+\subsection{Protokol Komunikasi Audio I2S}
+
+I2S (\textit{Inter-IC Sound}) merupakan protokol komunikasi serial sinkron tiga-kawat khusus untuk data audio digital PCM \citep{philips_i2s_1986}. Tiga sinyal utama protokol ini meliputi:
+\begin{itemize}
+    \item \textbf{Bit Clock (BCLK)}: Menentukan timing perpindahan bit data serial.
+    \item \textbf{Word Select (WS / LRCLK)}: Menentukan kanal aktif (kiri = LOW, kanan = HIGH). Frekuensi WS sama dengan \textit{sample rate} ($F_s$).
+    \item \textbf{Serial Data (SD / DATA)}: Jalur transmisi bit data serial (MSB-first).
+\end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/i2s-nxp-diagram.png}{%
+        \includegraphics[width=0.85\textwidth]{contents/figures/i2s-nxp-diagram.png}%
+    }{}
+    \caption{Diagram timing sinyal protokol I2S standar (Sumber: NXP).}
+    
+\end{figure}
+
+Pada format Philips I2S standar, transisi \texttt{WS} terjadi satu pulsa BCLK sebelum bit MSB dikirim (\textit{one-bit delay}) untuk sinkronisasi receiver (Gambar \ref{fig:i2s_nxp_diagram}). Penelitian ini menggunakan konfigurasi \textbf{stereo 24-bit di dalam slot 32-bit} per saluran (total 64 pulsa BCLK per frame stereo). Desain slot 32-bit menyederhanakan penyelarasan data pada bus AXI 32-bit. Hubungan frekuensi dinyatakan sebagai:
+\begin{equation}
+    f_{\mathrm{BCLK}} = 64 \times F_s
+    
+\end{equation}
+
+\subsection{Pembangkitan Clock Audio Berbasis NCO}
+
+Pembangkitan detak audio murni digital dilakukan menggunakan \textit{Numerically Controlled Oscillator} (NCO) untuk menghindari ketergantungan pada unit analog PLL/MMCM vendor FPGA \citep{vankka_dds_2001,ao2012nco}. Akumulator fase biner beralih dengan modulus $2^N$, tetapi pembulatan nilai increment dapat menyebabkan deviasi frekuensi kumulatif. Untuk mengatasinya, diimplementasikan \textbf{Akumulator Fase Desimal} dengan modulus $M$ yang nilainya disesuaikan dengan frekuensi clock referensi sistem ($f_{\mathrm{ref}} = 100\text{ MHz}$), sehingga $M = 100.000.000$.
+
+Persamaan pembaruan fase pada setiap siklus clock sistem adalah:
+\begin{equation}
+    \theta(t) = (\theta(t-1) + I) \pmod M
+    
+\end{equation}
+Di mana $I$ adalah nilai inkremen fase. Ketika $\theta(t-1) + I \ge M$, terjadi luapan (\textit{wrap}) yang memicu perubahan logika (\textit{toggle}) clock keluaran. Untuk BCLK, satu periode penuh (dua kali toggle) membutuhkan inkremen sebesar:
+\begin{equation}
+    I_{\mathrm{BCLK}} = 2 \times f_{\mathrm{BCLK}} = 2 \times 64 \times F_s = 128 \times F_s
+    
+\end{equation}
+Untuk Master Clock (MCLK) sebesar $256 \times F_s$, inkremennya adalah:
+\begin{equation}
+    I_{\mathrm{MCLK}} = 2 \times f_{\mathrm{MCLK}} = 2 \times 256 \times F_s = 512 \times F_s
+    
+\end{equation}
+
+Relasi umum antara inkremen, modulus, dan frekuensi keluaran NCO dinyatakan sebagai:
+\begin{equation}
+    f_{\mathrm{out}} = \frac{I}{2M} \, f_{\mathrm{ref}}
+    
+\end{equation}
+
+Dengan $M = 100.000.000$, persamaan tersebut menjelaskan bahwa semakin besar nilai inkremen $I$, semakin tinggi frekuensi keluaran yang dihasilkan oleh accumulator. Pada implementasi IP I2S, hubungan ini digunakan untuk membangkitkan BCLK dan MCLK secara deterministik dari clock sistem 100 MHz.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    node distance=1.8cm,
+    >=latex,
+    block/.style={
+        rectangle,
+        draw,
+        rounded corners,
+        minimum width=3.2cm,
+        minimum height=1cm,
+        align=center
+    },
+    smallblock/.style={
+        rectangle,
+        draw,
+        minimum width=2.2cm,
+        minimum height=0.9cm,
+        align=center
+    }
+]
+
+\node[block] (acc) {Phase Accumulator\\(NCO)};
+\node[block,right=of acc] (bclk) {BCLK Generator\\Toggle on Overflow};
+\node[block,right=of bclk] (counter) {Frame Counter\\0 -- 63};
+\node[block,right=of counter] (ws) {WS Generator};
+
+\draw[->] (acc) -- node[above]{overflow} (bclk);
+\draw[->] (bclk) -- node[above]{BCLK} (counter);
+\draw[->] (counter) -- node[above]{count[5:0]} (ws);
+
+\node[smallblock,below=1.2cm of acc] (fsreg)
+{FS Register};
+
+\draw[->] (fsreg) -- node[left]{phase\_inc} (acc);
+
+\node[below=1.2cm of counter,align=center]
+{
+1 Frame Stereo\\
+64 BCLK
+};
+
+\node[below=1.2cm of ws,align=center]
+{
+$F_s = \dfrac{f_{\mathrm{BCLK}}}{64}$
+};
+
+\end{tikzpicture}
+\caption{Alur pembangkitan frekuensi sampling menggunakan phase accumulator berbasis NCO.}
+
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    node distance=2cm,
+    >=latex,
+    block/.style={
+        rectangle,
+        draw,
+        minimum width=3cm,
+        minimum height=1cm,
+        align=center
+    }
+]
+
+\node[block] (inc) {Phase Increment\\($I$)};
+\node[block,right=of inc] (sum) {$+$};
+\node[block,right=of sum] (acc) {Accumulator\\($N$ bit)};
+\node[block,right=of acc] (cmp) {Overflow\\Detector};
+\node[block,right=of cmp] (tgl) {Toggle\\BCLK};
+
+\draw[->] (inc) -- (sum);
+\draw[->] (sum) -- (acc);
+\draw[->] (acc) -- (cmp);
+\draw[->] (cmp) -- (tgl);
+
+\draw[->] (acc.south) |- ++(0,-1.0) -| node[pos=0.25,below]
+{feedback} (sum.south);
+
+\end{tikzpicture}
+\caption{Arsitektur phase accumulator yang digunakan untuk menghasilkan BCLK.}
+
+\end{figure}
+
+Dalam kode RTL Verilog, perkalian ini diimplementasikan secara efisien lewat pergeseran bit (\textit{bit-shift}):
+
+\begin{lstlisting}[breaklines=true]
+	wire [31:0] bclk_toggle_rate_hz = {sample_rate_sync, 7'b0}; // Fs * 128
+	wire [31:0] mclk_toggle_rate_hz = {sample_rate_sync, 9'b0}; // Fs * 512
+\end{lstlisting}
+
+\begin{table}[htbp]
+\centering
+\caption{Perbandingan pembangkitan clock berbasis PLL dan NCO.}
+
+\begin{tabular}{|l|p{5.5cm}|p{5.5cm}|}
+\hline
+\textbf{Fitur} & \textbf{PLL / MMCM (Analog)} & \textbf{NCO (Digital)} \\
+\hline
+\textit{Jitter} & Sangat rendah (diredam filter analog). & Sebesar periode clock sistem ($1/f_{\mathrm{ref}}$). \\
+Fleksibilitas & Terbatas pada rasio perkalian integer. & Mendukung frekuensi arbitrer secara instan. \\
+Portabilitas & Spesifik vendor (\textit{vendor-locked}). & \textit{Vendor-agnostic} (RTL Verilog portabel). \\
+\hline
+\end{tabular}
+\end{table}
+
+Perbandingan kedua teknik disajikan pada Tabel \ref{tab:pll_vs_nco}. Pendekatan NCO dipilih karena memberikan fleksibilitas penuh untuk memprogram frekuensi sampling secara dinamis dari perangkat lunak.
+
+\subsection{DAC Audio PCM5102A}
+
+PCM5102A adalah chip Digital-to-Analog Converter (DAC) 24-bit stereo dari Texas Instruments dengan keluaran analog level-line langsung tanpa filter eksternal \citep{pcm5102a_datasheet}. DAC ini dapat beroperasi tanpa master clock (MCLK) eksternal dengan membangkitkan detak internal dari BCLK melalui unit PLL internalnya.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[b]{0.52\textwidth}
+        \centering
+        \IfFileExists{contents/figures/pcm5102-functional-block-diagram.png}{%
+            \includegraphics[width=\textwidth]{contents/figures/pcm5102-functional-block-diagram.png}%
+        }{}
+        \caption{Diagram blok internal fungsional.}
+        
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \IfFileExists{contents/figures/pcm5102.png}{%
+            \includegraphics[width=\textwidth]{contents/figures/pcm5102.png}%
+        }{}
+        \caption{Foto modul fisik PMOD PCM5102A.}
+        
+    \end{subfigure}
+    \caption{Spesifikasi arsitektur dan modul fisik DAC PCM5102A.}
+    
+\end{figure}
+
+Diagram blok fungsional dan foto fisik modul DAC PCM5102A disajikan pada Gambar \ref{fig:pcm5102_combined}. Modul eksternal ini dihubungkan langsung ke pin PMOD Basys3 untuk menerima data I2S dan menghasilkan keluaran audio stereo.
+
+\subsection{FPGA dan Board Basys3}
+
+FPGA (\textit{Field-Programmable Gate Array}) memungkinkan kustomisasi jalur data perangkat keras secara langsung melalui deskripsi bahasa pemrograman RTL \citep{kuon_fpga_architecture_2008}. Pengujian hardware pada penelitian ini menggunakan board pengembangan \textbf{Basys3} berbasis chip Xilinx Artix-7 (XC7A35T-1CPG236C) \citep{xilinx_basys3_ref}. 
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{contents/figures/basys3.png}{%
+        \includegraphics[width=0.7\textwidth]{contents/figures/basys3.png}%
+    }{}
+    \caption{Board FPGA Basys3 Artix-7 yang digunakan dalam penelitian.}
+    
+\end{figure}
+
+Board Basys3 (Gambar \ref{fig:basys3_board}) menyediakan osilator clock 100 MHz, koneksi micro-USB untuk pemograman JTAG dan UART, serta empat port PMOD standar 12-pin untuk ekspansi periferal eksternal seperti DAC.
+
+\subsection{Alur Pengembangan Vivado dan Vitis}
+
+AMD Vivado Design Suite digunakan untuk membangun bagian perangkat keras sistem FPGA, mulai dari penulisan dan simulasi RTL, pengemasan custom IP, penyusunan Block Design, hingga pemetaan pin melalui file constraint \path{.xdc} \citep{xilinx_vivado_design_suite_2021}. Setelah rancangan hardware selesai, Vivado menjalankan tiga tahap utama:
+\begin{enumerate}
+    \item \textbf{Synthesis}: menerjemahkan RTL dan Block Design menjadi netlist yang tersusun dari sumber daya logika FPGA, seperti LUT, flip-flop, BRAM, dan DSP.
+    \item \textbf{Implementation}: menempatkan sumber daya hasil sintesis pada FPGA (\textit{placement}), menghubungkan jalurnya (\textit{routing}), dan memeriksa pemenuhan batasan timing.
+    \item \textbf{Generate Bitstream}: menghasilkan file konfigurasi \path{.bit} yang digunakan untuk memprogram FPGA.
+\end{enumerate}
+
+Untuk pengembangan perangkat lunak, Vivado mengekspor deskripsi hardware sebagai file \path{.xsa} (\textit{Xilinx Support Archive}). File ini memuat informasi prosesor MicroBlaze V, peta alamat peripheral AXI4-Lite, konfigurasi interrupt, clock, serta bitstream yang terkait dengan platform hardware. AMD Vitis mengimpor file \path{.xsa} tersebut untuk membentuk \textit{platform project} dan \textit{Board Support Package} (BSP) \citep{xilinx_vitis_embedded_2021}. Berdasarkan platform itu, aplikasi bare-metal ditulis dalam bahasa C pada file \path{.c}, lalu dikompilasi menjadi berkas executable \path{.elf}. Saat pengujian, FPGA diprogram menggunakan bitstream dan Vitis memuat aplikasi \path{.elf} ke memori sistem melalui JTAG.
+
+Dengan demikian, alur pengembangan hardware dan software pada penelitian ini adalah:
+\begin{equation}
+    \begin{aligned}
+        \text{RTL/Block Design} &\rightarrow \text{Synthesis} \rightarrow \text{Implementation} \\
+        &\rightarrow \text{Bitstream dan XSA} \rightarrow \text{Platform Vitis} \rightarrow \text{Aplikasi C}
+    \end{aligned}
+    
+\end{equation}
+
+\subsection{Verilog HDL, Perbandingan IP, dan Analisis Metode}
+
+Logika IP core diimplementasikan menggunakan Verilog HDL untuk mendeskripsikan register kontrol, mesin NCO, serializer, dan bus interface slave AXI4-Lite \citep{palnitkar_verilog_2003}. Desain modular ini bersifat \textit{vendor-agnostic} karena ditulis dalam RTL standar tanpa memakai pustaka hardware proprietari. 
+
+Sebagai pembanding, AMD/Xilinx menyediakan LogiCORE I2S Transmitter IP yang kompleks \citep{amd_pg308_i2s_logicore}, namun membutuhkan AXI4-Stream interface, DMA controller, dan clocking analog MMCM eksternal. IP custom yang dirancang dalam penelitian ini berfokus pada mode \textbf{TX-only} minimalis melalui AXI4-Lite memory-mapped register, sehingga sangat efisien dalam penggunaan sumber daya logika FPGA dan mudah dikontrol secara langsung oleh CPU soft-core bare-metal.
+
