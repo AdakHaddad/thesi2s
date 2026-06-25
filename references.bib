@@ -44,36 +44,36 @@
 % ---- Dokumentasi Vendor (AMD/Xilinx) ---------------------------
 
 @manual{xilinx_microblaze_ref_2021,
-  author      = {{AMD Xilinx}},
+  author      = {{Advanced Micro Devices, Inc.}},
   title       = {{MicroBlaze} Processor Reference Guide},
-  organization= {AMD Xilinx},
+  organization= {Advanced Micro Devices, Inc.},
   year        = {2021},
   number      = {UG984 (v2021.2)},
   note        = {Tersedia: \url{https://www.xilinx.com/support/documentation/sw_manuals/xilinx2021_2/ug984-vivado-microblaze-ref.pdf}}
 }
 
 @manual{xilinx_axi_ref_2017,
-  author      = {{AMD Xilinx}},
+  author      = {{Advanced Micro Devices, Inc.}},
   title       = {{AXI} Reference Guide},
-  organization= {AMD Xilinx},
+  organization= {Advanced Micro Devices, Inc.},
   year        = {2017},
   number      = {UG1037 (v4.0)},
   note        = {Tersedia: \url{https://www.xilinx.com/support/documentation/ip_documentation/axi_ref_guide/latest/ug1037-vivado-axi-reference-guide.pdf}}
 }
 
 @manual{xilinx_clocking_wizard_2021,
-  author      = {{AMD Xilinx}},
+  author      = {{Advanced Micro Devices, Inc.}},
   title       = {Clocking Wizard {v6.0} Product Guide},
-  organization= {AMD Xilinx},
+  organization= {Advanced Micro Devices, Inc.},
   year        = {2021},
   number      = {PG065 (v6.0)},
   note        = {Tersedia: \url{https://www.xilinx.com/support/documentation/ip_documentation/clk_wiz/v6_0/pg065-clk-wiz.pdf}}
 }
 
 @manual{xilinx_vivado_design_suite_2021,
-  author      = {{AMD Xilinx}},
+  author      = {{Advanced Micro Devices, Inc.}},
   title       = {Vivado Design Suite User Guide: Designing with {IP}},
-  organization= {AMD Xilinx},
+  organization= {Advanced Micro Devices, Inc.},
   year        = {2021},
   number      = {UG896 (v2021.2)},
   note        = {Tersedia: \url{https://www.xilinx.com/support/documentation/sw_manuals/xilinx2021_2/ug896-vivado-ip.pdf}}
@@ -88,18 +88,18 @@
 }
 
 @manual{xilinx_vitis_embedded_2021,
-  author      = {{AMD Xilinx}},
+  author      = {{Advanced Micro Devices, Inc.}},
   title       = {Vitis Unified Software Platform Documentation: Embedded Software Development},
-  organization= {AMD Xilinx},
+  organization= {Advanced Micro Devices, Inc.},
   year        = {2021},
   number      = {UG1400 (v2021.2)},
   note        = {Tersedia: \url{https://www.xilinx.com/support/documentation/sw_manuals/xilinx2021_2/ug1400-vitis-embedded.pdf}}
 }
 
 @manual{amd_pg308_i2s_logicore,
-  author      = {{AMD Xilinx}},
+  author      = {{Advanced Micro Devices, Inc.}},
   title       = {{LogiCORE} I2S Transmitter and Receiver Product Guide},
-  organization= {AMD Xilinx},
+  organization= {Advanced Micro Devices, Inc.},
   number      = {PG308},
   year        = {2021},
   note        = {Tersedia: \url{https://www.xilinx.com/support/documentation/ip_documentation/i2s_transmitter/v3_0/pg308-i2s-logicore.pdf}}
@@ -153,9 +153,9 @@
 }
 
 @manual{xilinx_clocking_resources_2020,
-  author      = {{AMD Xilinx}},
+  author      = {{Advanced Micro Devices, Inc.}},
   title       = {7 Series FPGAs Clocking Resources User Guide},
-  organization= {AMD Xilinx},
+  organization= {Advanced Micro Devices, Inc.},
   year        = {2020},
   number      = {UG472 (v1.14)},
   note        = {Tersedia: \url{https://www.xilinx.com/support/documentation/user_guides/ug472_7Series_Clocking.pdf}}
@@ -278,9 +278,9 @@
 }
 
 @manual{xilinx_vivado_ip_subsystems_2025,
-  author      = {{AMD Xilinx}},
+  author      = {{Advanced Micro Devices, Inc.}},
   title       = {Vivado Design Suite User Guide: {IP} Subsystems},
-  organization= {AMD Xilinx},
+  organization= {Advanced Micro Devices, Inc.},
   year        = {2025},
   number      = {UG994 (v2025.2)}
 }
@@ -288,8 +288,36 @@
 @misc{opencores_i2s_interface,
   author       = {{OpenCores}},
   title        = {{I2S Interface}},
-  year         = {2026},
-  note         = {Tersedia: \url{https://opencores.org/projects/i2s_interface}}
+  year         = {2019},
+  howpublished = {\url{https://opencores.org/projects/i2s_interface}},
+  note         = {Open-source I2S IP core. Last updated January 31, 2019. Accessed June 2026.}
+}
+
+
+
+@manual{xilinx_ug1118,
+  author       = {{Advanced Micro Devices, Inc.}},
+  title        = {Vivado Design Suite User Guide: Creating and Packaging Custom IP},
+  organization = {Advanced Micro Devices, Inc.},
+  number       = {UG1118},
+  year         = {2021},
+  note         = {Available: https://docs.amd.com/r/en-US/ug1118-vivado-creating-packaging-custom-ip}
+}
+
+@misc{ultraembedded_i2s,
+  author       = {{Ultra-Embedded}},
+  title        = {I2S Master RTL},
+  year         = {2012},
+  howpublished = {\url{https://github.com/ultraembedded/cores/tree/master/i2s}},
+  note         = {Open-source Verilog I2S Master implementation (GPL). Accessed June 2026.}
+}
+
+@misc{ultraembedded_i2s_tb,
+  author       = {{Ultra-Embedded}},
+  title        = {I2S Master Testbench},
+  year         = {2012},
+  howpublished = {\url{https://github.com/ultraembedded/cores/blob/master/i2s/testbench/tb_top.v}},
+  note         = {Reference testbench for I2S verification. Accessed June 2026.}
 }
 
 % custom IP design local-file entry removed; use \cite{xilinx_vivado_design_suite_2021} instead
