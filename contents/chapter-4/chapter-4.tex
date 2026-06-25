@@ -4,6 +4,20 @@
 
 Bab ini mendokumentasikan realisasi akhir IP I2S berdasarkan source code aktual pada modul RTL dan firmware. Implementasi akhir terdiri atas wrapper \path{i2s.v}, core \path{i2s_slave_lite_v1_0_S00_AXI.v}, dan aplikasi bare-metal \path{helloworld.c}. Berbeda dari rancangan awal yang masih menempatkan generator gelombang di RTL, implementasi final memindahkan pembangkitan sampel audio ke firmware, sedangkan RTL difokuskan pada antarmuka AXI4-Lite, pengaturan register, pembangkitan clock audio, dan serializer Philips I2S.
 
+\subsection{Pembangunan Sistem Dasar MicroBlaze V}
+
+Sebagai landasan implementasi, penelitian ini terlebih dahulu membangun sistem dasar \textit{System-on-Chip} berbasis MicroBlaze V dengan mengacu pada tutorial \textit{MicroBlaze V} yang disusun oleh Agus Bejo~\cite{bejo2025microblazev}. Tutorial tersebut digunakan hanya untuk membentuk platform komputasi awal pada Vivado dan Vitis, sedangkan pengembangan utama pada penelitian ini tetap berfokus pada IP I2S kustom, register kontrol, mekanisme \textit{clock domain crossing}, pembangkitan laju sampling, serializer Philips I2S, serta firmware pengujian.
+
+Pembangunan dimulai dari pembuatan proyek Vivado untuk target papan Basys3 dan penetapan desain puncak yang akan menampung prosesor, memori lokal, interkoneksi AXI, serta periferal dasar. Pada tahap ini, struktur sistem belum memuat logika audio kustom, melainkan hanya menyediakan lingkungan pemrosesan yang stabil agar blok-blok berikutnya dapat diintegrasikan secara terukur. Melalui pendekatan tersebut, platform dasar berfungsi sebagai fondasi yang konsisten bagi seluruh eksperimen perangkat keras dan perangkat lunak pada penelitian ini.
+
+Di dalam \textit{block design}, tutorial mengarahkan pembentukan subsistem prosesor yang memuat instansiasi MicroBlaze V, \textit{Clocking Wizard}, memori lokal berbasis BRAM, \textit{AXI SmartConnect}, dan \textit{AXI UARTLite}. \textit{Clocking Wizard} disiapkan untuk menyediakan clock sistem 100 MHz yang seragam bagi subsistem prosesor dan periferal. Memori lokal dipakai sebagai ruang instruksi dan data awal bagi firmware, sedangkan AXI SmartConnect menangani perutean transaksi \textit{memory-mapped} antara prosesor dan periferal. UARTLite dipakai sebagai kanal keluaran teks untuk verifikasi dasar eksekusi firmware. \textit{Block automation} kemudian menyatukan parameter-parameter koneksi tersebut sehingga sistem dasar dapat dibangun sebagai satu kesatuan yang siap dipakai oleh perangkat lunak.
+
+Setelah struktur internal selesai, Vivado menghasilkan \textit{HDL wrapper} agar desain dapat diperlakukan sebagai satu entitas top-level. Langkah ini penting karena wrapper menjadi antarmuka antara \textit{block design} dan implementasi fisik pada papan FPGA, termasuk pemetaan pin serta ekspor perangkat keras ke Vitis dalam bentuk berkas XSA. Dari titik ini, platform MicroBlaze V dapat dimanfaatkan untuk membuat firmware bare-metal yang menguji konektivitas prosesor, memori, dan UART sebelum peripheral audio kustom diintegrasikan.
+
+Komponen yang diadopsi dari tutorial terbatas pada infrastruktur dasar, yaitu proyek Vivado, \textit{block design}, \textit{Clocking Wizard}, MicroBlaze V, \textit{block automation}, memori lokal, AXI SmartConnect, AXI UARTLite, \textit{HDL wrapper}, dan ekspor hardware ke Vitis. Sebaliknya, komponen yang menjadi kontribusi penelitian ini adalah IP I2S berbasis AXI4-Lite beserta implementasi register, logika NCO untuk pembangkitan frekuensi sampling arbitrer, serializer Philips I2S, serta firmware yang mengendalikan pengiriman sampel audio dan memvalidasi keluaran perangkat keras.
+
+Setelah sistem dasar MicroBlaze V berhasil dibangun, penelitian ini melanjutkan proses dengan mengintegrasikan IP I2S berbasis AXI4-Lite yang dikembangkan secara mandiri. Seluruh mekanisme komunikasi audio, register konfigurasi, generator clock berbasis NCO, serializer Philips I2S, serta firmware pengujian merupakan hasil pengembangan pada penelitian ini.
+
 \begin{figure}[htbp]
     \centering
     \IfFileExists{contents/figures/processor-uart-timer-axi-i2s-architecture-whole-diagram.png}{%
