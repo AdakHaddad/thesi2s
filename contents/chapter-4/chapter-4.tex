@@ -4,6 +4,32 @@
 
 Bab ini mendokumentasikan realisasi akhir IP I2S berdasarkan source code aktual pada modul RTL dan firmware. Implementasi akhir terdiri atas wrapper \path{i2s.v}, core \path{i2s_slave_lite_v1_0_S00_AXI.v}, dan aplikasi bare-metal \path{helloworld.c}. Berbeda dari rancangan awal yang masih menempatkan generator gelombang di RTL, implementasi final memindahkan pembangkitan sampel audio ke firmware, sedangkan RTL difokuskan pada antarmuka AXI4-Lite, pengaturan register, pembangkitan clock audio, dan serializer Philips I2S.
 
+\subsection{Hierarki File dan Modul}
+
+Source code implementasi terbagi menjadi dua lapisan: RTL perangkat keras dan firmware perangkat lunak. Seluruh file RTL ditulis dalam Verilog HDL, sedangkan firmware ditulis dalam bahasa C. Berikut adalah hierarki file beserta hubungan instansiasi antar modul:
+
+\begin{enumerate}
+    \item \textbf{\texttt{i2s.v}} --- \textit{Wrapper top-level IP}. Berada di \texttt{ip\_repo/i2s\_1\_0/hdl/}. Modul \texttt{i2s} tidak berisi logika fungsional; ia hanya meneruskan sinyal AXI4-Lite dan keluaran I2S ke modul inti. Instansiasi: \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI}.
+    \item \textbf{\texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v}} --- \textit{Core IP I2S}. Berada di direktori yang sama. Modul ini mencakup seluruh logika: handshake AXI4-Lite, register file (DATA\_LEFT, DATA\_RIGHT, CONTROL, STATUS), phase accumulator NCO untuk pembangkitan BCLK/MCLK/WS, latch sampel, dan fungsi \texttt{i2s\_next\_serial\_bit} yang mengimplementasikan serializer Philips I2S. Tidak ada sub-module yang diinstansiasi; seluruh fungsi terkandung dalam satu modul (\textit{self-contained}).
+    \item \textbf{\texttt{helloworld.c}} --- \textit{Firmware bare-metal}. Berada di \texttt{sw/} pada proyek Vitis. Berisi fungsi \texttt{main()} yang menginisialisasi sistem, serta fungsi-fungsi statis: \texttt{control\_word()} dan \texttt{apply\_control()} untuk menulis register CONTROL, \texttt{frame\_status\_bit()} untuk membaca sinyal latch hardware, \texttt{pack\_sample()} untuk menyesuaikan lebar sampel, \texttt{write\_channels()} untuk mengirim data ke DATA\_LEFT dan DATA\_RIGHT, \texttt{stream\_software\_dds\_sample()} untuk pembangkitan nada sinus/kotak, dan \texttt{handle\_key()} untuk kontrol runtime melalui UART.
+    \item \textbf{\texttt{i2s.h} / \texttt{i2s.c}} --- \textit{Driver peripheral}. Makro \texttt{I2S\_mWriteReg} dan \texttt{I2S\_mReadReg} menyediakan antarmuka baca/tulis register, serta \texttt{I2S\_Reg\_SelfTest} untuk verifikasi dasar.
+\end{enumerate}
+
+Hubungan instansiasi antar modul RTL adalah sebagai berikut:
+
+\begin{verbatim}
+i2s.v (top-level wrapper)
+  +-- i2s_slave_lite_v1_0_S00_AXI.v (core)
+        +-- AXI4-Lite handshake logic
+        +-- Register file (slv_reg0--slv_reg3)
+        +-- NCO phase accumulator (bclk/mclk/MCLK)
+        +-- Latch sample (sample_left_q, sample_right_q)
+        +-- Serializer (bit_count_q, i2s_next_serial_bit)
+        +-- Output assignment (i2s_mclk, i2s_bclk, i2s_ws, i2s_data)
+\end{verbatim}
+
+Sementara itu, firmware \texttt{helloworld.c} mengakses core melalui alamat memory-mapped AXI4-Lite tanpa perantara driver tambahan. Fungsi \texttt{Xil\_Out32} dan \texttt{Xil\_In32} dari pustaka Vitis digunakan untuk menulis dan membaca register IP I2S. Dengan demikian, seluruh alur data dari firmware ke DAC dapat dirunut: \texttt{helloworld.c} $\rightarrow$ AXI4-Lite $\rightarrow$ \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI} $\rightarrow$ pin FPGA $\rightarrow$ PCM5102A.
+
 \subsection{Pembangunan Sistem Dasar MicroBlaze V}
 
 Sebagai landasan implementasi, penelitian ini terlebih dahulu membangun platform dasar System-on-Chip (SoC) berbasis MicroBlaze V dengan mengacu pada modul tutorial MicroBlaze V~\cite{bejo2025microblazev}. Platform tersebut kemudian dikembangkan lebih lanjut melalui integrasi IP I2S berbasis AXI4-Lite yang dirancang pada penelitian ini. Tutorial tersebut digunakan hanya untuk membentuk platform komputasi awal pada Vivado dan Vitis, sedangkan pengembangan utama pada penelitian ini tetap berfokus pada IP I2S kustom, register kontrol, mekanisme \textit{clock domain crossing}, pembangkitan laju sampling, serializer Philips I2S, serta firmware pengujian.
@@ -138,6 +164,8 @@ i2s_slave_lite_v1_0_S00_AXI #(
 
 Struktur ini membuat seluruh logika fungsional berada di core, sehingga wrapper tetap sederhana dan mudah dipetakan pada IP Packager Vivado. Pada Gambar~\ref{fig:ch4-arch-overall} hubungan antara prosesor, UART, dan IP I2S menjadi jelas: firmware menulis register melalui AXI4-Lite, lalu core menghasilkan sinyal \path{i2s_mclk}, \path{i2s_bclk}, \path{i2s_ws}, dan \path{i2s_data}.
 
+Blok internal IP I2S diperlihatkan pada Gambar~\ref{fig:ch4-ip-block}. Modul AXI4-Lite menangani transaksi bus dari prosesor, register file menyimpan konfigurasi dan data sampel, NCO membangkitkan clock audio berdasarkan nilai register, latch sampel menyalin data pada batas frame stereo, dan serializer mengeluarkan bit serial dalam format Philips I2S.
+
 \begin{figure}[htbp]
     \centering
     \IfFileExists{contents/figures/i2s-ip-block.png}{%
@@ -221,7 +249,7 @@ Kanal baca bekerja dengan prinsip yang sama: alamat dilatch, data register dipil
 
 \subsection{Implementasi Register Konfigurasi}
 
-Register map final terdiri atas empat register 32 bit. Tabel~\ref{tab:ch4-regmap-final} menunjukkan pemetaan offset yang benar-benar dipakai pada source code.
+Register map final terdiri atas empat register 32 bit. Tabel~\ref{tab:ch4-regmap-final} menunjukkan pemetaan offset yang benar-benar dipakai pada source code. Rincian bitfield register \texttt{CONTROL} beserta fungsi setiap field dijelaskan pada Tabel~\ref{tab:ch4-control-final}.
 
 \begin{table}[htbp]
 \centering

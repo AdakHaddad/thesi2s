@@ -2,12 +2,9 @@
 
 Bab ini menyajikan hasil pengujian fungsional sistem IP I2S Transmitter yang dikembangkan, mencakup verifikasi timing protokol, analisis akurasi frekuensi sampling, identifikasi dan perbaikan bug firmware, serta pengujian integrasi dengan blok pemrosesan sinyal digital eksternal. Seluruh pengukuran dilakukan pada perangkat keras target Basys3 (FPGA Artix-7 XC7A35T) menggunakan osiloskop digital untuk sinyal analog dan capture timing digital untuk sinyal internal.
 
-% ============================================================
 \section{Pengujian Sinyal I2S}
-% ============================================================
 
 Verifikasi timing dilakukan dengan mengamati sinyal \path{i2s\_bclk}, \path{i2s\_ws}, dan \path{i2s\_data} melalui capture timing internal dari desain RTL. Sinyal internal \path{bclk\_q}, \path{ws\_q}, \path{data\_q}, dan \path{bit\_count\_q} dipantau agar seluruh relasi timing antar sinyal dapat diamati dalam satu domain waktu yang konsisten.
-
 \begin{landscape}
 	\begin{figure}[htbp]
 		\centering
@@ -337,6 +334,8 @@ endmodule
 
 Pengujian mengirim nada sinus 1~kHz dari firmware ke register data IP I2S. Capture timing menunjukkan pulsa \texttt{left\_valid} dan \texttt{right\_valid} muncul satu kali per kanal pada setiap frame, sedangkan BCLK dan WS pada sisi DAC tetap mengikuti keluaran IP I2S. Pengamatan keluaran DAC mengonfirmasi bahwa bridge mempertahankan batas kanal dan urutan bit selama filter memproses aliran audio.
 
+Integrasi IP I2S dengan blok filter IIR pada Block Design Vivado diperlihatkan pada Gambar~\ref{fig:ch5-filter-integration}. IP I2S (\texttt{i2s\_0}) terhubung ke modul \texttt{i2s\_filter\_bridge} yang mendeserialisasi data I2S, memprosesnya melalui filter IIR (\texttt{filter\_coeff}), dan mengembalikan hasil filter ke jalur data serial menuju DAC.
+
 \begin{landscape}
 	\begin{figure}[p]
 		\centering
@@ -355,7 +354,7 @@ Pengujian mengirim nada sinus 1~kHz dari firmware ke register data IP I2S. Captu
 \section{Analisis Penggunaan Sumber Daya dan Daya}
 % ============================================================
 
-Implementasi sistem SoC pada Basys3 menghasilkan penggunaan sumber daya yang efisien. Tabel~\ref{tab:ch5-resource} merangkum utilitas FPGA Artix-7 dari laporan implementasi Vivado, dan Gambar~\ref{fig:ch5-timing-summary} menunjukkan ringkasan timing pasca-implementasi.
+Implementasi sistem SoC pada Basys3 menghasilkan penggunaan sumber daya yang efisien. Tabel~\ref{tab:ch5-resource} merangkum utilitas FPGA Artix-7 dari laporan implementasi Vivado, Gambar~\ref{fig:ch5-timing-summary} menunjukkan ringkasan timing pasca-implementasi, dan Gambar~\ref{fig:ch5-hw-analysis} menyajikan visualisasi persentase utilitas resource serta estimasi konsumsi daya sistem.
 
 \begin{figure}[htbp]
 	\centering
@@ -416,7 +415,6 @@ Penggunaan LUT sebesar 11,36\% dan FF sebesar 5,80\% mengindikasikan bahwa IP I2
 \subsection{Perubahan Frekuensi Sampling}
 
 Pengujian pada empat mode $F_s$ standar (44,1~kHz, 48~kHz, 88,2~kHz, dan 96~kHz) menunjukkan bahwa perubahan konfigurasi register \path{CONTROL} langsung memengaruhi timing BCLK dan WS secara \textit{real-time} tanpa memerlukan reset hardware (Gambar~\ref{fig:ch5-disc-fs}).
-
 \begin{landscape}
 	\begin{figure}[htbp]
 		\centering

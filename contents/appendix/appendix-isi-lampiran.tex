@@ -120,17 +120,6 @@ Vivado IP Integrator Block Design terdiri dari komponen berikut:
 \item UART digunakan untuk debug dan logging dari aplikasi Vitis (tidak memengaruhi laju sampel I2S).
 \end{itemize}
 
-\subsection{Diagram Block (Color-coded)}
-
-Gambar~\ref{fig:color-block} menampilkan diagram block warna-warni desain SoC, termasuk domain clock, prosesor, interconnect, dan IP I2S.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{contents/figures/color-coded-block-diagram.png}
-\caption{Diagram block warna-warni arsitektur SoC.}
-\label{fig:color-block}
-\end{figure}
-
 \subsection{I2S IP Block (Standalone)}
 
 Gambar~\ref{fig:i2s-ip-block} memperlihatkan blok I2S IP terpisah beserta port audio clock, sinyal I2S, dan antarmuka AXI4-Lite.
@@ -142,27 +131,45 @@ Gambar~\ref{fig:i2s-ip-block} memperlihatkan blok I2S IP terpisah beserta port a
 \label{fig:i2s-ip-block}
 \end{figure}
 
+\begin{landscape}
+
+\begin{landscape}
+
 \subsection{Clocking View}
 
-Clocking view menunjukkan Clocking Wizard untuk domain sistem 100 MHz dan koneksi ke IP I2S.
+Clocking view menunjukkan Clocking Wizard untuk domain sistem 100~MHz dan koneksi ke IP I2S.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.85\textwidth]{contents/figures/clocking-view-block-diagram.png}
-\caption{Clocking view dan jalur pemilihan clock audio.}
+\begin{center}
+\includegraphics[
+    width=\textheight,
+    height=0.88\textwidth,
+    keepaspectratio
+]{contents/figures/clocking-view-block-diagram.png}
+
+\captionof{figure}{Clocking view dan jalur clock sistem pada Vivado Block Design.}
 \label{fig:clocking-view}
-\end{figure}
+\end{center}
+
+\end{landscape}
+\clearpage
+
+\begin{landscape}
 
 \subsection{Interface View}
 
 Interface view merinci koneksi pin PMOD, sinyal I2S, dan UART debug.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.85\textwidth]{contents/figures/interface-view-lock-diagram.png}
-\caption{Interface view pemetaan pin dan jalur debug.}
-\label{fig:interface-view}
-\end{figure}
+\begin{center}
+    \includegraphics[
+       width=\textheight,
+    height=0.88\textwidth,
+    keepaspectratio
+    ]{contents/figures/interface-view-lock-diagram.png}
+    \captionof{figure}{Interface view yang menunjukkan pemetaan antarmuka I2S, PMOD, dan UART.}
+    \label{fig:interface-view}
+\end{center}
+
+\end{landscape}
 
 \section{Hasil pengujian i2s transmitter - capture osiloskop}
 

@@ -1,7 +1,42 @@
-\hspace{1cm}Penelitian ini berfokus pada perancangan dan implementasi peripheral transmitter I2S (Inter-IC Sound) menggunakan bahasa Verilog HDL yang diintegrasikan ke dalam System-on-Chip (SoC) berbasis prosesor MicroBlaze V pada FPGA. Peripheral ini diimplementasikan sebagai custom IP dengan antarmuka AXI4-Lite slave sehingga dapat dikonfigurasi dan diisi data audio melalui register memory-mapped oleh perangkat lunak yang berjalan di Xilinx Vitis. Platform target yang digunakan adalah board FPGA Basys3, sedangkan keluaran audio direalisasikan melalui modul DAC PCM5102A. Modul pendukung seperti UART dan infrastruktur clock hanya digunakan sebagai penunjang sistem, sementara kontribusi utama skripsi ini adalah desain IP komunikasi audio buatan sendiri, integrasi, dan validasi peripheral transmitter I2S agar sistem tidak bergantung pada IP berlisensi dari pihak ketiga. \textbf{Kontribusi utama penelitian ini adalah perancangan Custom IP I2S Transmitter yang mendukung frekuensi sampling arbitrer berbasis NCO dan dapat diintegrasikan sebagai peripheral AXI4-Lite pada SoC MicroBlaze V tanpa ketergantungan pada IP audio berlisensi pihak ketiga.}
+\hspace{1cm}Suara merupakan bagian penting dalam berbagai perangkat elektronik modern, mulai dari 
+sistem hiburan hingga perangkat komunikasi. Untuk mengalirkan data audio secara digital antara 
+komponen elektronik, dibutuhkan protokol komunikasi yang andal, salah satunya adalah I2S 
+(\textit{Inter-IC Sound}). Protokol ini secara luas digunakan untuk menghubungkan prosesor atau 
+mikrokontroler dengan chip pengolah audio seperti DAC (\textit{Digital-to-Analog Converter}). 
+Dalam pengembangan sistem berbasis FPGA (\textit{Field-Programmable Gate Array}), ketersediaan 
+IP (\textit{Intellectual Property}) audio yang siap pakai seringkali memerlukan lisensi berbayar 
+atau bergantung pada vendor tertentu, sehingga menghambat fleksibilitas pengembangan. Oleh karena 
+itu, perancangan peripheral transmitter I2S secara mandiri menggunakan bahasa deskripsi perangkat 
+keras menjadi solusi yang relevan, terutama untuk sistem tertanam berbasis FPGA yang membutuhkan 
+keluaran audio digital tanpa ketergantungan pada IP pihak ketiga.
 
-\hspace{1cm}Metodologi penelitian mencakup: (1) desain RTL Verilog untuk transmitter I2S yang mengikuti format Philips I2S untuk transmisi audio stereo, (2) perancangan antarmuka register AXI4-Lite untuk kontrol, pemuatan sampel, dan observasi status, (3) integrasi custom IP I2S ke dalam SoC MicroBlaze V menggunakan Vivado block design, (4) pengembangan perangkat lunak uji dalam bahasa C pada Xilinx Vitis untuk konfigurasi register, pembangkitan sampel sinus, dan pengiriman sampel audio berbasis memory-mapped I/O, serta (5) verifikasi melalui synthesis, implementation, simulasi testbench (TB), pengamatan osiloskop, dan pengujian hardware dengan modul PCM5102A.
+\hspace{1cm}Penelitian ini bertujuan untuk merancang dan mengimplementasikan custom IP transmitter 
+I2S menggunakan Verilog HDL yang dapat diintegrasikan ke dalam \textit{System-on-Chip} (SoC) 
+berbasis prosesor MicroBlaze~V pada FPGA Basys3. IP yang dikembangkan menggunakan antarmuka 
+AXI4-Lite sehingga dapat dikonfigurasi melalui \textit{memory-mapped register} oleh perangkat 
+lunak yang berjalan di Xilinx Vitis. Kontribusi utama penelitian ini adalah perancangan IP 
+transmitter I2S yang mendukung frekuensi sampling arbitrer berbasis arsitektur NCO 
+(\textit{Numerically Controlled Oscillator}), mampu beroperasi tanpa bergantung pada IP audio 
+berlisensi pihak ketiga, serta tervalidasi pada platform perangkat keras nyata menggunakan modul 
+DAC PCM5102A sebagai keluaran audio.
 
-\hspace{1cm}Hasil penelitian menunjukkan bahwa IP transmitter I2S yang dirancang dapat diintegrasikan dengan baik ke dalam SoC berbasis MicroBlaze V dan dioperasikan melalui kontrol memory-mapped AXI4-Lite. Desain yang diimplementasikan mampu membangkitkan sinyal I2S yang diperlukan, mentransmisikan sampel audio stereo dalam format Philips I2S, serta mendukung frekuensi sampling yang dapat diprogram secara arbitrer melalui arsitektur berbasis NCO. Hal ini memungkinkan penggunaan frekuensi standar maupun non-standar dengan akurasi tinggi menggunakan satu clock referensi. Validasi perangkat keras menunjukkan bahwa desain bekerja sesuai tujuan pada platform yang diuji dan dapat menjadi dasar yang fleksibel untuk sistem keluaran audio digital berbasis FPGA.
+\hspace{1cm}Metodologi penelitian mencakup lima tahap utama: (1)~desain RTL Verilog untuk 
+transmitter I2S mengikuti format Philips I2S untuk transmisi audio stereo; (2)~perancangan 
+antarmuka register AXI4-Lite untuk kontrol, pemuatan sampel, dan observasi status; 
+(3)~integrasi custom IP ke dalam SoC MicroBlaze~V menggunakan Vivado \textit{block design}; 
+(4)~pengembangan perangkat lunak uji dalam bahasa C pada Xilinx Vitis untuk konfigurasi register, 
+pembangkitan sampel sinus berbasis DDS, dan pengiriman sampel audio melalui \textit{memory-mapped} 
+I/O; serta (5)~verifikasi melalui simulasi \textit{testbench}, pengamatan osiloskop, dan 
+pengujian perangkat keras dengan modul PCM5102A.
 
-\noindent{Kata kunci} : MicroBlaze V, I2S, Verilog, AXI4-Lite, FPGA, SoC, PCM5102A, Audio Digital
+\hspace{1cm}Hasil penelitian menunjukkan bahwa IP transmitter I2S yang dirancang berhasil 
+diintegrasikan ke dalam SoC berbasis MicroBlaze~V dan dapat dioperasikan melalui antarmuka 
+AXI4-Lite. Sistem mampu membangkitkan sinyal I2S yang valid, mentransmisikan sampel audio stereo 
+dalam format Philips I2S, serta mendukung frekuensi sampling yang dapat diprogram secara arbitrer 
+melalui arsitektur NCO dengan satu clock referensi. Validasi perangkat keras mengonfirmasi bahwa 
+desain bekerja sesuai spesifikasi pada platform yang diuji, sehingga dapat menjadi fondasi yang 
+fleksibel untuk pengembangan sistem keluaran audio digital berbasis FPGA selanjutnya.
+
+\vspace{0.5em}
+\noindent\textbf{Kata kunci}: MicroBlaze~V, I2S, Verilog, AXI4-Lite, FPGA, SoC, PCM5102A, 
+Audio Digital

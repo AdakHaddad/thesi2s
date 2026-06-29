@@ -13,6 +13,8 @@ Penelitian ini menggunakan kombinasi perangkat keras dan perangkat lunak untuk p
     \item \textbf{Modul DAC Audio PCM5102A}: Berperan sebagai receiver I2S eksternal yang dihubungkan ke PMOD Basys3 untuk menghasilkan sinyal audio analog \citep{pcm5102a_datasheet}.
 \end{itemize}
 
+Konfigurasi koneksi antara FPGA Basys3 dan modul DAC PCM5102A diperlihatkan pada Gambar~\ref{fig:ch3-wiring-dac}. Sinyal I2S (BCLK, WS, DATA) dan MCLK dihubungkan dari pin PMOD Basys3 ke input yang sesuai pada modul DAC, dengan jalur ground bersama untuk referensi sinyal.
+
 \begin{figure}[htbp]
     \centering
     \begin{subfigure}[b]{0.48\textwidth}
@@ -65,6 +67,8 @@ Perancangan Block Design dilakukan untuk menyatukan custom IP I2S ke dalam siste
 \subsection{Integrasi SoC MicroBlaze V}
 Vivado IP Integrator digunakan untuk menghubungkan komponen SoC: prosesor soft-core MicroBlaze V \citep{xilinx_microblaze_ref_2021}, memori lokal BRAM, Processor System Reset, AXI SmartConnect, AXI UARTLite untuk komunikasi terminal, dan custom IP I2S. Alamat dasar (Base Address) peripheral ditentukan secara otomatis oleh Vivado dan dipetakan ke dalam header file \path{xparameters.h} di Vitis.
 
+Komponen IP pendukung pada Block Design diperlihatkan pada Gambar~\ref{fig:ch3-bd-support-ip}. MicroBlaze V berperan sebagai pengendali utama, AXI UARTLite menyediakan jalur komunikasi serial untuk debugging, dan keduanya terhubung melalui AXI SmartConnect ke memori BRAM serta peripheral I2S.
+
 \begin{figure}[htbp]
     \centering
     \begin{subfigure}[b]{0.48\textwidth}
@@ -90,7 +94,7 @@ Vivado IP Integrator digunakan untuk menghubungkan komponen SoC: prosesor soft-c
 Clock audio diturunkan secara sinkron dari clock sistem AXI 100 MHz menggunakan teknik \textit{Numerically Controlled Oscillator} (NCO) desimal modulo 100.000.000 (penjelasan matematis rinci dibahas pada Bab~II). Sinyal detak yang dihasilkan meliputi \textbf{BCLK} ($64 \times F_s$) untuk serializer, serta \textbf{MCLK} ($256 \times F_s$) sebagai referensi clock DAC eksternal.
 
 \subsection{Perancangan Register AXI4-Lite}
-Akses register IP I2S oleh MicroBlaze V dilakukan melalui alamat memory-mapped (MMIO) berbasis antarmuka bus AXI4-Lite. Register internal IP terdiri dari \path{DATA_LEFT} (0x00), \path{DATA_RIGHT} (0x04), \path{CONTROL} (0x08), dan \path{STATUS} (0x0C). Peta register dan penjelasan fungsi bitfield sepenuhnya identik dengan detail perancangan yang disajikan pada Tabel~\ref{tab:ch4-regmap} dan Tabel~\ref{tab:ch4-control} di Bab~IV (halaman~\pageref{tab:ch4-regmap}).
+Akses register IP I2S oleh MicroBlaze V dilakukan melalui alamat memory-mapped (MMIO) berbasis antarmuka bus AXI4-Lite. Register internal IP terdiri dari \path{DATA_LEFT} (0x00), \path{DATA_RIGHT} (0x04), \path{CONTROL} (0x08), dan \path{STATUS} (0x0C). Peta register dan penjelasan fungsi bitfield sepenuhnya identik dengan detail perancangan yang disajikan pada Tabel~\ref{tab:ch4-regmap-final} dan Tabel~\ref{tab:ch4-control-final} di Bab~IV (halaman~\pageref{tab:ch4-regmap-final}).
 
 Untuk sinkronisasi pengiriman data, firmware melakukan polling terhadap bit status \path{STATUS[0]} yang berubah logika setiap kali perangkat keras memindahkan sampel dari register AXI ke shadow register internal di awal frame I2S.
 

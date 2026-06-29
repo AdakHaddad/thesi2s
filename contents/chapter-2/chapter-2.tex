@@ -108,88 +108,120 @@ Relasi umum antara inkremen, modulus, dan frekuensi keluaran NCO dinyatakan seba
 Dengan $M = 100.000.000$, persamaan tersebut menjelaskan bahwa semakin besar nilai inkremen $I$, semakin tinggi frekuensi keluaran yang dihasilkan oleh accumulator. Pada implementasi IP I2S, hubungan ini digunakan untuk membangkitkan BCLK dan MCLK secara deterministik dari clock sistem 100 MHz.
 
 \begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[
-    node distance=1.8cm,
-    >=latex,
-    block/.style={
-        rectangle,
-        draw,
-        rounded corners,
-        minimum width=3.2cm,
-        minimum height=1cm,
-        align=center
-    },
-    smallblock/.style={
-        rectangle,
-        draw,
-        minimum width=2.2cm,
-        minimum height=0.9cm,
-        align=center
-    }
-]
-
-\node[block] (acc) {Phase Accumulator\\(NCO)};
-\node[block,right=of acc] (bclk) {BCLK Generator\\Toggle on Overflow};
-\node[block,right=of bclk] (counter) {Frame Counter\\0 -- 63};
-\node[block,right=of counter] (ws) {WS Generator};
-
-\draw[->] (acc) -- node[above]{overflow} (bclk);
-\draw[->] (bclk) -- node[above]{BCLK} (counter);
-\draw[->] (counter) -- node[above]{count[5:0]} (ws);
-
-\node[smallblock,below=1.2cm of acc] (fsreg)
-{FS Register};
-
-\draw[->] (fsreg) -- node[left]{phase\_inc} (acc);
-
-\node[below=1.2cm of counter,align=center]
-{
-1 Frame Stereo\\
-64 BCLK
-};
-
-\node[below=1.2cm of ws,align=center]
-{
-$F_s = \dfrac{f_{\mathrm{BCLK}}}{64}$
-};
-
-\end{tikzpicture}
-\caption{Alur pembangkitan frekuensi sampling menggunakan phase accumulator berbasis NCO.}
-\label{fig:nco_fs_flow}
+	\centering
+	\begin{tikzpicture}[
+		node distance=1.4cm and 1.6cm,
+		>=Stealth,
+		font=\small,
+		% Main pipeline blocks
+		block/.style={
+			rectangle,
+			draw=black!70,
+			fill=blue!6,
+			rounded corners=3pt,
+			minimum width=2.8cm,
+			minimum height=1.0cm,
+			align=center,
+			line width=0.4pt
+		},
+		% Input/config block
+		inputblock/.style={
+			rectangle,
+			draw=black!60,
+			fill=orange!10,
+			rounded corners=3pt,
+			minimum width=2.2cm,
+			minimum height=0.85cm,
+			align=center,
+			dashed,
+			line width=0.4pt
+		},
+		% Annotation text below blocks
+		annot/.style={
+			font=\footnotesize\itshape,
+			text=black!60,
+			align=center
+		},
+		% Signal label on arrows
+		siglabel/.style={
+			font=\footnotesize\ttfamily,
+			fill=white,
+			inner sep=1pt
+		}
+		]
+		
+		%--- Main pipeline (top row) ---
+		\node[block] (acc)     {Phase\\Accumulator\\(NCO)};
+		\node[block, right=of acc]    (bclk)    {BCLK\\Generator};
+		\node[block, right=of bclk]   (counter) {Frame\\Counter};
+		\node[block, right=of counter](ws)      {WS\\Generator};
+		
+		%--- Arrows between main blocks ---
+		\draw[->] (acc)     -- node[siglabel, above]{overflow} (bclk);
+		\draw[->] (bclk)    -- node[siglabel, above]{BCLK}     (counter);
+		\draw[->] (counter) -- node[siglabel, above]{count[5:0]}(ws);
+		
+		%--- Input block (below acc) ---
+		\node[inputblock, below=1.4cm of acc] (fsreg) {FS\\Register};
+		\draw[->] (fsreg) -- node[siglabel, right]{phase\_inc} (acc);
+		
+		%--- Annotations below main pipeline ---
+		\node[annot, below=1.4cm of bclk]    {Toggle on\\overflow};
+		\node[annot, below=1.4cm of counter] {$0 \to 63$\\(64 BCLK/frame)};
+		\node[annot, below=1.4cm of ws]      {$F_s = \dfrac{f_{\mathrm{BCLK}}}{64}$};
+		
+		%--- Bounding box / grouping hint (optional subtle rule) ---
+		\begin{scope}[on background layer]
+			\node[
+			draw=black!15,
+			fill=black!2,
+			rounded corners=5pt,
+			fit=(acc)(bclk)(counter)(ws),
+			inner sep=6pt,
+			label={[font=\tiny\sffamily,text=black!40]above left:NCO \& Frame Sync Pipeline}
+			] {};
+		\end{scope}
+		
+	\end{tikzpicture}
+	\caption{Alur pembangkitan frekuensi sampling menggunakan \textit{phase accumulator} berbasis NCO.}
+	\label{fig:nco_fs_flow}
 \end{figure}
 
 \begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[
-    node distance=2cm,
-    >=latex,
-    block/.style={
-        rectangle,
-        draw,
-        minimum width=3cm,
-        minimum height=1cm,
-        align=center
-    }
-]
-
-\node[block] (inc) {Phase Increment\\($I$)};
-\node[block,right=of inc] (sum) {$+$};
-\node[block,right=of sum] (acc) {Accumulator\\($N$ bit)};
-\node[block,right=of acc] (cmp) {Overflow\\Detector};
-\node[block,right=of cmp] (tgl) {Toggle\\BCLK};
-
-\draw[->] (inc) -- (sum);
-\draw[->] (sum) -- (acc);
-\draw[->] (acc) -- (cmp);
-\draw[->] (cmp) -- (tgl);
-
-\draw[->] (acc.south) |- ++(0,-1.0) -| node[pos=0.25,below]
-{feedback} (sum.south);
-
-\end{tikzpicture}
-\caption{Arsitektur phase accumulator yang digunakan untuk menghasilkan BCLK.}
-\label{fig:nco_architecture}
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tikzpicture}[
+			node distance=1.3cm,
+			>=latex,
+			font=\small,
+			block/.style={
+				rectangle,
+				draw,
+				minimum width=2.5cm,
+				minimum height=0.8cm,
+				align=center
+			}
+			]
+			
+			\node[block] (inc) {Phase Increment\\($I$)};
+			\node[block,right=of inc] (sum) {$+$};
+			\node[block,right=of sum] (acc) {Accumulator\\($N$ bit)};
+			\node[block,right=of acc] (cmp) {Overflow\\Detector};
+			\node[block,right=of cmp] (tgl) {Toggle\\BCLK};
+			
+			\draw[->] (inc) -- (sum);
+			\draw[->] (sum) -- (acc);
+			\draw[->] (acc) -- (cmp);
+			\draw[->] (cmp) -- (tgl);
+			
+			\draw[->] (acc.south) |- ++(0,-0.8) -|
+			node[pos=0.25,below]{feedback}
+			(sum.south);
+			
+		\end{tikzpicture}%
+	}
+	\caption{Arsitektur phase accumulator yang digunakan untuk menghasilkan BCLK.}
+	\label{fig:nco_architecture}
 \end{figure}
 
 Dalam kode RTL Verilog, perkalian ini diimplementasikan secara efisien lewat pergeseran bit (\textit{bit-shift}):
