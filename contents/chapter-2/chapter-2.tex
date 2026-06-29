@@ -120,31 +120,51 @@ Pada format Philips I2S standar, transisi \texttt{WS} terjadi satu pulsa BCLK se
 
 \subsection{Pembangkitan Clock Audio Berbasis NCO}
 
-Pembangkitan detak audio murni digital dilakukan menggunakan \textit{Numerically Controlled Oscillator} (NCO) untuk menghindari ketergantungan pada unit analog PLL/MMCM vendor FPGA \citep{vankka_dds_2001,ao2012nco}. Akumulator fase biner beralih dengan modulus $2^N$, tetapi pembulatan nilai increment dapat menyebabkan deviasi frekuensi kumulatif. Untuk mengatasinya, diimplementasikan \textbf{Akumulator Fase Desimal} dengan modulus $M$ yang nilainya disesuaikan dengan frekuensi clock referensi sistem ($f_{\mathrm{ref}} = 100\text{ MHz}$), sehingga $M = 100.000.000$.
+Pembangkitan detak audio murni digital dilakukan menggunakan \textit{Numerically Controlled Oscillator} (NCO) untuk menghindari ketergantungan pada unit analog PLL/MMCM vendor FPGA \citep{vankka_dds_2001,ao2012nco}. NCO bekerja dengan prinsip akumulasi fase: suatu register (\textit{phase accumulator}) bertambah secara periodik pada setiap siklus clock referensi ($f_{\mathrm{ref}} = 100$ MHz) dengan nilai inkremen $I$ hingga mencapai batas modulus $M$, lalu kembali ke nol dan memicu perubahan logika keluaran.
+
+Akumulator fase yang umum digunakan pada NCO konvensional berbasis biner dengan modulus $2^N$, sehingga pembulatan inkremen dapat menyebabkan deviasi frekuensi kumulatif. Untuk menghindari hal tersebut, penelitian ini mengimplementasikan \textbf{Akumulator Fase Desimal} dengan modulus $M$ yang sama dengan frekuensi referensi ($M = f_{\mathrm{ref}} = 100.000.000$). Dengan demikian, nilai inkremen $I$ dapat berupa bilangan bulat yang menyatakan jumlah siklus clock referensi per detik yang diinginkan secara presisi.
+
+Variabel-variabel dalam sistem NCO ini didefinisikan sebagai berikut:
+\begin{enumerate}
+    \item $f_{\mathrm{ref}}$ : frekuensi clock referensi sistem (100 MHz), yaitu clock yang memicu pembaruan akumulator fase pada setiap siklusnya.
+    \item $M$ : modulus akumulator fase, yaitu batas maksimum nilai fase. Dalam desain ini $M = f_{\mathrm{ref}} = 100.000.000$, sehingga akumulator bertambah dari $0$ hingga $M-1$ dan kembali ke $0$ setelah mencapai $M$.
+    \item $I$ : inkremen fase (\textit{phase increment}), yaitu nilai pertambahan akumulator pada setiap siklus clock. Semakin besar $I$, semakin cepat akumulator mencapai batas $M$ dan semakin tinggi frekuensi keluaran.
+    \item $\theta(t)$ : nilai akumulator fase pada waktu $t$ (siklus clock ke-$t$).
+    \item $f_{\mathrm{out}}$ : frekuensi sinyal keluaran yang dihasilkan oleh NCO.
+\end{enumerate}
 
 Persamaan pembaruan fase pada setiap siklus clock sistem adalah:
 \begin{equation}
-    \theta(t) = (\theta(t-1) + I) \pmod M
+    \theta(t) = \bigl(\theta(t-1) + I\bigr) \bmod M
     \label{eq:nco_mod}
 \end{equation}
-Di mana $I$ adalah nilai inkremen fase. Ketika $\theta(t-1) + I \ge M$, terjadi luapan (\textit{wrap}) yang memicu perubahan logika (\textit{toggle}) clock keluaran. Untuk BCLK, satu periode penuh (dua kali toggle) membutuhkan inkremen sebesar:
+Persamaan (\ref{eq:nco_mod}) menyatakan bahwa pada setiap siklus clock $t$, nilai fase saat ini ($\theta(t)$) diperoleh dengan menjumlahkan nilai fase sebelumnya ($\theta(t-1)$) dengan inkremen $I$, kemudian dimodulokan terhadap $M$. Ketika hasil penjumlahan $\theta(t-1) + I \ge M$, terjadi luapan (\textit{overflow}) yang memicu perubahan logika (\textit{toggle}) pada sinyal keluaran. Setiap luapan mewakili satu pertambahan setengah periode sinyal keluaran.
+
+Frekuensi luapan akumulator fase dapat dihitung sebagai jumlah siklus per detik dikalikan probabilitas luapan per siklus, yaitu $f_{\mathrm{ref}} \times (I / M)$. Karena satu periode penuh sinyal keluaran memerlukan dua kali luapan (satu untuk transisi naik dan satu untuk transisi turun), frekuensi keluaran NCO dinyatakan sebagai:
+\begin{equation}
+    f_{\mathrm{out}} = \frac{I}{2M} \, f_{\mathrm{ref}}
+    \label{eq:nco_freq_general}
+\end{equation}
+Persamaan (\ref{eq:nco_freq_general}) merupakan relasi fundamental NCO yang menghubungkan seluruh variabel sistem. Semakin besar $I$, semakin tinggi $f_{\mathrm{out}}$; semakin besar $M$, semakin rendah $f_{\mathrm{out}}$.
+
+Dari persamaan tersebut, nilai inkremen $I$ yang diperlukan untuk menghasilkan frekuensi target tertentu dapat diturunkan sebagai:
+\begin{equation}
+    I = \frac{2M \, f_{\mathrm{out}}}{f_{\mathrm{ref}}}
+    \label{eq:inc_general}
+\end{equation}
+
+Dengan $M = f_{\mathrm{ref}} = 100.000.000$, Persamaan (\ref{eq:inc_general}) menyederhanakan menjadi $I = 2 \times f_{\mathrm{out}}$. Untuk BCLK yang memiliki frekuensi $f_{\mathrm{BCLK}} = 64 \times F_s$ (lihat Persamaan \ref{eq:fs_bclk}), nilai inkremennya adalah:
 \begin{equation}
     I_{\mathrm{BCLK}} = 2 \times f_{\mathrm{BCLK}} = 2 \times 64 \times F_s = 128 \times F_s
     \label{eq:inc_bclk}
 \end{equation}
-Untuk Master Clock (MCLK) sebesar $256 \times F_s$, inkremennya adalah:
+Untuk Master Clock (MCLK) dengan frekuensi $f_{\mathrm{MCLK}} = 256 \times F_s$, nilai inkremennya adalah:
 \begin{equation}
     I_{\mathrm{MCLK}} = 2 \times f_{\mathrm{MCLK}} = 2 \times 256 \times F_s = 512 \times F_s
     \label{eq:inc_mclk}
 \end{equation}
 
-Relasi umum antara inkremen, modulus, dan frekuensi keluaran NCO dinyatakan sebagai:
-\begin{equation}
-    f_{\mathrm{out}} = \frac{I}{2M} \, f_{\mathrm{ref}}
-    \label{eq:nco_freq_general}
-\end{equation}
-
-Dengan $M = 100.000.000$, persamaan tersebut menjelaskan bahwa semakin besar nilai inkremen $I$, semakin tinggi frekuensi keluaran yang dihasilkan oleh accumulator. Pada implementasi IP I2S, hubungan ini digunakan untuk membangkitkan BCLK dan MCLK secara deterministik dari clock sistem 100 MHz.
+Dengan mekanisme ini, BCLK dan MCLK dibangkitkan secara deterministik dari clock sistem 100 MHz tanpa memerlukan PLL atau MMCM analog. Perangkat lunak pada MicroBlaze V cukup menuliskan nilai $F_s$ yang diinginkan ke register \texttt{FS\_REGISTER}, dan IP I2S secara otomatis menghitung $I_{\mathrm{BCLK}}$ serta $I_{\mathrm{MCLK}}$ melalui operasi geser bit (\textit{bit-shift}) di dalam RTL.
 
 \begin{figure}[htbp]
 	\centering
