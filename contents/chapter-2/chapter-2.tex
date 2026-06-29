@@ -38,6 +38,37 @@ Kontribusi utama penelitian ini adalah:
 \section{Dasar Teori}
 % ============================================================
 
+\subsection{Verilog Hardware Description Language (HDL)}
+
+Verilog HDL merupakan bahasa formal yang digunakan untuk memodelkan, mendeskripsikan, dan mensimulasikan sistem digital \citep{palnitkar_verilog_2003}. Bahasa ini dikembangkan oleh Gateway Design Automation pada tahun 1984 dan distandarisasi sebagai IEEE 1364 pada tahun 1995. Sebagai \textit{Hardware Description Language} (HDL), Verilog memungkinkan perancang untuk mendeskripsikan perilaku dan struktur rangkaian digital pada berbagai tingkat abstraksi, mulai dari level transistor (\textit{switch-level}) hingga level pertukaran register (\textit{Register Transfer Level}, RTL).
+
+Pada tingkat RTL, Verilog mendeskripsikan aliran data antar register serta operasi logika kombinasional yang menghubungkannya, semuanya disinkronkan terhadap tepi clock tertentu. Pendekatan ini sangat sesuai untuk desain digital sinkron yang menjadi fondasi sistem FPGA dan ASIC modern. Perbedaan mendasar antara pemrograman perangkat keras dengan Verilog dan pemrograman perangkat lunak konvensional (C, Python) terletak pada sifat eksekusinya: kode Verilog RTL menggambarkan koneksi fisik dan logika yang berjalan secara \textit{konkuren}, bukan instruksi sekuensial \textit{von Neumann}. Setiap blok \texttt{always} atau \texttt{assign} dalam Verilog mewakili jalur logika yang dieksekusi secara paralel oleh perangkat keras \citep{harris_harris_digital_2022}.
+
+Pemilihan Verilog dalam penelitian ini didasarkan pada beberapa pertimbangan. Pertama, Verilog merupakan HDL yang didukung penuh oleh ekosistem Vivado, mencakup simulator, synthesizer, dan alat pengemasan IP. Kedua, sintaksis Verilog yang ringkas dan mirip dengan bahasa C memudahkan integrasi dengan kode yang dihasilkan oleh Vivado IP Packager serta memudahkan verifikasi fungsional melalui testbench \citep{chu_fpga_prototyping_2011}. Ketiga, adopsi Verilog yang luas di industri semikonduktor dan FPGA menjadikannya pilihan yang portabel dan relevan untuk publikasi penelitian. Seluruh logika IP I2S Transmitter pada penelitian ini, termasuk register map, akumulator NCO, serializer data, dan antarmuka AXI4-Lite slave, ditulis dalam Verilog RTL sintetis.
+
+\subsection{Register Transfer Level (RTL)}
+
+\textit{Register Transfer Level} (RTL) merupakan gaya abstraksi perancangan digital di mana rangkaian dimodelkan sebagai aliran data antar register yang dipicu oleh tepi clock \citep{harris_harris_digital_2022}. Dalam paradigma RTL, setiap sistem digital sinkron dapat dipandang sebagai kombinasi dari dua elemen utama: (1) elemen \textit{sekuensial} berupa register atau \textit{flip-flop} yang menyimpan status, dan (2) elemen \textit{kombinasional} berupa gerbang logika yang menghitung nilai masukan register berikutnya berdasarkan status saat ini.
+
+Hubungan antara logika kombinasional, logika sekuensial, register, dan clock merupakan inti dari desain RTL. Clock menyediakan referensi waktu diskrit yang menyelaraskan perpindahan data antar register. Pada setiap tepi clock (biasanya tepi naik), register menangkap nilai keluaran logika kombinasional, dan hasil tersebut menjadi masukan bagi logika kombinasional pada tahap berikutnya. Siklus ini membentuk pipa pemrosesan data yang sinkron dan deterministik \citep{palnitkar_verilog_2003}.
+
+Desain IP pada penelitian ini dikembangkan pada level RTL karena beberapa alasan. Pertama, RTL memberikan keseimbangan optimal antara portabilitas dan efisiensi sumber daya: kode RTL dapat disintesis untuk berbagai target FPGA atau ASIC tanpa modifikasi signifikan (\textit{vendor-agnostic}), berbeda dengan desain level skematik yang terikat pada pustaka vendor tertentu. Kedua, desain RTL memungkinkan simulasi fungsional yang cepat untuk memverifikasi kebenaran logika sebelum implementasi fisik, yang sangat penting selama proses debugging. Ketiga, pendekatan RTL memfasilitasi modularitas dan \textit{reuse}, di mana blok-blok fungsional seperti NCO, pencacah bit, dan AXI slave dapat dirancang, diuji, dan digabungkan secara independen. Seluruh komponen IP I2S pada penelitian ini --- akumulator fase NCO, pencacah bit frame I2S, register map AXI4-Lite, dan serializer data --- diimplementasikan sebagai modul-modul RTL Verilog yang berdiri sendiri.
+
+\subsection{Intellectual Property (IP) Core}
+
+\textit{Intellectual Property} (IP) \textit{core} merupakan blok desain digital yang telah terverifikasi dan dapat digunakan kembali (\textit{reusable}) dalam perancangan sistem terintegrasi skala besar seperti IC, SoC, maupun FPGA \citep{chu_fpga_prototyping_2011}. Konsep IP core lahir dari kebutuhan untuk mengatasi kompleksitas perancangan sistem digital modern: alih-alih merancang setiap blok dari awal (\textit{start from scratch}), perancang dapat mengintegrasikan IP core yang sudah matang untuk mempercepat siklus pengembangan dan mengurangi risiko kesalahan desain.
+
+Manfaat utama IP core meliputi \textit{design reuse}, modularitas, dan percepatan pengembangan. Dengan menggunakan IP core, satu blok fungsional --- misalnya pengontrol I2S, antarmuka AXI, atau unit DSP --- dapat dirancang sekali dan digunakan kembali di berbagai proyek, menghemat waktu dan biaya desain. Pendekatan modular juga memudahkan pengujian dan verifikasi karena setiap blok dapat divalidasi secara independen \citep{lafosse_embedded_2018}.
+
+Berdasarkan tingkat abstraksi dan portabilitasnya, IP core diklasifikasikan menjadi tiga kategori:
+\begin{enumerate}
+    \item \textbf{Soft IP}: IP berupa kode HDL (Verilog/VHDL) pada level RTL. Soft IP bersifat paling portabel dan \textit{vendor-agnostic}, tetapi hasil sintesis dan implementasinya (frekuensi maksimum, luas area) bergantung pada target FPGA serta alat sintesis yang digunakan. Desainer dapat memodifikasi kode sumber sesuai kebutuhan spesifik aplikasi.
+    \item \textbf{Firm IP}: IP berupa netlist atau representasi level gerbang yang telah dioptimasi untuk target teknologi tertentu. Firm IP menawarkan kinerja yang lebih dapat diprediksi dibandingkan soft IP, namun portabilitasnya lebih rendah dan modifikasi terbatas.
+    \item \textbf{Hard IP}: IP berupa \textit{layout} fisik yang telah sepenuhnya ditempatkan dan di-\textit{routing} pada silikon. Hard IP memberikan kinerja tertinggi dan konsumsi daya paling rendah, tetapi tidak portabel dan tidak dapat dimodifikasi. Contoh hard IP pada FPGA meliputi blok PLL, MMCM, pengontrol DDR, dan prosesor hard-core \citep{trimberger_history_fpga_2018}.
+\end{enumerate}
+
+IP yang dirancang dalam penelitian ini tergolong \textbf{Soft IP} berbasis RTL Verilog. Seluruh kode sumber --- termasuk logika NCO, serializer I2S, register map konfigurasi, dan \textit{slave} AXI4-Lite --- ditulis dalam Verilog portabel tanpa ketergantungan pada pustaka hardware vendor tertentu. Setelah proses verifikasi fungsional, IP ini dikemas menggunakan Vivado IP Packager menjadi format \texttt{.zip} yang dapat diimpor ke \textit{IP Catalog} Vivado untuk digunakan pada proyek FPGA lain \citep{xilinx_ug1118}. Dengan demikian, IP I2S Transmitter yang dihasilkan bersifat \textit{reusable} dan mendukung ekosistem perancangan SoC yang modular pada toolchain Vivado.
+
 \subsection{Arsitektur MicroBlaze V dan Memory-Mapped I/O}
 
 MicroBlaze V adalah soft-core processor 32-bit berbasis arsitektur RISC-V (RV32I) dari AMD/Xilinx \citep{xilinx_microblaze_ref_2021}. Prosesor berkomunikasi dengan peripheral melalui model \textit{Memory-Mapped I/O} (MMIO), di mana register kontrol dan data peripheral dipetakan ke alamat memori unik. Akses register dilakukan menggunakan instruksi load/store standar (\texttt{lw} / \texttt{sw}) melalui perantara fungsi pustaka \path{xil_io.h} seperti \path{Xil_Out32} dan \path{Xil_In32}. 
@@ -46,14 +77,22 @@ Untuk menjaga integritas data tanpa FIFO atau DMA, dikembangkan mekanisme \texti
 
 \subsection{Protokol Komunikasi AXI4-Lite}
 
-AXI4-Lite adalah varian sederhana dari protokol AMBA AXI4 yang dioptimalkan untuk akses register kontrol dan status \citep{arm_amba_axi_2010}. Transaksi AXI4-Lite bersifat synchronous dan menggunakan mekanisme jabat tangan (\textit{handshake}) dua arah berbasis sinyal \texttt{VALID} (dinyalakan oleh pengirim) dan \texttt{READY} (dinyalakan oleh penerima). Protokol ini terdiri atas lima kanal transaksi independen:
+AMBA (\textit{Advanced Microcontroller Bus Architecture}) merupakan spesifikasi bus interkoneksi \textit{on-chip} yang dirilis oleh ARM Limited untuk standarisasi komunikasi antar blok fungsional dalam suatu SoC \citep{arm_amba_axi_2010}. Di dalam keluarga protokol AMBA, AXI (\textit{Advanced eXtensible Interface}) menjadi pilihan utama untuk interkoneksi kinerja tinggi pada sistem FPGA modern. AXI memiliki tiga varian utama: AXI4 untuk transfer \textit{burst} data berkecepatan tinggi, AXI4-Lite untuk transfer data tunggal (\textit{single-beat}) yang disederhanakan, dan AXI4-Stream untuk aliran data tanpa alamat \citep{xilinx_axi_ref_2017}.
+
+AXI4-Lite merupakan varian protokol AMBA yang dioptimalkan untuk akses memory-mapped register kontrol dan status pada peripheral kustom. Protokol ini mendukung lebar bus data 32-bit atau 64-bit dengan transaksi tunggal per alamat, tanpa dukungan \textit{burst} maupun \textit{out-of-order transaction}. Seluruh transaksi AXI4-Lite bersifat sinkron terhadap tepi naik clock dan menggunakan mekanisme \textit{handshake} dua arah berbasis sinyal \texttt{VALID} (dinyalakan oleh pengirim) dan \texttt{READY} (dinyalakan oleh penerima). Data hanya ditransfer ketika kedua sinyal aktif dalam satu siklus clock yang sama.
+
+Protokol AXI4-Lite terdiri atas lima kanal independen yang memisahkan alur penulisan dan pembacaan:
 \begin{enumerate}
-    \item \textbf{Write Address (AW)}: Mengirimkan alamat tujuan penulisan.
-    \item \textbf{Write Data (W)}: Mengirimkan data yang akan ditulis.
-    \item \textbf{Write Response (B)}: Mengirimkan status respon penulisan dari slave ke master.
-    \item \textbf{Read Address (AR)}: Mengirimkan alamat data yang akan dibaca.
-    \item \textbf{Read Data (R)}: Mengirimkan data hasil pembacaan beserta status respon.
+    \item \textbf{Write Address Channel (AW)}: Mengirimkan alamat tujuan dari master ke slave.
+    \item \textbf{Write Data Channel (W)}: Mengirimkan data yang akan ditulis beserta strobe byte.
+    \item \textbf{Write Response Channel (B)}: Mengirimkan status respon penulisan (OKAY, EXOKAY, SLVERR, DECERR) dari slave ke master.
+    \item \textbf{Read Address Channel (AR)}: Mengirimkan alamat data yang akan dibaca.
+    \item \textbf{Read Data Channel (R)}: Mengirimkan data hasil pembacaan beserta status respon.
 \end{enumerate}
+
+Mekanisme \textit{read} dan \textit{write} register pada AXI4-Lite berlangsung sebagai berikut. Pada transaksi \textit{write}, master menempatkan alamat pada kanal AW dan data pada kanal W secara simultan atau berurutan. Slave mengakuisisi alamat dan data ketika \texttt{AWVALID} dan \texttt{AWREADY} (serta \texttt{WVALID} dan \texttt{WREADY}) aktif bersamaan, kemudian memproses penulisan dan mengembalikan respon melalui kanal B. Pada transaksi \textit{read}, master menempatkan alamat pada kanal AR; slave merespon dengan menempatkan data yang diminta pada kanal R. Urutan ini memungkinkan pipeline transaksi yang efisien karena kanal alamat dan data terpisah.
+
+Dalam konteks penelitian ini, MicroBlaze V berperan sebagai \textit{master} AXI4-Lite yang mengakses register konfigurasi IP I2S Transmitter (\textit{slave}) melalui bus AXI. Setiap register IP --- seperti \texttt{CONTROL} untuk enable dan reset, \texttt{FS\_REGISTER} untuk konfigurasi frekuensi sampling, \texttt{DATA\_LEFT} dan \texttt{DATA\_RIGHT} untuk data audio, serta \texttt{STATUS} untuk indikator \textit{hardware ready} --- dipetakan ke alamat memori unik dalam \textit{address space} AXI4-Lite. Perangkat lunak bare-metal pada MicroBlaze V menulis dan membaca register-register tersebut menggunakan fungsi \texttt{Xil\_Out32} dan \texttt{Xil\_In32} yang membangkitkan transaksi AXI4-Lite secara otomatis.
 
 \subsection{Protokol Komunikasi Audio I2S}
 
@@ -304,16 +343,49 @@ AMD Vivado Design Suite digunakan untuk membangun bagian perangkat keras sistem 
 Untuk pengembangan perangkat lunak, Vivado mengekspor deskripsi hardware sebagai file \path{.xsa} (\textit{Xilinx Support Archive}). File ini memuat informasi prosesor MicroBlaze V, peta alamat peripheral AXI4-Lite, konfigurasi interrupt, clock, serta bitstream yang terkait dengan platform hardware. AMD Vitis mengimpor file \path{.xsa} tersebut untuk membentuk \textit{platform project} dan \textit{Board Support Package} (BSP) \citep{xilinx_vitis_embedded_2021}. Berdasarkan platform itu, aplikasi bare-metal ditulis dalam bahasa C pada file \path{.c}, lalu dikompilasi menjadi berkas executable \path{.elf}. Saat pengujian, FPGA diprogram menggunakan bitstream dan Vitis memuat aplikasi \path{.elf} ke memori sistem melalui JTAG.
 
 Dengan demikian, alur pengembangan hardware dan software pada penelitian ini adalah:
-\begin{equation}
-    \begin{aligned}
-        \text{RTL/Block Design} &\rightarrow \text{Synthesis} \rightarrow \text{Implementation} \\
-        &\rightarrow \text{Bitstream dan XSA} \rightarrow \text{Platform Vitis} \rightarrow \text{Aplikasi C}
-    \end{aligned}
-    \label{eq:vivado_vitis_flow}
-\end{equation}
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        node distance=0.5cm and 0.4cm,
+        >=Stealth,
+        font=\small,
+        stage/.style={
+            rectangle, draw=black!60, fill=blue!6,
+            rounded corners=3pt,
+            minimum width=2.0cm, minimum height=0.75cm,
+            align=center, line width=0.4pt
+        },
+        bound/.style={
+            rectangle, draw=black!30, fill=black!3,
+            rounded corners=4pt,
+            minimum height=1.1cm,
+            inner sep=6pt
+        }
+    ]
+        % Nodes
+        \node[stage] (rtl)   {RTL /\\Block Design};
+        \node[stage, right=of rtl]   (syn)  {Synthesis};
+        \node[stage, right=of syn]   (impl) {Implementation};
+        \node[stage, right=of impl]  (bit)  {Bitstream\\+ XSA};
+        \node[stage, right=of bit]   (vitis){Platform\\Vitis};
+        \node[stage, right=of vitis] (app)  {Aplikasi C};
 
-\subsection{Verilog HDL, Perbandingan IP, dan Analisis Metode}
+        % Arrows
+        \draw[->] (rtl)   -- (syn);
+        \draw[->] (syn)   -- (impl);
+        \draw[->] (impl)  -- (bit);
+        \draw[->] (bit)   -- (vitis);
+        \draw[->] (vitis) -- (app);
 
-Logika IP core diimplementasikan menggunakan Verilog HDL untuk mendeskripsikan register kontrol, mesin NCO, serializer, dan bus interface slave AXI4-Lite \citep{palnitkar_verilog_2003}. Desain modular ini bersifat \textit{vendor-agnostic} karena ditulis dalam RTL standar tanpa memakai pustaka hardware proprietari. 
+        % Grouping braces / labels
+        \begin{scope}[on background layer]
+            \node[bound, fit=(rtl)(syn)(impl)(bit),
+                  label={[font=\footnotesize\sffamily,text=black!50]below:Vivado}] {};
+            \node[bound, fit=(vitis)(app),
+                  label={[font=\footnotesize\sffamily,text=black!50]below:Vitis}] {};
+        \end{scope}
 
-Sebagai pembanding, AMD/Xilinx menyediakan LogiCORE I2S Transmitter IP yang kompleks \citep{amd_pg308_i2s_logicore}, namun membutuhkan AXI4-Stream interface, DMA controller, dan clocking analog MMCM eksternal. IP custom yang dirancang dalam penelitian ini berfokus pada mode \textbf{TX-only} minimalis melalui AXI4-Lite memory-mapped register, sehingga sangat efisien dalam penggunaan sumber daya logika FPGA dan mudah dikontrol secara langsung oleh CPU soft-core bare-metal.
+    \end{tikzpicture}
+    \caption{Alur pengembangan \textit{hardware} dan \textit{software} pada penelitian ini.}
+    \label{fig:vivado_vitis_flow}
+\end{figure}

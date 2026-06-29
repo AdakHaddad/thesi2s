@@ -44,7 +44,9 @@ Komponen yang diadopsi dari tutorial terbatas pada infrastruktur dasar, yaitu pr
 
 Setelah sistem dasar MicroBlaze V berhasil dibangun, penelitian ini melanjutkan proses dengan mengintegrasikan IP I2S berbasis AXI4-Lite yang dikembangkan secara mandiri. Seluruh mekanisme komunikasi audio, register konfigurasi, generator clock berbasis NCO, serializer Philips I2S, serta firmware pengujian merupakan hasil pengembangan pada penelitian ini.
 
-\begin{figure}[htbp]
+\FloatBarrier
+
+\begin{figure}[H]
     \centering
     \IfFileExists{contents/figures/processor-uart-timer-axi-i2s-architecture-whole-diagram.png}{%
         \includegraphics[width=0.95\textwidth]{contents/figures/processor-uart-timer-axi-i2s-architecture-whole-diagram.png}%
@@ -53,11 +55,19 @@ Setelah sistem dasar MicroBlaze V berhasil dibangun, penelitian ini melanjutkan 
     \label{fig:ch4-arch-overall}
 \end{figure}
 
+\FloatBarrier
+
+Gambar~\ref{fig:ch4-arch-overall} menunjukkan arsitektur keseluruhan sistem yang dibangun pada penelitian ini. Prosesor MicroBlaze V berkomunikasi dengan IP I2S melalui antarmuka AXI4-Lite, sedangkan keluaran audio diteruskan menuju DAC melalui sinyal I2S.
+
 \subsection{Struktur Modul RTL}
 
-Struktur RTL dibangun dari wrapper yang mempertahankan nama IP \path{i2s} dan modul inti \path{i2s_slave_lite_v1_0_S00_AXI}. Wrapper ini dipakai agar integrasi pada Vivado Block Design tetap kompatibel dengan repository IP yang sudah ada.
+Struktur RTL dibangun dari wrapper yang mempertahankan nama IP \path{i2s} dan modul inti \path{i2s_slave_lite_v1_0_S00_AXI}. Wrapper ini digunakan agar integrasi pada Vivado Block Design tetap kompatibel dengan repository IP yang sudah ada.
 
-\begin{lstlisting}[language=Verilog,caption={Wrapper IP \texttt{i2s.v} yang meneruskan antarmuka AXI4-Lite dan keluaran I2S ke core.},label={lst:ch4-wrapper}]
+\begin{lstlisting}[
+language=Verilog,
+caption={Wrapper IP \texttt{i2s.v} yang meneruskan antarmuka AXI4-Lite dan keluaran I2S ke modul inti.},
+label={lst:ch4-wrapper}
+]
 module i2s #
 (
     parameter integer C_S00_AXI_DATA_WIDTH = 32,
@@ -65,6 +75,7 @@ module i2s #
 )
 (
     input  wire audio_clk,
+
     output wire i2s_mclk,
     output wire i2s_bclk,
     output wire i2s_ws,
@@ -76,59 +87,70 @@ module i2s #
     input  wire [2:0]                      s00_axi_awprot,
     input  wire                            s00_axi_awvalid,
     output wire                            s00_axi_awready,
+
     input  wire [C_S00_AXI_DATA_WIDTH-1:0] s00_axi_wdata,
     input  wire [(C_S00_AXI_DATA_WIDTH/8)-1:0] s00_axi_wstrb,
     input  wire                            s00_axi_wvalid,
     output wire                            s00_axi_wready,
+
     output wire [1:0]                      s00_axi_bresp,
     output wire                            s00_axi_bvalid,
     input  wire                            s00_axi_bready,
+
     input  wire [C_S00_AXI_ADDR_WIDTH-1:0] s00_axi_araddr,
     input  wire [2:0]                      s00_axi_arprot,
     input  wire                            s00_axi_arvalid,
     output wire                            s00_axi_arready,
+
     output wire [C_S00_AXI_DATA_WIDTH-1:0] s00_axi_rdata,
     output wire [1:0]                      s00_axi_rresp,
     output wire                            s00_axi_rvalid,
     input  wire                            s00_axi_rready
 );
 
-    i2s_slave_lite_v1_0_S00_AXI #(
-        .C_S_AXI_DATA_WIDTH(C_S00_AXI_DATA_WIDTH),
-        .C_S_AXI_ADDR_WIDTH(C_S00_AXI_ADDR_WIDTH)
-    ) i2s_slave_lite_v1_0_S00_AXI_inst (
-        .i2s_mclk          (i2s_mclk),
-        .i2s_bclk          (i2s_bclk),
-        .i2s_ws            (i2s_ws),
-        .i2s_data          (i2s_data),
-        .S_AXI_ACLK        (s00_axi_aclk),
-        .S_AXI_ARESETN     (s00_axi_aresetn),
-        .S_AXI_AWADDR      (s00_axi_awaddr),
-        .S_AXI_AWPROT      (s00_axi_awprot),
-        .S_AXI_AWVALID     (s00_axi_awvalid),
-        .S_AXI_AWREADY     (s00_axi_awready),
-        .S_AXI_WDATA       (s00_axi_wdata),
-        .S_AXI_WSTRB       (s00_axi_wstrb),
-        .S_AXI_WVALID      (s00_axi_wvalid),
-        .S_AXI_WREADY      (s00_axi_wready),
-        .S_AXI_BRESP       (s00_axi_bresp),
-        .S_AXI_BVALID      (s00_axi_bvalid),
-        .S_AXI_BREADY      (s00_axi_bready),
-        .S_AXI_ARADDR      (s00_axi_araddr),
-        .S_AXI_ARPROT      (s00_axi_arprot),
-        .S_AXI_ARVALID     (s00_axi_arvalid),
-        .S_AXI_ARREADY     (s00_axi_arready),
-        .S_AXI_RDATA       (s00_axi_rdata),
-        .S_AXI_RRESP       (s00_axi_rresp),
-        .S_AXI_RVALID      (s00_axi_rvalid),
-        .S_AXI_RREADY      (s00_axi_rready)
-    );
+i2s_slave_lite_v1_0_S00_AXI #(
+    .C_S_AXI_DATA_WIDTH(C_S00_AXI_DATA_WIDTH),
+    .C_S_AXI_ADDR_WIDTH(C_S00_AXI_ADDR_WIDTH)
+)
+i2s_slave_lite_v1_0_S00_AXI_inst
+(
+    .i2s_mclk      (i2s_mclk),
+    .i2s_bclk      (i2s_bclk),
+    .i2s_ws        (i2s_ws),
+    .i2s_data      (i2s_data),
+
+    .S_AXI_ACLK    (s00_axi_aclk),
+    .S_AXI_ARESETN (s00_axi_aresetn),
+
+    .S_AXI_AWADDR  (s00_axi_awaddr),
+    .S_AXI_AWPROT  (s00_axi_awprot),
+    .S_AXI_AWVALID (s00_axi_awvalid),
+    .S_AXI_AWREADY (s00_axi_awready),
+
+    .S_AXI_WDATA   (s00_axi_wdata),
+    .S_AXI_WSTRB   (s00_axi_wstrb),
+    .S_AXI_WVALID  (s00_axi_wvalid),
+    .S_AXI_WREADY  (s00_axi_wready),
+
+    .S_AXI_BRESP   (s00_axi_bresp),
+    .S_AXI_BVALID  (s00_axi_bvalid),
+    .S_AXI_BREADY  (s00_axi_bready),
+
+    .S_AXI_ARADDR  (s00_axi_araddr),
+    .S_AXI_ARPROT  (s00_axi_arprot),
+    .S_AXI_ARVALID (s00_axi_arvalid),
+    .S_AXI_ARREADY (s00_axi_arready),
+
+    .S_AXI_RDATA   (s00_axi_rdata),
+    .S_AXI_RRESP   (s00_axi_rresp),
+    .S_AXI_RVALID  (s00_axi_rvalid),
+    .S_AXI_RREADY  (s00_axi_rready)
+);
 
 endmodule
 \end{lstlisting}
 
-Potongan tersebut menunjukkan bahwa wrapper hanya berperan sebagai lapisan kompatibilitas. Sinyal keluaran I2S diteruskan langsung dari core, sedangkan antarmuka AXI4-Lite tetap menggunakan parameter lebar bus 32 bit dan alamat 4 bit. Port \path{audio_clk} tetap ada pada wrapper untuk menjaga bentuk antarmuka IP, tetapi pada implementasi akhir port tersebut tidak digunakan di core.
-
+Potongan kode pada Listing~\ref{lst:ch4-wrapper} menunjukkan bahwa wrapper hanya berfungsi sebagai lapisan kompatibilitas antara Vivado Block Design dan modul inti. Seluruh transaksi AXI4-Lite diteruskan langsung ke modul \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI}, sedangkan sinyal keluaran I2S (\texttt{i2s\_mclk}, \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data}) diteruskan tanpa modifikasi. Port \texttt{audio\_clk} tetap dipertahankan pada wrapper untuk menjaga kompatibilitas antarmuka IP dengan desain sebelumnya, meskipun pada implementasi akhir pembangkitan clock audio dilakukan secara internal menggunakan phase accumulator.
 \begin{lstlisting}[language=Verilog,caption={Instansiasi core I2S di dalam wrapper.},label={lst:ch4-wrapper-inst}]
 i2s_slave_lite_v1_0_S00_AXI #(
     .C_S_AXI_DATA_WIDTH(C_S00_AXI_DATA_WIDTH),
@@ -495,14 +517,21 @@ end else begin
 end
 \end{lstlisting}
 
-\begin{figure}[htbp]
+\begin{landscape}
+
+\begin{figure}[p]
     \centering
-    \IfFileExists{contents/figures/sample-latching-leftright-waveform.png}{%
-        \includegraphics[width=0.95\textwidth]{contents/figures/sample-latching-leftright-waveform.png}%
-    }{}
+    \includegraphics[
+        width=0.97\paperheight,
+        keepaspectratio
+    ]{contents/figures/sample-latching-leftright-waveform.png}
     \caption{Timing latching sampel kiri dan kanan pada awal frame stereo.}
     \label{fig:ch4-latch-waveform}
 \end{figure}
+
+\end{landscape}
+
+\clearpage
 
 Gambar~\ref{fig:ch4-latch-waveform} relevan untuk menjelaskan bahwa pasangan sampel kiri dan kanan tidak diambil secara acak per bit, tetapi dilatch utuh pada awal frame. Dengan demikian, satu frame stereo selalu menggunakan pasangan sampel yang konsisten.
 
