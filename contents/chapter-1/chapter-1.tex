@@ -18,16 +18,7 @@
 
 \hspace{1cm}\textbf{Kontribusi utama penelitian ini} adalah perancangan \textbf{Custom IP I2S Transmitter} yang mendukung frekuensi sampling arbitrer berbasis NCO dan dapat diintegrasikan sebagai peripheral AXI4-Lite pada SoC MicroBlaze V tanpa ketergantungan pada IP audio berlisensi pihak ketiga. Dengan demikian, sistem yang dibangun bersifat \textit{open-source}, \textit{vendor-agnostic}, dan dapat direplikasi pada platform FPGA lain tanpa biaya lisensi tambahan.
 
-Gambaran keseluruhan arsitektur sistem diperlihatkan pada Gambar~\ref{fig:ch1-block-sistem-i2s}. Prosesor MicroBlaze V berkomunikasi dengan IP I2S TX melalui bus AXI4-Lite, mengatur register kontrol dan mengirim sampel audio. IP I2S TX kemudian membangkitkan sinyal I2S (BCLK, WS, DATA) menuju DAC PCM5102A yang mengonversinya menjadi sinyal analog. UART digunakan untuk komunikasi terminal saat debugging.
-
-\begin{figure}[htbp]
-    \centering
-	\IfFileExists{contents/figures/processor-uart-timer-axi-i2s-architecture-whole-diagram.png}{%
-		\includegraphics[width=0.95\textwidth]{contents/figures/processor-uart-timer-axi-i2s-architecture-whole-diagram.png}%
-	}{}
-	\caption{Diagram arsitektur lengkap sistem SoC dengan IP I2S TX AXI4-Lite dan DAC PCM5102A.}
-    \label{fig:ch1-block-sistem-i2s}
-\end{figure}
+Gambaran keseluruhan arsitektur sistem dibahas lebih rinci pada Bab IV. Prosesor MicroBlaze V berkomunikasi dengan IP I2S TX melalui bus AXI4-Lite, mengatur register kontrol dan mengirim sampel audio. IP I2S TX kemudian membangkitkan sinyal I2S (BCLK, WS, DATA) menuju DAC PCM5102A yang mengonversinya menjadi sinyal analog. UART digunakan untuk komunikasi terminal saat debugging.
 
 \section{Rumusan Masalah}
 
