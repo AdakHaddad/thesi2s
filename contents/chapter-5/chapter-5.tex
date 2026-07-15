@@ -1,108 +1,88 @@
 \chapter{Hasil dan Pembahasan}
 
-Bab ini menyajikan hasil pengujian fungsional sistem IP I2S Transmitter yang dikembangkan, mencakup verifikasi timing protokol, analisis akurasi frekuensi sampling, identifikasi dan perbaikan bug firmware, serta pengujian integrasi dengan blok pemrosesan sinyal digital eksternal. Seluruh pengukuran dilakukan pada perangkat keras target Basys3 (FPGA Artix-7 XC7A35T) menggunakan osiloskop digital untuk sinyal analog dan capture timing digital untuk sinyal internal.
+Bab ini menyajikan hasil verifikasi dan pengujian fungsional IP I2S Transmitter. Urutan pengembangan dimulai dari simulasi RTL menggunakan \textit{testbench}, dilanjutkan dengan sintesis, implementasi, dan pembuatan bitstream setelah pemeriksaan fungsional dinyatakan lulus. Pengujian pada Basys3 (FPGA Artix-7 XC7A35T) dengan DAC PCM5102A kemudian digunakan sebagai validasi akhir pada perangkat keras, bukan sebagai tahap awal untuk mencari kesalahan RTL secara coba-coba.
 
-\section{Pengujian Sinyal I2S}
+\section{Verifikasi RTL dengan Testbench}
 
-Verifikasi timing dilakukan dengan mengamati sinyal \path{i2s\_bclk}, \path{i2s\_ws}, dan \path{i2s\_data} melalui capture timing internal dari desain RTL. Sinyal internal \path{bclk\_q}, \path{ws\_q}, \path{data\_q}, dan \path{bit\_count\_q} dipantau agar seluruh relasi timing antar sinyal dapat diamati dalam satu domain waktu yang konsisten.
+Sebelum IP dikemas dan diintegrasikan ke dalam \textit{block design}, modul I2S diverifikasi menggunakan Vivado Simulator melalui \textit{testbench} mandiri. Testbench memberikan clock sistem 100~MHz dan reset, menjalankan transaksi AXI4-Lite untuk menulis serta membaca register \path{DATA\_LEFT}, \path{DATA\_RIGHT}, \path{CONTROL}, dan \path{STATUS}, kemudian memeriksa respons \path{BRESP} dan \path{RRESP}. Dengan demikian, fungsi register, mekanisme handshaking AXI4-Lite, pembangkitan clock berbasis \textit{phase accumulator}, serta proses serialisasi data I2S dapat diverifikasi tanpa ketergantungan pada firmware maupun board fisik.
+
+Vektor uji menggunakan sampel kiri dan kanan 24-bit yang berbeda. Setelah bit \path{ENABLE} diaktifkan pada register \path{CONTROL}, simulator memantau pembangkitan BCLK, perubahan WS, serta keluaran \path{i2s\_data} pada setiap tepi naik BCLK sebagaimana dilakukan oleh penerima I2S. Pemeriksaan meliputi kondisi reset, kondisi \path{ENABLE=0}, pembangkitan clock menggunakan \textit{phase accumulator}, sinkronisasi frame stereo, urutan pengiriman bit MSB--LSB, \textit{one-bit delay} sesuai spesifikasi Philips I2S, padding nol pada slot 32-bit, serta fungsi \path{MUTE}. Simulasi dinyatakan berhasil apabila seluruh pemeriksaan tersebut terpenuhi.
+
+Hasil simulasi menjadi dasar sebelum proses sintesis dan implementasi. Setelah seluruh \textit{timing constraints} terpenuhi, bitstream dan \textit{hardware platform} diekspor ke Vitis untuk pengujian firmware. Selanjutnya dilakukan validasi pada perangkat keras menggunakan Integrated Logic Analyzer (ILA), osiloskop, dan pengujian audio pada DAC PCM5102A untuk memastikan perilaku yang telah diverifikasi melalui simulasi tetap konsisten pada implementasi fisik.
+
+\section{Pengujian Timing dan Pembangkitan Clock I2S}
+
+Verifikasi timing dilakukan dengan mengamati sinyal internal hasil simulasi RTL. Selain keluaran \path{i2s\_bclk}, \path{i2s\_ws}, dan \path{i2s\_data}, diamati pula sinyal internal \path{bclk\_phase\_acc\_q}, \path{bclk\_phase\_wrap}, \path{bit\_count\_q}, \path{ws\_q}, dan \path{data\_q}. Pengamatan terhadap sinyal-sinyal tersebut bertujuan untuk memverifikasi mekanisme pembangkitan clock menggunakan \textit{phase accumulator}, sinkronisasi frame stereo, serta proses serialisasi data sesuai protokol Philips I2S.
+
 \begin{landscape}
 	\begin{figure}[htbp]
 		\centering
+		
 		\begin{subfigure}[t]{0.98\linewidth}
 			\centering
 			\IfFileExists{contents/figures/sample-latching-leftright-waveform.png}{%
-				\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]%
-				{contents/figures/sample-latching-leftright-waveform.png}%
+				\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]
+				{contents/figures/sample-latching-leftright-waveform.png}
 			}{}
-			\caption{Sinyal BCLK, WS, dan DATA pada satu frame stereo penuh (64 BCLK).}
+			\caption{Timing sinyal BCLK, WS, dan DATA selama satu frame stereo (64 siklus BCLK).}
 			\label{fig:ch5-waveform-frame}
 		\end{subfigure}
+		
 		\vspace{0.5em}
+		
 		\begin{subfigure}[t]{0.98\linewidth}
 			\centering
 			\IfFileExists{contents/figures/bit-counter-waveform.png}{%
-				\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]%
-				{contents/figures/bit-counter-waveform.png}%
+				\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]
+				{contents/figures/bit-counter-waveform.png}
 			}{}
-			\caption{Perilaku penghitung bit (\texttt{bit\_count\_q}) selama satu frame stereo.}
+			\caption{Perilaku penghitung bit (\texttt{bit\_count\_q}) dan sinkronisasi pergantian kanal melalui sinyal WS.}
 			\label{fig:ch5-bit-counter-waveform}
 		\end{subfigure}
+		
 		\vspace{0.5em}
+		
 		\begin{subfigure}[t]{0.98\linewidth}
 			\centering
-			\IfFileExists{contents/figures/clock-divider-waveform.png}{%
-				\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]%
-				{contents/figures/clock-divider-waveform.png}%
+			\IfFileExists{contents/figures/nco-phase-accumulator-waveform.png}{%
+				\includegraphics[width=\linewidth,height=0.24\textheight,keepaspectratio]
+				{contents/figures/nco-phase-accumulator-waveform.png}
 			}{}
-			\caption{Pembangkitan strobe \texttt{bclk\_en\_w} oleh clock divider tiga-bit.}
-			\label{fig:ch5-clock-divider-waveform}
+			\caption{Pembangkitan BCLK menggunakan \textit{phase accumulator}. Accumulator bertambah sebesar \texttt{bclk\_toggle\_rate\_hz} pada setiap siklus clock sistem dan menghasilkan sinyal \texttt{bclk\_phase\_wrap} yang men-\textit{toggle} BCLK saat mencapai batas frekuensi clock sistem.}
+			\label{fig:ch5-nco-waveform}
 		\end{subfigure}
-		\caption{Tangkapan timing internal I2S: frame stereo, penghitung bit, dan clock divider.}
+		
+		\caption{Hasil simulasi internal IP I2S yang memperlihatkan pembangkitan clock berbasis \textit{phase accumulator}, sinkronisasi frame stereo, dan serialisasi data sesuai spesifikasi Philips I2S.}
 		\label{fig:ch5-waveform}
 	\end{figure}
 \end{landscape}
 
-Hasil pengamatan pada Gambar~\ref{fig:ch5-waveform} mengonfirmasi empat properti timing Philips I2S \citep{philips_i2s_1986} terpenuhi:
+Subgambar~\ref{fig:ch5-nco-waveform} memperlihatkan mekanisme pembangkitan BCLK menggunakan \textit{phase accumulator}. Pada setiap siklus clock sistem 100~MHz, nilai \path{bclk\_toggle\_rate\_hz} ditambahkan ke accumulator. Ketika hasil penjumlahan mencapai atau melampaui frekuensi clock sistem, accumulator mempertahankan nilai sisa (\textit{remainder}) dan menghasilkan sinyal \path{bclk\_phase\_wrap} selama satu siklus clock yang digunakan untuk melakukan \textit{toggle} terhadap BCLK. Mekanisme ini memungkinkan pembangkitan frekuensi BCLK secara arbitrer tanpa memerlukan PLL maupun clock divider integer.
+
+Sementara itu, Subgambar~\ref{fig:ch5-waveform-frame} dan Subgambar~\ref{fig:ch5-bit-counter-waveform} mengonfirmasi karakteristik timing Philips I2S~\citep{philips_i2s_1986} sebagai berikut.
 
 \begin{enumerate}
-	\item Satu frame stereo terdiri atas tepat 64 pulsa BCLK (32 slot kiri, 32 slot kanan).
-	\item Transisi WS terjadi bersamaan dengan bit pertama setelah batas frame, yaitu bit delay bernilai nol.
-	\item Bit pertama setelah setiap transisi WS selalu bernilai nol (\textit{one-cycle Philips delay}).
-	\item Penghitung bit (\texttt{bit\_count\_q}) kembali ke nol tepat di batas frame stereo, memastikan sinkronisasi awal kanal kiri pada setiap frame.
+	\item Satu frame stereo terdiri atas tepat 64 siklus BCLK, masing-masing 32 bit untuk kanal kiri dan 32 bit untuk kanal kanan.
+	\item Pergantian sinyal WS terjadi tepat pada batas antara kanal kiri dan kanal kanan.
+	\item Bit data pertama dikirim satu siklus BCLK setelah perubahan WS (\textit{one-bit delay}) sesuai spesifikasi Philips I2S.
+	\item Penghitung bit (\texttt{bit\_count\_q}) kembali ke nol pada awal setiap frame stereo sehingga sinkronisasi kanal kiri selalu terjaga.
 \end{enumerate}
-
 % ============================================================
 \section{Analisis Frekuensi Sampling}
 
-Frekuensi sampling dibangkitkan menggunakan sebuah \textit{Numerically Controlled Oscillator} (NCO) berbasis \textit{phase accumulator}. Nilai frekuensi sampling ditentukan oleh parameter \textit{phase increment} ($\Delta\theta$) yang disimpan pada register konfigurasi dan diperbarui melalui antarmuka AXI4-Lite.
+Frekuensi sampling diprogram melalui field \path{SAMPLE\_RATE\_HZ} pada register \path{CONTROL}. Pada clock sistem 100~MHz, DDS menambahkan nilai $128 \times F_s$ ke akumulator BCLK pada setiap siklus. Saat jumlahnya mencapai 100.000.000, akumulator melakukan \textit{wrap-around} dan BCLK berubah keadaan. Karena satu frame stereo memiliki 64 pulsa BCLK dan BCLK berubah keadaan dua kali dalam satu periode, sinyal WS memiliki frekuensi target $F_s$.
 
-Pada setiap siklus clock sistem 100~MHz, phase accumulator dijumlahkan dengan nilai \textit{phase increment}. Ketika hasil penjumlahan mencapai atau melebihi nilai clock referensi, accumulator melakukan proses \textit{wrap-around} dan menghasilkan sinyal \textit{overflow}. Sinyal \textit{overflow} tersebut digunakan untuk melakukan \textit{toggle} sinyal BCLK. Selanjutnya, penghitung bit membentuk satu frame stereo yang terdiri atas 64 pulsa BCLK sehingga sinyal WS secara otomatis memiliki frekuensi yang sama dengan frekuensi sampling ($F_s$).
+Validasi numerik dilakukan pada \textit{testbench}, bukan dengan menginterpretasikan gambar osiloskop. Setelah testbench menulis nilai target melalui AXI4-Lite, ia mencatat waktu 16 periode WS penuh, menghitung $f_\mathrm{WS}=16/\Delta t$, lalu membandingkannya dengan nilai yang diprogram. Konfigurasi yang diperiksa meliputi 44,1~kHz, 48~kHz, 88,2~kHz, 96~kHz, serta nilai non-standar 10~kHz dan 12,345~kHz. Simulasi gagal apabila galat relatif melebihi 0,1\%.
 
-Hubungan antara frekuensi sampling dan nilai \textit{phase increment} dinyatakan sebagai
-
-\begin{equation}
-	\Delta\theta = F_s \times 128
-\end{equation}
-
-dengan faktor 128 berasal dari dua kali frekuensi BCLK ($2 \times 64$), karena BCLK berubah keadaan (\textit{toggle}) pada setiap \textit{overflow} accumulator.
-
-Sebagai contoh, untuk menghasilkan frekuensi sampling sebesar 15~kHz digunakan nilai
-
-\[
-\Delta\theta = 15\,000 \times 128 = 1\,920\,000.
-\]
-
-Pada setiap siklus clock 100~MHz, accumulator bertambah sebesar 1.920.000. Setelah nilainya mencapai atau melampaui 100.000.000, accumulator melakukan \textit{wrap-around} dan menghasilkan satu pulsa \textit{overflow}. Pulsa tersebut menyebabkan BCLK berubah keadaan, sedangkan penghitung bit membentuk satu frame stereo setiap 64 pulsa BCLK sehingga diperoleh sinyal WS dengan frekuensi 15~kHz.
-
-Tabel~\ref{tab:ch5-fs-arbitrary} menunjukkan hasil pengukuran frekuensi sampling untuk beberapa nilai \textit{phase increment}. Pengujian dilakukan pada frekuensi standar maupun non-standar untuk memverifikasi akurasi metode phase accumulator dalam membangkitkan frekuensi sampling.
-
-\begin{table}[htbp]
-	\centering
-	\caption{Hasil validasi frekuensi sampling pada empat mode standar dan dua frekuensi non-standar.}
-	\label{tab:ch5-fs-arbitrary}
-	\begin{tabular}{|l|r|r|r|r|}
-		\hline
-		\textbf{Target $F_s$ (Hz)} & \textbf{$\Delta\theta$} &
-		\textbf{Terukur (Hz)} & \textbf{Error (Hz)} & \textbf{Error (\%)} \\
-		\hline
-		10.000 (non-std) & 2.748.779  & 9.999,98  & $-$0,02 & $-$0,0002 \\
-		12.345 (non-std) & 3.393.368  & 12.344,95 & $-$0,05 & $-$0,0004 \\
-		44.100           & 12.122.115 & 44.099,92 & $-$0,08 & $-$0,0002 \\
-		48.000           & 13.194.139 & 47.999,95 & $-$0,05 & $-$0,0001 \\
-		96.000           & 26.388.279 & 95.999,91 & $-$0,09 & $-$0,0001 \\
-		\hline
-	\end{tabular}
-\end{table}
-
-Deviasi frekuensi aktual terhadap nilai target berada di bawah 0,001\% pada seluruh konfigurasi yang diuji. Hasil tersebut menunjukkan bahwa metode phase accumulator mampu menghasilkan frekuensi sampling dengan akurasi tinggi menggunakan clock referensi 100~MHz. Selain mendukung frekuensi sampling standar seperti 44,1~kHz, 48~kHz, dan 96~kHz, pendekatan ini juga memungkinkan pembangkitan frekuensi sampling arbitrer, misalnya 10~kHz dan 12,345~kHz, hanya dengan mengubah nilai \textit{phase increment} tanpa memerlukan perubahan struktur RTL.
+Pendekatan ini menghasilkan bukti yang dapat diulang dari keluaran simulator dan tidak mengklaim angka hasil pengukuran perangkat keras yang tidak lagi tersedia. Capture osiloskop dan ILA tetap digunakan pada tahap integrasi untuk menunjukkan keberadaan dan relasi timing BCLK, WS, serta DATA pada board, sedangkan nilai frekuensi kuantitatif dilaporkan dari checker testbench.
 
 % ============================================================
 \section{Validasi Audio pada Berbagai Frekuensi Sampling}
 % ============================================================
 
-Pengujian fungsional dilakukan dengan memutar nada sinus menggunakan firmware berbasis DDS perangkat lunak (\textit{software DDS}) pada empat mode $F_s$ standar secara bergantian. Peralihan $F_s$ dilakukan secara langsung melalui penulisan bit \path{FS\_FAMILY} dan \path{FS\_MODE} pada register \path{CONTROL} tanpa reset hardware.
+Pengujian fungsional dilakukan dengan memutar nada sinus menggunakan firmware berbasis DDS perangkat lunak (\textit{software DDS}) pada empat mode $F_s$ standar secara bergantian. Peralihan $F_s$ dilakukan melalui field \path{SAMPLE\_RATE\_HZ} pada register \path{CONTROL} tanpa reset hardware.
 
-DAC PCM5102A berhasil melakukan \textit{lock} pada setiap transisi $F_s$ secara instan tanpa menghasilkan distorsi \textit{pitch} maupun \textit{audio pop} yang terdengar pada headset. Hasil ini mengonfirmasi bahwa mekanisme penghentian stream yang bersih (\textit{clean frame boundary}) saat peralihan \path{ENABLE} bekerja sebagaimana dirancang, sehingga DAC tidak menerima frame yang terpotong di tengah.
+Pada konfigurasi yang diuji, DAC PCM5102A menerima keluaran I2S setelah perubahan $F_s$ dan tidak terdengar distorsi \textit{pitch} maupun \textit{audio pop} pada headset. Pengamatan ini bersifat kualitatif; tesis tidak mengklaim pengukuran waktu \textit{lock} atau pembuktian bahwa setiap perubahan \path{ENABLE} selalu terjadi pada batas frame.
 
 % ============================================================
 \section{Identifikasi dan Perbaikan Bug Firmware}
@@ -124,20 +104,21 @@ Selama tahap integrasi perangkat keras ditemukan dua bug pada firmware (\path{he
 
 \textbf{Penyebab.} Fungsi \texttt{usleep()} pada MicroBlaze bare-metal memiliki resolusi dan akurasi yang bergantung pada implementasi BSP, dan tidak tersinkronisasi dengan transisi frame hardware I2S.
 
-\textbf{Solusi.} Penulisan sampel disinkronkan dengan sinyal latch hardware menggunakan \textit{status-bit polling} pada bit \path{STATUS[0]} (Listing~\ref{lst:ch5-timing-fix}). Firmware menunggu perubahan bit latch sebelum menulis sampel berikutnya, sehingga laju transfer data secara fisik mengikuti clock hardware tanpa overhead fungsi tunda.
+\textbf{Solusi.} Penulisan sampel disinkronkan dengan sinyal latch hardware menggunakan \textit{status-bit polling} pada bit \path{STATUS[0]} (Listing~\ref{lst:ch5-timing-fix}). Firmware membaca status secara nonblokir, mengirim sampel ketika bit berubah, lalu tetap memeriksa masukan UART pada loop yang sama.
 
 \begin{lstlisting}[
 	language=C,
-	caption={Sinkronisasi penulisan sampel menggunakan status-bit polling.},
+	caption={Sinkronisasi nonblokir penulisan sampel menggunakan status-bit polling.},
 	label={lst:ch5-timing-fix}
 	]
 	while (1) {
-		/* Tunggu sinyal latch baru dari hardware (toggle setiap frame) */
-		while (Xil_In32(STATUS_REG) == g_last_status);
-		g_last_status = Xil_In32(STATUS_REG);
-		
-		/* Kirim sampel tepat setelah hardware siap menerima */
-		stream_software_dds_sample();
+		uint32_t frame_bit = frame_status_bit();
+		if (g_enable && frame_bit != g_last_frame_bit) {
+			g_last_frame_bit = frame_bit;
+			stream_software_dds_sample();
+		}
+		if (!XUartLite_IsReceiveEmpty(STDIN_BASEADDRESS))
+			handle_key((uint8_t)XUartLite_RecvByte(STDIN_BASEADDRESS));
 	}
 \end{lstlisting}
 
@@ -148,7 +129,7 @@ Fungsionalitas utama firmware dikendalikan melalui beberapa komponen berikut:
 \begin{itemize}
 	\item \path{g\_phase} — akumulator fase 32-bit untuk DDS perangkat lunak; bertambah sebesar \textit{phase step} setiap sampel.
 	\item \path{g\_sample\_rate\_hz} — menyimpan nilai $F_s$ aktif; digunakan untuk menghitung \textit{phase step} agar akurasi frekuensi nada tidak bergantung pada mode $F_s$ yang dipilih.
-	\item \path{frame\_status\_bit()} — membaca bit[0] register \path{RESERVED} yang direfleksikan dari sinyal toggle \texttt{mclk\_latch\_toggle\_q} di domain audio; digunakan sebagai sinyal sinkronisasi.
+	\item \path{frame\_status\_bit()} — membaca bit[0] register \path{STATUS} yang berubah setiap kali hardware melakukan latch sampel stereo; digunakan sebagai sinyal sinkronisasi.
 	\item \path{pack\_sample()} — melakukan penskalaan dan pengeseran sampel sesuai lebar bit yang aktif tanpa memotong bit tanda.
 	\item \path{apply\_control()} — mengemas seluruh bit konfigurasi ke dalam satu nilai 32-bit dan menulis ke register \path{CONTROL} dalam satu transaksi AXI4-Lite.
 \end{itemize}
@@ -252,11 +233,11 @@ Setelah perbaikan bug bit tanda, kanal kiri (L) dan kanan (R) menghasilkan bentu
 
 IP \texttt{i2s\_0} menerima sampel PCM melalui register AXI4-Lite dan menghasilkan aliran serial I2S, sedangkan modul \texttt{filter\_coeff} memakai antarmuka paralel 16 bit berupa \texttt{x\_in}, \texttt{valid}, dan \texttt{y\_out}. Kedua antarmuka tersebut tidak dapat dihubungkan dengan sebuah net pada \textit{block design}. Penelitian ini menambahkan modul \texttt{i2s\_filter\_bridge} pada keluaran serial IP I2S tanpa mengubah RTL IP I2S maupun RTL filter.
 
-Pada tepi naik BCLK, bridge mendeteksi transisi WS, membuang satu bit tunda sesuai format Philips I2S, lalu menggeser 16 bit payload ke register sampel. Bridge membangkitkan \texttt{left\_valid} atau \texttt{right\_valid} setelah menerima satu word kanal. \textit{Block design} memakai dua instans \texttt{filter\_coeff} agar kanal kiri dan kanan memiliki \textit{state} biquad yang terpisah.
+Pada tepi naik BCLK, bridge mendeteksi transisi WS, membuang satu bit tunda sesuai format Philips I2S, lalu menggeser 16 bit payload ke register sampel. Implementasi terbaru hanya memproses slot kiri melalui satu instans \texttt{filter\_coeff}. Sinyal \texttt{right\_valid} dan jalur sampel kanan dipertahankan pada antarmuka untuk kompatibilitas, tetapi tidak digunakan pada Block Design final.
 
-Bridge menyimpan keluaran filter dan mengirimkannya pada frame berikutnya melalui \texttt{i2s\_data\_out}. Proses serialisasi memperbarui SDATA pada tepi turun BCLK agar DAC membaca nilai yang stabil pada tepi naik. Jalur MCLK, BCLK, dan WS menggunakan koneksi tembus; bridge hanya mengganti SDATA dengan data hasil filter. Konsekuensinya, integrasi menambah latensi satu frame stereo tanpa mengubah frekuensi sampling atau relasi fase antarsinyal I2S.
+Bridge menyimpan keluaran filter dan mengirimkannya pada frame berikutnya melalui \texttt{i2s\_data\_out}. Nilai hasil filter mono tersebut dikirim pada kedua slot I2S. Proses serialisasi memperbarui SDATA pada tepi turun BCLK agar DAC membaca nilai yang stabil pada tepi naik. Jalur MCLK, BCLK, dan WS menggunakan koneksi tembus; bridge hanya mengganti SDATA dengan data hasil filter. Konsekuensinya, integrasi menambah latensi satu frame stereo tanpa mengubah frekuensi sampling atau relasi fase antarsinyal I2S.
 
-Tiga switch pemilih koefisien berasal dari pin FPGA yang asinkron terhadap clock sistem. Dua tingkat flip-flop pada bridge menyinkronkan nilai switch sebelum kedua filter membacanya. Listing~\ref{lst:ch5-i2s-filter-bridge} memperlihatkan antarmuka dan bagian utama jalur data bridge.
+Tiga switch pemilih koefisien berasal dari pin FPGA yang asinkron terhadap clock sistem. Dua tingkat flip-flop pada bridge menyinkronkan nilai switch sebelum filter membacanya. Listing~\ref{lst:ch5-i2s-filter-bridge} memperlihatkan antarmuka dan bagian utama jalur data bridge.
 
 \begin{lstlisting}[
 	language=Verilog,
@@ -273,68 +254,36 @@ module i2s_filter_bridge (
     output reg                i2s_data_out,
     output reg                left_valid,
     output reg signed [15:0]  left_sample,
-    input  wire signed [15:0] left_filtered,
-    output reg                right_valid,
-    output reg signed [15:0]  right_sample,
-    input  wire signed [15:0] right_filtered
+    input  wire signed [15:0] left_filtered
 );
 
-wire bclk_rise =  i2s_bclk_in & ~bclk_d;
-wire bclk_fall = ~i2s_bclk_in &  bclk_d;
+wire bclk_rise = i2s_bclk_in & ~bclk_d;
+wire bclk_fall = ~i2s_bclk_in & bclk_d;
 
 always @(posedge clk) begin
-    if (!resetn) begin
-        left_valid  <= 1'b0;
-        right_valid <= 1'b0;
-        i2s_data_out <= 1'b0;
-    end else begin
-        bclk_d      <= i2s_bclk_in;
-        left_valid  <= 1'b0;
-        right_valid <= 1'b0;
+    /* The final Block Design connects only left_valid and left_filtered. */
+    if (bclk_rise && !i2s_ws_in && rx_bit_pos == 6'd15) begin
+        left_sample <= {rx_shift[14:0], i2s_data_in};
+        left_valid  <= 1'b1;
+    end
 
-        /* Deserialisasi: abaikan bit tunda, ambil 16 bit payload. */
-        if (bclk_rise) begin
-            if (i2s_ws_in != rx_ws) begin
-                rx_ws      <= i2s_ws_in;
-                rx_bit_pos <= 6'd0;
-            end else if (rx_bit_pos < 6'd16) begin
-                rx_shift   <= {rx_shift[14:0], i2s_data_in};
-                rx_bit_pos <= rx_bit_pos + 6'd1;
-                if (rx_bit_pos == 6'd15) begin
-                    if (!i2s_ws_in) begin
-                        left_sample <= {rx_shift[14:0], i2s_data_in};
-                        left_valid  <= 1'b1;
-                    end else begin
-                        right_sample <= {rx_shift[14:0], i2s_data_in};
-                        right_valid  <= 1'b1;
-                    end
-                end
-            end
-        end
+    if (filter_result_d2)
+        tx_sample <= left_filtered;
 
-        /* Serialisasi hasil filter pada tepi turun BCLK. */
-        if (bclk_fall) begin
-            if (i2s_ws_in != tx_ws) begin
-                tx_ws        <= i2s_ws_in;
-                tx_bit_pos   <= 6'd0;
-                i2s_data_out <= 1'b0;
-            end else if (tx_bit_pos < 6'd16) begin
-                i2s_data_out <= i2s_ws_in
-                              ? tx_right[15-tx_bit_pos]
-                              : tx_left[15-tx_bit_pos];
-                tx_bit_pos <= tx_bit_pos + 6'd1;
-            end else begin
-                i2s_data_out <= 1'b0;
-            end
-        end
+    /* The filtered mono result is serialized into both I2S slots. */
+    if (bclk_fall) begin
+        if (tx_bit_pos < 6'd16)
+            i2s_data_out <= tx_sample[15-tx_bit_pos];
+        else
+            i2s_data_out <= 1'b0;
     end
 end
 endmodule
 \end{lstlisting}
 
-Pengujian mengirim nada sinus 1~kHz dari firmware ke register data IP I2S. Capture timing menunjukkan pulsa \texttt{left\_valid} dan \texttt{right\_valid} muncul satu kali per kanal pada setiap frame, sedangkan BCLK dan WS pada sisi DAC tetap mengikuti keluaran IP I2S. Pengamatan keluaran DAC mengonfirmasi bahwa bridge mempertahankan batas kanal dan urutan bit selama filter memproses aliran audio.
+Pengujian mengirim nada sinus 1~kHz dari firmware ke register data IP I2S. Pada desain final, pulsa \texttt{left\_valid} memicu pemrosesan sampel dari slot kiri, sedangkan hasil filter mono dikirim ulang pada slot kiri dan kanan. BCLK dan WS pada sisi DAC tetap mengikuti keluaran IP I2S. Deskripsi ini membatasi klaim integrasi pada satu jalur filter dan tidak menyatakan bahwa kanal kiri dan kanan memiliki state biquad independen.
 
-Integrasi IP I2S dengan blok filter IIR pada Block Design Vivado diperlihatkan pada Gambar~\ref{fig:ch5-filter-integration}. IP I2S (\texttt{i2s\_0}) terhubung ke modul \texttt{i2s\_filter\_bridge} yang mendeserialisasi data I2S, memprosesnya melalui filter IIR (\texttt{filter\_coeff}), dan mengembalikan hasil filter ke jalur data serial menuju DAC.
+Integrasi IP I2S dengan satu blok filter IIR pada Block Design Vivado diperlihatkan pada Gambar~\ref{fig:ch5-filter-integration}. IP I2S (\texttt{i2s\_0}) terhubung ke modul \texttt{i2s\_filter\_bridge} yang mendeserialisasi slot kiri, memprosesnya melalui filter IIR (\texttt{filter\_coeff}), dan mengembalikan hasil mono yang dimirror ke jalur data serial menuju DAC.
 
 \begin{landscape}
 	\begin{figure}[p]
@@ -365,6 +314,8 @@ Implementasi sistem SoC pada Basys3 menghasilkan penggunaan sumber daya yang efi
 	\label{fig:ch5-timing-summary}
 \end{figure}
 
+Laporan timing pasca-implementasi menunjukkan \textit{Worst Negative Slack} (WNS) sebesar 0,064~ns, \textit{Worst Hold Slack} (WHS) sebesar 0,031~ns, serta \textit{Worst Pulse Width Slack} (WPWS) sebesar 3,000~ns. Nilai TNS, THS, dan TPWS sama dengan 0, sehingga seluruh constraint timing yang ditetapkan terpenuhi.
+
 \begin{table}[htbp]
 	\centering
 	\caption{Ringkasan penggunaan sumber daya FPGA Artix-7 XC7A35T (Basys3).}
@@ -373,9 +324,9 @@ Implementasi sistem SoC pada Basys3 menghasilkan penggunaan sumber daya yang efi
 		\hline
 		\textbf{Resource} & \textbf{Utilized} & \textbf{Available} & \textbf{Utilization (\%)} \\
 		\hline
-		LUT    & 2.363  & 20.800 & 11,36 \\
-		LUTRAM & 108    & 9.600  &  1,13 \\
-		FF     & 2.412  & 41.600 &  5,80 \\
+		LUT    & 2.435  & 20.800 & 11,71 \\
+		LUTRAM & 107    & 9.600  &  1,11 \\
+		FF     & 2.330  & 41.600 &  5,60 \\
 		BRAM   & 32     & 50     & 64,00 \\
 		IO     & 8      & 106    &  7,55 \\
 		MMCM   & 1      & 5      & 20,00 \\
@@ -406,7 +357,7 @@ Implementasi sistem SoC pada Basys3 menghasilkan penggunaan sumber daya yang efi
 	\label{fig:ch5-hw-analysis}
 \end{figure}
 
-Penggunaan LUT sebesar 11,36\% dan FF sebesar 5,80\% mengindikasikan bahwa IP I2S beserta SoC MicroBlaze V memiliki jejak logika yang kecil dan masih menyisakan kapasitas yang signifikan untuk ekspansi sistem di masa mendatang. Penggunaan BRAM sebesar 64\% terutama disumbang oleh memori program MicroBlaze dan tabel koefisien filter IIR, bukan oleh IP I2S sendiri. Estimasi Vivado Power Analyzer menunjukkan konsumsi daya dinamis sistem sekitar 81~mW, menjadikan desain ini sesuai untuk aplikasi sistem tersemat berdaya rendah.
+Penggunaan LUT sebesar 11,71\% dan FF sebesar 5,60\% menunjukkan bahwa sistem masih memiliki kapasitas logika untuk pengembangan lanjutan. Penggunaan BRAM sebesar 64\% terutama berasal dari memori program dan data pada sistem prosesor serta blok filter yang terintegrasi. Vivado Power Analyzer memperkirakan daya total sebesar 0,209~W, yang terdiri atas daya dinamis 0,135~W dan daya statis 0,073~W. Laporan tersebut menggunakan tingkat keyakinan \textit{Medium} tanpa berkas aktivitas simulasi, sehingga angka daya diperlakukan sebagai estimasi implementasi, bukan hasil pengukuran langsung pada papan.
 
 % ============================================================
 \section{Pembahasan terhadap Tujuan Penelitian}
@@ -518,7 +469,7 @@ Pengujian pada empat mode $F_s$ standar (44,1~kHz, 48~kHz, 88,2~kHz, dan 96~kHz)
 	\end{figure}
 \end{landscape}
 
-Pada setiap mode, frekuensi WS yang terukur sesuai dengan nilai $F_s$ target sesuai Tabel~\ref{tab:ch5-fs-arbitrary}, dan frekuensi BCLK mengikuti relasi $f_\text{BCLK} = 64 \times F_s$ sebagaimana ditetapkan oleh protokol Philips I2S.
+Pada setiap mode, checker testbench memverifikasi frekuensi WS terhadap nilai $F_s$ yang diprogram, sedangkan frekuensi BCLK mengikuti relasi $f_\text{BCLK} = 64 \times F_s$ sebagaimana ditetapkan oleh protokol Philips I2S.
 
 \subsection{Variasi Lebar Data Sampel}
 
@@ -731,20 +682,20 @@ Tabel~\ref{tab:ch5-comparison-ip} membandingkan fitur fungsional IP I2S Transmit
 		Antarmuka data      & AXI4-Stream
 		& AXI4-Lite (direct register write) \\
 		Konfigurasi $F_s$   & Divider statis / PLL eksternal
-		& Seleksi clock internal + NCO desimal (arbitrary $F_s$) \\
+		& NCO internal untuk laju sampling integer dalam rentang RTL \\
 		Sinkronisasi        & AXI-Stream backpressure / interupsi
 		& Status-bit polling (latch toggle) \\
 		Jumlah kanal        & 2, 4, 6, atau 8
 		& 2 (stereo) \\
 		Lisensi             & Proprietary (Xilinx)
-		& Open-source (vendor-agnostic logic) \\
+		& RTL audio terbuka; integrasi tetap bergantung pada toolchain vendor \\
 		Kompleksitas        & Tinggi (AES status, multi-channel, dsb.)
 		& Rendah (minimalis, fokus fungsi inti) \\
 		\hline
 	\end{tabular}
 \end{table}
 
-Custom IP yang dirancang menawarkan kesederhanaan kontrol tanpa memerlukan DMA atau interkoneksi AXI4-Stream, dengan tetap memenuhi seluruh persyaratan fungsional audio stereo standar. Fitur pembangkitan $F_s$ arbitrer berbasis NCO desimal memberikan fleksibilitas yang tidak dimiliki implementasi berbasis pembagi integer statis, sekaligus mempertahankan portabilitas tinggi karena logika utama tidak mengandung primitif vendor-spesifik.
+Custom IP yang dirancang menawarkan kesederhanaan kontrol tanpa memerlukan DMA atau interkoneksi AXI4-Stream, dengan tetap memenuhi format transmisi audio stereo yang diuji. NCO internal menerima laju sampling integer dalam rentang yang dibatasi RTL. Logika audio tidak mengandung primitif vendor-spesifik, tetapi proses packaging, integrasi Block Design, dan implementasi tetap menggunakan toolchain AMD/Xilinx.
 
 % ============================================================
 \section{Keterbatasan Desain}

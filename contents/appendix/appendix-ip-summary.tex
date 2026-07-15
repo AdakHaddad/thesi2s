@@ -3,7 +3,7 @@
 
 Lampiran ini merangkum IP utama pada Vivado Block Design yang digunakan dalam
 proyek. Berkas deskripsi block design utama dan hasil generasi IP
-tersedia di direktori \path{ready_to_run}.
+tersedia di direktori proyek \path{freshi2s}.
 
 \section*{Diagram Block Design}
 
@@ -150,7 +150,7 @@ tersedia di direktori \path{ready_to_run}.
 
 \section*{\path{microblaze_riscv_0}}
 \begin{description}
-    \item[Purpose] Soft processor RISC-V untuk menjalankan firmware \path{ready_to_run/sw/helloworld.c}.
+    \item[Purpose] Soft processor RISC-V untuk menjalankan firmware \path{freshi2s/sw/helloworld.c}.
     \item[Key parameters] Debug aktif, jalur \path{M_AXI_DP} untuk akses peripheral, serta ILMB/DLMB untuk memori lokal.
     \item[Connections] Clock 100 MHz dari \path{clk_wiz_0}; reset dari \path{rst_clk_wiz_0_100M}; master AXI ke \path{axi_smc/S00_AXI}.
 \end{description}

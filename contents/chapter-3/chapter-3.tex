@@ -44,21 +44,21 @@ Konfigurasi koneksi antara FPGA Basys3 dan modul DAC PCM5102A diperlihatkan pada
 
 \subsection{Perangkat lunak}
 \begin{itemize}
-    \item \textbf{AMD Vivado 2021.1}: Tool utama untuk perancangan RTL Verilog, simulasi behavioral (XSim), sintesis, implementasi, dan perancangan SoC (Block Design) \citep{xilinx_vivado_design_suite_2021}.
-    \item \textbf{AMD Vitis 2021.1}: Platform pengembangan perangkat lunak C bare-metal untuk prosesor MicroBlaze V \citep{xilinx_vitis_embedded_2021}.
+    \item \textbf{AMD Vivado 2025.2}: Tool utama untuk perancangan RTL Verilog, simulasi behavioral (XSim), sintesis, implementasi, dan perancangan SoC (Block Design) \citep{xilinx_vivado_ip_subsystems_2025}.
+    \item \textbf{AMD Vitis 2025.2}: Platform pengembangan perangkat lunak C bare-metal untuk prosesor MicroBlaze V.
     \item \textbf{PuTTY dan Trae IDE}: PuTTY digunakan sebagai terminal UART logging, sedangkan Trae IDE untuk penyuntingan kode sumber dan penyusunan naskah LaTeX.
 \end{itemize}
 
 \section{Metode yang Digunakan}
 
 \subsection{Metode perancangan hardware}
-RTL dirancang secara modular menggunakan Verilog HDL yang memisahkan bagian datapath dan control path \citep{palnitkar_verilog_2003}. Desain difokuskan pada serializer I2S standar Philips, register data, shadow register untuk perlindungan data, serta modul clock desimal NCO agar rancangan bersifat \textit{vendor-agnostic} dan mendukung \textit{sample rate} arbitrer.
+RTL dirancang secara modular menggunakan Verilog HDL yang memisahkan bagian datapath dan control path \citep{palnitkar_verilog_2003}. Desain difokuskan pada serializer I2S standar Philips, register data, shadow register untuk perlindungan data, serta modul clock desimal NCO. RTL audio tidak menggunakan primitif audio vendor-spesifik dan mendukung \textit{sample rate} integer dalam rentang yang ditetapkan oleh RTL.
 
 \subsection{Metode verifikasi dan simulasi}
 Verifikasi dilakukan lewat simulasi testbench di Vivado Simulator untuk memastikan fungsionalitas sinyal I2S. Selanjutnya dilakukan validasi fisik dengan mengamati timing clock dan bit data serial pada osiloskop serta mendengarkan hasil reproduksi suara dari DAC.
 
 \subsection{Metode integrasi SoC dan pengembangan software}
-IP kustom dikemas menggunakan Vivado IP Packager lalu dimasukkan ke dalam Block Design untuk dihubungkan dengan MicroBlaze V melalui AXI Interconnect \citep{xilinx_axi_ref_2017}. Firmware bare-metal dikembangkan di Vitis untuk mengontrol peripheral, menginisialisasi parameter register, melakukan generator DDS software, dan mengelola sinkronisasi pengiriman data lewat status polling.
+IP kustom dikemas menggunakan Vivado IP Packager lalu dimasukkan ke dalam Block Design untuk dihubungkan dengan MicroBlaze V melalui AXI SmartConnect \citep{xilinx_axi_ref_2017}. Firmware bare-metal dikembangkan di Vitis untuk mengontrol peripheral, menginisialisasi parameter register, menjalankan generator DDS software, dan mengelola sinkronisasi pengiriman data lewat status polling.
 
 \section{Perancangan Block Design Sistem}
 

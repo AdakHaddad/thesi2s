@@ -1,6 +1,14 @@
 \chapter{Hasil dan Pembahasan}
 
-Bab ini menyajikan hasil pengujian fungsional sistem IP I2S Transmitter yang dikembangkan, mencakup verifikasi timing protokol, analisis akurasi frekuensi sampling, identifikasi dan perbaikan bug firmware, serta pengujian integrasi dengan blok pemrosesan sinyal digital eksternal. Seluruh pengukuran dilakukan pada perangkat keras target Basys3 (FPGA Artix-7 XC7A35T) menggunakan osiloskop digital untuk sinyal analog dan capture timing digital untuk sinyal internal.
+Bab ini menyajikan hasil verifikasi dan pengujian fungsional IP I2S Transmitter. Urutan pengembangan dimulai dari simulasi RTL menggunakan \textit{testbench}, dilanjutkan dengan sintesis, implementasi, dan pembuatan bitstream setelah pemeriksaan fungsional dinyatakan lulus. Pengujian pada Basys3 (FPGA Artix-7 XC7A35T) dengan DAC PCM5102A kemudian digunakan sebagai validasi akhir pada perangkat keras, bukan sebagai tahap awal untuk mencari kesalahan RTL secara coba-coba.
+
+\section{Verifikasi RTL dengan Testbench}
+
+Sebelum IP dikemas dan diintegrasikan ke dalam \textit{block design}, modul I2S diverifikasi pada Vivado Simulator melalui \textit{testbench} mandiri. Testbench memberikan clock sistem 100~MHz dan reset, menjalankan transaksi AXI4-Lite untuk menulis serta membaca register \path{DATA\_LEFT}, \path{DATA\_RIGHT}, \path{CONTROL}, dan \path{STATUS}, kemudian memeriksa respons \path{BRESP} dan \path{RRESP}. Dengan demikian, fungsi register dan urutan handshaking bus diuji tanpa ketergantungan pada firmware maupun board fisik.
+
+Vektor uji memakai sampel kiri dan kanan 24 bit yang berbeda. Setelah \path{ENABLE} diaktifkan pada $F_s=48$~kHz, checker menangkap \path{i2s\_data} pada setiap tepi naik BCLK seperti penerima I2S. Pemeriksaan mencakup keluaran rendah saat reset dan saat \path{ENABLE=0}, pembangkitan BCLK dan WS, batas 32 BCLK per kanal, bit tunda satu siklus setelah perubahan WS sesuai format Philips I2S, urutan MSB--LSB, padding nol untuk slot 32 bit, serta fungsi \path{MUTE}. Simulasi dinyatakan lulus hanya apabila semua pemeriksaan tersebut berhasil.
+
+Hasil simulasi menjadi dasar untuk melanjutkan ke sintesis dan implementasi. Setelah \textit{timing constraints} terpenuhi, bitstream dan hardware platform diekspor ke Vitis untuk pengujian firmware. Osiloskop, ILA, dan uji dengar pada DAC digunakan untuk mengonfirmasi bahwa perilaku yang telah diverifikasi pada simulasi tetap muncul pada koneksi fisik dan lingkungan sistem lengkap.
 
 % ============================================================
 \section{Pengujian Sinyal I2S}

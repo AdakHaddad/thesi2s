@@ -1,42 +1,10 @@
-\hspace{1cm}Suara merupakan bagian penting dalam berbagai perangkat elektronik modern, mulai dari 
-sistem hiburan hingga perangkat komunikasi. Untuk mengalirkan data audio secara digital antara 
-komponen elektronik, dibutuhkan protokol komunikasi yang andal, salah satunya adalah I2S 
-(\textit{Inter-IC Sound}). Protokol ini secara luas digunakan untuk menghubungkan prosesor atau 
-mikrokontroler dengan chip pengolah audio seperti DAC (\textit{Digital-to-Analog Converter}). 
-Dalam pengembangan sistem berbasis FPGA (\textit{Field-Programmable Gate Array}), ketersediaan 
-IP (\textit{Intellectual Property}) audio yang siap pakai seringkali memerlukan lisensi berbayar 
-atau bergantung pada vendor tertentu, sehingga menghambat fleksibilitas pengembangan. Oleh karena 
-itu, perancangan peripheral transmitter I2S secara mandiri menggunakan bahasa deskripsi perangkat 
-keras menjadi solusi yang relevan, terutama untuk sistem tertanam berbasis FPGA yang membutuhkan 
-keluaran audio digital tanpa ketergantungan pada IP pihak ketiga.
+\hspace{1cm}Suara merupakan bagian penting dalam berbagai perangkat elektronik modern, mulai dari sistem hiburan hingga perangkat komunikasi. Untuk mentransmisikan data audio digital antarkomponen elektronik, digunakan protokol \textit{Inter-IC Sound} (I2S) yang banyak diterapkan pada komunikasi antara prosesor atau mikrokontroler dengan perangkat audio digital seperti \textit{Digital-to-Analog Converter} (DAC). Pada sistem berbasis \textit{Field-Programmable Gate Array} (FPGA), IP (\textit{Intellectual Property}) audio yang tersedia umumnya bersifat proprietary atau bergantung pada vendor tertentu sehingga membatasi fleksibilitas pengembangan. Oleh karena itu, perancangan IP transmitter I2S secara mandiri menggunakan bahasa deskripsi perangkat keras menjadi solusi yang relevan untuk membangun sistem audio digital yang lebih fleksibel dan mandiri.
 
-\hspace{1cm}Penelitian ini bertujuan untuk merancang dan mengimplementasikan custom IP transmitter 
-I2S menggunakan Verilog HDL yang dapat diintegrasikan ke dalam \textit{System-on-Chip} (SoC) 
-berbasis prosesor MicroBlaze~V pada FPGA Basys3. IP yang dikembangkan menggunakan antarmuka 
-AXI4-Lite sehingga dapat dikonfigurasi melalui \textit{memory-mapped register} oleh perangkat 
-lunak yang berjalan di Xilinx Vitis. Kontribusi utama penelitian ini adalah perancangan IP 
-transmitter I2S yang mendukung frekuensi sampling arbitrer berbasis arsitektur NCO 
-(\textit{Numerically Controlled Oscillator}), mampu beroperasi tanpa bergantung pada IP audio 
-berlisensi pihak ketiga, serta tervalidasi pada platform perangkat keras nyata menggunakan modul 
-DAC PCM5102A sebagai keluaran audio.
+\hspace{1cm}Penelitian ini bertujuan merancang dan mengimplementasikan IP core transmitter I2S berbasis AXI4-Lite menggunakan Verilog HDL yang dapat diintegrasikan ke dalam \textit{System-on-Chip} (SoC) berbasis prosesor MicroBlaze~V pada FPGA Basys3. Kontribusi utama penelitian ini adalah pengembangan IP transmitter I2S yang mendukung frekuensi sampling arbitrer menggunakan mekanisme \textit{phase accumulator} berbasis \textit{Numerically Controlled Oscillator} (NCO), sehingga tidak memerlukan IP audio berlisensi maupun pembangkit clock khusus untuk setiap frekuensi sampling.
 
-\hspace{1cm}Metodologi penelitian mencakup lima tahap utama: (1)~desain RTL Verilog untuk 
-transmitter I2S mengikuti format Philips I2S untuk transmisi audio stereo; (2)~perancangan 
-antarmuka register AXI4-Lite untuk kontrol, pemuatan sampel, dan observasi status; 
-(3)~integrasi custom IP ke dalam SoC MicroBlaze~V menggunakan Vivado \textit{block design}; 
-(4)~pengembangan perangkat lunak uji dalam bahasa C pada Xilinx Vitis untuk konfigurasi register, 
-pembangkitan sampel sinus berbasis DDS, dan pengiriman sampel audio melalui \textit{memory-mapped} 
-I/O; serta (5)~verifikasi melalui simulasi \textit{testbench}, pengamatan osiloskop, dan 
-pengujian perangkat keras dengan modul PCM5102A.
+\hspace{1cm}Metodologi penelitian meliputi perancangan RTL transmitter I2S menggunakan Verilog HDL, implementasi antarmuka register AXI4-Lite, integrasi ke dalam SoC MicroBlaze~V menggunakan Vivado, pengembangan perangkat lunak bare-metal menggunakan Xilinx Vitis untuk konfigurasi register dan pengiriman data audio, serta verifikasi melalui simulasi RTL, pengamatan menggunakan osiloskop, dan pengujian perangkat keras menggunakan modul DAC PCM5102A.
 
-\hspace{1cm}Hasil penelitian menunjukkan bahwa IP transmitter I2S yang dirancang berhasil 
-diintegrasikan ke dalam SoC berbasis MicroBlaze~V dan dapat dioperasikan melalui antarmuka 
-AXI4-Lite. Sistem mampu membangkitkan sinyal I2S yang valid, mentransmisikan sampel audio stereo 
-dalam format Philips I2S, serta mendukung frekuensi sampling yang dapat diprogram secara arbitrer 
-melalui arsitektur NCO dengan satu clock referensi. Validasi perangkat keras mengonfirmasi bahwa 
-desain bekerja sesuai spesifikasi pada platform yang diuji, sehingga dapat menjadi fondasi yang 
-fleksibel untuk pengembangan sistem keluaran audio digital berbasis FPGA selanjutnya.
-
+\hspace{1cm}Hasil penelitian menunjukkan bahwa IP transmitter I2S berhasil diintegrasikan ke dalam SoC berbasis MicroBlaze~V dan dikendalikan melalui antarmuka AXI4-Lite. Sistem mampu membangkitkan sinyal BCLK, WS, dan DATA yang memenuhi spesifikasi Philips I2S, mentransmisikan data audio stereo dengan benar, serta mendukung frekuensi sampling standar maupun non-standar menggunakan satu clock referensi melalui mekanisme \textit{phase accumulator}. 
+Hasil implementasi pada FPGA Basys3 menunjukkan bahwa rancangan menggunakan 903 Slice, 2435 LUT, 2330 Flip-Flop, dan 32 BRAM dengan estimasi konsumsi daya total sebesar 0,209~W. Selain itu, seluruh batasan timing pada clock sistem 100~MHz berhasil dipenuhi sehingga rancangan memenuhi target performa implementasi pada FPGA yang digunakan.
 \vspace{0.5em}
-\noindent\textbf{Kata kunci}: MicroBlaze~V, I2S, Verilog, AXI4-Lite, FPGA, SoC, PCM5102A, 
-Audio Digital
+\noindent\textbf{Kata kunci}: FPGA, Verilog, I2S, AXI4-Lite, MicroBlaze~V, SoC, PCM5102A, Audio Digital.

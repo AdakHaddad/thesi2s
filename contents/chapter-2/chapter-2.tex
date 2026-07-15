@@ -92,7 +92,7 @@ Protokol AXI4-Lite terdiri atas lima kanal independen yang memisahkan alur penul
 
 Mekanisme \textit{read} dan \textit{write} register pada AXI4-Lite berlangsung sebagai berikut. Pada transaksi \textit{write}, master menempatkan alamat pada kanal AW dan data pada kanal W secara simultan atau berurutan. Slave mengakuisisi alamat dan data ketika \texttt{AWVALID} dan \texttt{AWREADY} (serta \texttt{WVALID} dan \texttt{WREADY}) aktif bersamaan, kemudian memproses penulisan dan mengembalikan respon melalui kanal B. Pada transaksi \textit{read}, master menempatkan alamat pada kanal AR; slave merespon dengan menempatkan data yang diminta pada kanal R. Urutan ini memungkinkan pipeline transaksi yang efisien karena kanal alamat dan data terpisah.
 
-Dalam konteks penelitian ini, MicroBlaze V berperan sebagai \textit{master} AXI4-Lite yang mengakses register konfigurasi IP I2S Transmitter (\textit{slave}) melalui bus AXI. Setiap register IP  seperti \texttt{CONTROL} untuk enable dan reset, \texttt{FS\_REGISTER} untuk konfigurasi frekuensi sampling, \texttt{DATA\_LEFT} dan \texttt{DATA\_RIGHT} untuk data audio, serta \texttt{STATUS} untuk indikator \textit{hardware ready}  dipetakan ke alamat memori unik dalam \textit{address space} AXI4-Lite. Perangkat lunak bare-metal pada MicroBlaze V menulis dan membaca register-register tersebut menggunakan fungsi \texttt{Xil\_Out32} dan \texttt{Xil\_In32} yang membangkitkan transaksi AXI4-Lite secara otomatis.
+Dalam konteks penelitian ini, MicroBlaze V berperan sebagai \textit{master} AXI4-Lite yang mengakses register konfigurasi IP I2S Transmitter (\textit{slave}) melalui bus AXI. Register IP terdiri atas \texttt{DATA\_LEFT} dan \texttt{DATA\_RIGHT} untuk data audio, \texttt{CONTROL} untuk \texttt{ENABLE}, \texttt{MUTE}, lebar sampel, dan laju sampling, serta \texttt{STATUS} untuk indikator pergantian \textit{frame latch}. Register-register tersebut dipetakan ke alamat memori unik dalam \textit{address space} AXI4-Lite. Perangkat lunak bare-metal pada MicroBlaze V menulis dan membaca register-register tersebut menggunakan fungsi \texttt{Xil\_Out32} dan \texttt{Xil\_In32} yang membangkitkan transaksi AXI4-Lite secara otomatis.
 
 \subsection{Protokol Komunikasi Audio I2S}
 
@@ -112,7 +112,7 @@ I2S (\textit{Inter-IC Sound}) merupakan protokol komunikasi serial sinkron tiga-
     \label{fig:i2s_nxp_diagram}
 \end{figure}
 
-Pada format Philips I2S standar, transisi \texttt{WS} terjadi satu pulsa BCLK sebelum bit MSB dikirim (\textit{one-bit delay}) untuk sinkronisasi receiver (Gambar \ref{fig:i2s_nxp_diagram}). Penelitian ini menggunakan konfigurasi \textbf{stereo 24-bit di dalam slot 32-bit} per saluran (total 64 pulsa BCLK per frame stereo). Desain slot 32-bit menyederhanakan penyelarasan data pada bus AXI 32-bit. Hubungan frekuensi dinyatakan sebagai:
+Gambar~\ref{fig:i2s_nxp_diagram} menjadi acuan penjelasan format Philips I2S. Pada format tersebut, transisi \texttt{WS} terjadi satu pulsa BCLK sebelum bit MSB dikirim (\textit{one-bit delay}) untuk sinkronisasi receiver. Penelitian ini menggunakan konfigurasi \textbf{stereo 24-bit di dalam slot 32-bit} per saluran (total 64 pulsa BCLK per frame stereo). Desain slot 32-bit menyederhanakan penyelarasan data pada bus AXI 32-bit. Hubungan frekuensi dinyatakan sebagai:
 \begin{equation}
     f_{\mathrm{BCLK}} = 64 \times F_s
     \label{eq:fs_bclk}
@@ -120,9 +120,9 @@ Pada format Philips I2S standar, transisi \texttt{WS} terjadi satu pulsa BCLK se
 
 \subsection{Pembangkitan Clock Audio Berbasis NCO}
 
-Pembangkitan detak audio murni digital dilakukan menggunakan \textit{Numerically Controlled Oscillator} (NCO) untuk menghindari ketergantungan pada unit analog PLL/MMCM vendor FPGA \citep{vankka_dds_2001,ao2012nco}. NCO bekerja dengan prinsip akumulasi fase: suatu register (\textit{phase accumulator}) bertambah secara periodik pada setiap siklus clock referensi ($f_{\mathrm{ref}} = 100$ MHz) dengan nilai inkremen $I$ hingga mencapai batas modulus $M$, lalu kembali ke nol dan memicu perubahan logika keluaran.
+Pembangkitan detak audio murni digital dilakukan menggunakan \textit{Numerically Controlled Oscillator} (NCO) untuk mengurangi ketergantungan pada jalur clock audio khusus \citep{vankka_dds_2001,ao2012nco}. NCO bekerja dengan prinsip akumulasi fase: suatu register (\textit{phase accumulator}) bertambah secara periodik pada setiap siklus clock referensi ($f_{\mathrm{ref}} = 100$ MHz) dengan nilai inkremen $I$ hingga mencapai batas modulus $M$, lalu kembali ke nilai sisa dan memicu perubahan logika keluaran.
 
-Akumulator fase yang umum digunakan pada NCO konvensional berbasis biner dengan modulus $2^N$, sehingga pembulatan inkremen dapat menyebabkan deviasi frekuensi kumulatif. Untuk menghindari hal tersebut, penelitian ini mengimplementasikan \textbf{Akumulator Fase Desimal} dengan modulus $M$ yang sama dengan frekuensi referensi ($M = f_{\mathrm{ref}} = 100.000.000$). Dengan demikian, nilai inkremen $I$ dapat berupa bilangan bulat yang menyatakan jumlah siklus clock referensi per detik yang diinginkan secara presisi.
+Akumulator fase pada penelitian ini menggunakan modulus numerik $M=100.000.000$, sama dengan nilai frekuensi referensi dalam satuan Hz. Pemilihan ini membuat nilai inkremen berbasis laju sampling integer mudah dihitung dari perangkat lunak. Modulus tersebut tidak menghapus kuantisasi atau jitter temporal; setiap luapan tetap terjadi pada tepi clock sistem terdekat.
 
 Variabel-variabel dalam sistem NCO ini didefinisikan sebagai berikut:
 \begin{enumerate}
@@ -164,7 +164,7 @@ Untuk Master Clock (MCLK) dengan frekuensi $f_{\mathrm{MCLK}} = 256 \times F_s$,
     \label{eq:inc_mclk}
 \end{equation}
 
-Dengan mekanisme ini, BCLK dan MCLK dibangkitkan secara deterministik dari clock sistem 100 MHz tanpa memerlukan PLL atau MMCM analog. Perangkat lunak pada MicroBlaze V cukup menuliskan nilai $F_s$ yang diinginkan ke register \texttt{FS\_REGISTER}, dan IP I2S secara otomatis menghitung $I_{\mathrm{BCLK}}$ serta $I_{\mathrm{MCLK}}$ melalui operasi geser bit (\textit{bit-shift}) di dalam RTL.
+Dengan mekanisme ini, BCLK dan MCLK dibangkitkan dari clock sistem 100 MHz tanpa memerlukan PLL audio tambahan. Perangkat lunak pada MicroBlaze V menuliskan nilai $F_s$ ke field \texttt{SAMPLE\_RATE\_HZ} pada register \texttt{CONTROL}, dan IP I2S menghitung inkremen BCLK serta MCLK melalui operasi geser bit (\textit{bit-shift}) di dalam RTL.
 
 \begin{figure}[htbp]
 	\centering
@@ -298,9 +298,9 @@ Dalam kode RTL Verilog, perkalian ini diimplementasikan secara efisien lewat per
 \hline
 \textbf{Fitur} & \textbf{PLL / MMCM (Analog)} & \textbf{NCO (Digital)} \\
 \hline
-\textit{Jitter} & Sangat rendah (diredam filter analog). & Sebesar periode clock sistem ($1/f_{\mathrm{ref}}$). \\
-Fleksibilitas & Terbatas pada rasio perkalian integer. & Mendukung frekuensi arbitrer secara instan. \\
-Portabilitas & Spesifik vendor (\textit{vendor-locked}). & \textit{Vendor-agnostic} (RTL Verilog portabel). \\
+\textit{Jitter} & Bergantung pada karakteristik PLL/MMCM dan konfigurasi clock. & Tepi keluaran terkuantisasi terhadap periode clock sistem ($1/f_{\mathrm{ref}}$). \\
+Fleksibilitas & Bergantung pada konfigurasi dan resolusi clocking device. & Mendukung laju sampling integer dalam rentang RTL. \\
+Portabilitas & Menggunakan primitive atau IP clocking vendor. & Logika audio ditulis dalam RTL portabel, tetapi integrasi sistem tetap menggunakan toolchain vendor. \\
 \hline
 \end{tabular}
 \end{table}
