@@ -164,7 +164,7 @@ Untuk Master Clock (MCLK) dengan frekuensi $f_{\mathrm{MCLK}} = 256 \times F_s$,
     \label{eq:inc_mclk}
 \end{equation}
 
-Dengan mekanisme ini, BCLK dan MCLK dibangkitkan dari clock sistem 100 MHz tanpa memerlukan PLL audio tambahan. Perangkat lunak pada MicroBlaze V menuliskan nilai $F_s$ ke field \texttt{SAMPLE\_RATE\_HZ} pada register \texttt{CONTROL}, dan IP I2S menghitung inkremen BCLK serta MCLK melalui operasi geser bit (\textit{bit-shift}) di dalam RTL.
+Dengan mekanisme ini, BCLK dan MCLK dibangkitkan dari clock sistem 100 MHz tanpa memerlukan PLL audio tambahan. Perangkat lunak pada MicroBlaze V menuliskan nilai $F_s$ ke field \texttt{SAMPLE\_RATE\_HZ} pada register \texttt{CONTROL}, dan IP I2S menghitung inkremen BCLK serta MCLK melalui operasi geser bit (\textit{bit-shift}) di dalam RTL. Nilai $I_{\mathrm{BCLK}}$ merupakan laju toggle BCLK, sehingga dua toggle membentuk satu periode BCLK. Sebaliknya, WS berubah setelah 64 periode BCLK, sedangkan MCLK memakai akumulator terpisah dengan inkremen $I_{\mathrm{MCLK}}$. Contoh numerik pembaruan accumulator dan interpretasi waveform dibahas pada Bab~V.
 
 \begin{figure}[htbp]
 	\centering

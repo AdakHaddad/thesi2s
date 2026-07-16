@@ -57,7 +57,43 @@ Verifikasi timing dilakukan dengan mengamati sinyal internal hasil simulasi RTL.
 	\end{figure}
 \end{landscape}
 
-Subgambar~\ref{fig:ch5-nco-waveform} memperlihatkan mekanisme pembangkitan BCLK menggunakan \textit{phase accumulator}. Pada setiap siklus clock sistem 100~MHz, nilai \path{bclk\_toggle\_rate\_hz} ditambahkan ke accumulator. Ketika hasil penjumlahan mencapai atau melampaui frekuensi clock sistem, accumulator mempertahankan nilai sisa (\textit{remainder}) dan menghasilkan sinyal \path{bclk\_phase\_wrap} selama satu siklus clock yang digunakan untuk melakukan \textit{toggle} terhadap BCLK. Mekanisme ini memungkinkan pembangkitan frekuensi BCLK secara arbitrer tanpa memerlukan PLL maupun clock divider integer.
+Subgambar~\ref{fig:ch5-nco-waveform} memperlihatkan mekanisme pembangkitan BCLK menggunakan \textit{phase accumulator}. Pada setiap tepi naik clock sistem 100~MHz, RTL menjumlahkan \path{bclk\_toggle\_rate\_hz} dengan nilai accumulator sebelumnya. Jika hasil penjumlahan mencapai atau melampaui modulus 100.000.000, sinyal \path{bclk\_phase\_wrap} aktif selama satu siklus, accumulator menyimpan nilai sisa setelah dikurangi modulus, dan BCLK melakukan satu toggle. Contoh urutan penjumlahan tersebut ditunjukkan pada Tabel~\ref{tab:nco-accumulator-example}.
+
+Pada waveform, empat sinyal perlu dibedakan. Clock sistem menjadi sumbu waktu diskrit. Accumulator membentuk deret nilai yang meningkat lalu turun ke nilai sisa ketika terjadi wrap. Pulsa \path{bclk\_phase\_wrap} menandai peristiwa toggle, bukan satu periode penuh BCLK. Dua peristiwa toggle membentuk satu periode BCLK, dan 64 periode BCLK membentuk satu frame stereo sehingga WS kembali ke kanal berikutnya. Akumulator MCLK bekerja secara terpisah menggunakan \path{mclk\_toggle\_rate\_hz}; karena itu, waveform tidak perlu menunjukkan MCLK dan BCLK berubah pada tepi yang sama.
+
+Untuk menghubungkan bentuk waveform dengan perhitungan numerik, Tabel~\ref{tab:nco-accumulator-example} memberikan contoh $F_s=96$~kHz. Pada konfigurasi ini, inkremen akumulator BCLK adalah $I_{\mathrm{BCLK}}=128\times96.000=12.288.000$. Kolom nilai penjumlahan menampilkan hasil sebelum operasi modulo. Ketika hasil mencapai atau melewati $M=100.000.000$, RTL menghasilkan satu pulsa \path{bclk\_phase\_wrap}, melakukan satu toggle pada BCLK, lalu menyimpan sisa setelah dikurangi $M$.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Contoh penjumlahan pada \textit{phase accumulator} BCLK untuk $F_s=96$~kHz.}
+\label{tab:nco-accumulator-example}
+\begin{tabular}{|c|r|l|}
+\hline
+\textbf{Siklus} & \textbf{Nilai penjumlahan} & \textbf{Keterangan} \\
+\hline
+0  & 0             & Nilai awal \\
+1  & 12\,288\,000  & \\
+2  & 24\,576\,000  & \\
+3  & 36\,864\,000  & \\
+4  & 49\,152\,000  & \\
+5  & 61\,440\,000  & \\
+6  & 73\,728\,000  & \\
+7  & 86\,016\,000  & \\
+8  & 98\,304\,000  & \\
+9  & 110\,592\,000 & $\geq M$: toggle 1; sisa 10\,592\,000 \\
+10 & 10\,592\,000  & Nilai setelah wrap \\
+11 & 22\,880\,000  & \\
+12 & 35\,168\,000  & \\
+13 & 47\,456\,000  & \\
+14 & 59\,744\,000  & \\
+15 & 72\,032\,000  & \\
+16 & 84\,320\,000  & \\
+17 & 96\,608\,000  & \\
+18 & 108\,896\,000 & $\geq M$: toggle 2; sisa 8\,896\,000 \\
+\hline
+\end{tabular}
+\end{table}
 
 Sementara itu, Subgambar~\ref{fig:ch5-waveform-frame} dan Subgambar~\ref{fig:ch5-bit-counter-waveform} mengonfirmasi karakteristik timing Philips I2S~\citep{philips_i2s_1986} sebagai berikut.
 
