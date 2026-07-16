@@ -126,6 +126,8 @@ Pada konfigurasi yang diuji, DAC PCM5102A menerima keluaran I2S setelah perubaha
 
 Selama tahap integrasi perangkat keras ditemukan dua bug pada firmware (\path{helloworld.c}) yang memengaruhi kualitas audio dan akurasi frekuensi nada. Keduanya berhasil diidentifikasi dan diperbaiki sebelum pengambilan data final.
 
+Pada rancangan ini, \textit{status polling} berarti firmware membaca bit 0 pada register \path{STATUS} secara berulang dan membandingkan nilainya dengan nilai pembacaan sebelumnya. Perubahan nilai menandai dimulainya frame stereo baru setelah hardware melatch sampel sebelumnya. Firmware kemudian menulis pasangan sampel berikutnya. Mekanisme ini menjaga sinkronisasi antara perangkat lunak dan serializer tanpa FIFO atau interupsi.
+
 \subsection{Bug 1: Masker Bit Merusak Bit Tanda Sampel}
 
 \textbf{Gejala.} Gelombang audio terdengar terdistorsi dengan amplitudo asimetris antara setengah siklus positif dan negatif.
@@ -718,7 +720,7 @@ Tabel~\ref{tab:ch5-comparison-ip} membandingkan fitur fungsional IP I2S Transmit
 		Antarmuka data      & AXI4-Stream
 		& AXI4-Lite (direct register write) \\
 		Konfigurasi $F_s$   & Divider statis / PLL eksternal
-		& NCO internal untuk laju sampling integer dalam rentang RTL \\
+		& NCO internal untuk frekuensi sampling integer dalam rentang RTL \\
 		Sinkronisasi        & AXI-Stream backpressure / interupsi
 		& Status-bit polling (latch toggle) \\
 		Jumlah kanal        & 2, 4, 6, atau 8
@@ -731,7 +733,7 @@ Tabel~\ref{tab:ch5-comparison-ip} membandingkan fitur fungsional IP I2S Transmit
 	\end{tabular}
 \end{table}
 
-Custom IP yang dirancang menawarkan kesederhanaan kontrol tanpa memerlukan DMA atau interkoneksi AXI4-Stream, dengan tetap memenuhi format transmisi audio stereo yang diuji. NCO internal menerima laju sampling integer dalam rentang yang dibatasi RTL. Logika audio tidak mengandung primitif vendor-spesifik, tetapi proses packaging, integrasi Block Design, dan implementasi tetap menggunakan toolchain AMD/Xilinx.
+Custom IP yang dirancang menawarkan kesederhanaan kontrol tanpa memerlukan DMA atau interkoneksi AXI4-Stream, dengan tetap memenuhi format transmisi audio stereo yang diuji. NCO internal menerima frekuensi sampling integer dalam rentang yang dibatasi RTL. Logika audio tidak mengandung primitif vendor-spesifik, tetapi proses packaging, integrasi Block Design, dan implementasi tetap menggunakan toolchain AMD/Xilinx.
 
 % ============================================================
 \section{Keterbatasan Desain}

@@ -28,7 +28,7 @@ Penelitian ini mengisi celah dokumentasi perancangan IP core I2S TX kustom untuk
 
 Kontribusi utama penelitian ini adalah:
 \begin{enumerate}
-    \item Merancang IP core I2S transmitter AXI4-Lite berbasis \textbf{NCO} (\textit{Numerically Controlled Oscillator}) desimal yang mendukung \textbf{arbitrary sample rate} tanpa PLL eksternal.
+    \item Merancang IP core I2S transmitter AXI4-Lite berbasis \textbf{NCO} (\textit{Numerically Controlled Oscillator}) desimal yang mendukung frekuensi sampling integer terprogram dalam rentang RTL tanpa PLL eksternal.
     \item Mengintegrasikan sistem SoC berbasis MicroBlaze V pada FPGA Artix-7 secara hemat sumber daya.
     \item Menyediakan solusi hardware-software handshake berbasis status-polling untuk mencegah data corruption dan drift.
     \item Mengidentifikasi dan mendokumentasikan penyelesaian tiga bug kritis pada lapisan firmware.
@@ -92,7 +92,7 @@ Protokol AXI4-Lite terdiri atas lima kanal independen yang memisahkan alur penul
 
 Mekanisme \textit{read} dan \textit{write} register pada AXI4-Lite berlangsung sebagai berikut. Pada transaksi \textit{write}, master menempatkan alamat pada kanal AW dan data pada kanal W secara simultan atau berurutan. Slave mengakuisisi alamat dan data ketika \texttt{AWVALID} dan \texttt{AWREADY} (serta \texttt{WVALID} dan \texttt{WREADY}) aktif bersamaan, kemudian memproses penulisan dan mengembalikan respon melalui kanal B. Pada transaksi \textit{read}, master menempatkan alamat pada kanal AR; slave merespon dengan menempatkan data yang diminta pada kanal R. Urutan ini memungkinkan pipeline transaksi yang efisien karena kanal alamat dan data terpisah.
 
-Dalam konteks penelitian ini, MicroBlaze V berperan sebagai \textit{master} AXI4-Lite yang mengakses register konfigurasi IP I2S Transmitter (\textit{slave}) melalui bus AXI. Register IP terdiri atas \texttt{DATA\_LEFT} dan \texttt{DATA\_RIGHT} untuk data audio, \texttt{CONTROL} untuk \texttt{ENABLE}, \texttt{MUTE}, lebar sampel, dan laju sampling, serta \texttt{STATUS} untuk indikator pergantian \textit{frame latch}. Register-register tersebut dipetakan ke alamat memori unik dalam \textit{address space} AXI4-Lite. Perangkat lunak bare-metal pada MicroBlaze V menulis dan membaca register-register tersebut menggunakan fungsi \texttt{Xil\_Out32} dan \texttt{Xil\_In32} yang membangkitkan transaksi AXI4-Lite secara otomatis.
+Dalam konteks penelitian ini, MicroBlaze V berperan sebagai \textit{master} AXI4-Lite yang mengakses register konfigurasi IP I2S Transmitter (\textit{slave}) melalui bus AXI. Register IP terdiri atas \texttt{DATA\_LEFT} dan \texttt{DATA\_RIGHT} untuk data audio, \texttt{CONTROL} untuk \texttt{ENABLE}, \texttt{MUTE}, lebar sampel, dan frekuensi sampling, serta \texttt{STATUS} untuk indikator pergantian \textit{frame latch}. Register-register tersebut dipetakan ke alamat memori unik dalam \textit{address space} AXI4-Lite. Perangkat lunak bare-metal pada MicroBlaze V menulis dan membaca register-register tersebut menggunakan fungsi \texttt{Xil\_Out32} dan \texttt{Xil\_In32} yang membangkitkan transaksi AXI4-Lite secara otomatis.
 
 \subsection{Protokol Komunikasi Audio I2S}
 
@@ -122,7 +122,7 @@ Gambar~\ref{fig:i2s_nxp_diagram} menjadi acuan penjelasan format Philips I2S. Pa
 
 Pembangkitan detak audio murni digital dilakukan menggunakan \textit{Numerically Controlled Oscillator} (NCO) untuk mengurangi ketergantungan pada jalur clock audio khusus \citep{vankka_dds_2001,ao2012nco}. NCO bekerja dengan prinsip akumulasi fase: suatu register (\textit{phase accumulator}) bertambah secara periodik pada setiap siklus clock referensi ($f_{\mathrm{ref}} = 100$ MHz) dengan nilai inkremen $I$ hingga mencapai batas modulus $M$, lalu kembali ke nilai sisa dan memicu perubahan logika keluaran.
 
-Akumulator fase pada penelitian ini menggunakan modulus numerik $M=100.000.000$, sama dengan nilai frekuensi referensi dalam satuan Hz. Pemilihan ini membuat nilai inkremen berbasis laju sampling integer mudah dihitung dari perangkat lunak. Modulus tersebut tidak menghapus kuantisasi atau jitter temporal; setiap luapan tetap terjadi pada tepi clock sistem terdekat.
+Akumulator fase pada penelitian ini menggunakan modulus numerik $M=100.000.000$, sama dengan nilai frekuensi referensi dalam satuan Hz. Pemilihan ini membuat nilai inkremen berbasis frekuensi sampling integer mudah dihitung dari perangkat lunak. Modulus tersebut tidak menghapus kuantisasi atau jitter temporal; setiap luapan tetap terjadi pada tepi clock sistem terdekat.
 
 Variabel-variabel dalam sistem NCO ini didefinisikan sebagai berikut:
 \begin{enumerate}
@@ -299,7 +299,7 @@ Dalam kode RTL Verilog, perkalian ini diimplementasikan secara efisien lewat per
 \textbf{Fitur} & \textbf{PLL / MMCM (Analog)} & \textbf{NCO (Digital)} \\
 \hline
 \textit{Jitter} & Bergantung pada karakteristik PLL/MMCM dan konfigurasi clock. & Tepi keluaran terkuantisasi terhadap periode clock sistem ($1/f_{\mathrm{ref}}$). \\
-Fleksibilitas & Bergantung pada konfigurasi dan resolusi clocking device. & Mendukung laju sampling integer dalam rentang RTL. \\
+Fleksibilitas & Bergantung pada konfigurasi dan resolusi clocking device. & Mendukung frekuensi sampling integer dalam rentang RTL. \\
 Portabilitas & Menggunakan primitive atau IP clocking vendor. & Logika audio ditulis dalam RTL portabel, tetapi integrasi sistem tetap menggunakan toolchain vendor. \\
 \hline
 \end{tabular}

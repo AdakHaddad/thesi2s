@@ -32,7 +32,7 @@ Sementara itu, firmware \texttt{helloworld.c} mengakses core melalui alamat memo
 
 \subsection{Pembangunan Sistem Dasar MicroBlaze V}
 
-Sebagai landasan implementasi, penelitian ini terlebih dahulu membangun platform dasar System-on-Chip (SoC) berbasis MicroBlaze V dengan mengacu pada modul tutorial MicroBlaze V~\cite{bejo2025microblazev}. Platform tersebut kemudian dikembangkan lebih lanjut melalui integrasi IP I2S berbasis AXI4-Lite yang dirancang pada penelitian ini. Tutorial tersebut digunakan hanya untuk membentuk platform komputasi awal pada Vivado dan Vitis, sedangkan pengembangan utama pada penelitian ini tetap berfokus pada IP I2S kustom, register kontrol, pembangkitan laju sampling, serializer Philips I2S, serta firmware pengujian. Desain akhir menggunakan satu domain clock 100 MHz, sehingga tidak memerlukan mekanisme \textit{clock domain crossing} asinkron pada jalur audio.
+Sebagai landasan implementasi, penelitian ini terlebih dahulu membangun platform dasar System-on-Chip (SoC) berbasis MicroBlaze V dengan mengacu pada modul tutorial MicroBlaze V~\cite{bejo2025microblazev}. Platform tersebut kemudian dikembangkan lebih lanjut melalui integrasi IP I2S berbasis AXI4-Lite yang dirancang pada penelitian ini. Tutorial tersebut digunakan hanya untuk membentuk platform komputasi awal pada Vivado dan Vitis, sedangkan pengembangan utama pada penelitian ini tetap berfokus pada IP I2S kustom, register kontrol, pembangkitan frekuensi sampling, serializer Philips I2S, serta firmware pengujian. Desain akhir menggunakan satu domain clock 100 MHz, sehingga tidak memerlukan mekanisme \textit{clock domain crossing} asinkron pada jalur audio.
 
 Pembangunan dimulai dari pembuatan proyek Vivado untuk target papan Basys3 dan penetapan desain puncak yang akan menampung prosesor, memori lokal, interkoneksi AXI, serta periferal dasar. Pada tahap ini, struktur sistem belum memuat logika audio kustom, melainkan hanya menyediakan lingkungan pemrosesan yang stabil agar blok-blok berikutnya dapat diintegrasikan secara terukur. Melalui pendekatan tersebut, platform dasar berfungsi sebagai fondasi yang konsisten bagi seluruh eksperimen perangkat keras dan perangkat lunak pada penelitian ini.
 
@@ -40,7 +40,7 @@ Di dalam \textit{block design}, tutorial mengarahkan pembentukan subsistem prose
 
 Setelah struktur internal selesai, Vivado menghasilkan \textit{HDL wrapper} agar desain dapat diperlakukan sebagai satu entitas top-level. Langkah ini penting karena wrapper menjadi antarmuka antara \textit{block design} dan implementasi fisik pada papan FPGA, termasuk pemetaan pin serta ekspor perangkat keras ke Vitis dalam bentuk berkas XSA. Dari titik ini, platform MicroBlaze V dapat dimanfaatkan untuk membuat firmware bare-metal yang menguji konektivitas prosesor, memori, dan UART sebelum peripheral audio kustom diintegrasikan.
 
-Komponen yang diadopsi dari tutorial terbatas pada infrastruktur dasar, yaitu proyek Vivado, \textit{block design}, \textit{Clocking Wizard}, MicroBlaze V, \textit{block automation}, memori lokal, AXI SmartConnect, AXI UARTLite, \textit{HDL wrapper}, dan ekspor hardware ke Vitis. Sebaliknya, komponen yang menjadi kontribusi penelitian ini adalah IP I2S berbasis AXI4-Lite beserta implementasi register, logika NCO untuk pembangkitan laju sampling integer dalam rentang RTL, serializer Philips I2S, serta firmware yang mengendalikan pengiriman sampel audio dan memvalidasi keluaran perangkat keras.
+Komponen yang diadopsi dari tutorial terbatas pada infrastruktur dasar, yaitu proyek Vivado, \textit{block design}, \textit{Clocking Wizard}, MicroBlaze V, \textit{block automation}, memori lokal, AXI SmartConnect, AXI UARTLite, \textit{HDL wrapper}, dan ekspor hardware ke Vitis. Sebaliknya, komponen yang menjadi kontribusi penelitian ini adalah IP I2S berbasis AXI4-Lite beserta implementasi register, logika NCO untuk pembangkitan frekuensi sampling integer dalam rentang RTL, serializer Philips I2S, serta firmware yang mengendalikan pengiriman sampel audio dan memvalidasi keluaran perangkat keras.
 
 Setelah sistem dasar MicroBlaze V berhasil dibangun, penelitian ini melanjutkan proses dengan mengintegrasikan IP I2S berbasis AXI4-Lite yang dikembangkan secara mandiri. Seluruh mekanisme komunikasi audio, register konfigurasi, generator clock berbasis NCO, serializer Philips I2S, serta firmware pengujian merupakan hasil pengembangan pada penelitian ini.
 
@@ -289,6 +289,8 @@ Register map final terdiri atas empat register 32 bit. Tabel~\ref{tab:ch4-regmap
 \end{tabular}
 \end{table}
 
+Empat register digunakan karena IP harus menyimpan sampel kiri dan kanan secara terpisah, menerima konfigurasi operasi, serta menyediakan umpan balik sinkronisasi kepada firmware. Register \texttt{STATUS} melengkapi register data dan \texttt{CONTROL}: bit 0 berubah nilai setiap kali pasangan sampel kiri-kanan dilatch ke dalam serializer pada awal frame stereo. Firmware menggunakan perubahan nilai tersebut untuk mengetahui bahwa register data dapat diperbarui tanpa menimpa sampel yang masih dikirim.
+
 \begin{table}[htbp]
 \centering
 \caption{Bitfield register \texttt{CONTROL}.}
@@ -451,7 +453,7 @@ end else begin
 end
 \end{lstlisting}
 
-Penggunaan NCO membuat laju sampling integer dapat diprogram dalam rentang RTL tanpa PLL audio tambahan \citep{ao2012nco}. Dari sudut implementasi, pendekatan ini menyederhanakan block design dan mengurangi ketergantungan pada clocking IP audio vendor-spesifik. Tepi keluaran tetap terkuantisasi terhadap clock sistem 100 MHz, sehingga klaim ini tidak berarti bahwa jitter temporal hilang.
+Penggunaan NCO membuat frekuensi sampling integer dapat diprogram dalam rentang RTL tanpa PLL audio tambahan \citep{ao2012nco}. Dari sudut implementasi, pendekatan ini menyederhanakan block design dan mengurangi ketergantungan pada clocking IP audio vendor-spesifik. Tepi keluaran tetap terkuantisasi terhadap clock sistem 100 MHz, sehingga klaim ini tidak berarti bahwa jitter temporal hilang.
 
 \subsection{Implementasi Serializer Philips I2S}
 
@@ -535,7 +537,7 @@ end
 
 Gambar~\ref{fig:ch4-latch-waveform} relevan untuk menjelaskan bahwa pasangan sampel kiri dan kanan tidak diambil secara acak per bit, tetapi dilatch utuh pada awal frame. Dengan demikian, satu frame stereo selalu menggunakan pasangan sampel yang konsisten.
 
-\subsection{Implementasi Pengaturan Frekuensi Sampling Arbitrer}
+\subsection{Implementasi Pengaturan Frekuensi Sampling Integer Terprogram}
 
 Pengaturan frekuensi sampling dimasukkan melalui bit \path{SAMPLE_RATE_HZ} pada register \path{CONTROL}. Di source code, nilai ini didefinisikan pada bit \path{[26:7]} dan dikonversi menjadi frekuensi yang digunakan NCO.
 
@@ -563,7 +565,7 @@ Konstruk ini penting karena \path{SAMPLE_WIDTH} tidak dapat menyimpan nilai 32 s
     \IfFileExists{contents/figures/arbitrary-fs-config-register-bit.png}{%
         \includegraphics[width=0.85\textwidth]{contents/figures/arbitrary-fs-config-register-bit.png}%
     }{}
-    \caption{Layout bit register \texttt{CONTROL} untuk konfigurasi laju sampling integer.}
+    \caption{Layout bit register \texttt{CONTROL} untuk konfigurasi frekuensi sampling integer.}
     \label{fig:ch4-fs-bit-layout}
 \end{figure}
 
