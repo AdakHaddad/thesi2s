@@ -1,7 +1,7 @@
 \chapter*{LAMPIRAN}
 %\addcontentsline{toc}{chapter}{LAMPIRAN}
 
-\section{Hasil resource utilization}
+\section{Hasil utilisasi resource}
 
 \subsection{Post-implementation resource report}
 
@@ -63,7 +63,7 @@ Timing Met? & \textbf{Yes} \\
 \subsection{I2S audio transmission timing}
 
 \begin{verbatim}
-Mode uji utama      : Fs keluarga 48 kHz
+Mode uji utama      : Fs = 48 kHz
 Sample width        : 24-bit per kanal (slot 32-bit)
 Struktur frame      : 64 BCLK per frame stereo
 
@@ -286,22 +286,4 @@ Laporan analisis power dari post-implementation desain menunjukkan konsumsi daya
 \centering
 \includegraphics[width=0.95\textwidth]{contents/figures/power-summary.png}
 \caption{Power summary report - total on-chip power consumption, breakdown per resource (MMCM, Block RAM, Slice Logic), dan power supply margins}
-\end{figure}
-
-\chapter{Repositori Kode Sumber}
-\label{app:repository}
-
-Seluruh kode sumber, firmware, skrip pembangunan proyek, serta dokumen pendukung penelitian ini tersedia pada repositori GitHub berikut.
-
-\begin{center}
-    \url{https://github.com/adakhaddad/thesi2s}
-\end{center}
-
-Pengelolaan repositori dilakukan menggunakan \textit{Hog (HDL on Git)}, yaitu kerangka kerja berbasis Git yang mendukung reproduksibilitas proyek FPGA serta mempermudah rekonstruksi proyek AMD Vivado.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.28\textwidth]{contents/figures/logos_hog.png}
-    \caption{Logo Hog (\textit{HDL on Git}) yang digunakan sebagai sistem pengelolaan proyek HDL pada penelitian ini.}
-    \label{fig:hog-logo}
 \end{figure}

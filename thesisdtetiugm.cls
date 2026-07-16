@@ -853,6 +853,15 @@
 }
 
 % Appendix
+% Appendix chapters use an unnumbered visual style.  The appendix page and
+% section labels still use the L convention, but an internal chapter command
+% must not be formatted as "BAB L".
+\newcommand{\@makeappendixchapterhead}[1]{%
+  {\parindent \z@ \centering \bfseries
+   \fontsize{14pt}{16pt}\selectfont
+   \MakeUppercase{#1}\par\nobreak
+   \vskip 20\p@}}
+
 \newcommand{\chapterappendix}[1]{
 	\newpage
 	% Reset counter
@@ -864,6 +873,7 @@
 	\renewcommand{\thepage}{L-\arabic{page}}
 	\renewcommand \thesection {L.\@arabic\c@section}
 	\renewcommand\thesubsection {L.\@arabic\c@section.\@arabic\c@subsection}
+	\let\@makechapterhead\@makeappendixchapterhead
 	
 	% Add to TOC
     \addcontentsline{toc}{chapter}{LAMPIRAN}	
@@ -890,6 +900,7 @@
 	\renewcommand{\thepage}{L-\arabic{page}}
 	\renewcommand \thesection {L.\@arabic\c@section}
 	\renewcommand\thesubsection {L.\@arabic\c@section.\@arabic\c@subsection}
+	\let\@makechapterhead\@makeappendixchapterhead
 	
 	% Add to TOC
 	%\addcontentsline{toc}{chapter}{\protect\setcounter{tocdepth}{1}\protect\appendixname}
