@@ -587,12 +587,12 @@ wire _unused_ok = S_AXI_AWPROT[0] ^ S_AXI_AWPROT[1] ^ S_AXI_AWPROT[2] ^
 
 Integrasi ke Vivado dilakukan dengan mempertahankan nama modul \path{i2s} pada wrapper, menggunakan parameter lebar bus standar, dan menghubungkan core ke AXI interconnect serta pin keluar PMOD/DAC. Pada level Block Design, IP ini menerima clock sistem dari prosesor dan memancarkan clock I2S langsung dari internal NCO.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \IfFileExists{contents/figures/processor-system-reset.png}{%
-        \includegraphics[width=0.75\textwidth]{contents/figures/processor-system-reset.png}%
+    \IfFileExists{contents/figures/color-coded-block-diagram.png}{%
+        \includegraphics[width=0.95\textwidth]{contents/figures/color-coded-block-diagram.png}%
     }{}
-    \caption{Rangkaian reset sistem yang digunakan pada Block Design Vivado.}
+    \caption{Rangkaian sistem yang digunakan pada Block Design Vivado.}
     
 \end{figure}
 

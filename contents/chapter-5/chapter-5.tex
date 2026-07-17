@@ -6,6 +6,8 @@ Bab ini menyajikan hasil verifikasi dan pengujian fungsional IP I2S Transmitter.
 
 Sebelum IP dikemas dan diintegrasikan ke dalam \textit{block design}, modul I2S diverifikasi menggunakan Vivado Simulator melalui \textit{testbench} mandiri. Testbench memberikan clock sistem 100~MHz dan reset, menjalankan transaksi AXI4-Lite untuk menulis serta membaca register \path{DATA\_LEFT}, \path{DATA\_RIGHT}, \path{CONTROL}, dan \path{STATUS}, kemudian memeriksa respons \path{BRESP} dan \path{RRESP}. Dengan demikian, fungsi register, mekanisme handshaking AXI4-Lite, pembangkitan clock berbasis \textit{phase accumulator}, serta proses serialisasi data I2S dapat diverifikasi tanpa ketergantungan pada firmware maupun board fisik.
 
+Kode lengkap \textit{testbench} yang digunakan pada simulasi disertakan pada Listing~\ref{lst:i2s-testbench} di lampiran. Listing tersebut menunjukkan pembangkitan clock dan reset, koneksi modul I2S, transaksi baca-tulis AXI4-Lite, serta pemeriksaan otomatis terhadap data yang dibaca kembali dan sinyal keluaran I2S. Dengan demikian, hasil verifikasi pada bagian ini dapat direproduksi dari kode sumber yang dicantumkan.
+
 Vektor uji menggunakan sampel kiri dan kanan 24-bit yang berbeda. Setelah bit \path{ENABLE} diaktifkan pada register \path{CONTROL}, simulator memantau pembangkitan BCLK, perubahan WS, serta keluaran \path{i2s\_data} pada setiap tepi naik BCLK sebagaimana dilakukan oleh penerima I2S. Pemeriksaan meliputi kondisi reset, kondisi \path{ENABLE=0}, pembangkitan clock menggunakan \textit{phase accumulator}, sinkronisasi frame stereo, urutan pengiriman bit MSB--LSB, \textit{one-bit delay} sesuai spesifikasi Philips I2S, padding nol pada slot 32-bit, serta fungsi \path{MUTE}. Simulasi dinyatakan berhasil apabila seluruh pemeriksaan tersebut terpenuhi.
 
 Hasil simulasi menjadi dasar sebelum proses sintesis dan implementasi. Setelah seluruh \textit{timing constraints} terpenuhi, bitstream dan \textit{hardware platform} diekspor ke Vitis untuk pengujian firmware. Selanjutnya dilakukan validasi pada perangkat keras menggunakan Integrated Logic Analyzer (ILA), osiloskop, dan pengujian audio pada DAC PCM5102A untuk memastikan perilaku yang telah diverifikasi melalui simulasi tetap konsisten pada implementasi fisik.
@@ -323,12 +325,13 @@ Pengujian mengirim nada sinus 1~kHz dari firmware ke register data IP I2S. Pada 
 
 Integrasi IP I2S dengan satu blok filter IIR pada Block Design Vivado diperlihatkan pada Gambar~\ref{fig:ch5-filter-integration}. IP I2S (\texttt{i2s\_0}) terhubung ke modul \texttt{i2s\_filter\_bridge} yang mendeserialisasi slot kiri, memprosesnya melalui filter IIR (\texttt{filter\_coeff}), dan mengembalikan hasil mono yang dimirror ke jalur data serial menuju DAC.
 
+\clearpage
 \begin{landscape}
-	\begin{figure}[p]
+	\begin{figure}[H]
 		\centering
 		\includegraphics[
-		width=\textwidth,
-		height=\textheight,
+		width=\linewidth,
+		height=0.88\textheight,
 		keepaspectratio
 		]{contents/figures/filter_i2s_bd_fullsizeview.jpg}
 		\caption{Integrasi IP I2S dengan blok filter IIR pada Vivado Block Design.}

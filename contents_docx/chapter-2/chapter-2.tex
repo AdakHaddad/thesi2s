@@ -159,7 +159,7 @@ $F_s = \dfrac{f_{\mathrm{BCLK}}}{64}$
 
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}[
     node distance=2cm,
@@ -192,12 +192,18 @@ $F_s = \dfrac{f_{\mathrm{BCLK}}}{64}$
 
 \end{figure}
 
-Dalam kode RTL Verilog, perkalian ini diimplementasikan secara efisien lewat pergeseran bit (\textit{bit-shift}):
+\FloatBarrier
+
+Pada Gambar~\ref{fig:nco_architecture}, nilai inkremen fase ditambahkan ke akumulator pada setiap siklus clock sistem. Ketika akumulator melampaui modulus, terjadi luapan yang digunakan untuk mengubah keluaran clock. Dengan demikian, laju perubahan BCLK dan MCLK ditentukan oleh frekuensi sampling yang ditulis pada register kontrol.
+
+Dalam kode RTL Verilog, perkalian $F_s$ dengan 128 dan 512 diimplementasikan secara efisien melalui pergeseran bit (\textit{bit-shift}). Penyambungan tujuh bit nol di sebelah kanan menghasilkan $F_s \times 2^7 = F_s \times 128$, sedangkan penyambungan sembilan bit nol menghasilkan $F_s \times 2^9 = F_s \times 512$:
 
 \begin{lstlisting}[breaklines=true]
 	wire [31:0] bclk_toggle_rate_hz = {sample_rate_sync, 7'b0}; // Fs * 128
 	wire [31:0] mclk_toggle_rate_hz = {sample_rate_sync, 9'b0}; // Fs * 512
 \end{lstlisting}
+
+Variabel \texttt{bclk\_toggle\_rate\_hz} menyimpan laju toggle BCLK, sedangkan \texttt{mclk\_toggle\_rate\_hz} menyimpan laju toggle MCLK. Karena setiap periode clock memerlukan dua toggle, nilai tersebut digunakan sebagai laju perubahan level oleh logika NCO.
 
 \begin{table}[htbp]
 \centering
