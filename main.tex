@@ -1,272 +1,171 @@
 \documentclass[conference]{IEEEtran}
 \IEEEoverridecommandlockouts
-% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
-\usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+\usepackage{url}
+
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
 \begin{document}
+\title{Perancangan IP I2S Transmitter AXI4-Lite pada SoC MicroBlaze V menggunakan Verilog}
 
-\title{Paper Title}
-
-\author{\IEEEauthorblockN{1\textsuperscript{st} Given Name Surname}
-\IEEEauthorblockA{\textit{Department of Electrical and} \\
-	\textit{Information Engineering}\\ \textit{Universitas Gadjah Mada} \\
-	Yogyakarta, Indonesia \\
-	email address or ORCID}
-\and
-\IEEEauthorblockN{2\textsuperscript{nd} Given Name Surname}
-\IEEEauthorblockA{\textit{Department of Electrical and} \\
-	\textit{Information Engineering}\\ \textit{Universitas Gadjah Mada} \\
-	Yogyakarta, Indonesia \\
-	email address or ORCID}
-\and
-\IEEEauthorblockN{3\textsuperscript{rd} Given Name Surname}
-\IEEEauthorblockA{\textit{Department of Electrical and} \\
-	\textit{Information Engineering}\\ \textit{Universitas Gadjah Mada} \\
-	Yogyakarta, Indonesia \\
-	email address or ORCID}
+\author{\IEEEauthorblockN{Muhammad Muqtada Alhaddad}
+\IEEEauthorblockA{Program Studi Teknologi Informasi\\
+Universitas Gadjah Mada\\
+Yogyakarta, Indonesia\\
+muqtada@example.com}
 }
 
 \maketitle
 
 \begin{abstract}
-This document is a model and instructions for \LaTeX.
-This and the IEEEtran.cls file define the components of your paper [title, text, heads, etc.]. *CRITICAL: Do Not Use Symbols, Special Characters, Footnotes, 
-or Math in Paper Title or Abstract.
+This paper presents the implementation of a custom I2S transmitter IP core in Verilog that is controlled through an AXI4-Lite register interface on a MicroBlaze V soft-core SoC. The target platform is a Basys3 FPGA board driving an external PCM5102A DAC. Audio timing is generated from a 100 MHz system clock using a numerically controlled oscillator, while the firmware streams stereo samples through memory-mapped register writes and status polling. The final design supports Philips I2S framing, 32-bit slots with 24-bit audio, and programmable integer sampling rates without relying on FIFO, DMA, or a licensed audio IP block. Simulation and hardware validation confirm correct waveform generation, stable audio output, and a compact implementation suitable as reusable soft IP.
 \end{abstract}
 
 \begin{IEEEkeywords}
-component, formatting, style, styling, insert
+I2S, AXI4-Lite, MicroBlaze V, FPGA, Verilog, PCM5102A, soft IP
 \end{IEEEkeywords}
 
 \section{Introduction}
-This document is a model and instructions for \LaTeX.
-Please observe the conference page limits. 
+Digital audio on FPGA is attractive when deterministic timing, configurable interfaces, and software-controlled peripheral access are required. The I2S protocol remains a practical transport for PCM audio because it is simple, standardized, and directly compatible with external DACs\cite{philips_i2s_1986}. For SoC control, AXI4-Lite provides a compact memory-mapped interface for custom peripherals\cite{arm_amba_axi_2010}.
 
-\section{Ease of Use}
+This work follows the thesis implementation path for a custom I2S transmitter IP that is integrated into a MicroBlaze V based SoC on Basys3 and connected to a PCM5102A DAC\cite{xilinx_microblaze_ref_2021,xilinx_basys3_ref,pcm5102a_datasheet}. The goal is not only to produce correct I2S waveforms, but also to keep the peripheral reusable as a soft IP block in Vivado designs\cite{xilinx_vivado_design_suite_2021}.
 
-\subsection{Maintaining the Integrity of the Specifications}
+The main contribution is a complete hardware-software flow: a Verilog I2S transmitter core, an AXI4-Lite register map, an internal phase-accumulator timing generator, and bare-metal firmware that streams audio samples using status polling. The implementation stays transparent at RTL level and avoids dependence on a licensed vendor audio block.
 
-The IEEEtran class file is used to format your paper and style the text. All margins, 
-column widths, line spaces, and text fonts are prescribed; please do not 
-alter them. You may note peculiarities. For example, the head margin
-measures proportionately more than is customary. This measurement 
-and others are deliberate, using specifications that anticipate your paper 
-as one part of the entire proceedings, and not as an independent document. 
-Please do not revise any of the current designations.
+\section{Background and Related Concepts}
+\subsection{I2S audio framing}
+I2S uses three signals: bit clock, word select, and serial data. Philips I2S requires a one-bit delay between the word-select transition and the first data bit, and the design in this paper preserves that rule\cite{philips_i2s_1986}. The transmitter operates in stereo mode with 32-bit slots, while the active sample width is 24 bits.
 
-\section{Prepare Your Paper Before Styling}
-Before you begin to format your paper, first write and save the content as a 
-separate text file. Complete all content and organizational editing before 
-formatting. Please note sections \ref{AA}--\ref{SCM} below for more information on 
-proofreading, spelling and grammar.
+\subsection{AXI4-Lite register access}
+AXI4-Lite is used as a simple register-access protocol for control and status traffic\cite{arm_amba_axi_2010,xilinx_axi_ref_2017}. In this design, the software writes audio samples and control settings to memory-mapped registers, then waits for a status transition that indicates the hardware has latched the sample pair.
 
-Keep your text and graphic files separate until after the text has been 
-formatted and styled. Do not number text heads---{\LaTeX} will do that 
-for you.
+\subsection{Clock generation}
+The audio timing is derived from a 100 MHz system clock using a numerically controlled oscillator. NCO-style phase accumulation is a standard way to generate programmable output frequencies in digital systems\cite{vankka_dds_2001,ao2012nco}. Here, that technique is used to derive BCLK and MCLK without requiring a separate audio PLL.
 
-\subsection{Abbreviations and Acronyms}\label{AA}
-Define abbreviations and acronyms the first time they are used in the text, 
-even after they have been defined in the abstract. Abbreviations such as 
-IEEE, SI, MKS, CGS, ac, dc, and rms do not have to be defined. Do not use 
-abbreviations in the title or heads unless they are unavoidable.
+\section{System Design}
+\subsection{Hardware architecture}
+The final system contains four main parts: MicroBlaze V, AXI interconnect, the custom I2S IP, and the external PCM5102A DAC. The processor writes to the I2S peripheral through AXI4-Lite, and the peripheral outputs \texttt{i2s\_mclk}, \texttt{i2s\_bclk}, \texttt{i2s\_ws}, and \texttt{i2s\_data}. UART is reserved for debug output during development.
 
-\subsection{Units}
-\begin{itemize}
-\item Use either SI (MKS) or CGS as primary units. (SI units are encouraged.) English units may be used as secondary units (in parentheses). An exception would be the use of English units as identifiers in trade, such as ``3.5-inch disk drive''.
-\item Avoid combining SI and CGS units, such as current in amperes and magnetic field in oersteds. This often leads to confusion because equations do not balance dimensionally. If you must use mixed units, clearly state the units for each quantity that you use in an equation.
-\item Do not mix complete spellings and abbreviations of units: ``Wb/m\textsuperscript{2}'' or ``webers per square meter'', not ``webers/m\textsuperscript{2}''. Spell out units when they appear in text: ``. . . a few henries'', not ``. . . a few H''.
-\item Use a zero before decimal points: ``0.25'', not ``.25''. Use ``cm\textsuperscript{3}'', not ``cc''.)
-\end{itemize}
-
-\subsection{Equations}
-Number equations consecutively. To make your 
-equations more compact, you may use the solidus (~/~), the exp function, or 
-appropriate exponents. Italicize Roman symbols for quantities and variables, 
-but not Greek symbols. Use a long dash rather than a hyphen for a minus 
-sign. Punctuate equations with commas or periods when they are part of a 
-sentence, as in:
-\begin{equation}
-a+b=\gamma\label{eq}
-\end{equation}
-
-Be sure that the 
-symbols in your equation have been defined before or immediately following 
-the equation. Use ``\eqref{eq}'', not ``Eq.~\eqref{eq}'' or ``equation \eqref{eq}'', except at 
-the beginning of a sentence: ``Equation \eqref{eq} is . . .''
-
-\subsection{\LaTeX-Specific Advice}
-
-Please use ``soft'' (e.g., \verb|\eqref{Eq}|) cross references instead
-of ``hard'' references (e.g., \verb|(1)|). That will make it possible
-to combine sections, add equations, or change the order of figures or
-citations without having to go through the file line by line.
-
-Please don't use the \verb|{eqnarray}| equation environment. Use
-\verb|{align}| or \verb|{IEEEeqnarray}| instead. The \verb|{eqnarray}|
-environment leaves unsightly spaces around relation symbols.
-
-Please note that the \verb|{subequations}| environment in {\LaTeX}
-will increment the main equation counter even when there are no
-equation numbers displayed. If you forget that, you might write an
-article in which the equation numbers skip from (17) to (20), causing
-the copy editors to wonder if you've discovered a new method of
-counting.
-
-{\BibTeX} does not work by magic. It doesn't get the bibliographic
-data from thin air but from .bib files. If you use {\BibTeX} to produce a
-bibliography you must send the .bib files. 
-
-{\LaTeX} can't read your mind. If you assign the same label to a
-subsubsection and a table, you might find that Table I has been cross
-referenced as Table IV-B3. 
-
-{\LaTeX} does not have precognitive abilities. If you put a
-\verb|\label| command before the command that updates the counter it's
-supposed to be using, the label will pick up the last counter to be
-cross referenced instead. In particular, a \verb|\label| command
-should not go before the caption of a figure or a table.
-
-Do not use \verb|\nonumber| inside the \verb|{array}| environment. It
-will not stop equation numbers inside \verb|{array}| (there won't be
-any anyway) and it might stop a wanted equation number in the
-surrounding equation.
-
-\subsection{Some Common Mistakes}\label{SCM}
-\begin{itemize}
-\item The word ``data'' is plural, not singular.
-\item The subscript for the permeability of vacuum $\mu_{0}$, and other common scientific constants, is zero with subscript formatting, not a lowercase letter ``o''.
-\item In American English, commas, semicolons, periods, question and exclamation marks are located within quotation marks only when a complete thought or name is cited, such as a title or full quotation. When quotation marks are used, instead of a bold or italic typeface, to highlight a word or phrase, punctuation should appear outside of the quotation marks. A parenthetical phrase or statement at the end of a sentence is punctuated outside of the closing parenthesis (like this). (A parenthetical sentence is punctuated within the parentheses.)
-\item A graph within a graph is an ``inset'', not an ``insert''. The word alternatively is preferred to the word ``alternately'' (unless you really mean something that alternates).
-\item Do not use the word ``essentially'' to mean ``approximately'' or ``effectively''.
-\item In your paper title, if the words ``that uses'' can accurately replace the word ``using'', capitalize the ``u''; if not, keep using lower-cased.
-\item Be aware of the different meanings of the homophones ``affect'' and ``effect'', ``complement'' and ``compliment'', ``discreet'' and ``discrete'', ``principal'' and ``principle''.
-\item Do not confuse ``imply'' and ``infer''.
-\item The prefix ``non'' is not a word; it should be joined to the word it modifies, usually without a hyphen.
-\item There is no period after the ``et'' in the Latin abbreviation ``et al.''.
-\item The abbreviation ``i.e.'' means ``that is'', and the abbreviation ``e.g.'' means ``for example''.
-\end{itemize}
-An excellent style manual for science writers is \cite{b7}.
-
-\subsection{Authors and Affiliations}
-\textbf{The class file is designed for, but not limited to, six authors.} A 
-minimum of one author is required for all conference articles. Author names 
-should be listed starting from left to right and then moving down to the 
-next line. This is the author sequence that will be used in future citations 
-and by indexing services. Names should not be listed in columns nor group by 
-affiliation. Please keep your affiliations as succinct as possible (for 
-example, do not differentiate among departments of the same organization).
-
-\subsection{Identify the Headings}
-Headings, or heads, are organizational devices that guide the reader through 
-your paper. There are two types: component heads and text heads.
-
-Component heads identify the different components of your paper and are not 
-topically subordinate to each other. Examples include Acknowledgments and 
-References and, for these, the correct style to use is ``Heading 5''. Use 
-``figure caption'' for your Figure captions, and ``table head'' for your 
-table title. Run-in heads, such as ``Abstract'', will require you to apply a 
-style (in this case, italic) in addition to the style provided by the drop 
-down menu to differentiate the head from the text.
-
-Text heads organize the topics on a relational, hierarchical basis. For 
-example, the paper title is the primary text head because all subsequent 
-material relates and elaborates on this one topic. If there are two or more 
-sub-topics, the next level head (uppercase Roman numerals) should be used 
-and, conversely, if there are not at least two sub-topics, then no subheads 
-should be introduced.
-
-\subsection{Figures and Tables}
-\paragraph{Positioning Figures and Tables} Place figures and tables at the top and 
-bottom of columns. Avoid placing them in the middle of columns. Large 
-figures and tables may span across both columns. Figure captions should be 
-below the figures; table heads should appear above the tables. Insert 
-figures and tables after they are cited in the text. Use the abbreviation 
-``Fig.~\ref{fig}'', even at the beginning of a sentence.
-
-\begin{table}[htbp]
-\caption{Table Type Styles}
-\begin{center}
-\begin{tabular}{|c|c|c|c|}
-\hline
-\textbf{Table}&\multicolumn{3}{|c|}{\textbf{Table Column Head}} \\
-\cline{2-4} 
-\textbf{Head} & \textbf{\textit{Table column subhead}}& \textbf{\textit{Subhead}}& \textbf{\textit{Subhead}} \\
-\hline
-copy& More table copy$^{\mathrm{a}}$& &  \\
-\hline
-\multicolumn{4}{l}{$^{\mathrm{a}}$Sample of a Table footnote.}
-\end{tabular}
-\label{tab1}
-\end{center}
-\end{table}
-
-\begin{figure}[htbp]
-\centerline{\includegraphics{fig1.png}}
-\caption{Example of a figure caption.}
-\label{fig}
+\begin{figure}[t]
+\centering
+\IfFileExists{../thesi2s/contents/figures/processor-uart-timer-axi-i2s-architecture-whole-diagram.png}{%
+\includegraphics[width=0.92\columnwidth]{../thesi2s/contents/figures/processor-uart-timer-axi-i2s-architecture-whole-diagram.png}%
+}{}
+\caption{System architecture linking MicroBlaze V, UART, AXI4-Lite, and the custom I2S transmitter IP.}
+\label{fig:system-architecture}
 \end{figure}
 
-Figure Labels: Use 8 point Times New Roman for Figure labels. Use words 
-rather than symbols or abbreviations when writing Figure axis labels to 
-avoid confusing the reader. As an example, write the quantity 
-``Magnetization'', or ``Magnetization, M'', not just ``M''. If including 
-units in the label, present them within parentheses. Do not label axes only 
-with units. In the example, write ``Magnetization (A/m)'' or ``Magnetization 
-\{A[m(1)]\}'', not just ``A/m''. Do not label axes with a ratio of 
-quantities and units. For example, write ``Temperature (K)'', not 
-``Temperature/K''.
+\subsection{Register map}
+Table~\ref{tab:register-map} summarizes the peripheral interface.
 
-\section*{Acknowledgment}
+\begin{table}[t]
+\caption{AXI4-Lite register map of the I2S transmitter}
+\label{tab:register-map}
+\centering
+\begin{tabular}{|l|c|p{4.1cm}|}
+\hline
+\textbf{Register} & \textbf{Offset} & \textbf{Function} \\
+\hline
+DATA\_LEFT  & 0x00 & Left-channel audio sample written by software \\
+\hline
+DATA\_RIGHT & 0x04 & Right-channel audio sample written by software \\
+\hline
+CONTROL     & 0x08 & Enable, mute, and programmable sampling-rate control \\
+\hline
+STATUS      & 0x0C & Frame-latch status bit used for software synchronization \\
+\hline
+\end{tabular}
+\end{table}
 
-The preferred spelling of the word ``acknowledgment'' in America is without 
-an ``e'' after the ``g''. Avoid the stilted expression ``one of us (R. B. 
-G.) thanks $\ldots$''. Instead, try ``R. B. G. thanks$\ldots$''. Put sponsor 
-acknowledgments in the unnumbered footnote on the first page.
+The control path is intentionally small so the firmware can interact with the peripheral using ordinary load/store operations rather than a driver stack. This keeps the software side suitable for bare-metal Vitis projects.
 
-\section*{References}
+\subsection{Clock and frame timing}
+The implementation uses a 100 MHz reference clock and generates the audio clocks from phase accumulators. The design aligns the channel boundary with the 64-bit stereo frame, meaning one frame contains 32 BCLK periods for the left channel and 32 for the right channel. A status toggle marks the moment when the hardware has moved the current sample pair into its internal shadow registers.
 
-Please cite all your references \cite{2023Bhawal-SST},\cite{2023Chen-Phase-Shift-DAB}. References are stored in a bibtex file "references.bib". You can use Mendeley or Jabref for your reference manager. 
+\section{Implementation}
+\subsection{RTL structure}
+The RTL is organized as a soft IP core written in Verilog\cite{palnitkar_verilog_2003}. The core contains three functional blocks: AXI4-Lite handshake logic, a register file, and an I2S serializer. The register file stores the audio samples and control bits, while the serializer emits the Philips I2S bit stream. The clock generator and frame counter are kept inside the core so the design is self-contained.
 
-%Please number citations consecutively within brackets \cite{b1}. The 
-%sentence punctuation follows the bracket \cite{b2}. Refer simply to the reference 
-%number, as in \cite{b3}---do not use ``Ref. \cite{b3}'' or ``reference \cite{b3}'' except at 
-%the beginning of a sentence: ``Reference \cite{b3} was the first $\ldots$''
-%
-%Number footnotes separately in superscripts. Place the actual footnote at 
-%the bottom of the column in which it was cited. Do not put footnotes in the 
-%abstract or reference list. Use letters for table footnotes.
-%
-%Unless there are six authors or more give all authors' names; do not use 
-%``et al.''. Papers that have not been published, even if they have been 
-%submitted for publication, should be cited as ``unpublished'' \cite{b4}. Papers 
-%that have been accepted for publication should be cited as ``in press'' \cite{b5}. 
-%Capitalize only the first word in a paper title, except for proper nouns and 
-%element symbols.
-%
-%For papers published in translation journals, please give the English 
-%citation first, followed by the original foreign-language citation \cite{b6}.
+\subsection{Firmware flow}
+The bare-metal firmware initializes the peripheral, writes the control word, waits for the frame-status transition, and then pushes the next stereo sample pair. The software uses status polling instead of delays or interrupts so that sample submission stays synchronized with the frame boundary.
 
+This approach avoids the drift that would occur if the software tried to approximate audio timing using sleep calls alone. It also keeps the transfer path deterministic across sample-rate changes.
 
+\subsection{Supported operating modes}
+The implementation supports the following modes:
+\begin{itemize}
+\item Philips I2S framing with one-bit delay.
+\item Stereo output with 32-bit slots.
+\item 24-bit active sample width.
+\item Programmable integer sampling rates, including standard audio rates such as 44.1 kHz, 48 kHz, 88.2 kHz, and 96 kHz.
+\item Mute and enable control through the AXI4-Lite control register.
+\end{itemize}
 
-\bibliography{references}{}
+\section{Results and Discussion}
+\subsection{Functional validation}
+The RTL was verified in simulation before board deployment. The checks covered AXI4-Lite read/write behavior, BCLK and WS generation, one-bit I2S delay, stereo frame alignment, and mute behavior. After the RTL passed simulation, the bitstream was implemented on Basys3 and the DAC output was observed on the physical board.
+
+Figure~\ref{fig:system-architecture} summarizes the full hardware-software chain used in the implementation.
+
+The hardware test confirmed that the PCM5102A produced clean audio output for the intended modes. In particular, the final firmware avoided the sign-bit corruption and timing drift issues that were encountered during development.
+
+\subsection{Synthesis summary}
+Table~\ref{tab:synthesis} summarizes the reported implementation results.
+
+\begin{figure}[t]
+\centering
+\IfFileExists{../thesi2s/contents/figures/utilization-summary.png}{%
+\includegraphics[width=0.92\columnwidth]{../thesi2s/contents/figures/utilization-summary.png}%
+}{}
+\caption{Resource utilization summary of the implemented SoC and I2S transmitter.}
+\label{fig:utilization-summary}
+\end{figure}
+
+\begin{table}[t]
+\caption{Reported implementation summary}
+\label{tab:synthesis}
+\centering
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+Slice registers and logic & 903 Slice \\
+\hline
+LUT usage & 2435 LUT \\
+\hline
+Flip-flop usage & 2330 FF \\
+\hline
+BRAM usage & 32 BRAM \\
+\hline
+Total power & 0.209 W \\
+\hline
+WNS at 100 MHz & 0.064 ns \\
+\hline
+Estimated Fmax & 100.64 MHz \\
+\hline
+\end{tabular}
+\end{table}
+
+These numbers indicate that the design is lightweight enough for Artix-7 class devices while still providing a reusable audio peripheral and software control path.
+
+Figure~\ref{fig:utilization-summary} provides a compact view of the implementation footprint reported by the thesis build.
+
+\subsection{Discussion}
+The main advantage of the final architecture is that the peripheral does not depend on a third-party audio IP license. The core remains transparent at RTL level, and the register map is simple enough to be driven from bare-metal firmware. Compared with a FIFO- or DMA-based design, this implementation is easier to understand and sufficient for modest audio streaming workloads.
+
+The tradeoff is that software must respect the frame boundary and keep up with the status polling loop. That is acceptable for the intended use case, but a higher-throughput system would benefit from FIFO buffering or DMA support.
+
+\section{Conclusion}
+A custom I2S transmitter IP was successfully designed in Verilog and integrated into a MicroBlaze V SoC using AXI4-Lite control. The design generates Philips I2S timing, supports stereo 24-bit audio in 32-bit slots, and uses a phase-accumulator clocking scheme to support programmable integer sampling rates. Hardware validation with a PCM5102A DAC and synthesis results on Basys3 show that the implementation is compact, reusable, and practical for FPGA-based audio experiments.
+
+Future work can extend the core with TX FIFO buffering, interrupt-driven transfers, or DMA support for higher sustained throughput.
+
 \bibliographystyle{IEEEtran}
-
-%\begin{thebibliography}{00}
-%\bibitem{b1} G. Eason, B. Noble, and I. N. Sneddon, ``On certain integrals of Lipschitz-Hankel type involving products of Bessel functions,'' Phil. Trans. Roy. Soc. London, vol. A247, pp. 529--551, April 1955.
-%\bibitem{b2} J. Clerk Maxwell, A Treatise on Electricity and Magnetism, 3rd ed., vol. 2. Oxford: Clarendon, 1892, pp.68--73.
-%\bibitem{b3} I. S. Jacobs and C. P. Bean, ``Fine particles, thin films and exchange anisotropy,'' in Magnetism, vol. III, G. T. Rado and H. Suhl, Eds. New York: Academic, 1963, pp. 271--350.
-%\bibitem{b4} K. Elissa, ``Title of paper if known,'' unpublished.
-%\bibitem{b5} R. Nicole, ``Title of paper with only first word capitalized,'' J. Name Stand. Abbrev., in press.
-%\bibitem{b6} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ``Electron spectroscopy studies on magneto-optical media and plastic substrate interface,'' IEEE Transl. J. Magn. Japan, vol. 2, pp. 740--741, August 1987 [Digests 9th Annual Conf. Magnetics Japan, p. 301, 1982].
-%\bibitem{b7} M. Young, The Technical Writer's Handbook. Mill Valley, CA: University Science, 1989.
-%\end{thebibliography}
-
-
+\bibliography{references}
 
 \end{document}
