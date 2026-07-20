@@ -16,7 +16,7 @@
 
 \hspace{1cm}Berdasarkan kebutuhan tersebut, skripsi ini berfokus pada perancangan IP core transmitter I2S berbasis Verilog dengan antarmuka AXI4-Lite yang dapat diintegrasikan ke dalam SoC MicroBlaze V pada board Basys3~\citep{xilinx_basys3_ref}. Kode sumber dan dokumentasi proyek ini tersedia secara terbuka pada repositori GitHub\footnote{\url{https://github.com/adakhaddad/thesi2s}}. Target keluaran audio adalah modul PCM5102A sebagai DAC eksternal. Desain difokuskan pada mode TX-only, format Philips I2S, stereo, slot 32 bit, dan lebar sampel yang dapat dipilih hingga 32 bit. Penelitian ini mencakup evolusi rancangan dari empat mode frekuensi sampling standar menuju pengembangan berbasis DDS (\textit{Direct Digital Synthesis}) untuk mendukung frekuensi sampling integer dalam rentang RTL. Tahapan penelitian meliputi perancangan RTL, integrasi Vivado Block Design~\citep{xilinx_vivado_ip_subsystems_2025}, pengembangan perangkat lunak uji di Vitis, pengukuran sinyal, dan pengujian keluaran audio.
 
-\hspace{1cm}Kontribusi utama penelitian ini adalah perancangan Custom IP I2S Transmitter yang mendukung frekuensi sampling integer terprogram berbasis NCO dan dapat diintegrasikan sebagai peripheral AXI4-Lite pada SoC MicroBlaze V tanpa ketergantungan pada IP audio berlisensi pihak ketiga. RTL audio tersedia sebagai kode sumber, sedangkan proses packaging, integrasi, dan implementasi tetap bergantung pada toolchain FPGA yang digunakan.
+\hspace{1cm}Kontribusi utama penelitian ini adalah perancangan Custom IP I2S Transmitter yang mendukung frekuensi sampling integer berbasis NCO dan dapat diintegrasikan sebagai peripheral AXI4-Lite pada SoC MicroBlaze V tanpa ketergantungan pada IP audio berlisensi pihak ketiga. RTL audio tersedia sebagai kode sumber, sedangkan proses packaging, integrasi, dan implementasi tetap bergantung pada toolchain FPGA yang digunakan.
 
 Gambaran keseluruhan arsitektur sistem dibahas lebih rinci pada Bab IV. Prosesor MicroBlaze V berkomunikasi dengan IP I2S TX melalui bus AXI4-Lite, mengatur register kontrol dan mengirim sampel audio. IP I2S TX kemudian membangkitkan sinyal I2S (BCLK, WS, DATA) menuju DAC PCM5102A yang mengonversinya menjadi sinyal analog. UART digunakan untuk komunikasi terminal saat debugging.
 
@@ -25,7 +25,7 @@ Gambaran keseluruhan arsitektur sistem dibahas lebih rinci pada Bab IV. Prosesor
 Berdasarkan latar belakang tersebut, rumusan masalah penelitian ini adalah:
 
 \begin{enumerate}
-	\item Bagaimana merancang \textbf{IP core transmitter I2S} berbasis Verilog dengan antarmuka \textbf{AXI4-Lite} sehingga dapat dikontrol dari program Vitis melalui register memory-mapped dan mendukung frekuensi sampling integer terprogram melalui teknik DDS?
+	\item Bagaimana merancang \textbf{IP core transmitter I2S} berbasis Verilog dengan antarmuka \textbf{AXI4-Lite} sehingga dapat dikontrol dari program Vitis melalui register memory-mapped dan mendukung frekuensi sampling integer melalui NCO?
 	\item Bagaimana melakukan \textbf{verifikasi fungsional dan timing} melalui simulasi bila tersedia, pengukuran sinyal, dan uji keluaran audio pada PCM5102A?
 \end{enumerate}
 

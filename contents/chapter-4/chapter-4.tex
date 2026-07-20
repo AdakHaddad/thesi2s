@@ -537,7 +537,7 @@ end
 
 Gambar~\ref{fig:ch4-latch-waveform} untuk menunjukkan \textit{waveform} bahwa pasangan sampel kiri dan kanan tidak diambil secara acak per bit, tetapi dilatch utuh pada awal frame. Dengan demikian, satu frame stereo selalu menggunakan pasangan sampel yang konsisten.
 
-\subsection{Implementasi Pengaturan Frekuensi Sampling Integer Terprogram}
+\subsection{Implementasi Pengaturan Frekuensi Sampling Integer}
 
 Pengaturan frekuensi sampling dimasukkan melalui bit \path{SAMPLE_RATE_HZ} pada register \path{CONTROL}. Di source code, nilai ini didefinisikan pada bit \path{[26:7]} dan dikonversi menjadi frekuensi yang digunakan NCO.
 
