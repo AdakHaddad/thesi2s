@@ -426,7 +426,7 @@
 					{Telah disetujui dan disahkan}
 					{Has been approved and endorsed}\\
 				\vspace{0.5cm}
-				\iftoggle{lang}{Pada tanggal $\ldots\ldots$}{on $\ldots\ldots$}\\
+				\iftoggle{lang}{Pada tanggal 20 Juli 2026}{on 20 July 2026}\\
 				\vfill
 				\begin{center}
 					\begin{tabular}{ccc}
@@ -496,7 +496,7 @@
 					{This thesis has been accepted as a partial fulfillment \\ for the degree of Master}\\
 				\vspace{0.3cm}
 				
-				\iftoggle{lang}{Tanggal:}{Date: $\ldots\ldots$} \\
+				\iftoggle{lang}{Tanggal: 20 Juli 2026}{Date: 20 July 2026} \\
 				\iftoggle{lang}
 					{Pengelola Program Studi \@program} 
 					{Program Coordinator of \@program}\\
