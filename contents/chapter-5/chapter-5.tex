@@ -126,7 +126,7 @@ Pada konfigurasi yang diuji, DAC PCM5102A menerima keluaran I2S setelah perubaha
 \section{Identifikasi dan Perbaikan Bug Firmware}
 % ============================================================
 
-Selama tahap integrasi perangkat keras ditemukan dua bug pada firmware (\path{helloworld.c}) yang memengaruhi kualitas audio dan akurasi frekuensi nada. Keduanya berhasil diidentifikasi dan diperbaiki sebelum pengambilan data final.
+Selama tahap integrasi perangkat keras ditemukan dua bug pada firmware (\path{freshi2s/sw/helloworld.c}) yang memengaruhi kualitas audio dan akurasi frekuensi nada. Keduanya berhasil diidentifikasi dan diperbaiki sebelum pengambilan data final.
 
 Pada rancangan ini, \textit{status polling} berarti firmware membaca bit 0 pada register \path{STATUS} secara berulang dan membandingkan nilainya dengan nilai pembacaan sebelumnya. Perubahan nilai menandai dimulainya frame stereo baru setelah hardware melatch sampel sebelumnya. Firmware kemudian menulis pasangan sampel berikutnya. Mekanisme ini menjaga sinkronisasi antara perangkat lunak dan serializer tanpa FIFO atau interupsi.
 
@@ -327,16 +327,19 @@ Integrasi IP I2S dengan satu blok filter IIR pada Block Design Vivado diperlihat
 
 \clearpage
 \begin{landscape}
-	\begin{figure}[H]
+	\thispagestyle{empty} % optional, removes page number
+	
+	\begin{figure}[p]
 		\centering
 		\includegraphics[
-		width=\linewidth,
-		height=0.88\textheight,
+		width=0.98\paperheight,
+		height=\paperwidth,
 		keepaspectratio
 		]{contents/figures/filter_i2s_bd_fullsizeview.jpg}
 		\caption{Integrasi IP I2S dengan blok filter IIR pada Vivado Block Design.}
 		\label{fig:ch5-filter-integration}
 	\end{figure}
+	
 \end{landscape}
 \clearpage
 
@@ -398,7 +401,7 @@ Laporan timing pasca-implementasi menunjukkan \textit{Worst Negative Slack} (WNS
 	\label{fig:ch5-hw-analysis}
 \end{figure}
 
-Penggunaan LUT sebesar 11,71\% dan FF sebesar 5,60\% menunjukkan bahwa sistem masih memiliki kapasitas logika untuk pengembangan lanjutan. Penggunaan BRAM sebesar 64\% terutama berasal dari memori program dan data pada sistem prosesor serta blok filter yang terintegrasi. Vivado Power Analyzer memperkirakan daya total sebesar 0,209~W, yang terdiri atas daya dinamis 0,135~W dan daya statis 0,073~W. Laporan tersebut menggunakan tingkat keyakinan \textit{Medium} tanpa berkas aktivitas simulasi, sehingga angka daya diperlakukan sebagai estimasi implementasi, bukan hasil pengukuran langsung pada papan.
+Penggunaan LUT sebesar 11,71\% dan FF sebesar 5,60\% menunjukkan bahwa sistem masih memiliki kapasitas logika untuk pengembangan lanjutan. Penggunaan BRAM sebesar 64\% terutama berasal dari memori program dan data pada sistem prosesor serta blok filter yang terintegrasi. Vivado Power Analyzer memperkirakan daya total sebesar 0,209~W, yang terdiri atas daya dinamis 0,135~W dan daya statis 0,073~W. Laporan tersebut menggunakan tingkat keyakinan \textit{Medium} tanpa berkas aktivitas simulasi, sehingga angka daya diperlakukan sebagai estimasi implementasi, bukan hasil pengukuran langsung pada \textit{board}.
 
 % ============================================================
 \section{Pembahasan terhadap Tujuan Penelitian}

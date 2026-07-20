@@ -2,7 +2,7 @@
 
 \section{Implementasi IP I2S}
 
-Bab ini mendokumentasikan realisasi akhir IP I2S berdasarkan source code aktual pada modul RTL dan firmware. Implementasi akhir terdiri atas wrapper \path{i2s.v}, core \path{i2s_slave_lite_v1_0_S00_AXI.v}, dan aplikasi bare-metal \path{helloworld.c}. Berbeda dari rancangan awal yang masih menempatkan generator gelombang di RTL, implementasi final memindahkan pembangkitan sampel audio ke firmware, sedangkan RTL difokuskan pada antarmuka AXI4-Lite, pengaturan register, pembangkitan clock audio, dan serializer Philips I2S.
+Bab ini mendokumentasikan realisasi akhir IP I2S berdasarkan source code aktual pada modul RTL dan firmware. Implementasi akhir terdiri atas wrapper \path{i2s.v}, core \path{i2s_slave_lite_v1_0_S00_AXI.v}, dan aplikasi bare-metal \path{freshi2s/sw/helloworld.c}. Berbeda dari rancangan awal yang masih menempatkan generator gelombang di RTL, implementasi final memindahkan pembangkitan sampel audio ke firmware, sedangkan RTL difokuskan pada antarmuka AXI4-Lite, pengaturan register, pembangkitan clock audio, dan serializer Philips I2S.
 
 \subsection{Hierarki File dan Modul}
 
@@ -11,7 +11,7 @@ Source code implementasi terbagi menjadi dua lapisan: RTL perangkat keras dan fi
 \begin{enumerate}
     \item \textbf{\texttt{i2s.v}} --- \textit{Wrapper top-level IP}. Berada di \texttt{ip\_repo/i2s\_1\_0/hdl/}. Modul \texttt{i2s} tidak berisi logika fungsional; ia hanya meneruskan sinyal AXI4-Lite dan keluaran I2S ke modul inti. Instansiasi: \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI}.
     \item \textbf{\texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI.v}} --- \textit{Core IP I2S}. Berada di direktori yang sama. Modul ini mencakup seluruh logika: handshake AXI4-Lite, register file (DATA\_LEFT, DATA\_RIGHT, CONTROL, STATUS), phase accumulator NCO untuk pembangkitan BCLK/MCLK/WS, latch sampel, dan fungsi \texttt{i2s\_next\_serial\_bit} yang mengimplementasikan serializer Philips I2S. Tidak ada sub-module yang diinstansiasi; seluruh fungsi terkandung dalam satu modul (\textit{self-contained}).
-    \item \textbf{\texttt{helloworld.c}} --- \textit{Firmware bare-metal}. Berada di \texttt{sw/} pada proyek Vitis. Berisi fungsi \texttt{main()} yang menginisialisasi sistem, serta fungsi-fungsi statis: \texttt{control\_word()} dan \texttt{apply\_control()} untuk menulis register CONTROL, \texttt{frame\_status\_bit()} untuk membaca sinyal latch hardware, \texttt{pack\_sample()} untuk menyesuaikan lebar sampel, \texttt{write\_channels()} untuk mengirim data ke DATA\_LEFT dan DATA\_RIGHT, \texttt{stream\_software\_dds\_sample()} untuk pembangkitan nada sinus/kotak, dan \texttt{handle\_key()} untuk kontrol runtime melalui UART.
+    \item \textbf{\texttt{freshi2s/sw/helloworld.c}} --- \textit{Firmware bare-metal}. Berisi fungsi \texttt{main()} yang menginisialisasi sistem, serta fungsi-fungsi statis: \texttt{control\_word()} dan \texttt{apply\_control()} untuk menulis register CONTROL, \texttt{frame\_status\_bit()} untuk membaca sinyal latch hardware, \texttt{pack\_sample()} untuk menyesuaikan lebar sampel, \texttt{write\_channels()} untuk mengirim data ke DATA\_LEFT dan DATA\_RIGHT, \texttt{stream\_software\_dds\_sample()} untuk pembangkitan nada sinus/kotak, dan \texttt{handle\_key()} untuk kontrol runtime melalui UART.
     \item \textbf{\texttt{i2s.h} / \texttt{i2s.c}} --- \textit{Driver peripheral}. Makro \texttt{I2S\_mWriteReg} dan \texttt{I2S\_mReadReg} menyediakan antarmuka baca/tulis register, serta \texttt{I2S\_Reg\_SelfTest} untuk verifikasi dasar.
 \end{enumerate}
 
@@ -28,7 +28,7 @@ i2s.v (top-level wrapper)
         +-- Output assignment (i2s_mclk, i2s_bclk, i2s_ws, i2s_data)
 \end{verbatim}
 
-Sementara itu, firmware \texttt{helloworld.c} mengakses core melalui alamat memory-mapped AXI4-Lite tanpa perantara driver tambahan. Fungsi \texttt{Xil\_Out32} dan \texttt{Xil\_In32} dari pustaka Vitis digunakan untuk menulis dan membaca register IP I2S. Dengan demikian, seluruh alur data dari firmware ke DAC dapat dirunut: \texttt{helloworld.c} $\rightarrow$ AXI4-Lite $\rightarrow$ \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI} $\rightarrow$ pin FPGA $\rightarrow$ PCM5102A.
+Sementara itu, firmware \texttt{freshi2s/sw/helloworld.c} mengakses core melalui alamat memory-mapped AXI4-Lite tanpa perantara driver tambahan. Fungsi \texttt{Xil\_Out32} dan \texttt{Xil\_In32} dari pustaka Vitis digunakan untuk menulis dan membaca register IP I2S. Dengan demikian, seluruh alur data dari firmware ke DAC dapat dirunut: \texttt{freshi2s/sw/helloworld.c} $\rightarrow$ AXI4-Lite $\rightarrow$ \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI} $\rightarrow$ pin FPGA $\rightarrow$ PCM5102A.
 
 \subsection{Pembangunan Sistem Dasar MicroBlaze V}
 
@@ -535,7 +535,7 @@ end
 
 \clearpage
 
-Gambar~\ref{fig:ch4-latch-waveform} relevan untuk menjelaskan bahwa pasangan sampel kiri dan kanan tidak diambil secara acak per bit, tetapi dilatch utuh pada awal frame. Dengan demikian, satu frame stereo selalu menggunakan pasangan sampel yang konsisten.
+Gambar~\ref{fig:ch4-latch-waveform} untuk menunjukkan \textit{waveform} bahwa pasangan sampel kiri dan kanan tidak diambil secara acak per bit, tetapi dilatch utuh pada awal frame. Dengan demikian, satu frame stereo selalu menggunakan pasangan sampel yang konsisten.
 
 \subsection{Implementasi Pengaturan Frekuensi Sampling Integer Terprogram}
 
@@ -668,7 +668,7 @@ Gambar~\ref{fig:ch4-reset-arch} dan Gambar~\ref{fig:ch4-pmod-wiring} menjelaskan
 
 \section{Implementasi Firmware}
 
-Firmware \path{helloworld.c} merupakan bagian yang menghasilkan sampel audio uji dan mengendalikan IP I2S melalui register memory-mapped. Di implementasi akhir ini, firmware tidak hanya menulis data, tetapi juga menyinkronkan penulisan sampel dengan status latch hardware dan menyediakan antarmuka UART untuk mengubah parameter runtime.
+Firmware \path{freshi2s/sw/helloworld.c} merupakan bagian yang menghasilkan sampel audio uji dan mengendalikan IP I2S melalui register memory-mapped. Di implementasi akhir ini, firmware tidak hanya menulis data, tetapi juga menyinkronkan penulisan sampel dengan status latch hardware dan menyediakan antarmuka UART untuk mengubah parameter runtime.
 
 \subsection{Struktur Program}
 
@@ -945,4 +945,4 @@ Pengujian yang dilakukan dengan beberapa kombinasi sample rate, lebar sampel, mu
 
 \section{Ringkasan Implementasi}
 
-Realisasi akhir IP I2S dibangun sebagai periferal AXI4-Lite empat register dengan clock generator berbasis NCO, serializer Philips I2S, mekanisme latch sampel, enable dan mute, serta status toggle sebagai sinkronisasi firmware. Firmware pada \path{helloworld.c} bertugas menghasilkan audio uji, menulis register kontrol dan data, serta menyediakan antarmuka UART untuk validasi runtime. Dengan pembagian tugas tersebut, sistem menjadi sederhana, deterministik, dan sesuai dengan source code yang benar-benar diimplementasikan.
+Realisasi akhir IP I2S dibangun sebagai periferal AXI4-Lite empat register dengan clock generator berbasis NCO, serializer Philips I2S, mekanisme latch sampel, enable dan mute, serta status toggle sebagai sinkronisasi firmware. Firmware pada \path{freshi2s/sw/helloworld.c} bertugas menghasilkan audio uji, menulis register kontrol dan data, serta menyediakan antarmuka UART untuk validasi runtime. Dengan pembagian tugas tersebut, sistem menjadi sederhana, deterministik, dan sesuai dengan source code yang benar-benar diimplementasikan.
