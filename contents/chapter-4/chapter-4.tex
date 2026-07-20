@@ -150,7 +150,7 @@ i2s_slave_lite_v1_0_S00_AXI_inst
 endmodule
 \end{lstlisting}
 
-Potongan kode pada Listing~\ref{lst:ch4-wrapper} menunjukkan bahwa wrapper hanya berfungsi sebagai lapisan kompatibilitas antara Vivado Block Design dan modul inti. Seluruh transaksi AXI4-Lite diteruskan langsung ke modul \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI}, sedangkan sinyal keluaran I2S (\texttt{i2s\_mclk}, \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data}) diteruskan tanpa modifikasi. Port \texttt{audio\_clk} tetap dipertahankan pada wrapper untuk menjaga kompatibilitas antarmuka IP dengan desain sebelumnya, meskipun pada implementasi akhir pembangkitan clock audio dilakukan secara internal menggunakan phase accumulator.
+Potongan kode pada kode~\ref{lst:ch4-wrapper} menunjukkan bahwa wrapper hanya berfungsi sebagai lapisan kompatibilitas antara Vivado Block Design dan modul inti. Seluruh transaksi AXI4-Lite diteruskan langsung ke modul \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI}, sedangkan sinyal keluaran I2S (\texttt{i2s\_mclk}, \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data}) diteruskan tanpa modifikasi. Port \texttt{audio\_clk} tetap dipertahankan pada wrapper untuk menjaga kompatibilitas antarmuka IP dengan desain sebelumnya, meskipun pada implementasi akhir pembangkitan clock audio dilakukan secara internal menggunakan phase accumulator.
 \begin{lstlisting}[language=Verilog,caption={Instansiasi core I2S di dalam wrapper.},label={lst:ch4-wrapper-inst}]
 i2s_slave_lite_v1_0_S00_AXI #(
     .C_S_AXI_DATA_WIDTH(C_S00_AXI_DATA_WIDTH),

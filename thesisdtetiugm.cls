@@ -138,6 +138,8 @@
 	\renewcommand{\contentsname}{DAFTAR ISI}%
 	\renewcommand{\listfigurename}{DAFTAR GAMBAR}%
 	\renewcommand{\listtablename}{DAFTAR TABEL}%
+	\renewcommand{\lstlistingname}{Kode}%
+	\renewcommand{\lstlistlistingname}{DAFTAR KODE}%
 	\renewcommand{\abstractname}{INTISARI}%
 	\renewcommand{\partname}{BAGIAN}%
 	\renewcommand{\chaptername}{BAB}%
@@ -156,6 +158,8 @@
 	\renewcommand{\contentsname}{CONTENTS}%
 	\renewcommand{\listfigurename}{LIST OF FIGURES}%
 	\renewcommand{\listtablename}{LIST OF TABLES}%
+	\renewcommand{\lstlistingname}{Code}%
+	\renewcommand{\lstlistlistingname}{LIST OF CODE}%
 	\renewcommand{\abstractname}{\emph{Abstract}}%
 	\renewcommand{\partname}{PART}%
 	\renewcommand{\chaptername}{CHAPTER}%
