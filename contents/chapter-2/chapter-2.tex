@@ -246,6 +246,8 @@ Dengan mekanisme ini, BCLK dan MCLK dibangkitkan dari clock sistem 100 MHz tanpa
 	\label{fig:nco_fs_flow}
 \end{figure}
 
+Gambar~\ref{fig:nco_fs_flow} menunjukkan alur pembangkitan frekuensi sampling dari register frekuensi sampling hingga keluaran BCLK dan WS. Diagram ini menegaskan bahwa laju perubahan sinyal audio ditentukan oleh nilai inkremen pada akumulator fase.
+
 \begin{figure}[H]
 	\centering
 	\resizebox{\textwidth}{!}{%
@@ -289,7 +291,9 @@ Pada Gambar~\ref{fig:nco_architecture}, nilai inkremen fase ditambahkan ke akumu
 
 Dalam kode RTL Verilog, perkalian $F_s$ dengan 128 dan 512 diimplementasikan secara efisien melalui pergeseran bit (\textit{bit-shift}). Penyambungan tujuh bit nol di sebelah kanan menghasilkan $F_s \times 2^7 = F_s \times 128$, sedangkan penyambungan sembilan bit nol menghasilkan $F_s \times 2^9 = F_s \times 512$:
 
-\begin{lstlisting}[breaklines=true]
+Cuplikan pada Kode~\ref{lst:nco_shift_rates} menunjukkan implementasi pergeseran bit tersebut secara langsung di RTL Verilog.
+
+\begin{lstlisting}[language=Verilog,caption={Implementasi pergeseran bit untuk laju toggle BCLK dan MCLK.},label={lst:nco_shift_rates},breaklines=true]
 	wire [31:0] bclk_toggle_rate_hz = {sample_rate_sync, 7'b0}; // Fs * 128
 	wire [31:0] mclk_toggle_rate_hz = {sample_rate_sync, 9'b0}; // Fs * 512
 \end{lstlisting}
@@ -368,7 +372,7 @@ AMD Vivado Design Suite digunakan untuk membangun bagian perangkat keras sistem 
 
 Untuk pengembangan perangkat lunak, Vivado mengekspor deskripsi hardware sebagai file \path{.xsa} (\textit{Xilinx Support Archive}). File ini memuat informasi prosesor MicroBlaze V, peta alamat peripheral AXI4-Lite, konfigurasi interrupt, clock, serta bitstream yang terkait dengan platform hardware. AMD Vitis mengimpor file \path{.xsa} tersebut untuk membentuk \textit{platform project} dan \textit{Board Support Package} (BSP) \citep{xilinx_vitis_embedded_2021}. Berdasarkan platform itu, aplikasi bare-metal ditulis dalam bahasa C pada file \path{.c}, lalu dikompilasi menjadi berkas executable \path{.elf}. Saat pengujian, FPGA diprogram menggunakan bitstream dan Vitis memuat aplikasi \path{.elf} ke memori sistem melalui JTAG.
 
-Dengan demikian, alur pengembangan hardware dan software pada penelitian ini adalah:
+Dengan demikian, alur pengembangan hardware dan software pada penelitian ini diringkas pada Gambar~\ref{fig:vivado_vitis_flow}:
 \begin{figure}[htbp]
     \centering
     \begin{tikzpicture}[

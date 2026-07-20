@@ -325,7 +325,6 @@ Pengujian mengirim nada sinus 1~kHz dari firmware ke register data IP I2S. Pada 
 
 Integrasi IP I2S dengan satu blok filter IIR pada Block Design Vivado diperlihatkan pada Gambar~\ref{fig:ch5-filter-integration}. IP I2S (\texttt{i2s\_0}) terhubung ke modul \texttt{i2s\_filter\_bridge} yang mendeserialisasi slot kiri, memprosesnya melalui filter IIR (\texttt{filter\_coeff}), dan mengembalikan hasil mono yang dimirror ke jalur data serial menuju DAC.
 
-\clearpage
 \begin{landscape}
 	\thispagestyle{empty} % optional, removes page number
 	
@@ -341,7 +340,7 @@ Integrasi IP I2S dengan satu blok filter IIR pada Block Design Vivado diperlihat
 	\end{figure}
 	
 \end{landscape}
-\clearpage
+\FloatBarrier
 
 % ============================================================
 \section{Analisis Penggunaan Sumber Daya dan Daya}

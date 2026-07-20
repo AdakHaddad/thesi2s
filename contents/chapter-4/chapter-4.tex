@@ -151,38 +151,6 @@ endmodule
 \end{lstlisting}
 
 Potongan kode pada kode~\ref{lst:ch4-wrapper} menunjukkan bahwa wrapper hanya berfungsi sebagai lapisan kompatibilitas antara Vivado Block Design dan modul inti. Seluruh transaksi AXI4-Lite diteruskan langsung ke modul \texttt{i2s\_slave\_lite\_v1\_0\_S00\_AXI}, sedangkan sinyal keluaran I2S (\texttt{i2s\_mclk}, \texttt{i2s\_bclk}, \texttt{i2s\_ws}, dan \texttt{i2s\_data}) diteruskan tanpa modifikasi. Port \texttt{audio\_clk} tetap dipertahankan pada wrapper untuk menjaga kompatibilitas antarmuka IP dengan desain sebelumnya, meskipun pada implementasi akhir pembangkitan clock audio dilakukan secara internal menggunakan phase accumulator.
-\begin{lstlisting}[language=Verilog,caption={Instansiasi core I2S di dalam wrapper.},label={lst:ch4-wrapper-inst}]
-i2s_slave_lite_v1_0_S00_AXI #(
-    .C_S_AXI_DATA_WIDTH(C_S00_AXI_DATA_WIDTH),
-    .C_S_AXI_ADDR_WIDTH(C_S00_AXI_ADDR_WIDTH)
-) i2s_slave_lite_v1_0_S00_AXI_inst (
-    .i2s_mclk      (i2s_mclk),
-    .i2s_bclk      (i2s_bclk),
-    .i2s_ws        (i2s_ws),
-    .i2s_data      (i2s_data),
-    .S_AXI_ACLK    (s00_axi_aclk),
-    .S_AXI_ARESETN (s00_axi_aresetn),
-    .S_AXI_AWADDR  (s00_axi_awaddr),
-    .S_AXI_AWPROT  (s00_axi_awprot),
-    .S_AXI_AWVALID (s00_axi_awvalid),
-    .S_AXI_AWREADY (s00_axi_awready),
-    .S_AXI_WDATA   (s00_axi_wdata),
-    .S_AXI_WSTRB   (s00_axi_wstrb),
-    .S_AXI_WVALID  (s00_axi_wvalid),
-    .S_AXI_WREADY  (s00_axi_wready),
-    .S_AXI_BRESP   (s00_axi_bresp),
-    .S_AXI_BVALID  (s00_axi_bvalid),
-    .S_AXI_BREADY  (s00_axi_bready),
-    .S_AXI_ARADDR  (s00_axi_araddr),
-    .S_AXI_ARPROT  (s00_axi_arprot),
-    .S_AXI_ARVALID (s00_axi_arvalid),
-    .S_AXI_ARREADY (s00_axi_arready),
-    .S_AXI_RDATA   (s00_axi_rdata),
-    .S_AXI_RRESP   (s00_axi_rresp),
-    .S_AXI_RVALID  (s00_axi_rvalid),
-    .S_AXI_RREADY  (s00_axi_rready)
-);
-\end{lstlisting}
 
 Struktur ini membuat seluruh logika fungsional berada di core, sehingga wrapper tetap sederhana dan mudah dipetakan pada IP Packager Vivado. Pada Gambar~\ref{fig:ch4-arch-overall} hubungan antara prosesor, UART, dan IP I2S menjadi jelas: firmware menulis register melalui AXI4-Lite, lalu core menghasilkan sinyal \path{i2s_mclk}, \path{i2s_bclk}, \path{i2s_ws}, dan \path{i2s_data}.
 
