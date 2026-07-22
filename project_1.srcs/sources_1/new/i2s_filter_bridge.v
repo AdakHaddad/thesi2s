@@ -4,8 +4,8 @@
 // after the existing AXI I2S transmitter without modifying either block.
 //
 // The incoming stream is Philips I2S with one delay bit and 32 BCLK slots per
-// channel.  The first 16 payload bits are filtered; the remaining slot bits
-// are emitted as zero.  Filtered audio is delayed by one stereo frame.
+// channel.  One 16-bit sample stream is filtered; the remaining slot bits are
+// emitted as zero.  The filtered mono sample is driven into both I2S slots.
 module i2s_filter_bridge (
     input  wire               clk,
     input  wire               resetn,
@@ -52,13 +52,10 @@ module i2s_filter_bridge (
     reg [5:0] tx_bit_pos;
     reg [15:0] rx_shift;
 
-    reg signed [15:0] tx_left;
-    reg signed [15:0] tx_right;
-    reg left_result_d1;
-    reg left_result_d2;
-    reg right_result_d1;
-    reg right_result_d2;
-    reg filters_primed;
+    reg signed [15:0] tx_sample;
+    reg filter_result_d1;
+    reg filter_result_d2;
+    reg filter_primed;
 
     wire bclk_rise =  i2s_bclk_in & ~bclk_d;
     wire bclk_fall = ~i2s_bclk_in &  bclk_d;
@@ -79,43 +76,33 @@ module i2s_filter_bridge (
             right_sample       <= 16'sd0;
             left_valid         <= 1'b0;
             right_valid        <= 1'b0;
-            tx_left            <= 16'sd0;
-            tx_right           <= 16'sd0;
-            left_result_d1      <= 1'b0;
-            left_result_d2      <= 1'b0;
-            right_result_d1     <= 1'b0;
-            right_result_d2     <= 1'b0;
-            filters_primed     <= 1'b0;
+            tx_sample          <= 16'sd0;
+            filter_result_d1   <= 1'b0;
+            filter_result_d2   <= 1'b0;
+            filter_primed      <= 1'b0;
             i2s_data_out       <= 1'b0;
         end else begin
             filter_sw_meta <= filter_sw_in;
             filter_sw_sync <= filter_sw_meta;
             bclk_d         <= i2s_bclk_in;
 
-            left_valid  <= 1'b0;
-            right_valid <= 1'b0;
-            left_result_d2  <= left_result_d1;
-            left_result_d1  <= 1'b0;
-            right_result_d2 <= right_result_d1;
-            right_result_d1 <= 1'b0;
+            left_valid       <= 1'b0;
+            right_valid      <= 1'b0;
+            filter_result_d2 <= filter_result_d1;
+            filter_result_d1 <= 1'b0;
 
             // Give coefficient registers a deterministic selection before
-            // the first real sample reaches either existing filter instance.
-            if (!filters_primed) begin
-                left_valid     <= 1'b1;
-                right_valid    <= 1'b1;
-                left_sample    <= 16'sd0;
-                right_sample   <= 16'sd0;
-                filters_primed <= 1'b1;
+            // the first real sample reaches the existing filter instance.
+            if (!filter_primed) begin
+                left_valid    <= 1'b1;
+                left_sample   <= 16'sd0;
+                filter_primed <= 1'b1;
             end
 
             // filter_coeff updates y_out on the valid clock edge.  Capture it
             // one clk later, leaving ample time before the next stereo frame.
-            if (left_result_d2) begin
-                tx_left <= left_filtered;
-            end
-            if (right_result_d2) begin
-                tx_right <= right_filtered;
+            if (filter_result_d2) begin
+                tx_sample <= left_filtered;
             end
 
             // Receive the source I2S stream on BCLK rising edges.  A WS
@@ -133,14 +120,13 @@ module i2s_filter_bridge (
                     rx_bit_pos <= rx_bit_pos + 6'd1;
 
                     if (rx_bit_pos == 6'd15) begin
+                        // Use one filter instance.  Take the left I2S slot as
+                        // the mono source and mirror the filtered result into
+                        // both output slots.
                         if (!i2s_ws_in) begin
-                            left_sample         <= {rx_shift[14:0], i2s_data_in};
-                            left_valid          <= 1'b1;
-                            left_result_d1      <= 1'b1;
-                        end else begin
-                            right_sample         <= {rx_shift[14:0], i2s_data_in};
-                            right_valid          <= 1'b1;
-                            right_result_d1      <= 1'b1;
+                            left_sample      <= {rx_shift[14:0], i2s_data_in};
+                            left_valid       <= 1'b1;
+                            filter_result_d1 <= 1'b1;
                         end
                     end
                 end
@@ -159,9 +145,7 @@ module i2s_filter_bridge (
                     tx_bit_pos     <= 6'd0;
                     i2s_data_out   <= 1'b0;
                 end else if (tx_bit_pos < 6'd16) begin
-                    i2s_data_out <= i2s_ws_in
-                                  ? tx_right[15 - tx_bit_pos]
-                                  : tx_left[15 - tx_bit_pos];
+                    i2s_data_out <= tx_sample[15 - tx_bit_pos];
                     tx_bit_pos   <= tx_bit_pos + 6'd1;
                 end else begin
                     i2s_data_out <= 1'b0;

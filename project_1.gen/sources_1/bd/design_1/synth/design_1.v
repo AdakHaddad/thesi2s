@@ -2,7 +2,7 @@
 //Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 //--------------------------------------------------------------------------------
 //Tool Version: Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
-//Date        : Fri Jun 19 22:09:37 2026
+//Date        : Fri Jul 17 14:50:48 2026
 //Host        : DESKTOP-HTVV1N1 running 64-bit major release  (build 9200)
 //Command     : generate_target design_1.bd
 //Design      : design_1
@@ -10,10 +10,9 @@
 //--------------------------------------------------------------------------------
 `timescale 1 ps / 1 ps
 
-(* CORE_GENERATION_INFO = "design_1,IP_Integrator,{x_ipVendor=xilinx.com,x_ipLibrary=BlockDiagram,x_ipName=design_1,x_ipVersion=1.00.a,x_ipLanguage=VERILOG,numBlks=16,numReposBlks=15,numNonXlnxBlks=0,numHierBlks=1,maxHierDepth=1,numSysgenBlks=0,numHlsBlks=0,numHdlrefBlks=3,numPkgbdBlks=0,bdsource=USER,da_axi4_cnt=2,da_board_cnt=2,da_clkrst_cnt=2,da_microblaze_riscv_cnt=1,synth_mode=Hierarchical}" *) (* HW_HANDOFF = "design_1.hwdef" *) 
+(* CORE_GENERATION_INFO = "design_1,IP_Integrator,{x_ipVendor=xilinx.com,x_ipLibrary=BlockDiagram,x_ipName=design_1,x_ipVersion=1.00.a,x_ipLanguage=VERILOG,numBlks=13,numReposBlks=12,numNonXlnxBlks=0,numHierBlks=1,maxHierDepth=1,numSysgenBlks=0,numHlsBlks=0,numHdlrefBlks=0,numPkgbdBlks=0,bdsource=USER,da_axi4_cnt=2,da_board_cnt=2,da_clkrst_cnt=2,da_microblaze_riscv_cnt=1,synth_mode=Hierarchical}" *) (* HW_HANDOFF = "design_1.hwdef" *) 
 module design_1
-   (filter_sw,
-    i2s_bclk_0,
+   (i2s_bclk_0,
     i2s_data_0,
     i2s_mclk_0,
     i2s_ws_0,
@@ -21,7 +20,6 @@ module design_1
     sys_clock,
     usb_uart_rxd,
     usb_uart_txd);
-  input [2:0]filter_sw;
   output i2s_bclk_0;
   output i2s_data_0;
   output i2s_mclk_0;
@@ -68,20 +66,8 @@ module design_1
   wire [3:0]axi_smc_M01_AXI_WSTRB;
   wire axi_smc_M01_AXI_WVALID;
   wire clk_wiz_0_locked;
-  wire [15:0]filter_coeff_0_y_out;
-  wire [15:0]filter_coeff_1_y_out;
-  wire [2:0]filter_sw;
-  wire i2s_0_i2s_bclk1;
-  wire i2s_0_i2s_data1;
-  wire i2s_0_i2s_mclk1;
-  wire i2s_0_i2s_ws1;
   wire i2s_bclk_0;
   wire i2s_data_0;
-  wire [2:0]i2s_filter_bridge_0_filter_sw_out;
-  wire [15:0]i2s_filter_bridge_0_left_sample;
-  wire i2s_filter_bridge_0_left_valid;
-  wire [15:0]i2s_filter_bridge_0_right_sample;
-  wire i2s_filter_bridge_0_right_valid;
   wire i2s_mclk_0;
   wire i2s_ws_0;
   wire mdm_1_debug_sys_rst;
@@ -226,24 +212,12 @@ module design_1
         .clk_out1(microblaze_riscv_0_Clk),
         .locked(clk_wiz_0_locked),
         .reset(reset));
-  design_1_filter_coeff_0_1 filter_coeff_0
-       (.clk(microblaze_riscv_0_Clk),
-        .sw(i2s_filter_bridge_0_filter_sw_out),
-        .valid(i2s_filter_bridge_0_left_valid),
-        .x_in(i2s_filter_bridge_0_left_sample),
-        .y_out(filter_coeff_0_y_out));
-  design_1_filter_coeff_1_0 filter_coeff_1
-       (.clk(microblaze_riscv_0_Clk),
-        .sw(i2s_filter_bridge_0_filter_sw_out),
-        .valid(i2s_filter_bridge_0_right_valid),
-        .x_in(i2s_filter_bridge_0_right_sample),
-        .y_out(filter_coeff_1_y_out));
-  design_1_i2s_0_1 i2s_0
+  design_1_i2s_0_2 i2s_0
        (.audio_clk(microblaze_riscv_0_Clk),
-        .i2s_bclk(i2s_0_i2s_bclk1),
-        .i2s_data(i2s_0_i2s_data1),
-        .i2s_mclk(i2s_0_i2s_mclk1),
-        .i2s_ws(i2s_0_i2s_ws1),
+        .i2s_bclk(i2s_bclk_0),
+        .i2s_data(i2s_data_0),
+        .i2s_mclk(i2s_mclk_0),
+        .i2s_ws(i2s_ws_0),
         .s00_axi_aclk(microblaze_riscv_0_Clk),
         .s00_axi_araddr(axi_smc_M01_AXI_ARADDR),
         .s00_axi_aresetn(rst_clk_wiz_0_100M_peripheral_aresetn),
@@ -265,25 +239,6 @@ module design_1
         .s00_axi_wready(axi_smc_M01_AXI_WREADY),
         .s00_axi_wstrb(axi_smc_M01_AXI_WSTRB),
         .s00_axi_wvalid(axi_smc_M01_AXI_WVALID));
-  design_1_i2s_filter_bridge_0_0 i2s_filter_bridge_0
-       (.clk(microblaze_riscv_0_Clk),
-        .filter_sw_in(filter_sw),
-        .filter_sw_out(i2s_filter_bridge_0_filter_sw_out),
-        .i2s_bclk_in(i2s_0_i2s_bclk1),
-        .i2s_bclk_out(i2s_bclk_0),
-        .i2s_data_in(i2s_0_i2s_data1),
-        .i2s_data_out(i2s_data_0),
-        .i2s_mclk_in(i2s_0_i2s_mclk1),
-        .i2s_mclk_out(i2s_mclk_0),
-        .i2s_ws_in(i2s_0_i2s_ws1),
-        .i2s_ws_out(i2s_ws_0),
-        .left_filtered(filter_coeff_0_y_out),
-        .left_sample(i2s_filter_bridge_0_left_sample),
-        .left_valid(i2s_filter_bridge_0_left_valid),
-        .resetn(rst_clk_wiz_0_100M_peripheral_aresetn),
-        .right_filtered(filter_coeff_1_y_out),
-        .right_sample(i2s_filter_bridge_0_right_sample),
-        .right_valid(i2s_filter_bridge_0_right_valid));
   design_1_mdm_1_0 mdm_1
        (.Dbg_Capture_0(microblaze_riscv_0_debug_CAPTURE),
         .Dbg_Clk_0(microblaze_riscv_0_debug_CLK),

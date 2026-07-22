@@ -2,7 +2,7 @@
 //Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 //--------------------------------------------------------------------------------
 //Tool Version: Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
-//Date        : Tue Jun 16 22:12:11 2026
+//Date        : Fri Jul 17 14:50:48 2026
 //Host        : DESKTOP-HTVV1N1 running 64-bit major release  (build 9200)
 //Command     : generate_target design_1.bd
 //Design      : design_1
@@ -10,10 +10,9 @@
 //--------------------------------------------------------------------------------
 `timescale 1 ps / 1 ps
 
-(* CORE_GENERATION_INFO = "design_1,IP_Integrator,{x_ipVendor=xilinx.com,x_ipLibrary=BlockDiagram,x_ipName=design_1,x_ipVersion=1.00.a,x_ipLanguage=VERILOG,numBlks=14,numReposBlks=13,numNonXlnxBlks=0,numHierBlks=1,maxHierDepth=1,numSysgenBlks=0,numHlsBlks=0,numHdlrefBlks=1,numPkgbdBlks=0,bdsource=USER,da_axi4_cnt=2,da_board_cnt=2,da_clkrst_cnt=2,da_microblaze_riscv_cnt=1,synth_mode=Hierarchical}" *) (* HW_HANDOFF = "design_1.hwdef" *) 
+(* CORE_GENERATION_INFO = "design_1,IP_Integrator,{x_ipVendor=xilinx.com,x_ipLibrary=BlockDiagram,x_ipName=design_1,x_ipVersion=1.00.a,x_ipLanguage=VERILOG,numBlks=13,numReposBlks=12,numNonXlnxBlks=0,numHierBlks=1,maxHierDepth=1,numSysgenBlks=0,numHlsBlks=0,numHdlrefBlks=0,numPkgbdBlks=0,bdsource=USER,da_axi4_cnt=2,da_board_cnt=2,da_clkrst_cnt=2,da_microblaze_riscv_cnt=1,synth_mode=Hierarchical}" *) (* HW_HANDOFF = "design_1.hwdef" *) 
 module design_1
-   (filter_sw,
-    i2s_bclk_0,
+   (i2s_bclk_0,
     i2s_data_0,
     i2s_mclk_0,
     i2s_ws_0,
@@ -21,7 +20,6 @@ module design_1
     sys_clock,
     usb_uart_rxd,
     usb_uart_txd);
-  input [2:0]filter_sw;
   output i2s_bclk_0;
   output i2s_data_0;
   output i2s_mclk_0;
@@ -68,7 +66,6 @@ module design_1
   wire [3:0]axi_smc_M01_AXI_WSTRB;
   wire axi_smc_M01_AXI_WVALID;
   wire clk_wiz_0_locked;
-  wire [2:0]filter_sw;
   wire i2s_bclk_0;
   wire i2s_data_0;
   wire i2s_mclk_0;
@@ -215,14 +212,8 @@ module design_1
         .clk_out1(microblaze_riscv_0_Clk),
         .locked(clk_wiz_0_locked),
         .reset(reset));
-  design_1_filter_coeff_0_0 filter_coeff_0
-       (.clk(microblaze_riscv_0_Clk),
-        .sw({1'b0,1'b0,1'b0}),
-        .valid(1'b0),
-        .x_in({1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0}));
-  design_1_i2s_0_0 i2s_0
+  design_1_i2s_0_2 i2s_0
        (.audio_clk(microblaze_riscv_0_Clk),
-        .filter_sw(filter_sw),
         .i2s_bclk(i2s_bclk_0),
         .i2s_data(i2s_data_0),
         .i2s_mclk(i2s_mclk_0),

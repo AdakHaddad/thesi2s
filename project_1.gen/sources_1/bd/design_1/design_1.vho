@@ -60,8 +60,7 @@ COMPONENT design_1
     i2s_ws_0 : OUT STD_LOGIC;
     i2s_bclk_0 : OUT STD_LOGIC;
     i2s_mclk_0 : OUT STD_LOGIC;
-    i2s_data_0 : OUT STD_LOGIC;
-    filter_sw : IN STD_LOGIC_VECTOR(2 DOWNTO 0)
+    i2s_data_0 : OUT STD_LOGIC
   );
 END COMPONENT;
 -- COMP_TAG_END ------  End cut for COMPONENT Declaration  ------
@@ -79,8 +78,7 @@ your_instance_name : design_1
     i2s_ws_0 => i2s_ws_0,
     i2s_bclk_0 => i2s_bclk_0,
     i2s_mclk_0 => i2s_mclk_0,
-    i2s_data_0 => i2s_data_0,
-    filter_sw => filter_sw
+    i2s_data_0 => i2s_data_0
   );
 -- INST_TAG_END ------  End cut for INSTANTIATION Template  ------
 

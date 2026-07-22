@@ -161,31 +161,3 @@ set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 set_property BITSTREAM.CONFIG.CONFIGRATE 33 [current_design]
 set_property CONFIG_MODE SPIx4 [current_design]
 
-## Timing constraints for Clock Domain Crossing (CDC)
-# The AXI clock (100MHz) and audio clocks (24.576MHz / 22.579MHz) are asynchronous.
-# We also treat the two audio clocks as logically exclusive since they are muxed.
-
-# Create generated clocks first so they can be referenced in clock groups
-# In the updated IP design, internal_mclk is at the same frequency as the
-# input audio clocks (no division in clk_mux).
-create_generated_clock -name internal_mclk_from_48 -source [get_pins -hierarchical *clk_wiz_0/clk_out2] -divide_by 1 [get_nets -hierarchical *internal_mclk]
-create_generated_clock -name internal_mclk_from_44 -source [get_pins -hierarchical *clk_wiz_0/clk_out3] -divide_by 1 [get_nets -hierarchical *internal_mclk]
-
-# Define all asynchronous relationships in a single command
-# Group 1: AXI Bus and MicroBlaze (100 MHz)
-# Group 2: Audio 48-family source (24.576 MHz)
-# Group 3: Audio 44-family source (22.579 MHz)
-# Group 4: Selected Internal MCLK (48-family)
-# Group 5: Selected Internal MCLK (44-family)
-set_clock_groups -asynchronous \
-    -group [get_clocks clk_out1_bdesign_clock_core_clk_wiz_0_0] \
-    -group [get_clocks clk_out2_bdesign_clock_core_clk_wiz_0_0] \
-    -group [get_clocks clk_out3_bdesign_clock_core_clk_wiz_0_0] \
-    -group [get_clocks -quiet internal_mclk_from_48] \
-    -group [get_clocks -quiet internal_mclk_from_44]
-
-# False path for the FS_FAMILY select bit CDC
-# This bit is changed by the CPU (AXI domain) and consumed by the clk_mux
-# (audio domains). We ignore timing on this specific synchronization path.
-set_false_path -from [get_cells -hierarchical *slv_reg2_reg[2]] -to [get_cells -hierarchical *mclk_mux_inst/q*_d1_reg*]
-

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<GenRun Id="synth_1" LaunchPart="xc7a35tcpg236-1" LaunchTime="1781882148">
+<GenRun Id="synth_1" LaunchPart="xc7a35tcpg236-1" LaunchTime="1784275780" LaunchIncrCheckpoint="$PSRCDIR/utils_1/imports/synth_1/design_1_wrapper.dcp">
   <File Type="PA-TCL" Name="design_1_wrapper.tcl"/>
-  <File Type="RDS-PROPCONSTRS" Name="design_1_wrapper_drc_synth.rpt"/>
   <File Type="REPORTS-TCL" Name="design_1_wrapper_reports.tcl"/>
   <File Type="RDS-RDS" Name="design_1_wrapper.vds"/>
+  <File Type="RDS-PROPCONSTRS" Name="design_1_wrapper_drc_synth.rpt"/>
   <File Type="RDS-UTIL" Name="design_1_wrapper_utilization_synth.rpt"/>
   <File Type="RDS-UTIL-PB" Name="design_1_wrapper_utilization_synth.pb"/>
   <File Type="RDS-DCP" Name="design_1_wrapper.dcp"/>
@@ -11,8 +11,17 @@
   <File Type="VDS-TIMING-PB" Name="design_1_wrapper_timing_summary_synth.pb"/>
   <FileSet Name="sources" Type="DesignSrcs" RelSrcDir="$PSRCDIR/sources_1" RelGenDir="$PGENDIR/sources_1">
     <Filter Type="Srcs"/>
+    <File Path="$PSRCDIR/sources_1/new/i2s_filter_bridge.v">
+      <FileInfo>
+        <Attr Name="AutoDisabled" Val="1"/>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
     <File Path="$PPRDIR/ip_repo/i2s_1_0/hdl/filter_biquad.v">
       <FileInfo>
+        <Attr Name="AutoDisabled" Val="1"/>
         <Attr Name="UsedIn" Val="synthesis"/>
         <Attr Name="UsedIn" Val="implementation"/>
         <Attr Name="UsedIn" Val="simulation"/>
@@ -20,13 +29,7 @@
     </File>
     <File Path="$PPRDIR/ip_repo/i2s_1_0/hdl/filter_coeff.v">
       <FileInfo>
-        <Attr Name="UsedIn" Val="synthesis"/>
-        <Attr Name="UsedIn" Val="implementation"/>
-        <Attr Name="UsedIn" Val="simulation"/>
-      </FileInfo>
-    </File>
-    <File Path="$PSRCDIR/sources_1/new/i2s_filter_bridge.v">
-      <FileInfo>
+        <Attr Name="AutoDisabled" Val="1"/>
         <Attr Name="UsedIn" Val="synthesis"/>
         <Attr Name="UsedIn" Val="implementation"/>
         <Attr Name="UsedIn" Val="simulation"/>
@@ -66,6 +69,14 @@
   </FileSet>
   <FileSet Name="utils" Type="Utils" RelSrcDir="$PSRCDIR/utils_1" RelGenDir="$PGENDIR/utils_1">
     <Filter Type="Utils"/>
+    <File Path="$PSRCDIR/utils_1/imports/synth_1/design_1_wrapper.dcp">
+      <FileInfo>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedInSteps" Val="synth_1"/>
+        <Attr Name="AutoDcp" Val="1"/>
+      </FileInfo>
+    </File>
     <Config>
       <Option Name="TopAutoSet" Val="TRUE"/>
     </Config>
@@ -74,19 +85,14 @@
     <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2025"/>
     <Step Id="synth_design"/>
   </Strategy>
-  <BlockFileSet Type="BlockSrcs" Name="design_1_dlmb_bram_if_cntlr_0"/>
-  <BlockFileSet Type="BlockSrcs" Name="design_1_i2s_filter_bridge_0_0"/>
-  <BlockFileSet Type="BlockSrcs" Name="design_1_ilmb_v10_0"/>
-  <BlockFileSet Type="BlockSrcs" Name="design_1_axi_smc_0"/>
   <BlockFileSet Type="BlockSrcs" Name="design_1_clk_wiz_0_0"/>
+  <BlockFileSet Type="BlockSrcs" Name="design_1_i2s_0_2"/>
   <BlockFileSet Type="BlockSrcs" Name="design_1_microblaze_riscv_0_0"/>
   <BlockFileSet Type="BlockSrcs" Name="design_1_dlmb_v10_0"/>
+  <BlockFileSet Type="BlockSrcs" Name="design_1_dlmb_bram_if_cntlr_0"/>
   <BlockFileSet Type="BlockSrcs" Name="design_1_ilmb_bram_if_cntlr_0"/>
-  <BlockFileSet Type="BlockSrcs" Name="design_1_mdm_1_0"/>
   <BlockFileSet Type="BlockSrcs" Name="design_1_lmb_bram_0"/>
+  <BlockFileSet Type="BlockSrcs" Name="design_1_mdm_1_0"/>
   <BlockFileSet Type="BlockSrcs" Name="design_1_rst_clk_wiz_0_100M_0"/>
   <BlockFileSet Type="BlockSrcs" Name="design_1_axi_uartlite_0_0"/>
-  <BlockFileSet Type="BlockSrcs" Name="design_1_filter_coeff_1_0"/>
-  <BlockFileSet Type="BlockSrcs" Name="design_1_filter_coeff_0_1"/>
-  <BlockFileSet Type="BlockSrcs" Name="design_1_i2s_0_1"/>
 </GenRun>

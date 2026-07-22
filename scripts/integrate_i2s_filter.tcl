@@ -43,7 +43,7 @@ if {[llength $i2s_cell]} {
 }
 create_bd_cell -type ip -vlnv xilinx.com:user:i2s:1.0 i2s_0
 
-# Recreate both channel filters as visible module-reference blocks.
+# Recreate a single visible filter module-reference block.
 foreach cell_name {filter_coeff_0 filter_coeff_1 i2s_filter_bridge_0} {
     set old_cell [get_bd_cells -quiet $cell_name]
     if {[llength $old_cell]} {
@@ -51,7 +51,6 @@ foreach cell_name {filter_coeff_0 filter_coeff_1 i2s_filter_bridge_0} {
     }
 }
 create_bd_cell -type module -reference filter_coeff filter_coeff_0
-create_bd_cell -type module -reference filter_coeff filter_coeff_1
 create_bd_cell -type module -reference i2s_filter_bridge i2s_filter_bridge_0
 
 # AXI and system-domain clock/reset connections remain the same as before.
@@ -60,32 +59,26 @@ connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] \
     [get_bd_pins i2s_0/audio_clk] \
     [get_bd_pins i2s_0/s00_axi_aclk] \
     [get_bd_pins filter_coeff_0/clk] \
-    [get_bd_pins filter_coeff_1/clk] \
     [get_bd_pins i2s_filter_bridge_0/clk]
 connect_bd_net [get_bd_pins rst_clk_wiz_0_100M/peripheral_aresetn] \
     [get_bd_pins i2s_0/s00_axi_aresetn] \
     [get_bd_pins i2s_filter_bridge_0/resetn]
 
-# Decode source I2S, filter left/right independently, and re-serialize it.
+# Decode source I2S, filter one mono sample stream, and re-serialize it.
+# The bridge keeps the old left/right BD port names to avoid stale module-ref
+# pin-cache churn, but only the left/mono path is connected to filter_coeff_0.
 connect_bd_net [get_bd_pins i2s_filter_bridge_0/left_sample] \
     [get_bd_pins filter_coeff_0/x_in]
 connect_bd_net [get_bd_pins i2s_filter_bridge_0/left_valid] \
     [get_bd_pins filter_coeff_0/valid]
 connect_bd_net [get_bd_pins filter_coeff_0/y_out] \
-    [get_bd_pins i2s_filter_bridge_0/left_filtered]
-
-connect_bd_net [get_bd_pins i2s_filter_bridge_0/right_sample] \
-    [get_bd_pins filter_coeff_1/x_in]
-connect_bd_net [get_bd_pins i2s_filter_bridge_0/right_valid] \
-    [get_bd_pins filter_coeff_1/valid]
-connect_bd_net [get_bd_pins filter_coeff_1/y_out] \
+    [get_bd_pins i2s_filter_bridge_0/left_filtered] \
     [get_bd_pins i2s_filter_bridge_0/right_filtered]
 
 connect_bd_net [get_bd_ports filter_sw] \
     [get_bd_pins i2s_filter_bridge_0/filter_sw_in]
 connect_bd_net [get_bd_pins i2s_filter_bridge_0/filter_sw_out] \
-    [get_bd_pins filter_coeff_0/sw] \
-    [get_bd_pins filter_coeff_1/sw]
+    [get_bd_pins filter_coeff_0/sw]
 
 connect_bd_net [get_bd_pins i2s_0/i2s_mclk] \
     [get_bd_pins i2s_filter_bridge_0/i2s_mclk_in]

@@ -1,32 +1,27 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Fri Jun 19 22:10:50 2026" VIVADOVERSION="2025.2">
+<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Fri Jul 17 14:51:09 2026" VIVADOVERSION="2025.2">
 
   <SYSTEMINFO ARCH="artix7" BOARD="digilentinc.com:basys3:part0:1.2" DEVICE="7a35t" NAME="design_1" PACKAGE="cpg236" SPEEDGRADE="-1"/>
 
   <EXTERNALPORTS>
-    <PORT DIR="I" LEFT="2" NAME="filter_sw" RIGHT="0" SIGIS="undef" SIGNAME="External_Ports_filter_sw">
+    <PORT DIR="O" NAME="i2s_bclk_0" SIGIS="undef" SIGNAME="i2s_0_i2s_bclk">
       <CONNECTIONS>
-        <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="filter_sw_in"/>
+        <CONNECTION INSTANCE="i2s_0" PORT="i2s_bclk"/>
       </CONNECTIONS>
     </PORT>
-    <PORT DIR="O" NAME="i2s_bclk_0" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_i2s_bclk_out">
+    <PORT DIR="O" NAME="i2s_data_0" SIGIS="undef" SIGNAME="i2s_0_i2s_data">
       <CONNECTIONS>
-        <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="i2s_bclk_out"/>
+        <CONNECTION INSTANCE="i2s_0" PORT="i2s_data"/>
       </CONNECTIONS>
     </PORT>
-    <PORT DIR="O" NAME="i2s_data_0" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_i2s_data_out">
+    <PORT DIR="O" NAME="i2s_mclk_0" SIGIS="undef" SIGNAME="i2s_0_i2s_mclk">
       <CONNECTIONS>
-        <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="i2s_data_out"/>
+        <CONNECTION INSTANCE="i2s_0" PORT="i2s_mclk"/>
       </CONNECTIONS>
     </PORT>
-    <PORT DIR="O" NAME="i2s_mclk_0" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_i2s_mclk_out">
+    <PORT DIR="O" NAME="i2s_ws_0" SIGIS="undef" SIGNAME="i2s_0_i2s_ws">
       <CONNECTIONS>
-        <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="i2s_mclk_out"/>
-      </CONNECTIONS>
-    </PORT>
-    <PORT DIR="O" NAME="i2s_ws_0" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_i2s_ws_out">
-      <CONNECTIONS>
-        <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="i2s_ws_out"/>
+        <CONNECTION INSTANCE="i2s_0" PORT="i2s_ws"/>
       </CONNECTIONS>
     </PORT>
     <PORT DIR="I" NAME="reset" POLARITY="ACTIVE_HIGH" SIGIS="rst" SIGNAME="External_Ports_reset">
@@ -1492,9 +1487,6 @@
             <CONNECTION INSTANCE="axi_uartlite_0" PORT="s_axi_aclk"/>
             <CONNECTION INSTANCE="i2s_0" PORT="audio_clk"/>
             <CONNECTION INSTANCE="i2s_0" PORT="s00_axi_aclk"/>
-            <CONNECTION INSTANCE="filter_coeff_0" PORT="clk"/>
-            <CONNECTION INSTANCE="filter_coeff_1" PORT="clk"/>
-            <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="clk"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="O" NAME="locked" SIGIS="undef" SIGNAME="clk_wiz_0_locked">
@@ -1510,76 +1502,6 @@
       </PORTS>
       <BUSINTERFACES/>
     </MODULE>
-    <MODULE COREREVISION="1" FULLNAME="/filter_coeff_0" HWVERSION="1.0" INSTANCE="filter_coeff_0" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="filter_coeff" VLNV="xilinx.com:module_ref:filter_coeff:1.0">
-      <DOCUMENTS/>
-      <PARAMETERS>
-        <PARAMETER NAME="Component_Name" VALUE="design_1_filter_coeff_0_1"/>
-        <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
-      </PARAMETERS>
-      <PORTS>
-        <PORT CLKFREQUENCY="100000000" DIR="I" NAME="clk" SIGIS="clk" SIGNAME="clk_wiz_0_clk_out1">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="clk_wiz_0" PORT="clk_out1"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" LEFT="2" NAME="sw" RIGHT="0" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_filter_sw_out">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="filter_sw_out"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" NAME="valid" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_left_valid">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="left_valid"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" LEFT="15" NAME="x_in" RIGHT="0" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_left_sample">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="left_sample"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" LEFT="15" NAME="y_out" RIGHT="0" SIGIS="undef" SIGNAME="filter_coeff_0_y_out">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="left_filtered"/>
-          </CONNECTIONS>
-        </PORT>
-      </PORTS>
-      <BUSINTERFACES/>
-    </MODULE>
-    <MODULE COREREVISION="1" FULLNAME="/filter_coeff_1" HWVERSION="1.0" INSTANCE="filter_coeff_1" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="filter_coeff" VLNV="xilinx.com:module_ref:filter_coeff:1.0">
-      <DOCUMENTS/>
-      <PARAMETERS>
-        <PARAMETER NAME="Component_Name" VALUE="design_1_filter_coeff_1_0"/>
-        <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
-      </PARAMETERS>
-      <PORTS>
-        <PORT CLKFREQUENCY="100000000" DIR="I" NAME="clk" SIGIS="clk" SIGNAME="clk_wiz_0_clk_out1">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="clk_wiz_0" PORT="clk_out1"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" LEFT="2" NAME="sw" RIGHT="0" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_filter_sw_out">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="filter_sw_out"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" NAME="valid" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_right_valid">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="right_valid"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" LEFT="15" NAME="x_in" RIGHT="0" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_right_sample">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="right_sample"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" LEFT="15" NAME="y_out" RIGHT="0" SIGIS="undef" SIGNAME="filter_coeff_1_y_out">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="right_filtered"/>
-          </CONNECTIONS>
-        </PORT>
-      </PORTS>
-      <BUSINTERFACES/>
-    </MODULE>
     <MODULE COREREVISION="2" FULLNAME="/i2s_0" HWVERSION="1.0" INSTANCE="i2s_0" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="i2s" VLNV="xilinx.com:user:i2s:1.0">
       <DOCUMENTS/>
       <ADDRESSBLOCKS>
@@ -1588,7 +1510,7 @@
       <PARAMETERS>
         <PARAMETER NAME="C_S00_AXI_ADDR_WIDTH" VALUE="4"/>
         <PARAMETER NAME="C_S00_AXI_DATA_WIDTH" VALUE="32"/>
-        <PARAMETER NAME="Component_Name" VALUE="design_1_i2s_0_1"/>
+        <PARAMETER NAME="Component_Name" VALUE="design_1_i2s_0_2"/>
         <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
         <PARAMETER NAME="C_S00_AXI_BASEADDR" VALUE="0x44A00000"/>
         <PARAMETER NAME="C_S00_AXI_HIGHADDR" VALUE="0x44A0FFFF"/>
@@ -1601,22 +1523,22 @@
         </PORT>
         <PORT DIR="O" NAME="i2s_bclk" SIGIS="undef" SIGNAME="i2s_0_i2s_bclk">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="i2s_bclk_in"/>
+            <CONNECTION INSTANCE="External_Ports" PORT="i2s_bclk_0"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="O" NAME="i2s_data" SIGIS="undef" SIGNAME="i2s_0_i2s_data">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="i2s_data_in"/>
+            <CONNECTION INSTANCE="External_Ports" PORT="i2s_data_0"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="O" NAME="i2s_mclk" SIGIS="undef" SIGNAME="i2s_0_i2s_mclk">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="i2s_mclk_in"/>
+            <CONNECTION INSTANCE="External_Ports" PORT="i2s_mclk_0"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="O" NAME="i2s_ws" SIGIS="undef" SIGNAME="i2s_0_i2s_ws">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="i2s_ws_in"/>
+            <CONNECTION INSTANCE="External_Ports" PORT="i2s_ws_0"/>
           </CONNECTIONS>
         </PORT>
         <PORT CLKFREQUENCY="100000000" DIR="I" NAME="s00_axi_aclk" SIGIS="clk" SIGNAME="clk_wiz_0_clk_out1">
@@ -1783,107 +1705,6 @@
           </PORTMAPS>
         </BUSINTERFACE>
       </BUSINTERFACES>
-    </MODULE>
-    <MODULE COREREVISION="1" FULLNAME="/i2s_filter_bridge_0" HWVERSION="1.0" INSTANCE="i2s_filter_bridge_0" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="i2s_filter_bridge" VLNV="xilinx.com:module_ref:i2s_filter_bridge:1.0">
-      <DOCUMENTS/>
-      <PARAMETERS>
-        <PARAMETER NAME="Component_Name" VALUE="design_1_i2s_filter_bridge_0_0"/>
-        <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
-      </PARAMETERS>
-      <PORTS>
-        <PORT CLKFREQUENCY="100000000" DIR="I" NAME="clk" SIGIS="clk" SIGNAME="clk_wiz_0_clk_out1">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="clk_wiz_0" PORT="clk_out1"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" LEFT="2" NAME="filter_sw_in" RIGHT="0" SIGIS="undef" SIGNAME="External_Ports_filter_sw">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="External_Ports" PORT="filter_sw"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" LEFT="2" NAME="filter_sw_out" RIGHT="0" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_filter_sw_out">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="filter_coeff_0" PORT="sw"/>
-            <CONNECTION INSTANCE="filter_coeff_1" PORT="sw"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" NAME="i2s_bclk_in" SIGIS="undef" SIGNAME="i2s_0_i2s_bclk">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_0" PORT="i2s_bclk"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" NAME="i2s_bclk_out" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_i2s_bclk_out">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="External_Ports" PORT="i2s_bclk_0"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" NAME="i2s_data_in" SIGIS="undef" SIGNAME="i2s_0_i2s_data">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_0" PORT="i2s_data"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" NAME="i2s_data_out" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_i2s_data_out">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="External_Ports" PORT="i2s_data_0"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" NAME="i2s_mclk_in" SIGIS="undef" SIGNAME="i2s_0_i2s_mclk">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_0" PORT="i2s_mclk"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" NAME="i2s_mclk_out" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_i2s_mclk_out">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="External_Ports" PORT="i2s_mclk_0"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" NAME="i2s_ws_in" SIGIS="undef" SIGNAME="i2s_0_i2s_ws">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="i2s_0" PORT="i2s_ws"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" NAME="i2s_ws_out" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_i2s_ws_out">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="External_Ports" PORT="i2s_ws_0"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" LEFT="15" NAME="left_filtered" RIGHT="0" SIGIS="undef" SIGNAME="filter_coeff_0_y_out">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="filter_coeff_0" PORT="y_out"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" LEFT="15" NAME="left_sample" RIGHT="0" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_left_sample">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="filter_coeff_0" PORT="x_in"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" NAME="left_valid" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_left_valid">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="filter_coeff_0" PORT="valid"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" NAME="resetn" POLARITY="ACTIVE_LOW" SIGIS="rst" SIGNAME="rst_clk_wiz_0_100M_peripheral_aresetn">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="rst_clk_wiz_0_100M" PORT="peripheral_aresetn"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" LEFT="15" NAME="right_filtered" RIGHT="0" SIGIS="undef" SIGNAME="filter_coeff_1_y_out">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="filter_coeff_1" PORT="y_out"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" LEFT="15" NAME="right_sample" RIGHT="0" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_right_sample">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="filter_coeff_1" PORT="x_in"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" NAME="right_valid" SIGIS="undef" SIGNAME="i2s_filter_bridge_0_right_valid">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="filter_coeff_1" PORT="valid"/>
-          </CONNECTIONS>
-        </PORT>
-      </PORTS>
-      <BUSINTERFACES/>
     </MODULE>
     <MODULE COREREVISION="7" FULLNAME="/mdm_1" HWVERSION="1.0" INSTANCE="mdm_1" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="mdm_riscv" VLNV="xilinx.com:ip:mdm_riscv:1.0">
       <DOCUMENTS>
@@ -3735,7 +3556,6 @@
             <CONNECTION INSTANCE="axi_uartlite_0" PORT="s_axi_aresetn"/>
             <CONNECTION INSTANCE="axi_smc" PORT="aresetn"/>
             <CONNECTION INSTANCE="i2s_0" PORT="s00_axi_aresetn"/>
-            <CONNECTION INSTANCE="i2s_filter_bridge_0" PORT="resetn"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="O" LEFT="0" NAME="peripheral_reset" POLARITY="ACTIVE_HIGH" RIGHT="0" SIGIS="rst"/>

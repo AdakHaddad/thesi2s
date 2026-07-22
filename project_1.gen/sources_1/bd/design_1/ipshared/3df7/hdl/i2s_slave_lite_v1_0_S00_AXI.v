@@ -1,91 +1,32 @@
 `timescale 1 ns / 1 ps
 
-// ============================================================================
-// Module      : i2s_axi_lite
-// Description : AXI4-Lite controlled I2S transmitter peripheral.
-//
-//   This module integrates two sections:
-//     1. AXI4-Lite slave interface - generated from the standard Xilinx
-//        IP-packager template (aw_en handshake style).
-//     2. I2S audio serializer - driven by a DDS (Direct Digital Synthesis)
-//        phase accumulator that generates BCLK and MCLK from the AXI system
-//        clock, avoiding any external audio clock dependency.
-//
-//   The firmware programming model is simple:
-//     - Write PCM samples to DATA_LEFT and DATA_RIGHT.
-//     - Write CONTROL with ENABLE=1, desired sample rate, and sample width.
-//     - Poll STATUS[0] to detect each new stereo-frame latch.
-//
-// ----------------------------------------------------------------------------
-// Register Map
-// ----------------------------------------------------------------------------
-//   Offset   Name         Dir   Description
-//   0x00     DATA_LEFT    R/W   Left-channel  PCM sample  (right-justified)
-//   0x04     DATA_RIGHT   R/W   Right-channel PCM sample  (right-justified)
-//   0x08     CONTROL      R/W   Bitfield - see below
-//   0x0C     STATUS       R/W   Bit 0: toggles on every stereo-frame latch
-//
-// ----------------------------------------------------------------------------
-// CONTROL Bitfield  (offset 0x08)
-// ----------------------------------------------------------------------------
-//   Bit(s)   Field            Default    Description
-//   0        ENABLE           0          1 = transmit I2S; 0 = hold outputs low
-//   1        MUTE             0          1 = send zeros while clocks keep running
-//   6:2      SAMPLE_WIDTH     0 (=32b)   Payload bits per channel.
-//                                        Values 1-31 are literal bit-widths.
-//                                        Value 0 encodes 32 bits (field is 5 b).
-//   26:7     SAMPLE_RATE_HZ   48000      Target sample rate in Hz.
-//                                        Value 0 defaults to 48000 Hz.
-//                                        Capped at MAX_SAFE_FS_HZ (195312 Hz).
-//   31:27    RESERVED         0          Ignored on write; read as zero.
-//
-// ----------------------------------------------------------------------------
-// I2S Protocol Notes
-// ----------------------------------------------------------------------------
-//   - Standard I2S (Philips): WS low = left, WS high = right.
-//   - WS transitions one BCLK *before* the MSB of each channel.
-//   - BCLK = 64 × Fs  (32 bits per channel × 2 channels).
-//   - MCLK = 256 × Fs (optional; provided for DACs that need it).
-//
-// ----------------------------------------------------------------------------
-// Clocking
-// ----------------------------------------------------------------------------
-//   All logic runs on S_AXI_ACLK (typically 100 MHz from the PS/PL).
-//   BCLK and MCLK are synthesised via DDS phase accumulators so no external
-//   audio PLL is required. The audio_48_clk and audio_44_clk ports are
-//   accepted but deliberately left unused (tied to a dummy XOR to suppress
-//   undriven-input lint warnings) for block-design back-compatibility.
-//
-// ============================================================================
+// AXI4-Lite controlled I2S transmitter.
+// Register map: DATA_LEFT 0x00, DATA_RIGHT 0x04, CONTROL 0x08, STATUS 0x0C.
+// CONTROL: ENABLE[0], MUTE[1], SAMPLE_WIDTH[6:2], SAMPLE_RATE_HZ[26:7].
+// I2S uses 32-bit slots, Philips one-bit delay, and DDS-generated BCLK/MCLK.
 
 module i2s_slave_lite_v1_0_S00_AXI #
 (
-    // Width of AXI data bus - keep at 32 for a 32-bit address map.
     parameter integer C_S_AXI_DATA_WIDTH = 32,
 
-    // Width of AXI address bus - 4 bits covers 16 bytes = four 32-bit regs.
     parameter integer C_S_AXI_ADDR_WIDTH = 4
 )
 (
-    // ------------------------------------------------------------------
-    // I2S output pins
-    // ------------------------------------------------------------------
-    output wire i2s_mclk,       // Master clock  (256 × Fs)
-    output wire i2s_bclk,       // Bit clock     ( 64 × Fs)
-    output wire i2s_ws,         // Word select / LR clock (Fs)
-    output wire i2s_data,       // Serial data   (MSB-first, left-justified)
+    output wire i2s_mclk,       
+    output wire i2s_bclk,       
+    output wire i2s_ws,         
+    output wire i2s_data,       
 
-    // ------------------------------------------------------------------
-    // AXI4-Lite slave interface
-    // ------------------------------------------------------------------
+       
 
+
+       
     // Global clock and active-low reset
     input  wire                                     S_AXI_ACLK,
     input  wire                                     S_AXI_ARESETN,
 
     // Write address channel
     input  wire [C_S_AXI_ADDR_WIDTH-1:0]            S_AXI_AWADDR,
-    input  wire [2:0]                               S_AXI_AWPROT,
     input  wire                                     S_AXI_AWVALID,
     output wire                                     S_AXI_AWREADY,
 
@@ -102,7 +43,6 @@ module i2s_slave_lite_v1_0_S00_AXI #
 
     // Read address channel
     input  wire [C_S_AXI_ADDR_WIDTH-1:0]            S_AXI_ARADDR,
-    input  wire [2:0]                               S_AXI_ARPROT,
     input  wire                                     S_AXI_ARVALID,
     output wire                                     S_AXI_ARREADY,
 
@@ -112,10 +52,6 @@ module i2s_slave_lite_v1_0_S00_AXI #
     output wire                                     S_AXI_RVALID,
     input  wire                                     S_AXI_RREADY
 );
-
-// ============================================================================
-// Section 1 - Local Parameters
-// ============================================================================
 
     // ADDR_LSB: number of byte-address LSBs to strip when indexing word regs.
     //   For a 32-bit data bus: ADDR_LSB = (32/32)+1 = 2  → byte offsets 0,4,8,C
@@ -140,22 +76,18 @@ module i2s_slave_lite_v1_0_S00_AXI #
     localparam [31:0] DEFAULT_CONTROL = (32'd48000 << 7);
 
     // AXI system clock frequency - must match actual PL clock for DDS math.
-    localparam [31:0] AXI_CLK_HZ = 32'd100_000_000;
+    localparam [31:0] AUDIO_CLK_HZ = 32'd100_000_000;
 
     // DDS constants derived from Fs:
     //   bclk_toggle_rate = Fs × 64  (BCLK = 2 edges × 32 bits × 2 ch)
     //   mclk_toggle_rate = Fs × 256 (MCLK = 4× BCLK, standard 256×Fs)
     // These are computed combinatorially from sample_rate_sync below.
 
-    // Safety cap: at AXI_CLK_HZ = 100 MHz, BCLK max toggle = 50 MHz
+    // Safety cap for the 100 MHz audio clock.
     //   → max Fs = 50e6 / 64 ≈ 781 kHz, but we cap conservatively at ~195 kHz
     //   to keep BCLK well inside the 50 MHz Nyquist limit.
     localparam [19:0] DEFAULT_SAMPLE_RATE_HZ = 20'd48000;
     localparam [19:0] MAX_SAFE_FS_HZ         = 20'd195312;
-
-// ============================================================================
-// Section 2 - AXI4-Lite Internal Signals  (standard Xilinx template signals)
-// ============================================================================
 
     // --- Write channel handshake registers ---
     reg [C_S_AXI_ADDR_WIDTH-1:0] axi_awaddr;   // latched write address
@@ -192,10 +124,6 @@ module i2s_slave_lite_v1_0_S00_AXI #
     // Combinatorial read-data mux output (registered into axi_rdata on rden)
     reg [C_S_AXI_DATA_WIDTH-1:0] reg_data_out;
 
-// ============================================================================
-// Section 3 - AXI4-Lite Output Assignments  (wire outputs from regs)
-// ============================================================================
-
     assign S_AXI_AWREADY = axi_awready;
     assign S_AXI_WREADY  = axi_wready;
     assign S_AXI_BRESP   = axi_bresp;
@@ -205,33 +133,10 @@ module i2s_slave_lite_v1_0_S00_AXI #
     assign S_AXI_RRESP   = axi_rresp;
     assign S_AXI_RVALID  = axi_rvalid;
 
-// ============================================================================
-// Section 4 - Write Enable Strobe
-//
-//   slv_reg_wren pulses HIGH for exactly one cycle when all four write-channel
-//   handshake signals are simultaneously asserted (template standard).
-// ============================================================================
-
     assign slv_reg_wren = axi_wready && S_AXI_WVALID &&
                           axi_awready && S_AXI_AWVALID;
 
-// ============================================================================
-// Section 5 - Read Enable Strobe
-//
-//   slv_reg_rden pulses HIGH for exactly one cycle when the read address is
-//   valid and the slave has not yet asserted RVALID for that transaction.
-// ============================================================================
-
     assign slv_reg_rden = axi_arready && S_AXI_ARVALID && !axi_rvalid;
-
-// ============================================================================
-// Section 6 - AWREADY / WREADY Generation  (standard Xilinx aw_en pattern)
-//
-//   aw_en acts as a one-shot token: it is released (set to 0) as soon as the
-//   write address is accepted and is not re-armed until the master accepts the
-//   BRESP.  This prevents AWADDR being overwritten mid-transaction and avoids
-//   outstanding write ambiguity in a single-outstanding-transaction slave.
-// ============================================================================
 
     always @(posedge S_AXI_ACLK) begin
         if (!S_AXI_ARESETN) begin
@@ -267,17 +172,6 @@ module i2s_slave_lite_v1_0_S00_AXI #
                 axi_wready <= 1'b0;
         end
     end
-
-// ============================================================================
-// Section 7 - Register Write Logic  (byte-strobe aware)
-//
-//   When slv_reg_wren pulses, the addressed register is updated one byte at a
-//   time according to S_AXI_WSTRB.  This allows firmware to do partial-word
-//   writes (e.g., updating only the high byte of CONTROL).
-//
-//   CONTROL[31:27] is always forced to zero after any write to enforce the
-//   RESERVED-bits contract.
-// ============================================================================
 
     always @(posedge S_AXI_ACLK) begin
         if (!S_AXI_ARESETN) begin
@@ -335,14 +229,6 @@ module i2s_slave_lite_v1_0_S00_AXI #
         end
     end
 
-// ============================================================================
-// Section 8 - Write Response (BRESP) Generation
-//
-//   Assert BVALID one cycle after the write completes (slv_reg_wren).
-//   BRESP is always 2'b00 (OKAY) - this slave has no error detection.
-//   Deassert BVALID once master accepts via BREADY.
-// ============================================================================
-
     always @(posedge S_AXI_ACLK) begin
         if (!S_AXI_ARESETN) begin
             axi_bvalid <= 1'b0;
@@ -356,12 +242,6 @@ module i2s_slave_lite_v1_0_S00_AXI #
             end
         end
     end
-
-// ============================================================================
-// Section 9 - ARREADY Generation  (read address channel)
-//
-//   Assert ARREADY for one cycle when ARVALID arrives; latch the address.
-// ============================================================================
 
     always @(posedge S_AXI_ACLK) begin
         if (!S_AXI_ARESETN) begin
@@ -378,14 +258,6 @@ module i2s_slave_lite_v1_0_S00_AXI #
         end
     end
 
-// ============================================================================
-// Section 10 - Read Data Mux  (combinatorial)
-//
-//   Selects the appropriate register for the latched read address.
-//   CONTROL is masked to zero RESERVED bits on readback.
-//   STATUS[0] reflects the hardware-driven latch-toggle bit.
-// ============================================================================
-
     always @(*) begin
         case (read_addr)
             REG_DATA_LEFT:  reg_data_out = slv_reg0;
@@ -396,13 +268,6 @@ module i2s_slave_lite_v1_0_S00_AXI #
             default:        reg_data_out = 32'd0;
         endcase
     end
-
-// ============================================================================
-// Section 11 - RVALID / RDATA Generation  (read data channel)
-//
-//   Register the mux output into axi_rdata on slv_reg_rden.
-//   Deassert RVALID once master accepts via RREADY.
-// ============================================================================
 
     always @(posedge S_AXI_ACLK) begin
         if (!S_AXI_ARESETN) begin
@@ -419,13 +284,6 @@ module i2s_slave_lite_v1_0_S00_AXI #
             end
         end
     end
-
-// ============================================================================
-// Section 12 - Control Register Decode
-//
-//   Extract and sanitise individual fields from the CONTROL register.
-//   All of these are directly sourced from slv_reg2 (same clock domain).
-// ============================================================================
 
     // Bit 0: transmit enable
     wire        enable_sync = slv_reg2[0];
@@ -449,27 +307,6 @@ module i2s_slave_lite_v1_0_S00_AXI #
                                       ? MAX_SAFE_FS_HZ
                                       : sample_rate_nonzero;
 
-// ============================================================================
-// Section 13 - DDS Phase Accumulator Setup
-//
-//   DDS principle: each cycle add a "frequency word" to a 32-bit accumulator.
-//   When the accumulator wraps past AXI_CLK_HZ, one toggle of the output
-//   clock has elapsed.  This gives a fractional-divider effect without a PLL.
-//
-//   BCLK frequency = Fs × 64  (64 BCLKs per stereo frame: 2 ch × 32 bits)
-//   MCLK frequency = Fs × 256 (256× oversampling, common for I2S DACs)
-//
-//   The frequency words are computed by shifting sample_rate_sync:
-//     bclk_toggle_rate = sample_rate_sync << 6   (× 64)
-//     mclk_toggle_rate = sample_rate_sync << 8   (× 256)
-//   These are the per-cycle increment values for their accumulators.
-//
-//   Note: "toggle" because each accumulator wrap causes one clock edge, so
-//   the actual output frequency is toggle_rate_hz / 2 for a 50% duty cycle.
-//   We compensate by doubling the multiplier:
-//     BCLK toggles at 2 × Fs × 64  → BCLK period = Fs × 64
-// ============================================================================
-
     // Frequency words (increments per AXI clock cycle)
     wire [31:0] bclk_toggle_rate_hz = {sample_rate_sync, 7'b0};   // Fs × 128
     wire [31:0] mclk_toggle_rate_hz = {sample_rate_sync, 9'b0};   // Fs × 512
@@ -479,12 +316,8 @@ module i2s_slave_lite_v1_0_S00_AXI #
     wire [31:0] mclk_phase_sum = mclk_phase_acc_q + mclk_toggle_rate_hz;
 
     // Wrap detects: did the sum pass the AXI clock period?
-    wire bclk_phase_wrap = (bclk_phase_sum >= AXI_CLK_HZ);
-    wire mclk_phase_wrap = (mclk_phase_sum >= AXI_CLK_HZ);
-
-// ============================================================================
-// Section 14 - I2S Internal State Registers
-// ============================================================================
+    wire bclk_phase_wrap = (bclk_phase_sum >= AUDIO_CLK_HZ);
+    wire mclk_phase_wrap = (mclk_phase_sum >= AUDIO_CLK_HZ);
 
     reg [31:0] bclk_phase_acc_q;   // BCLK DDS accumulator
     reg [31:0] mclk_phase_acc_q;   // MCLK DDS accumulator
@@ -509,37 +342,8 @@ module i2s_slave_lite_v1_0_S00_AXI #
     // Firmware can poll this (or detect toggle) to know a new frame started.
     reg        current_latch_status_q;
 
-// ============================================================================
-// Section 15 - Mute Mux
-//
-//   When MUTE=1, substitute zero for both channels so the I2S stream
-//   continues (clocks stay active) but no audio is output.  This is
-//   useful for smooth transitions without click noise on abrupt enable/disable.
-// ============================================================================
-
     wire [31:0] sample_for_i2s_left  = mute_sync ? 32'd0 : sample_left_q;
     wire [31:0] sample_for_i2s_right = mute_sync ? 32'd0 : sample_right_q;
-
-// ============================================================================
-// Section 16 - I2S Next-Bit Serializer Function
-//
-//   Pure combinatorial: given the current bit_count and sample data, returns
-//   the data bit to place on i2s_data for the *next* BCLK falling edge.
-//
-//   I2S timing (Philips standard):
-//     bit_count = 0  → WS transition + padding bit (always 0)
-//     bit_count = 1..width   → MSB-first payload bits
-//     bit_count = width+1..31 → padding zeros (if width < 32)
-//     bit_count = 32 → WS transition + padding (right channel)
-//     bit_count = 33..(32+width) → right-channel MSB-first payload
-//     bit_count = (32+width+1)..63 → padding zeros
-//
-//   Function parameters:
-//     left_samp  - latched left sample
-//     right_samp - latched right sample
-//     bc         - current bit_count value (6-bit, 0..63)
-//     width      - active sample bit-width (1..32)
-// ============================================================================
 
     function i2s_next_serial_bit;
         input [31:0] left_samp;
@@ -569,19 +373,6 @@ module i2s_slave_lite_v1_0_S00_AXI #
             end
         end
     endfunction
-
-// ============================================================================
-// Section 17 - Main I2S Sequencer  (DDS-clocked, runs on S_AXI_ACLK)
-//
-//   All I2S outputs (BCLK, WS, DATA) are generated here by toggling registers
-//   only when the corresponding DDS accumulator wraps.  This ensures accurate
-//   frequency synthesis across a wide range of Fs values.
-//
-//   On each AXI clock edge where bclk_phase_wrap is true, the BCLK output
-//   toggles.  We use the previous bclk_q state to determine which half-cycle:
-//     bclk_q == 1 → falling edge: advance bit_count, update DATA and WS
-//     bclk_q == 0 → rising edge:  latch new samples at start of frame
-// ============================================================================
 
     always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN) begin
         if (!S_AXI_ARESETN) begin
@@ -614,7 +405,7 @@ module i2s_slave_lite_v1_0_S00_AXI #
             // ---------------------------------------------------------------
             if (mclk_phase_wrap) begin
                 // Accumulator overflowed → toggle MCLK, subtract one period
-                mclk_phase_acc_q <= mclk_phase_sum - AXI_CLK_HZ;
+                mclk_phase_acc_q <= mclk_phase_sum - AUDIO_CLK_HZ;
                 mclk_q           <= !mclk_q;
             end else begin
                 mclk_phase_acc_q <= mclk_phase_sum;
@@ -626,7 +417,7 @@ module i2s_slave_lite_v1_0_S00_AXI #
             // ---------------------------------------------------------------
             if (bclk_phase_wrap) begin
                 // Accumulator overflowed → one BCLK edge event
-                bclk_phase_acc_q <= bclk_phase_sum - AXI_CLK_HZ;
+                bclk_phase_acc_q <= bclk_phase_sum - AUDIO_CLK_HZ;
 
                 if (bclk_q) begin
                     // ---- BCLK FALLING EDGE --------------------------------
@@ -677,26 +468,9 @@ module i2s_slave_lite_v1_0_S00_AXI #
         end
     end
 
-// ============================================================================
-// Section 18 - Output Assignments
-// ============================================================================
-
     assign i2s_mclk = mclk_q;  // 256 × Fs (optional; for DACs that need MCLK)
     assign i2s_ws   = ws_q;    // Word select - low=left, high=right
     assign i2s_bclk = bclk_q;  // Bit clock - 64 × Fs
     assign i2s_data = data_q;  // Serial PCM data - MSB first
-
-// ============================================================================
-// Section 19 - Unused Input Suppression
-//
-//   The audio_48_clk / audio_44_clk ports and PROT signals are accepted for
-//   block-design pin-compatibility but carry no functional meaning in this
-//   DDS-based implementation.  The XOR expression prevents synthesis from
-//   issuing undriven-input warnings while generating zero logic.
-// ============================================================================
-
-    wire _unused_ok = audio_48_clk  ^ audio_44_clk    ^
-                      S_AXI_AWPROT[0] ^ S_AXI_AWPROT[1] ^ S_AXI_AWPROT[2] ^
-                      S_AXI_ARPROT[0] ^ S_AXI_ARPROT[1] ^ S_AXI_ARPROT[2];
 
 endmodule

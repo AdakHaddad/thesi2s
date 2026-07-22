@@ -22,14 +22,16 @@ module i2s #
     parameter integer C_S00_AXI_ADDR_WIDTH = 4
 )
 (
-    // Audio clock input provided by the top-level block design.
     input  wire audio_clk,
-    // I2S serial outputs — connect directly to PCM5102A PMOD pins.
-    // MCLK is driven but the PCM5102A can operate without it (SCK mode).
+ 
     output wire i2s_mclk,
     output wire i2s_bclk,
     output wire i2s_ws,
     output wire i2s_data,
+
+
+
+
 
     // AXI4-Lite slave interface
     input  wire                            s00_axi_aclk,
@@ -60,16 +62,14 @@ module i2s #
         .C_S_AXI_DATA_WIDTH(C_S00_AXI_DATA_WIDTH),
         .C_S_AXI_ADDR_WIDTH(C_S00_AXI_ADDR_WIDTH)
     ) i2s_slave_lite_v1_0_S00_AXI_inst (
-        .audio_48_clk      (audio_clk),
-        .audio_44_clk      (audio_clk),
         .i2s_mclk          (i2s_mclk),
         .i2s_bclk          (i2s_bclk),
         .i2s_ws            (i2s_ws),
         .i2s_data          (i2s_data),
-        .S_AXI_ACLK        (s00_axi_aclk),
+        // audio_clk is the 100 MHz clock used by both AXI registers and I2S DDS.
+        .S_AXI_ACLK        (audio_clk),
         .S_AXI_ARESETN     (s00_axi_aresetn),
         .S_AXI_AWADDR      (s00_axi_awaddr),
-        .S_AXI_AWPROT      (s00_axi_awprot),
         .S_AXI_AWVALID     (s00_axi_awvalid),
         .S_AXI_AWREADY     (s00_axi_awready),
         .S_AXI_WDATA       (s00_axi_wdata),
@@ -80,7 +80,6 @@ module i2s #
         .S_AXI_BVALID      (s00_axi_bvalid),
         .S_AXI_BREADY      (s00_axi_bready),
         .S_AXI_ARADDR      (s00_axi_araddr),
-        .S_AXI_ARPROT      (s00_axi_arprot),
         .S_AXI_ARVALID     (s00_axi_arvalid),
         .S_AXI_ARREADY     (s00_axi_arready),
         .S_AXI_RDATA       (s00_axi_rdata),

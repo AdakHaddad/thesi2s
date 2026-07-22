@@ -68,9 +68,7 @@ module design_1_sv (
   (* X_INTERFACE_IGNORE = "true" *)
   output wire i2s_mclk_0,
   (* X_INTERFACE_IGNORE = "true" *)
-  output wire i2s_data_0,
-  (* X_INTERFACE_IGNORE = "true" *)
-  input wire [2:0] filter_sw
+  output wire i2s_data_0
 );
 
   design_1 inst (
@@ -81,8 +79,7 @@ module design_1_sv (
     .i2s_ws_0(i2s_ws_0),
     .i2s_bclk_0(i2s_bclk_0),
     .i2s_mclk_0(i2s_mclk_0),
-    .i2s_data_0(i2s_data_0),
-    .filter_sw(filter_sw)
+    .i2s_data_0(i2s_data_0)
   );
 
 endmodule

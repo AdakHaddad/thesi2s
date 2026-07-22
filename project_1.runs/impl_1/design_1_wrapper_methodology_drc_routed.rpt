@@ -1,0 +1,98 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
+| Date         : Fri Jul 17 15:22:18 2026
+| Host         : DESKTOP-HTVV1N1 running 64-bit major release  (build 9200)
+| Command      : report_methodology -file design_1_wrapper_methodology_drc_routed.rpt -pb design_1_wrapper_methodology_drc_routed.pb -rpx design_1_wrapper_methodology_drc_routed.rpx
+| Design       : design_1_wrapper
+| Device       : xc7a35tcpg236-1
+| Speed File   : -1
+| Design State : Fully Routed
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Report Methodology
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: design_1
+      Design limits: <entire design considered>
+             Max checks: <unlimited>
+             Checks found: 11
++-----------+----------+--------------------------------------------------------+--------+
+| Rule      | Severity | Description                                            | Checks |
++-----------+----------+--------------------------------------------------------+--------+
+| LUTAR-1   | Warning  | LUT drives async reset alert                           | 1      |
+| TIMING-9  | Warning  | Unknown CDC Logic                                      | 1      |
+| TIMING-18 | Warning  | Missing input or output delay                          | 7      |
+| XDCC-1    | Warning  | Scoped Clock constraint overwritten with the same name | 1      |
+| XDCC-7    | Warning  | Scoped Clock constraint overwritten on the same source | 1      |
++-----------+----------+--------------------------------------------------------+--------+
+
+2. REPORT DETAILS
+-----------------
+LUTAR-1#1 Warning
+LUT drives async reset alert  
+LUT cell design_1_i/microblaze_riscv_0/U0/riscv_core_I/Base.Core/Use_Debug_Logic.Master_Core.Debug_Perf/Serial_Dbg_Intf.resume_rst_i_i_1, with 2 or more inputs, drives asynchronous preset/clear pin(s) design_1_i/microblaze_riscv_0/U0/riscv_core_I/Base.Core/Use_Debug_Logic.Master_Core.Debug_Perf/Serial_Dbg_Intf.resumeack_reg/PRE. The LUT may glitch and trigger an unexpected reset, even if it is a properly timed path.
+Related violations: <none>
+
+TIMING-9#1 Warning
+Unknown CDC Logic  
+One or more asynchronous Clock Domain Crossing has been detected between 2 clock domains through a set_false_path or a set_clock_groups or set_max_delay -datapath_only constraint but no double-registers logic synchronizer has been found on the side of the capture clock. It is recommended to run report_cdc for a complete and detailed CDC coverage. Please consider using XPM_CDC to avoid Critical severities
+Related violations: <none>
+
+TIMING-18#1 Warning
+Missing input or output delay  
+An input delay is missing on reset relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#2 Warning
+Missing input or output delay  
+An input delay is missing on usb_uart_rxd relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#3 Warning
+Missing input or output delay  
+An output delay is missing on i2s_bclk_0 relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#4 Warning
+Missing input or output delay  
+An output delay is missing on i2s_data_0 relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#5 Warning
+Missing input or output delay  
+An output delay is missing on i2s_mclk_0 relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#6 Warning
+Missing input or output delay  
+An output delay is missing on i2s_ws_0 relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+TIMING-18#7 Warning
+Missing input or output delay  
+An output delay is missing on usb_uart_txd relative to the rising and/or falling clock edge(s) of sys_clock.
+Related violations: <none>
+
+XDCC-1#1 Warning
+Scoped Clock constraint overwritten with the same name  
+A new clock constraint create_clock overrides a previous scoped clock constraint with the same name. It is not recommended to override a scoped (typically an IP) clock constraint and could result in unexpected behaviors.
+New: create_clock -period 10.000 -name sys_clock -waveform {0.000 5.000} [get_ports sys_clock] (Source: C:/fixi2s/freshi2s/project_1.srcs/constrs_1/new/cnstrn.xdc (Line: 9))
+Previous: create_clock -period 10.000 [get_ports sys_clock] (Source: c:/fixi2s/freshi2s/project_1.gen/sources_1/bd/design_1/ip/design_1_clk_wiz_0_0/design_1_clk_wiz_0_0.xdc (Line: 53))
+Related violations: <none>
+
+XDCC-7#1 Warning
+Scoped Clock constraint overwritten on the same source  
+A new clock constraint create_clock overrides a previous scoped clock constraint defined on the same source. It is not recommended to override a scoped (typically an IP) clock constraint and could result in unexpected behaviors.
+New: create_clock -period 10.000 -name sys_clock -waveform {0.000 5.000} [get_ports sys_clock] (Source: C:/fixi2s/freshi2s/project_1.srcs/constrs_1/new/cnstrn.xdc (Line: 9))
+Previous: create_clock -period 10.000 [get_ports sys_clock] (Source: c:/fixi2s/freshi2s/project_1.gen/sources_1/bd/design_1/ip/design_1_clk_wiz_0_0/design_1_clk_wiz_0_0.xdc (Line: 53))
+Related violations: <none>
+
+

@@ -2,7 +2,7 @@
 //Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 //--------------------------------------------------------------------------------
 //Tool Version: Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
-//Date        : Fri Jun 19 22:09:37 2026
+//Date        : Fri Jul 17 14:50:48 2026
 //Host        : DESKTOP-HTVV1N1 running 64-bit major release  (build 9200)
 //Command     : generate_target design_1_wrapper.bd
 //Design      : design_1_wrapper
@@ -11,8 +11,7 @@
 `timescale 1 ps / 1 ps
 
 module design_1_wrapper
-   (filter_sw,
-    i2s_bclk_0,
+   (i2s_bclk_0,
     i2s_data_0,
     i2s_mclk_0,
     i2s_ws_0,
@@ -20,7 +19,6 @@ module design_1_wrapper
     sys_clock,
     usb_uart_rxd,
     usb_uart_txd);
-  input [2:0]filter_sw;
   output i2s_bclk_0;
   output i2s_data_0;
   output i2s_mclk_0;
@@ -30,7 +28,6 @@ module design_1_wrapper
   input usb_uart_rxd;
   output usb_uart_txd;
 
-  wire [2:0]filter_sw;
   wire i2s_bclk_0;
   wire i2s_data_0;
   wire i2s_mclk_0;
@@ -41,8 +38,7 @@ module design_1_wrapper
   wire usb_uart_txd;
 
   design_1 design_1_i
-       (.filter_sw(filter_sw),
-        .i2s_bclk_0(i2s_bclk_0),
+       (.i2s_bclk_0(i2s_bclk_0),
         .i2s_data_0(i2s_data_0),
         .i2s_mclk_0(i2s_mclk_0),
         .i2s_ws_0(i2s_ws_0),

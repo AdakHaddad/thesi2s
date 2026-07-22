@@ -61,8 +61,7 @@ design_1 your_instance_name (
   .i2s_ws_0(i2s_ws_0), // output wire i2s_ws_0
   .i2s_bclk_0(i2s_bclk_0), // output wire i2s_bclk_0
   .i2s_mclk_0(i2s_mclk_0), // output wire i2s_mclk_0
-  .i2s_data_0(i2s_data_0), // output wire i2s_data_0
-  .filter_sw(filter_sw) // input wire [2:0] filter_sw
+  .i2s_data_0(i2s_data_0) // output wire i2s_data_0
 );
 // INST_TAG_END ------  End cut for INSTANTIATION Template  ------
 
