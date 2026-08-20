@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex main"] 1787196470.97069 "main.aux" "main.bbl" "main" 1787196492.79481 0
+["bibtex main"] 1787196470.97069 "main.aux" "main.bbl" "main" 1787196901.12058 0
   "./references.bib" 1784597765.38331 3730 5a42b2fe4aafaa0f37a5d26f1df77162 ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/bibtex/bst/ieeetran/IEEEtran.bst" 1440622569 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "main.aux" 1787196483.95991 3794 d01dd454a59db4ab13cd4d431c72da28 "pdflatex"
+  "main.aux" 1787196897.55429 3794 d01dd454a59db4ab13cd4d431c72da28 "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1787196472.57536 "c:/fixi2s/makalah-ieee/main.tex" "main.pdf" "main" 1787196492.7988 0
+["pdflatex"] 1787196889.73813 "c:/fixi2s/makalah-ieee/main.tex" "main.pdf" "main" 1787196901.12668 0
   "../thesi2s/contents/figures/processor-uart-timer-axi-i2s-architecture-whole-diagram.png" 1779442731.40533 1122173 5d34d10da3bf0227cfa1d9d016a4f258 ""
   "../thesi2s/contents/figures/utilization-summary.png" 1784133235.01641 24156 3570d0c6bcef24dba3c56960aac13a3a ""
   "C:/Users/LENOVO/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1782741879.7763 94906 98e18dd7e92188e7e762c54423bdfaa9 ""
@@ -32,12 +32,18 @@
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/tfm/public/amsfonts/symbols/msbm10.tfm" 1233951854 908 2921f8a10601f252058503cc6570e581 ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/tfm/public/amsfonts/symbols/msbm5.tfm" 1233951854 940 75ac932a52f80982a9f8ea75d03a34cf ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/tfm/public/amsfonts/symbols/msbm7.tfm" 1233951854 940 228d6584342e91276bf566bcf9716b83 ""
+  "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/tfm/public/cm/cmex10.tfm" 1136765053 992 662f679a0b3d2d53c1b94050fdaa3f50 ""
+  "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/tfm/public/cm/cmmi10.tfm" 1136765053 1528 abec98dbc43e172678c11b3b9031252a ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/tfm/public/cm/cmmi6.tfm" 1136765053 1512 f21f83efb36853c0b70002322c1ab3ad ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/tfm/public/cm/cmmi8.tfm" 1136765053 1520 eccf95517727cb11801f4f1aee3a21b4 ""
+  "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/tfm/public/cm/cmr10.tfm" 1136765053 1296 45809c5a464d5f32c8f98ba97c1bb47f ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/tfm/public/cm/cmr6.tfm" 1136765053 1300 b62933e007d01cfd073f79b963c01526 ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/tfm/public/cm/cmr8.tfm" 1136765053 1292 21c1c5bfeaebccffdb478fd231a0997d ""
+  "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/tfm/public/cm/cmsy10.tfm" 1136765053 1124 6c73e740cf17375f03eec0ee63599741 ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/tfm/public/cm/cmsy6.tfm" 1136765053 1116 933a60c408fc0a863a92debe84b2d294 ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/tfm/public/cm/cmsy8.tfm" 1136765053 1120 8b7d695260f3cff42e636090a8002094 ""
+  "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb" 1247596666 35469 70d41d2b9ea31d5d813066df7c99281c ""
+  "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb" 1247596667 35752 024fb6c41858982481f6968b5fc26508 ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb" 1247596667 32734 69e00a6b65cedb993666e42eedb3d48f ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb" 1247596666 32716 08e384dc442464e7285e891af9f45947 ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb" 1136846148 45758 19968a0990191524e34e1994d4a31cb6 ""
@@ -79,8 +85,8 @@
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/tex/latex/xcolor/xcolor.sty" 1700127522 55487 80a65caedd3722f4c20a14a69e785d8f ""
   "IEEEtran.cls" 1784469692.27617 288304 b67b6fc6c2abb39f9b461923f5199343 ""
-  "c:/fixi2s/makalah-ieee/main.tex" 1787196454.40504 11552 f3e8f546d040ad68f5999117fd76b282 ""
-  "main.aux" 1787196483.95991 3794 d01dd454a59db4ab13cd4d431c72da28 "pdflatex"
+  "c:/fixi2s/makalah-ieee/main.tex" 1787196885.15939 11579 3d055b8796a09691ec240cd72b73825c ""
+  "main.aux" 1787196897.55429 3794 d01dd454a59db4ab13cd4d431c72da28 "pdflatex"
   "main.bbl" 1787196472.29726 3584 3f6340586d5bd340be0f89988ef782cd "bibtex main"
   (generated)
   "main.aux"
