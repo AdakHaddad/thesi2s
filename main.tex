@@ -11,13 +11,35 @@
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \begin{document}
-\title{Perancangan IP I2S Transmitter AXI4-Lite pada SoC MicroBlaze V menggunakan Verilog}
+\title{Design of an AXI4-Lite I2S Transmitter IP for a MicroBlaze V SoC Using Verilog}
 
-\author{\IEEEauthorblockN{Muhammad Muqtada Alhaddad}
-\IEEEauthorblockA{Program Studi Teknologi Informasi\\
-Universitas Gadjah Mada\\
+\author{
+\IEEEauthorblockN{Muhammad Muqtada Alhaddad}
+\IEEEauthorblockA{
+\textit{Department of Electrical and}\\
+\textit{Information Engineering}\\
+\textit{Universitas Gadjah Mada}\\
 Yogyakarta, Indonesia\\
-muqtada@example.com}
+muhammadmuqtadaalhaddad@mail.ugm.ac.id
+}
+\and
+\IEEEauthorblockN{Agus Bejo}
+\IEEEauthorblockA{
+\textit{Department of Electrical and}\\
+\textit{Information Engineering}\\
+\textit{Universitas Gadjah Mada}\\
+Yogyakarta, Indonesia\\
+agusbj@ugm.ac.id
+}
+\and
+\IEEEauthorblockN{Wahyu Dewanto}
+\IEEEauthorblockA{
+\textit{Department of Electrical and}\\
+\textit{Information Engineering}\\
+\textit{Universitas Gadjah Mada}\\
+Yogyakarta, Indonesia\\
+wahyud@ugm.ac.id
+}
 }
 
 \maketitle
@@ -105,6 +127,8 @@ The implementation supports the following modes:
 \item Programmable integer sampling rates, including standard audio rates such as 44.1 kHz, 48 kHz, 88.2 kHz, and 96 kHz.
 \item Mute and enable control through the AXI4-Lite control register.
 \end{itemize}
+
+The complete source code, including the Verilog RTL, AXI4-Lite peripheral, firmware, and Vivado project, is available in the accompanying GitHub repository\cite{alhaddad_thesi2s_2026}. 
 
 \section{Results and Discussion}
 \subsection{Functional validation}

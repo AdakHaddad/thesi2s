@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex main"] 1784471953.66313 "main.aux" "main.bbl" "main" 1784471988.97792 0
-  "./references.bib" 1784471495.43275 3423 9383bc2cec3d45f7ab5faafd3b553866 ""
+["bibtex main"] 1787196470.97069 "main.aux" "main.bbl" "main" 1787196492.79481 0
+  "./references.bib" 1784597765.38331 3730 5a42b2fe4aafaa0f37a5d26f1df77162 ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/bibtex/bst/ieeetran/IEEEtran.bst" 1440622569 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "main.aux" 1784471986.55688 3725 4b7549928e4baf8235c3936124f33deb "pdflatex"
+  "main.aux" 1787196483.95991 3794 d01dd454a59db4ab13cd4d431c72da28 "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1784471978.98999 "main.tex" "main.pdf" "main" 1784471988.98129 0
+["pdflatex"] 1787196472.57536 "c:/fixi2s/makalah-ieee/main.tex" "main.pdf" "main" 1787196492.7988 0
   "../thesi2s/contents/figures/processor-uart-timer-axi-i2s-architecture-whole-diagram.png" 1779442731.40533 1122173 5d34d10da3bf0227cfa1d9d016a4f258 ""
   "../thesi2s/contents/figures/utilization-summary.png" 1784133235.01641 24156 3570d0c6bcef24dba3c56960aac13a3a ""
   "C:/Users/LENOVO/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1782741879.7763 94906 98e18dd7e92188e7e762c54423bdfaa9 ""
@@ -79,9 +79,9 @@
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
   "C:/Users/LENOVO/AppData/Local/Programs/MiKTeX/tex/latex/xcolor/xcolor.sty" 1700127522 55487 80a65caedd3722f4c20a14a69e785d8f ""
   "IEEEtran.cls" 1784469692.27617 288304 b67b6fc6c2abb39f9b461923f5199343 ""
-  "main.aux" 1784471986.55688 3725 4b7549928e4baf8235c3936124f33deb "pdflatex"
-  "main.bbl" 1784471954.84499 3376 4688d723305b6953d6bd455595c753cf "bibtex main"
-  "main.tex" 1784471904.72344 10859 967a426a74d541659c29736b48f54b94 ""
+  "c:/fixi2s/makalah-ieee/main.tex" 1787196454.40504 11552 f3e8f546d040ad68f5999117fd76b282 ""
+  "main.aux" 1787196483.95991 3794 d01dd454a59db4ab13cd4d431c72da28 "pdflatex"
+  "main.bbl" 1787196472.29726 3584 3f6340586d5bd340be0f89988ef782cd "bibtex main"
   (generated)
   "main.aux"
   "main.log"

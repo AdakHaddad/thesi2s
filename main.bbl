@@ -72,4 +72,9 @@ G.~P. Ao, ``The basic principle and {FPGA} implementation of {NCO},'' in
 S.~Palnitkar, \emph{Verilog {HDL}: A Guide to Digital Design and Synthesis},
   2nd~ed.\hskip 1em plus 0.5em minus 0.4em\relax Prentice Hall, 2003.
 
+\bibitem{alhaddad_thesi2s_2026}
+M.~M. Alhaddad, ``thesi2s: I2s transmitter axi4-lite ip for microblaze v,''
+  \url{https://github.com/AdakHaddad/thesi2s}, 2026, gitHub repository.
+  Accessed July 2026.
+
 \end{thebibliography}
