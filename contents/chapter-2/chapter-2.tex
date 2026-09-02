@@ -2,7 +2,7 @@
 
 \section{Tinjauan Pustaka}
 
-Bagian ini membahas penelitian terdahulu yang relevan dengan implementasi protokol I2S pada FPGA, integrasi peripheral kustom pada SoC berbasis prosesor soft-core, serta penggunaan bus AXI4-Lite dan sinkronisasi lintas domain clock.
+Bagian ini membahas penelitian terdahulu yang relevan dengan implementasi protokol I2S pada FPGA, integrasi \textit{peripheral} kustom pada SoC berbasis prosesor \textit{soft-core}, serta penggunaan bus AXI4-Lite dan sinkronisasi lintas domain \textit{clock}.
 
 \subsection{Penelitian tentang implementasi I2S pada FPGA}
 
@@ -12,7 +12,7 @@ Penelitian-penelitian tersebut mengonfirmasi kelayakan pembangkitan sinyal I2S p
 
 \subsection{Penelitian tentang prosesor soft-core dan integrasi SoC}
 
-Pengembangan arsitektur RISC-V sebagai ISA terbuka \citep{waterman_riscv_2016} mendasari perancangan prosesor soft-core modern seperti MicroBlaze V pada ekosistem AMD/Xilinx \citep{xilinx_microblaze_ref_2021}. Integrasi peripheral kustom ke dalam SoC berbasis bus AXI dieksplorasi oleh \citep{sklyarov_axi_peripheral_2014}, yang menekankan aspek modularitas dan skalabilitas interkoneksi. Metodologi hardware-software co-design dan pengembangan driver bare-metal untuk peripheral kustom pada FPGA diulas secara komprehensif oleh \citep{crockett_zynq_book_2014}.
+Pengembangan arsitektur RISC-V sebagai ISA terbuka \citep{waterman_riscv_2016} mendasari perancangan prosesor \textit{soft-core} modern seperti MicroBlaze V pada ekosistem AMD/Xilinx \citep{xilinx_microblaze_ref_2021}. Integrasi \textit{peripheral} kustom ke dalam SoC berbasis bus AXI dieksplorasi oleh \citep{sklyarov_axi_peripheral_2014}, yang menekankan aspek modularitas dan skalabilitas interkoneksi. Metodologi \textit{hardware-software co-design} dan pengembangan driver \textit{bare-metal} untuk \textit{peripheral} kustom pada FPGA diulas secara komprehensif oleh \citep{crockett_zynq_book_2014}.
 
 \subsection{Penelitian tentang sinkronisasi lintas domain clock (CDC)}
 
@@ -20,18 +20,18 @@ Dalam sistem multi-clock, sinkronisasi data antar-domain (\textit{Clock Domain C
 
 \subsection{Penelitian tentang penjadwalan firmware berbasis counter siklus}
 
-Penjadwalan periodik pada bare-metal sering kali memanfaatkan CSR \texttt{mcycle} pada arsitektur RISC-V sebagai referensi timing presisi tinggi \citep{riscv_isa_vol1_2019}. Pada tahap awal penelitian ini, fungsi tunda \texttt{usleep()} dan register \texttt{mcycle} sempat digunakan untuk pengiriman sampel. Namun, sistem akhir beralih menggunakan polling bit register \texttt{STATUS} yang menyinkronkan pengiriman data secara fisik dengan detak konsumsi perangkat keras untuk mengeliminasi akumulasi keterlambatan (\textit{drift}).
+Penjadwalan periodik pada \textit{bare-metal} sering kali memanfaatkan CSR \texttt{mcycle} pada arsitektur RISC-V sebagai referensi \textit{timing} presisi tinggi \citep{riscv_isa_vol1_2019}. Pada tahap awal penelitian ini, fungsi tunda \texttt{usleep()} dan register \texttt{mcycle} sempat digunakan untuk pengiriman sampel. Namun, sistem akhir beralih menggunakan polling bit \textit{register} \texttt{STATUS} yang menyinkronkan pengiriman data secara fisik dengan detak konsumsi perangkat keras untuk mengeliminasi akumulasi keterlambatan (\textit{drift}).
 
 \subsection{Gap penelitian dan kontribusi}
 
-Penelitian ini mengisi celah dokumentasi perancangan IP core I2S TX kustom untuk SoC MicroBlaze V yang mencakup seluruh alur RTL, register map, perangkat lunak bare-metal, analisis bug firmware (seperti kesalahan justifikasi bit dan sinkronisasi timing), serta verifikasi fisik pada platform hemat daya berbasis Basys3. 
+Penelitian ini mengisi celah dokumentasi perancangan IP core I2S TX kustom untuk SoC MicroBlaze V yang mencakup seluruh alur RTL, \textit{register map}, perangkat lunak \textit{bare-metal}, analisis bug \textit{firmware} (seperti kesalahan justifikasi bit dan sinkronisasi \textit{timing}), serta verifikasi fisik pada platform hemat daya berbasis Basys3. 
 
 Kontribusi utama penelitian ini adalah:
 \begin{enumerate}
-    \item Merancang IP core I2S transmitter AXI4-Lite berbasis \textbf{NCO} (\textit{Numerically Controlled Oscillator}) desimal yang mendukung frekuensi sampling integer dalam RTL tanpa PLL eksternal.
+    \item Merancang IP core I2S \textit{transmitter} AXI4-Lite berbasis \textbf{NCO} (\textit{Numerically Controlled Oscillator}) desimal yang mendukung frekuensi \textit{sampling} integer dalam RTL tanpa PLL eksternal.
     \item Mengintegrasikan sistem SoC berbasis MicroBlaze V pada FPGA Artix-7 secara hemat sumber daya.
-    \item Menyediakan solusi hardware-software handshake berbasis status-polling untuk mencegah data corruption dan drift.
-    \item Mengidentifikasi dan mendokumentasikan penyelesaian tiga bug kritis pada lapisan firmware.
+    \item Menyediakan solusi \textit{hardware-software handshake} berbasis \textit{status-polling} untuk mencegah data corruption dan drift.
+    \item Mengidentifikasi dan mendokumentasikan penyelesaian tiga bug kritis pada lapisan \textit{firmware}.
 \end{enumerate}
 
 % ============================================================
@@ -40,9 +40,9 @@ Kontribusi utama penelitian ini adalah:
 
 \subsection{Verilog Hardware Description Language (HDL)}
 
-Verilog HDL merupakan bahasa formal yang digunakan untuk memodelkan, mendeskripsikan, dan mensimulasikan sistem digital \citep{palnitkar_verilog_2003}. Bahasa ini dikembangkan oleh Gateway Design Automation pada tahun 1984 dan distandarisasi sebagai IEEE 1364 pada tahun 1995. Sebagai \textit{Hardware Description Language} (HDL), Verilog memungkinkan perancang untuk mendeskripsikan perilaku dan struktur rangkaian digital pada berbagai tingkat abstraksi, mulai dari level transistor (\textit{switch-level}) hingga level pertukaran register (\textit{Register Transfer Level}, RTL).
+Verilog HDL merupakan bahasa formal yang digunakan untuk memodelkan, mendeskripsikan, dan mensimulasikan sistem digital \citep{palnitkar_verilog_2003}. Bahasa ini dikembangkan oleh Gateway Design Automation pada tahun 1984 dan distandarisasi sebagai IEEE 1364 pada tahun 1995. Sebagai Hardware Description Language (HDL), Verilog memungkinkan perancang untuk mendeskripsikan perilaku dan struktur rangkaian digital pada berbagai tingkat abstraksi, mulai dari level transistor (switch-level) hingga level pertukaran register (Register Transfer Level, RTL).
 
-Pada tingkat RTL, Verilog mendeskripsikan aliran data antar register serta operasi logika kombinasional yang menghubungkannya, semuanya disinkronkan terhadap tepi clock tertentu. Pendekatan ini sangat sesuai untuk desain digital sinkron yang menjadi fondasi sistem FPGA dan ASIC modern. Perbedaan mendasar antara pemrograman perangkat keras dengan Verilog dan pemrograman perangkat lunak konvensional (C, Python) terletak pada sifat eksekusinya: kode Verilog RTL menggambarkan koneksi fisik dan logika yang berjalan secara \textit{konkuren}, bukan instruksi sekuensial \textit{von Neumann}. Setiap blok \texttt{always} atau \texttt{assign} dalam Verilog mewakili jalur logika yang dieksekusi secara paralel oleh perangkat keras \citep{harris_harris_digital_2022}.
+Pada tingkat RTL, Verilog mendeskripsikan aliran data antar \textit{register} serta operasi logika kombinasional yang menghubungkannya, semuanya disinkronkan terhadap tepi \textit{clock} tertentu. Pendekatan ini sangat sesuai untuk desain digital sinkron yang menjadi fondasi sistem FPGA dan ASIC modern. Perbedaan mendasar antara pemrograman perangkat keras dengan Verilog dan pemrograman perangkat lunak konvensional (C, Python) terletak pada sifat eksekusinya: kode Verilog RTL menggambarkan koneksi fisik dan logika yang berjalan secara \textit{konkuren}, bukan instruksi sekuensial \textit{von Neumann}. Setiap blok \texttt{always} atau \texttt{assign} dalam Verilog mewakili jalur logika yang dieksekusi secara paralel oleh perangkat keras \citep{harris_harris_digital_2022}.
 
 Pemilihan Verilog dalam penelitian ini didasarkan pada beberapa pertimbangan. Pertama, Verilog merupakan HDL yang didukung penuh oleh ekosistem Vivado, mencakup simulator, synthesizer, dan alat pengemasan IP. Kedua, sintaksis Verilog yang ringkas dan mirip dengan bahasa C memudahkan integrasi dengan kode yang dihasilkan oleh Vivado IP Packager serta memudahkan verifikasi fungsional melalui testbench \citep{chu_fpga_prototyping_2011}. Ketiga, adopsi Verilog yang luas di industri semikonduktor dan FPGA menjadikannya pilihan yang portabel dan relevan untuk publikasi penelitian. Seluruh logika IP I2S Transmitter pada penelitian ini, termasuk register map, akumulator NCO, serializer data, dan antarmuka AXI4-Lite slave, ditulis dalam Verilog RTL sintetis.
 
@@ -52,7 +52,7 @@ Pemilihan Verilog dalam penelitian ini didasarkan pada beberapa pertimbangan. Pe
 
 Hubungan antara logika kombinasional, logika sekuensial, register, dan clock merupakan inti dari desain RTL. Clock menyediakan referensi waktu diskrit yang menyelaraskan perpindahan data antar register. Pada setiap tepi clock (biasanya tepi naik), register menangkap nilai keluaran logika kombinasional, dan hasil tersebut menjadi masukan bagi logika kombinasional pada tahap berikutnya. Siklus ini membentuk pipa pemrosesan data yang sinkron dan deterministik \citep{palnitkar_verilog_2003}.
 
-Desain IP pada penelitian ini dikembangkan pada level RTL karena beberapa alasan. Pertama, RTL memberikan keseimbangan optimal antara portabilitas dan efisiensi sumber daya: kode RTL dapat disintesis untuk berbagai target FPGA atau ASIC tanpa modifikasi signifikan (\textit{vendor-agnostic}), berbeda dengan desain level skematik yang terikat pada pustaka vendor tertentu. Kedua, desain RTL memungkinkan simulasi fungsional yang cepat untuk memverifikasi kebenaran logika sebelum implementasi fisik, yang sangat penting selama proses debugging. Ketiga, pendekatan RTL memfasilitasi modularitas dan \textit{reuse}, di mana blok-blok fungsional seperti NCO, pencacah bit, dan AXI slave dapat dirancang, diuji, dan digabungkan secara independen. Seluruh komponen IP I2S pada penelitian ini  akumulator fase NCO, pencacah bit frame I2S, register map AXI4-Lite, dan serializer data  diimplementasikan sebagai modul-modul RTL Verilog yang berdiri sendiri.
+Desain IP pada penelitian ini dikembangkan pada level RTL karena beberapa alasan. Pertama, RTL memberikan keseimbangan optimal antara portabilitas dan efisiensi sumber daya: implementasi RTL yang dikembangkan tidak bergantung pada IP audio \textit{proprietary} tertentu dan dirancang menggunakan antarmuka standar sehingga berpotensi diadaptasi pada platform FPGA lain, berbeda dengan desain level skematik yang terikat pada pustaka vendor tertentu. Kedua, desain RTL memungkinkan simulasi fungsional yang cepat untuk memverifikasi kebenaran logika sebelum implementasi fisik, yang sangat penting selama proses debugging. Ketiga, pendekatan RTL memfasilitasi modularitas dan \textit{reuse}, di mana blok-blok fungsional seperti NCO, pencacah bit, dan AXI slave dapat dirancang, diuji, dan digabungkan secara independen. Seluruh komponen IP I2S pada penelitian ini  akumulator fase NCO, pencacah bit frame I2S, register map AXI4-Lite, dan serializer data  diimplementasikan sebagai modul-modul RTL Verilog yang berdiri sendiri.
 
 \subsection{Intellectual Property (IP) Core}
 
@@ -62,7 +62,7 @@ Manfaat utama IP core meliputi \textit{design reuse}, modularitas, dan percepata
 
 Berdasarkan tingkat abstraksi dan portabilitasnya, IP core diklasifikasikan menjadi tiga kategori:
 \begin{enumerate}
-    \item \textbf{Soft IP}: IP berupa kode HDL (Verilog/VHDL) pada level RTL. Soft IP bersifat paling portabel dan \textit{vendor-agnostic}, tetapi hasil sintesis dan implementasinya (frekuensi maksimum, luas area) bergantung pada target FPGA serta alat sintesis yang digunakan. Desainer dapat memodifikasi kode sumber sesuai kebutuhan spesifik aplikasi.
+    \item \textbf{Soft IP}: IP berupa kode HDL (Verilog/VHDL) pada level RTL. Soft IP bersifat paling portabel karena tidak terikat pada pustaka \textit{vendor} tertentu, tetapi hasil sintesis dan implementasinya (frekuensi maksimum, luas area) bergantung pada target FPGA serta alat sintesis yang digunakan. Desainer dapat memodifikasi kode sumber sesuai kebutuhan spesifik aplikasi.
     \item \textbf{Firm IP}: IP berupa netlist atau representasi level gerbang yang telah dioptimasi untuk target teknologi tertentu. Firm IP menawarkan kinerja yang lebih dapat diprediksi dibandingkan soft IP, namun portabilitasnya lebih rendah dan modifikasi terbatas.
     \item \textbf{Hard IP}: IP berupa \textit{layout} fisik yang telah sepenuhnya ditempatkan dan di-\textit{routing} pada silikon. Hard IP memberikan kinerja tertinggi dan konsumsi daya paling rendah, tetapi tidak portabel dan tidak dapat dimodifikasi. Contoh hard IP pada FPGA meliputi blok PLL, MMCM, pengontrol DDR, dan prosesor hard-core \citep{trimberger_history_fpga_2018}.
 \end{enumerate}
@@ -108,7 +108,7 @@ I2S (\textit{Inter-IC Sound}) merupakan protokol komunikasi serial sinkron tiga-
     \IfFileExists{contents/figures/i2s-nxp-diagram.png}{%
         \includegraphics[width=0.85\textwidth]{contents/figures/i2s-nxp-diagram.png}%
     }{}
-    \caption{Diagram timing sinyal protokol I2S standar (Sumber: NXP).}
+    \caption{Diagram timing sinyal protokol I2S standar (Sumber: NXP~\cite{philips_i2s_1986}).}
     \label{fig:i2s_nxp_diagram}
 \end{figure}
 

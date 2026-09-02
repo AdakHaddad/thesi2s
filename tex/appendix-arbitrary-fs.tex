@@ -11,4 +11,4 @@ Perubahan utama pada perancangan perangkat keras:
     \item Menjaga keamanan akumulator NCO dengan tetap menyertakan batas atas frekuensi (\texttt{MAX\_SAFE\_FS\_HZ}) pada modul register control untuk menghindari nilai increment yang tidak aman.
 \end{itemize}
 
-Dengan modifikasi ini, arsitektur IP core menjadi lebih sederhana, bersih, dan sepenuhnya bersifat \textit{vendor-agnostic} karena tidak lagi memerlukan clock generator analog/wizard clock tambahan untuk audio di luar clock AXI standar.
+Dengan modifikasi ini, arsitektur IP core menjadi lebih sederhana dan bersih karena tidak lagi memerlukan \textit{clock generator} analog/\textit{wizard clock} tambahan untuk audio di luar clock AXI standar. Seluruh logika pembangkitan clock audio kini bersumber dari akumulator fase digital yang berjalan pada domain clock sistem.

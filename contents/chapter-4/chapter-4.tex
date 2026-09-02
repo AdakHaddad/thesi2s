@@ -684,6 +684,7 @@ int main(void)
     apply_control();
     g_last_frame_bit = frame_status_bit();
     print_state();
+
     while (1) {
         uint32_t frame_bit = frame_status_bit();
 
@@ -698,6 +699,7 @@ int main(void)
 
     cleanup_platform();
     return 0;
+}
 \end{lstlisting}
 
 Urutan tersebut menunjukkan bahwa firmware memastikan konfigurasi aman sebelum streaming dimulai. Sampel data ditulis nol terlebih dahulu, lalu kontrol diterapkan, dan status frame awal dibaca agar sinkronisasi berikutnya memiliki referensi yang benar.
@@ -837,9 +839,30 @@ static void handle_key(uint8_t ch)
 
     switch (lower) {
         case 's': set_wave_square(!g_square); break;
+        case '+': case '=':
+            set_tone_freq(clamp_u16((uint32_t)g_tone_freq_hz + 100U));
+            break;
+        case '-':
+            set_tone_freq(g_tone_freq_hz > 100U ? g_tone_freq_hz - 100U : 0U);
+            break;
+        case '*':
+            set_tone_freq(clamp_u16((uint32_t)g_tone_freq_hz + 1000U));
+            break;
+        case '_':
+            set_tone_freq(g_tone_freq_hz > 1000U ? g_tone_freq_hz - 1000U : 0U);
+            break;
+        case '1': set_tone_freq(1000U); break;
+        case '2': set_tone_freq(2000U); break;
+        case '3': set_tone_freq(5000U); break;
         case '4': set_sample_rate(48000U); break;
         case '5': set_sample_rate(44100U); break;
         case '6': set_sample_rate(96000U); break;
+        case '[':
+            set_sample_rate(g_sample_rate_hz > 1000U ? g_sample_rate_hz - 1000U : 1U);
+            break;
+        case ']':
+            set_sample_rate(g_sample_rate_hz + 1000U);
+            break;
         case 'w': set_width(16U); break;
         case 'x': set_width(24U); break;
         case 'y': set_width(32U); break;
@@ -892,6 +915,16 @@ static void print_state(void)
     xil_printf(">> %-14s = %u Hz\r\n", "TONE FREQ", (unsigned)g_tone_freq_hz);
     xil_printf(">> %-14s = %lu Hz\r\n", "SAMPLE RATE", (unsigned long)g_sample_rate_hz);
     xil_printf(">> %-14s = %u bit\r\n", "SAMPLE WIDTH", (unsigned)g_width);
+    xil_printf("-----------------------------\r\n");
+    xil_printf(" S      toggle sine/square\r\n");
+    xil_printf(" +/-    tone freq +100/-100 Hz\r\n");
+    xil_printf(" */_    tone freq +1k/-1k Hz\r\n");
+    xil_printf(" 1/2/3  tone freq 1k/2k/5k\r\n");
+    xil_printf(" 4/5/6  sample rate 48k/44.1k/96k\r\n");
+    xil_printf(" [/]    sample rate -1k/+1k Hz\r\n");
+    xil_printf(" W/X/Y  width 16/24/32 bit\r\n");
+    xil_printf(" E      toggle ENABLE\r\n");
+    xil_printf(" M      toggle MUTE\r\n");
     xil_printf(" L/R/B  left/right/both channels\r\n");
     xil_printf(" ?      show this menu\r\n");
     xil_printf("=============================\r\n");

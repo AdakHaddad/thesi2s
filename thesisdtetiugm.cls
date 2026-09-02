@@ -278,8 +278,10 @@
 				\vfill
 				\iftoggle{lang}{\textit{\textbf{\MakeUppercase{The Sustainable Development Goals}}}}{\textbf{\MakeUppercase{The Sustainable Development Goals}}}\\
 				\iftoggle{lang}{\textit{\textbf{Industry, Innovation and Infrastructure}}}{\textbf{Industry, Innovation and Infrastructure}}\\
-				\iftoggle{lang}{\textit{\textbf{Affordable and Clean Energy}}}{\textbf{Affordable and Clean Energy}}\\
-				\iftoggle{lang}{\textit{\textbf{Climate Action}}}{\textbf{Climate Action}}
+				\iftoggle{lang}{\textit{\textbf{Quality Education}}}{\textbf{Quality Education}}\\
+				\iftoggle{lang}{\textit{\textbf{Decent Work and Economic Growth}}}{\textbf{Decent Work and Economic Growth}}
+
+
 				\vfill
 				\iftoggle{lang}{\textbf{Disusun oleh:}}{Written by:}\\
 				\vspace{0.4em}
