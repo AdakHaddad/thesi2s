@@ -2,15 +2,15 @@
 
 \section{Alat dan Bahan}
 
-Penelitian ini menggunakan kombinasi perangkat keras dan perangkat lunak untuk perancangan, integrasi SoC, dan validasi fisik sistem I2S Transmitter.
+Penelitian ini menggunakan kombinasi perangkat keras dan perangkat lunak untuk perancangan, integrasi SoC, dan validasi fisik sistem transmitter I2S.
 
 \subsection{Perangkat keras}
 
-\subsubsection{Perangkat pengembangan dan target hardware}
+\subsubsection{Perangkat pengembangan dan target perangkat keras}
 \begin{itemize}
     \item \textbf{Laptop Lenovo ThinkPad}: Intel Core i5, RAM 8 GB, Windows 10 Pro. Digunakan untuk merancang RTL, menulis kode driver, dan menyusun laporan.
-    \item \textbf{Board FPGA Basys3}: Berbasis AMD/Xilinx Artix-7 (XC7A35T), sebagai platform SoC soft-core utama \citep{xilinx_basys3_ref}.
-    \item \textbf{Modul DAC Audio PCM5102A}: Berperan sebagai receiver I2S eksternal yang dihubungkan ke PMOD Basys3 untuk menghasilkan sinyal audio analog \citep{pcm5102a_datasheet}.
+    \item \textbf{Papan FPGA Basys3}: Berbasis AMD/Xilinx Artix-7 (XC7A35T), sebagai platform SoC dengan prosesor \textit{soft-core} utama \citep{xilinx_basys3_ref}.
+    \item \textbf{Modul DAC Audio PCM5102A}: Berperan sebagai penerima I2S eksternal yang dihubungkan ke PMOD Basys3 untuk menghasilkan sinyal audio analog \citep{pcm5102a_datasheet}.
 \end{itemize}
 
 Konfigurasi koneksi antara FPGA Basys3 dan modul DAC PCM5102A diperlihatkan pada Gambar~\ref{fig:ch3-wiring-dac}. Sinyal I2S (BCLK, WS, DATA) dan MCLK dihubungkan dari pin PMOD Basys3 ke input yang sesuai pada modul DAC, dengan jalur ground bersama untuk referensi sinyal.
@@ -44,30 +44,30 @@ Konfigurasi koneksi antara FPGA Basys3 dan modul DAC PCM5102A diperlihatkan pada
 
 \subsection{Perangkat lunak}
 \begin{itemize}
-    \item \textbf{AMD Vivado 2025.2}: Tool utama untuk perancangan RTL Verilog, simulasi behavioral (XSim), sintesis, implementasi, dan perancangan SoC (Block Design) \citep{xilinx_vivado_ip_subsystems_2025}.
-    \item \textbf{AMD Vitis 2025.2}: Platform pengembangan perangkat lunak C bare-metal untuk prosesor MicroBlaze V.
-    \item \textbf{PuTTY dan Visual Studio Code IDE}: PuTTY digunakan sebagai terminal UART logging, sedangkan Visual Studio Code IDE untuk penyuntingan kode.
+    \item \textbf{AMD Vivado 2025.2}: Perangkat utama untuk perancangan RTL Verilog, simulasi perilaku (XSim), sintesis, implementasi, dan perancangan SoC (\textit{Block Design}) \citep{xilinx_vivado_ip_subsystems_2025}.
+    \item \textbf{AMD Vitis 2025.2}: Platform pengembangan perangkat lunak C \textit{bare-metal} untuk prosesor MicroBlaze V.
+    \item \textbf{PuTTY dan Visual Studio Code}: PuTTY digunakan sebagai terminal pencatatan UART, sedangkan Visual Studio Code digunakan untuk penyuntingan kode.
 \end{itemize}
 
 \section{Metode yang Digunakan}
 
-\subsection{Metode perancangan hardware}
-RTL dirancang secara modular menggunakan Verilog HDL yang memisahkan bagian datapath dan control path \citep{palnitkar_verilog_2003}. Desain difokuskan pada serializer I2S standar Philips, register data, shadow register untuk perlindungan data, serta modul clock desimal NCO. RTL audio tidak menggunakan primitif audio vendor-spesifik dan mendukung \textit{sample rate} integer dalam rentang yang ditetapkan oleh RTL.
+\subsection{Metode perancangan perangkat keras}
+RTL dirancang secara modular menggunakan Verilog HDL yang memisahkan bagian jalur data dan jalur kendali \citep{palnitkar_verilog_2003}. Desain difokuskan pada serializer I2S standar Philips, register data, \textit{shadow register} untuk perlindungan data, serta modul \textit{clock} desimal NCO. RTL audio tidak menggunakan primitif audio khusus vendor dan mendukung frekuensi pencuplikan integer dalam rentang yang ditetapkan oleh RTL.
 
 \subsection{Metode verifikasi dan simulasi}
-Verifikasi dilakukan lewat simulasi testbench di Vivado Simulator untuk memastikan fungsionalitas sinyal I2S. Selanjutnya dilakukan validasi fisik dengan mengamati timing clock dan bit data serial pada osiloskop serta mendengarkan hasil reproduksi suara dari DAC.
+Verifikasi dilakukan lewat simulasi \textit{testbench} di Vivado Simulator untuk memastikan fungsionalitas sinyal I2S. Selanjutnya dilakukan validasi fisik dengan mengamati \textit{timing} clock dan bit data serial pada osiloskop serta mendengarkan hasil reproduksi suara dari DAC.
 
-\subsection{Metode integrasi SoC dan pengembangan software}
-IP kustom dikemas menggunakan Vivado IP Packager lalu dimasukkan ke dalam Block Design untuk dihubungkan dengan MicroBlaze V melalui AXI SmartConnect \citep{xilinx_axi_ref_2017}. Firmware bare-metal dikembangkan di Vitis untuk mengontrol peripheral, menginisialisasi parameter register, menjalankan generator DDS software, dan mengelola sinkronisasi pengiriman data lewat status polling.
+\subsection{Metode integrasi SoC dan pengembangan perangkat lunak}
+IP kustom dikemas menggunakan Vivado IP Packager lalu dimasukkan ke dalam \textit{Block Design} untuk dihubungkan dengan MicroBlaze V melalui AXI SmartConnect \citep{xilinx_axi_ref_2017}. Firmware \textit{bare-metal} dikembangkan di Vitis untuk mengontrol periferal, menginisialisasi parameter register, menjalankan pembangkit DDS perangkat lunak, dan mengelola sinkronisasi pengiriman data melalui \textit{status polling}.
 
 \section{Perancangan Block Design Sistem}
 
 Perancangan Block Design dilakukan untuk menyatukan custom IP I2S ke dalam sistem SoC berbasis prosesor MicroBlaze V agar dapat diakses oleh program perangkat lunak.
 
 \subsection{Integrasi SoC MicroBlaze V}
-Vivado IP Integrator digunakan untuk menghubungkan komponen SoC: prosesor soft-core MicroBlaze V \citep{xilinx_microblaze_ref_2021}, memori lokal BRAM, Processor System Reset, AXI SmartConnect, AXI UARTLite untuk komunikasi terminal, dan custom IP I2S. Alamat dasar (Base Address) peripheral ditentukan secara otomatis oleh Vivado dan dipetakan ke dalam header file \path{xparameters.h} di Vitis.
+Vivado IP Integrator digunakan untuk menghubungkan komponen SoC: prosesor \textit{soft-core} MicroBlaze V \citep{xilinx_microblaze_ref_2021}, memori lokal BRAM, Processor System Reset, AXI SmartConnect, AXI UARTLite untuk komunikasi terminal, dan IP I2S kustom. Alamat dasar (\textit{base address}) periferal ditentukan secara otomatis oleh Vivado dan dipetakan ke dalam berkas tajuk \path{xparameters.h} di Vitis.
 
-Komponen IP pendukung pada Block Design diperlihatkan pada Gambar~\ref{fig:ch3-bd-support-ip}. MicroBlaze V berperan sebagai pengendali utama, AXI UARTLite menyediakan jalur komunikasi serial untuk debugging, dan keduanya terhubung melalui AXI SmartConnect ke memori BRAM serta peripheral I2S.
+Komponen IP pendukung pada \textit{Block Design} diperlihatkan pada Gambar~\ref{fig:ch3-bd-support-ip}. MicroBlaze V berperan sebagai pengendali utama, AXI UARTLite menyediakan jalur komunikasi serial untuk \textit{debugging}, dan keduanya terhubung melalui AXI SmartConnect ke memori BRAM serta periferal I2S.
 
 \begin{figure}[htbp]
     \centering
@@ -91,7 +91,7 @@ Komponen IP pendukung pada Block Design diperlihatkan pada Gambar~\ref{fig:ch3-b
 \end{figure}
 
 \subsection{Perancangan Clocking Audio Berbasis NCO}
-Clock audio diturunkan secara sinkron dari clock sistem AXI 100 MHz menggunakan teknik \textit{Numerically Controlled Oscillator} (NCO) desimal modulo 100.000.000 (penjelasan matematis rinci dibahas pada Bab~II). Sinyal detak yang dihasilkan meliputi \textbf{BCLK} ($64 \times F_s$) untuk serializer, serta \textbf{MCLK} ($256 \times F_s$) sebagai referensi clock DAC eksternal.
+Clock audio diturunkan secara sinkron dari \textit{clock} sistem AXI 100 MHz menggunakan teknik \textit{Numerically Controlled Oscillator} (NCO) desimal modulo 100.000.000 (penjelasan matematis rinci dibahas pada Bab~II). Sinyal detak yang dihasilkan meliputi \textbf{BCLK} ($64 \times F_s$) untuk serializer, serta \textbf{MCLK} ($256 \times F_s$) sebagai referensi \textit{clock} DAC eksternal.
 
 \subsection{Perancangan Register AXI4-Lite}
 Akses register IP I2S oleh MicroBlaze V dilakukan melalui alamat memory-mapped (MMIO) berbasis antarmuka bus AXI4-Lite. Register internal IP terdiri dari \path{DATA_LEFT} (0x00), \path{DATA_RIGHT} (0x04), \path{CONTROL} (0x08), dan \path{STATUS} (0x0C). Peta register dan penjelasan fungsi bitfield sepenuhnya identik dengan detail perancangan yang disajikan pada Tabel~\ref{tab:ch4-regmap-final} dan Tabel~\ref{tab:ch4-control-final} di Bab~IV (halaman~\pageref{tab:ch4-regmap-final}).

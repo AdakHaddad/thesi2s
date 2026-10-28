@@ -6,15 +6,15 @@ Bagian ini membahas penelitian terdahulu yang relevan dengan implementasi protok
 
 \subsection{Penelitian tentang implementasi I2S pada FPGA}
 
-Implementasi antarmuka I2S pada FPGA telah dilaporkan dalam beberapa konteks. \citep{sang_i2s_codec_2020} merancang antarmuka I2S pada FPGA untuk menghubungkan prosesor dengan codec audio, menunjukkan dukungan \textit{sample rate} hingga 96 kHz menggunakan pendekatan RTL langsung tanpa bus sistem. Sementara itu, \citep{kaviani_i2s_fpga_2017} mengintegrasikan logika I2S bersama logic analyzer pada FPGA berbiaya rendah untuk kebutuhan instrumentasi.
+Implementasi antarmuka I2S pada FPGA telah dilaporkan dalam beberapa konteks. Sang, Peng, dan Zhou merancang antarmuka I2S pada FPGA untuk menghubungkan prosesor dengan codec audio, serta menunjukkan dukungan \textit{sample rate} hingga 96 kHz menggunakan pendekatan RTL langsung tanpa bus sistem~\citep{sang_i2s_codec_2020}. Sementara itu, Kaviani dan Lewis mengintegrasikan logika I2S bersama \textit{logic analyzer} pada FPGA berbiaya rendah untuk kebutuhan instrumentasi~\citep{kaviani_i2s_fpga_2017}.
 
 Penelitian-penelitian tersebut mengonfirmasi kelayakan pembangkitan sinyal I2S pada FPGA, namun sebagian besar masih terbatas pada level simulasi atau pengujian RTL terisolasi. Penelitian ini berfokus pada pendekatan \textit{hardware-software co-design} secara sistemik, yang mengintegrasikan register map, interkoneksi bus, dan validasi fungsional menggunakan perangkat lunak yang berjalan pada prosesor soft-core \citep{lafosse_embedded_2018}.
 
 \subsection{Penelitian tentang prosesor soft-core dan integrasi SoC}
 
-Pengembangan arsitektur RISC-V sebagai ISA terbuka \citep{waterman_riscv_2016} mendasari perancangan prosesor \textit{soft-core} modern seperti MicroBlaze V pada ekosistem AMD/Xilinx \citep{xilinx_microblaze_ref_2021}. Integrasi \textit{peripheral} kustom ke dalam SoC berbasis bus AXI dieksplorasi oleh \citep{sklyarov_axi_peripheral_2014}, yang menekankan aspek modularitas dan skalabilitas interkoneksi. Metodologi \textit{hardware-software co-design} dan pengembangan driver \textit{bare-metal} untuk \textit{peripheral} kustom pada FPGA diulas secara komprehensif oleh \citep{crockett_zynq_book_2014}.
+Pengembangan arsitektur RISC-V sebagai ISA terbuka menjadi dasar perancangan prosesor \textit{soft-core} modern seperti MicroBlaze V pada ekosistem AMD/Xilinx~\citep{waterman_riscv_2016,xilinx_microblaze_ref_2021}. Sklyarov dan rekan-rekan mengeksplorasi integrasi periferal kustom ke dalam SoC berbasis bus AXI dengan menekankan aspek modularitas dan skalabilitas interkoneksi~\citep{sklyarov_axi_peripheral_2014}. Metodologi \textit{hardware-software co-design} dan pengembangan penggerak \textit{bare-metal} untuk periferal kustom pada FPGA diulas secara komprehensif oleh Crockett dan rekan-rekan~\citep{crockett_zynq_book_2014}.
 
-\subsection{Penelitian tentang sinkronisasi lintas domain clock (CDC)}
+\subsection{Penelitian tentang sinkronisasi lintas domain \textit{clock} (CDC)}
 
 Dalam sistem multi-clock, sinkronisasi data antar-domain (\textit{Clock Domain Crossing}, CDC) sangat krusial. \citep{ginosar_metastability_2011} menganalisis masalah metastabilitas dan memaparkan solusi flip-flop ganda. Pada rancangan final penelitian ini (\texttt{i2s\_1\_0}), serializer I2S berjalan sepenuhnya pada domain clock bus AXI 100 MHz, sehingga masalah CDC pada jalur data audio ditiadakan. Koordinasi aliran data diselesaikan melalui status handshake berbasis register.
 
@@ -69,11 +69,17 @@ Berdasarkan tingkat abstraksi dan portabilitasnya, IP core diklasifikasikan menj
 
 IP yang dirancang dalam penelitian ini tergolong \textbf{Soft IP} berbasis RTL Verilog. Seluruh kode sumber  termasuk logika NCO, serializer I2S, register map konfigurasi, dan \textit{slave} AXI4-Lite  ditulis dalam Verilog portabel tanpa ketergantungan pada pustaka hardware vendor tertentu. Setelah proses verifikasi fungsional, IP ini dikemas menggunakan Vivado IP Packager menjadi format \texttt{.zip} yang dapat diimpor ke \textit{IP Catalog} Vivado untuk digunakan pada proyek FPGA lain \citep{xilinx_ug1118}. Dengan demikian, IP I2S Transmitter yang dihasilkan bersifat \textit{reusable} dan mendukung ekosistem perancangan SoC yang modular pada toolchain Vivado.
 
+\subsection{Varian Arsitektur RISC-V}
+
+RISC-V merupakan arsitektur set instruksi terbuka yang dibangun dari beberapa komponen dasar dan dapat diperluas sesuai kebutuhan sistem \citep{waterman_riscv_2016}. Varian yang umum digunakan dibedakan berdasarkan lebar data dan ekstensi instruksinya, misalnya RV32I untuk bilangan bulat 32-bit, RV64I untuk bilangan bulat 64-bit, serta varian yang menambahkan ekstensi perkalian dan pembagian (\textit{M}), operasi atomik (\textit{A}), bilangan pecahan (\textit{F} dan \textit{D}), atau instruksi terkompresi (\textit{C}). Kombinasi ekstensi tersebut ditulis sebagai nama dasar seperti RV32IM atau RV32IMAC. Selain varian untuk aplikasi umum, RISC-V juga dapat digunakan pada mikrokontroler, sistem tertanam, dan aplikasi komputasi berkinerja tinggi.
+
 \subsection{Arsitektur MicroBlaze V dan Memory-Mapped I/O}
 
-MicroBlaze V adalah soft-core processor 32-bit berbasis arsitektur RISC-V (RV32I) dari AMD/Xilinx \citep{xilinx_microblaze_ref_2021}. Prosesor berkomunikasi dengan peripheral melalui model \textit{Memory-Mapped I/O} (MMIO), di mana register kontrol dan data peripheral dipetakan ke alamat memori unik. Akses register dilakukan menggunakan instruksi load/store standar (\texttt{lw} / \texttt{sw}) melalui perantara fungsi pustaka \path{xil_io.h} seperti \path{Xil_Out32} dan \path{Xil_In32}. 
+MicroBlaze V adalah prosesor \textit{soft-core} 32-bit berbasis arsitektur RISC-V (RV32I) dari AMD/Xilinx \citep{xilinx_microblaze_ref_2021}. MicroBlaze V dipilih karena dapat diimplementasikan pada FPGA yang tidak memiliki prosesor keras, sesuai untuk pengembangan periferal kustom, dan terhubung langsung dengan infrastruktur AXI pada ekosistem Vivado. Penggunaan prosesor ini juga memungkinkan pengujian IP komunikasi dilakukan melalui program C, bukan hanya melalui sinyal kendali yang dibuat secara tetap. Dengan demikian, perhatian penelitian tetap berada pada periferal audio, sedangkan prosesor menyediakan cara yang praktis untuk mengonfigurasi register dan mengirim sampel.
 
-Untuk menjaga integritas data tanpa FIFO atau DMA, dikembangkan mekanisme \textit{Hardware-Software Handshake}. IP I2S Transmitter menyediakan bit status (\texttt{STATUS[0]}) yang berubah logika (\textit{toggle}) setiap kali perangkat keras selesai memindahkan sampel dari register AXI ke \textit{shadow register} internal untuk diserialisasikan. Perangkat lunak melakukan polling terhadap bit status ini sebelum mengirimkan sampel berikutnya, sehingga laju transfer data terkunci secara fisik dengan laju transmisi clock audio eksternal.
+Prosesor berkomunikasi dengan periferal melalui model \textit{Memory-Mapped I/O} (MMIO), di mana register kontrol dan data periferal dipetakan ke alamat memori unik. Akses register dilakukan menggunakan instruksi \textit{load/store} standar (\texttt{lw}/\texttt{sw}) melalui perantara fungsi pustaka \path{xil_io.h} seperti \path{Xil_Out32} dan \path{Xil_In32}.
+
+Untuk menjaga integritas data tanpa FIFO atau DMA, dikembangkan mekanisme \textit{Hardware-Software Handshake}.  IP I2S Transmitter menyediakan bit status (\texttt{STATUS[0]}) yang berubah logika (\textit{toggle}) setiap kali perangkat keras selesai memindahkan sampel dari register AXI ke \textit{shadow register} internal untuk diserialisasikan. Perangkat lunak melakukan polling terhadap bit status ini sebelum mengirimkan sampel berikutnya, sehingga laju transfer data terkunci secara fisik dengan laju transmisi clock audio eksternal.
 
 \subsection{Protokol Komunikasi AXI4-Lite}
 
@@ -108,7 +114,7 @@ I2S (\textit{Inter-IC Sound}) merupakan protokol komunikasi serial sinkron tiga-
     \IfFileExists{contents/figures/i2s-nxp-diagram.png}{%
         \includegraphics[width=0.85\textwidth]{contents/figures/i2s-nxp-diagram.png}%
     }{}
-    \caption{Diagram timing sinyal protokol I2S standar (Sumber: NXP~\cite{philips_i2s_1986}).}
+    \caption{Diagram \textit{timing} sinyal protokol I2S standar (Sumber: NXP Semiconductors~\citep{philips_i2s_1986}).}
     \label{fig:i2s_nxp_diagram}
 \end{figure}
 

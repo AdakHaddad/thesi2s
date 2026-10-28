@@ -6,11 +6,11 @@ Bab ini menyajikan hasil verifikasi dan pengujian fungsional IP I2S Transmitter.
 
 Sebelum IP dikemas dan diintegrasikan ke dalam \textit{block design}, modul I2S diverifikasi menggunakan Vivado Simulator melalui \textit{testbench} mandiri. Testbench memberikan clock sistem 100~MHz dan reset, menjalankan transaksi AXI4-Lite untuk menulis serta membaca register \path{DATA\_LEFT}, \path{DATA\_RIGHT}, \path{CONTROL}, dan \path{STATUS}, kemudian memeriksa respons \path{BRESP} dan \path{RRESP}. Dengan demikian, fungsi register, mekanisme handshaking AXI4-Lite, pembangkitan clock berbasis \textit{phase accumulator}, serta proses serialisasi data I2S dapat diverifikasi tanpa ketergantungan pada firmware maupun board fisik.
 
-Kode lengkap \textit{testbench} yang digunakan pada simulasi disertakan pada Listing~\ref{lst:i2s-testbench} di lampiran. Listing tersebut menunjukkan pembangkitan clock dan reset, koneksi modul I2S, transaksi baca-tulis AXI4-Lite, serta pemeriksaan otomatis terhadap data yang dibaca kembali dan sinyal keluaran I2S. Dengan demikian, hasil verifikasi pada bagian ini dapat direproduksi dari kode sumber yang dicantumkan.
+Kode lengkap \textit{testbench} yang digunakan pada simulasi disertakan pada Kode~\ref{lst:i2s-testbench} di lampiran. Kode tersebut menunjukkan pembangkitan \textit{clock} dan reset, koneksi modul I2S, transaksi baca-tulis AXI4-Lite, serta pemeriksaan otomatis terhadap data yang dibaca kembali dan sinyal keluaran I2S. Dengan demikian, hasil verifikasi pada bagian ini dapat direproduksi dari kode sumber yang dicantumkan.
 
 Vektor uji menggunakan sampel kiri dan kanan 24-bit yang berbeda. Setelah bit \path{ENABLE} diaktifkan pada register \path{CONTROL}, simulator memantau pembangkitan BCLK, perubahan WS, serta keluaran \path{i2s\_data} pada setiap tepi naik BCLK sebagaimana dilakukan oleh penerima I2S. Pemeriksaan meliputi kondisi reset, kondisi \path{ENABLE=0}, pembangkitan clock menggunakan \textit{phase accumulator}, sinkronisasi frame stereo, urutan pengiriman bit MSB--LSB, \textit{one-bit delay} sesuai spesifikasi Philips I2S, padding nol pada slot 32-bit, serta fungsi \path{MUTE}. Simulasi dinyatakan berhasil apabila seluruh pemeriksaan tersebut terpenuhi.
 
-Hasil simulasi menjadi dasar sebelum proses sintesis dan implementasi. Setelah seluruh \textit{timing constraints} terpenuhi, bitstream dan \textit{hardware platform} diekspor ke Vitis untuk pengujian firmware. Selanjutnya dilakukan validasi pada perangkat keras menggunakan Integrated Logic Analyzer (ILA), osiloskop, dan pengujian audio pada DAC PCM5102A untuk memastikan perilaku yang telah diverifikasi melalui simulasi tetap konsisten pada implementasi fisik.
+Hasil simulasi menjadi dasar sebelum proses sintesis dan implementasi. Setelah seluruh \textit{timing constraints} terpenuhi, bitstream dan \textit{hardware platform} diekspor ke Vitis untuk pengujian firmware. Selanjutnya dilakukan validasi pada perangkat keras menggunakan osiloskop dan pengujian audio pada DAC PCM5102A untuk memastikan perilaku yang telah diverifikasi melalui simulasi tetap konsisten pada implementasi fisik.
 
 \section{Pengujian Timing dan Pembangkitan Clock I2S}
 
@@ -112,7 +112,7 @@ Frekuensi sampling diprogram melalui field \path{SAMPLE\_RATE\_HZ} pada register
 
 Validasi numerik dilakukan pada \textit{testbench}, bukan dengan menginterpretasikan gambar osiloskop. Setelah testbench menulis nilai target melalui AXI4-Lite, ia mencatat waktu 16 periode WS penuh, menghitung $f_\mathrm{WS}=16/\Delta t$, lalu membandingkannya dengan nilai yang diprogram. Konfigurasi yang diperiksa meliputi 44,1~kHz, 48~kHz, 88,2~kHz, 96~kHz, serta nilai non-standar 10~kHz dan 12,345~kHz. Simulasi gagal apabila galat relatif melebihi 0,1\%.
 
-Pendekatan ini menghasilkan bukti yang dapat diulang dari keluaran simulator dan tidak mengklaim angka hasil pengukuran perangkat keras yang tidak lagi tersedia. Capture osiloskop dan ILA tetap digunakan pada tahap integrasi untuk menunjukkan keberadaan dan relasi timing BCLK, WS, serta DATA pada board, sedangkan nilai frekuensi kuantitatif dilaporkan dari checker testbench.
+Pendekatan ini menghasilkan bukti yang dapat diulang dari keluaran simulator dan tidak mengklaim angka hasil pengukuran perangkat keras yang tidak lagi tersedia. Pengamatan osiloskop digunakan pada tahap integrasi untuk menunjukkan keberadaan dan relasi timing BCLK, WS, serta DATA pada board, sedangkan nilai frekuensi kuantitatif dilaporkan dari checker testbench.
 
 % ============================================================
 \section{Validasi Audio pada Berbagai Frekuensi Sampling}
@@ -126,7 +126,7 @@ Pada konfigurasi yang diuji, DAC PCM5102A menerima keluaran I2S setelah perubaha
 \section{Identifikasi dan Perbaikan Bug Firmware}
 % ============================================================
 
-Selama tahap integrasi perangkat keras ditemukan dua bug pada firmware (\path{freshi2s/sw/helloworld.c}) yang memengaruhi kualitas audio dan akurasi frekuensi nada. Keduanya berhasil diidentifikasi dan diperbaiki sebelum pengambilan data final.
+Selama tahap integrasi perangkat keras ditemukan dua bug pada aplikasi firmware yang memengaruhi kualitas audio dan akurasi frekuensi nada. Keduanya berhasil diidentifikasi dan diperbaiki sebelum pengambilan data final.
 
 Pada rancangan ini, \textit{status polling} berarti firmware membaca bit 0 pada register \path{STATUS} secara berulang dan membandingkan nilainya dengan nilai pembacaan sebelumnya. Perubahan nilai menandai dimulainya frame stereo baru setelah hardware melatch sampel sebelumnya. Firmware kemudian menulis pasangan sampel berikutnya. Mekanisme ini menjaga sinkronisasi antara perangkat lunak dan serializer tanpa FIFO atau interupsi.
 
@@ -144,7 +144,7 @@ Pada rancangan ini, \textit{status polling} berarti firmware membaca bit 0 pada 
 
 \textbf{Penyebab.} Fungsi \texttt{usleep()} pada MicroBlaze bare-metal memiliki resolusi dan akurasi yang bergantung pada implementasi BSP, dan tidak tersinkronisasi dengan transisi frame hardware I2S.
 
-\textbf{Solusi.} Penulisan sampel disinkronkan dengan sinyal latch hardware menggunakan \textit{status-bit polling} pada bit \path{STATUS[0]} (Listing~\ref{lst:ch5-timing-fix}). Firmware membaca status secara nonblokir, mengirim sampel ketika bit berubah, lalu tetap memeriksa masukan UART pada loop yang sama.
+\textbf{Solusi.} Penulisan sampel disinkronkan dengan sinyal latch perangkat keras menggunakan \textit{status-bit polling} pada bit \path{STATUS[0]} (Kode~\ref{lst:ch5-timing-fix}). Firmware membaca status secara nonblokir, mengirim sampel ketika bit berubah, lalu tetap memeriksa masukan UART pada loop yang sama.
 
 \begin{lstlisting}[
 	language=C,
@@ -277,7 +277,7 @@ Pada tepi naik BCLK, bridge mendeteksi transisi WS, membuang satu bit tunda sesu
 
 Bridge menyimpan keluaran filter dan mengirimkannya pada frame berikutnya melalui \texttt{i2s\_data\_out}. Nilai hasil filter mono tersebut dikirim pada kedua slot I2S. Proses serialisasi memperbarui SDATA pada tepi turun BCLK agar DAC membaca nilai yang stabil pada tepi naik. Jalur MCLK, BCLK, dan WS menggunakan koneksi tembus; bridge hanya mengganti SDATA dengan data hasil filter. Konsekuensinya, integrasi menambah latensi satu frame stereo tanpa mengubah frekuensi sampling atau relasi fase antarsinyal I2S.
 
-Tiga switch pemilih koefisien berasal dari pin FPGA yang asinkron terhadap clock sistem. Dua tingkat flip-flop pada bridge menyinkronkan nilai switch sebelum filter membacanya. Listing~\ref{lst:ch5-i2s-filter-bridge} memperlihatkan antarmuka dan bagian utama jalur data bridge.
+Tiga switch pemilih koefisien berasal dari pin FPGA yang asinkron terhadap \textit{clock} sistem. Dua tingkat flip-flop pada \textit{bridge} menyinkronkan nilai switch sebelum filter membacanya. Kode~\ref{lst:ch5-i2s-filter-bridge} memperlihatkan antarmuka dan bagian utama jalur data \textit{bridge}.
 
 \begin{lstlisting}[
 	language=Verilog,
