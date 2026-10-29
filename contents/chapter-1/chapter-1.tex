@@ -46,7 +46,7 @@ Tujuan penelitian ini disusun agar selaras dengan rumusan masalah yang telah dit
 
 \subsection{Tujuan integrasi SoC dan perangkat lunak}
 \begin{enumerate}
-	\item Membangun SoC berbasis \textbf{MicroBlaze V} dengan AXI interconnect, BRAM, Clocking Wizard, dan akses ke peripheral I2S hasil rancangan sendiri melalui \textbf{Vitis}.
+	\item Membangun SoC berbasis \textbf{MicroBlaze V} dengan interkoneksi AXI, BRAM, Clocking Wizard, dan akses ke periferal I2S hasil rancangan sendiri melalui \textbf{Vitis}.
 	\item Mengembangkan aplikasi \textbf{Vitis} dalam bahasa C untuk konfigurasi register, pembangkitan sinyal uji audio, pengaturan kanal dan mode sampling, serta pengiriman sampel berbasis memory-mapped I/O ke IP komunikasi yang dibuat sendiri.
 \end{enumerate}
 
@@ -62,8 +62,8 @@ Batasan penelitian dalam pengembangan \textbf{IP core I2S TX AXI4-Lite} ini meli
 
 \subsection{Batasan perangkat keras dan RTL}
 \begin{enumerate}
-	\item Modul I2S dirancang sebagai \textbf{transmitter (TX-only)}; tidak mencakup receiver atau mode full-duplex.
-	\item Format audio dibatasi pada \textbf{Philips I2S}, stereo, \textbf{24 bit} per saluran dalam \textbf{slot 32 bit}; tidak mencakup TDM, left-justified, right-justified, atau multi-channel.
+	\item Modul I2S dirancang sebagai \textit{transmitter} (TX-only); tidak mencakup \textit{receiver} atau mode \textit{full-duplex}.
+	\item Format audio dibatasi pada \textbf{Philips I2S}, stereo, dan data PCM dengan lebar sampel 16, 24, atau 32 bit per saluran yang dikirim dalam \textbf{slot 32 bit}; tidak mencakup TDM, \textit{left-justified}, \textit{right-justified}, atau \textit{multi-channel}.
 	\item Dukungan frekuensi sampling dapat diprogram melalui register \texttt{SAMPLE\_RATE\_HZ} dalam rentang 1--195.312 Hz (batas aman DDS pada clock 100 MHz); pengujian utama difokuskan pada nilai standar 44,1 kHz, 48 kHz, 88,2 kHz, dan 96 kHz serta beberapa nilai non-standar.
 	\item Transfer data audio ke IP menggunakan \textbf{programmed I/O} berbasis register dan tidak mencakup integrasi \textbf{FIFO} maupun \textbf{DMA}.
 	\item Pengujian perangkat keras dilakukan pada board \textbf{Basys3} dengan modul \textbf{PCM5102A}; hasil pada platform lain dapat berbeda.
@@ -94,7 +94,7 @@ Batasan penelitian dalam pengembangan \textbf{IP core I2S TX AXI4-Lite} ini meli
 \subsection{Manfaat praktis}
 \begin{enumerate}
 	\item Menyediakan dasar untuk proyek \textbf{audio output} berbasis FPGA seperti generator nada, alarm, dan sistem multimedia sederhana.
-	\item Menunjukkan pola desain \textbf{register-mapped I/O + status polling} yang dapat diadaptasi pada peripheral streaming sederhana lain.
+	\item Menunjukkan pola desain \textbf{register-mapped I/O + status polling} yang dapat diadaptasi pada periferal \textit{streaming} sederhana lain.
 	\item Menjadi fondasi pengembangan lebih lanjut menuju sistem audio digital yang lebih kompleks, misalnya integrasi DMA atau dukungan Linux/ASoC.
 \end{enumerate}
 

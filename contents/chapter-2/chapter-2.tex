@@ -6,7 +6,7 @@ Bagian ini membahas penelitian terdahulu yang relevan dengan implementasi protok
 
 \subsection{Penelitian tentang implementasi I2S pada FPGA}
 
-Implementasi antarmuka I2S pada FPGA telah dilaporkan dalam beberapa konteks. Sang, Peng, dan Zhou merancang antarmuka I2S pada FPGA untuk menghubungkan prosesor dengan codec audio, serta menunjukkan dukungan \textit{sample rate} hingga 96 kHz menggunakan pendekatan RTL langsung tanpa bus sistem~\citep{sang_i2s_codec_2020}. Sementara itu, Kaviani dan Lewis mengintegrasikan logika I2S bersama \textit{logic analyzer} pada FPGA berbiaya rendah untuk kebutuhan instrumentasi~\citep{kaviani_i2s_fpga_2017}.
+Implementasi antarmuka I2S pada FPGA telah dilaporkan dalam beberapa konteks. Sang, Peng, dan Zhou merancang antarmuka I2S pada FPGA untuk menghubungkan prosesor dengan codec audio, serta menunjukkan dukungan \textit{sample rate} hingga 96 kHz menggunakan pendekatan RTL langsung tanpa bus sistem~\citep{sang_i2s_codec_2020}. Sementara itu, Kaviani dan Lewis mengintegrasikan logika I2S dengan instrumen pengukuran pada FPGA berbiaya rendah untuk kebutuhan verifikasi~\citep{kaviani_i2s_fpga_2017}.
 
 Penelitian-penelitian tersebut mengonfirmasi kelayakan pembangkitan sinyal I2S pada FPGA, namun sebagian besar masih terbatas pada level simulasi atau pengujian RTL terisolasi. Penelitian ini berfokus pada pendekatan \textit{hardware-software co-design} secara sistemik, yang mengintegrasikan register map, interkoneksi bus, dan validasi fungsional menggunakan perangkat lunak yang berjalan pada prosesor soft-core \citep{lafosse_embedded_2018}.
 
@@ -16,7 +16,7 @@ Pengembangan arsitektur RISC-V sebagai ISA terbuka menjadi dasar perancangan pro
 
 \subsection{Penelitian tentang sinkronisasi lintas domain \textit{clock} (CDC)}
 
-Dalam sistem multi-clock, sinkronisasi data antar-domain (\textit{Clock Domain Crossing}, CDC) sangat krusial. \citep{ginosar_metastability_2011} menganalisis masalah metastabilitas dan memaparkan solusi flip-flop ganda. Pada rancangan final penelitian ini (\texttt{i2s\_1\_0}), serializer I2S berjalan sepenuhnya pada domain clock bus AXI 100 MHz, sehingga masalah CDC pada jalur data audio ditiadakan. Koordinasi aliran data diselesaikan melalui status handshake berbasis register.
+Ginosar menganalisis masalah metastabilitas pada sinkronisasi data antar-domain dan memaparkan penggunaan rangkaian flip-flop ganda sebagai salah satu solusinya~\citep{ginosar_metastability_2011}. Pada rancangan final penelitian ini (\texttt{i2s\_1\_0}), serializer I2S berjalan sepenuhnya pada domain clock bus AXI 100 MHz, sehingga masalah CDC pada jalur data audio ditiadakan. Koordinasi aliran data diselesaikan melalui status \textit{handshake} berbasis register.
 
 \subsection{Penelitian tentang penjadwalan firmware berbasis counter siklus}
 
@@ -85,7 +85,7 @@ Untuk menjaga integritas data tanpa FIFO atau DMA, dikembangkan mekanisme \texti
 
 AMBA (\textit{Advanced Microcontroller Bus Architecture}) merupakan spesifikasi bus interkoneksi \textit{on-chip} yang dirilis oleh ARM Limited untuk standarisasi komunikasi antar blok fungsional dalam suatu SoC \citep{arm_amba_axi_2010}. Di dalam keluarga protokol AMBA, AXI (\textit{Advanced eXtensible Interface}) menjadi pilihan utama untuk interkoneksi kinerja tinggi pada sistem FPGA modern. AXI memiliki tiga varian utama: AXI4 untuk transfer \textit{burst} data berkecepatan tinggi, AXI4-Lite untuk transfer data tunggal (\textit{single-beat}) yang disederhanakan, dan AXI4-Stream untuk aliran data tanpa alamat \citep{xilinx_axi_ref_2017}.
 
-AXI4-Lite merupakan varian protokol AMBA yang dioptimalkan untuk akses memory-mapped register kontrol dan status pada peripheral kustom. Protokol ini mendukung lebar bus data 32-bit atau 64-bit dengan transaksi tunggal per alamat, tanpa dukungan \textit{burst} maupun \textit{out-of-order transaction}. Seluruh transaksi AXI4-Lite bersifat sinkron terhadap tepi naik clock dan menggunakan mekanisme \textit{handshake} dua arah berbasis sinyal \texttt{VALID} (dinyalakan oleh pengirim) dan \texttt{READY} (dinyalakan oleh penerima). Data hanya ditransfer ketika kedua sinyal aktif dalam satu siklus clock yang sama.
+AXI4-Lite merupakan varian protokol AMBA yang dioptimalkan untuk akses register \textit{memory-mapped} kontrol dan status pada periferal kustom. Protokol ini mendukung lebar bus data 32-bit atau 64-bit dengan transaksi tunggal per alamat, tanpa dukungan \textit{burst} maupun \textit{out-of-order transaction}. Seluruh transaksi AXI4-Lite bersifat sinkron terhadap tepi naik clock dan menggunakan mekanisme \textit{handshake} dua arah berbasis sinyal \texttt{VALID} (dinyalakan oleh pengirim) dan \texttt{READY} (dinyalakan oleh penerima). Data hanya ditransfer ketika kedua sinyal aktif dalam satu siklus clock yang sama.
 
 Protokol AXI4-Lite terdiri atas lima kanal independen yang memisahkan alur penulisan dan pembacaan:
 \begin{enumerate}
@@ -118,7 +118,7 @@ I2S (\textit{Inter-IC Sound}) merupakan protokol komunikasi serial sinkron tiga-
     \label{fig:i2s_nxp_diagram}
 \end{figure}
 
-Gambar~\ref{fig:i2s_nxp_diagram} menjadi acuan penjelasan format Philips I2S. Pada format tersebut, transisi \texttt{WS} terjadi satu pulsa BCLK sebelum bit MSB dikirim (\textit{one-bit delay}) untuk sinkronisasi receiver. Penelitian ini menggunakan konfigurasi \textbf{stereo 24-bit di dalam slot 32-bit} per saluran (total 64 pulsa BCLK per frame stereo). Desain slot 32-bit menyederhanakan penyelarasan data pada bus AXI 32-bit. Hubungan frekuensi dinyatakan sebagai:
+Gambar~\ref{fig:i2s_nxp_diagram} menjadi acuan penjelasan format Philips I2S. Pada format tersebut, transisi \texttt{WS} terjadi satu pulsa BCLK sebelum bit MSB dikirim (\textit{one-bit delay}) untuk sinkronisasi \textit{receiver}. Penelitian ini menggunakan slot 32-bit per saluran (total 64 pulsa BCLK per frame stereo), dengan konfigurasi pengujian utama menggunakan sampel 24-bit. RTL dan firmware juga menyediakan pilihan lebar sampel 16-bit dan 32-bit. Desain slot 32-bit menyederhanakan penyelarasan data pada bus AXI 32-bit. Hubungan frekuensi dinyatakan sebagai:
 \begin{equation}
     f_{\mathrm{BCLK}} = 64 \times F_s
     \label{eq:fs_bclk}
