@@ -72,9 +72,13 @@
 \usepackage{multirow}
 \usepackage{titlesec}
 \usepackage{ragged2e}% text alignment
+\let\thesis@inputpath\input@path
+\def\input@path{{packages/}}
 \usepackage{algorithm}
 \usepackage{algcompatible}
 \usepackage{algpseudocode}
+\usepackage{bytefield}
+\let\input@path\thesis@inputpath
 \usepackage{listings}
 \lstset{
     basicstyle=\ttfamily\small,
@@ -101,7 +105,7 @@
 \usetikzlibrary{positioning}
 \usetikzlibrary{arrows}
 \usetikzlibrary{shapes}
-\bibliographystyle{IEEEtran}
+\bibliographystyle{packages/IEEEtran}
 
 % Page break for equation
 \allowdisplaybreaks
@@ -940,4 +944,3 @@
 
 \setlist[enumerate,1]{leftmargin=2em, label=\arabic*., topsep=0pt, itemsep=0pt, partopsep=1ex, parsep=1ex}
 \setlist[itemize,1]{align=parleft, left=0pt, label=\textbullet, itemsep=0pt, topsep=0pt, partopsep=1ex, parsep=1ex}
-
