@@ -41,7 +41,6 @@
 \usepackage{float}
 \usepackage{placeins}
 \usepackage{caption}
-\newcommand{\thelstlisting}{\arabic{chapter}.\arabic{lstlisting}}
 \usetikzlibrary{arrows.meta,backgrounds,fit}
 
 \Urlmuskip=0mu plus 2mu
@@ -109,6 +108,9 @@
 %  MAIN TEXT
 %======================================
 \startmain
+\makeatletter
+\def\thelstlisting{\@arabic\c@chapter.\@arabic\c@lstlisting}
+\makeatother
 
 \cleardoublepage \phantomsection
 \include{contents/chapter-1/chapter-1}
