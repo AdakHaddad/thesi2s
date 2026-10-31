@@ -29,9 +29,9 @@ Gambaran keseluruhan arsitektur sistem dibahas lebih rinci pada Bab IV. Prosesor
 Berdasarkan latar belakang tersebut, rumusan masalah penelitian ini adalah:
 
 \begin{enumerate}
-	\item Keterbukaan dan kemandirian IP komunikasi audio pada FPGA masih terbatas karena penggunaan IP I$^2$S yang tertutup, bergantung pada vendor, atau memerlukan lisensi.
-	\item Belum tersedia IP I$^2$S transmitter yang kode sumbernya dapat diperiksa dan disesuaikan, serta dapat berfungsi sebagai periferal komunikasi PCM stereo pada SoC FPGA.
-	\item Belum diketahui apakah IP komunikasi I$^2$S yang dirancang sendiri dapat memenuhi aturan \textit{timing} protokol dan mengirimkan data PCM secara benar ke DAC eksternal.
+	\item Meskipun ekosistem perangkat keras terbuka telah berkembang, implementasi audio pada FPGA komersial masih sering bergantung pada IP I$^2$S bawaan vendor yang bersifat \textit{proprietary}, berlisensi tertutup, atau memerlukan subsistem streaming (AXI-Stream/DMA) yang kompleks sehingga membatasi kemandirian dan transparansi modifikasi logika internal.
+	\item Solusi I$^2$S sumber terbuka yang ada di komunitas umumnya berupa modul \textit{serializer standalone} tanpa antarmuka bus SoC standar, atau masih memerlukan sumber \textit{clock} audio eksternal ganda dan sinkronisasi lintas domain (\textit{clock domain crossing}) yang rumit, sehingga diperlukan IP I$^2$S terbuka yang siap diintegrasikan sebagai periferal AXI4-Lite ringan berbasis domain \textit{clock} tunggal dengan mekanisme \textit{handshake} data untuk SoC prosesor \textit{soft-core}.
+	\item Perlunya pembuktian dan validasi eksperimental bahwa IP I$^2$S terbuka yang dirancang secara mandiri tersebut mampu memenuhi batasan \textit{timing} protokol Philips I$^2$S, menghasilkan akurasi frekuensi pencuplikan yang andal, dan merekonstruksi sinyal PCM secara benar pada perangkat keras FPGA dengan DAC eksternal.
 \end{enumerate}
 
 \section{Tujuan Penelitian}
