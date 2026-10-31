@@ -4,17 +4,17 @@ Bab ini menyajikan hasil verifikasi dan pengujian fungsional IP I2S Transmitter.
 
 \section{Verifikasi RTL dengan Testbench}
 
-Sebelum IP dikemas dan diintegrasikan ke dalam \textit{block design}, modul I2S diverifikasi menggunakan Vivado Simulator melalui \textit{testbench} mandiri. Testbench memberikan clock sistem 100~MHz dan reset, menjalankan transaksi AXI4-Lite untuk menulis serta membaca register \path{DATA\_LEFT}, \path{DATA\_RIGHT}, \path{CONTROL}, dan \path{STATUS}, kemudian memeriksa respons \path{BRESP} dan \path{RRESP}. Dengan demikian, fungsi register, mekanisme handshaking AXI4-Lite, pembangkitan clock berbasis \textit{phase accumulator}, serta proses serialisasi data I2S dapat diverifikasi tanpa ketergantungan pada firmware maupun board fisik.
+Sebelum IP dikemas dan diintegrasikan ke dalam \textit{block design}, modul I2S diverifikasi menggunakan Vivado Simulator melalui \textit{testbench} mandiri. Testbench memberikan clock sistem 100~MHz dan reset, menjalankan transaksi AXI4-Lite untuk menulis serta membaca register \path{DATA_LEFT}, \path{DATA_RIGHT}, \path{CONTROL}, dan \path{STATUS}, kemudian memeriksa respons \path{BRESP} dan \path{RRESP}. Dengan demikian, fungsi register, mekanisme handshaking AXI4-Lite, pembangkitan clock berbasis \textit{phase accumulator}, serta proses serialisasi data I2S dapat diverifikasi tanpa ketergantungan pada firmware maupun board fisik.
 
 Kode lengkap \textit{testbench} yang digunakan pada simulasi disertakan pada Kode~\ref{lst:i2s-testbench} di lampiran. Kode tersebut menunjukkan pembangkitan \textit{clock} dan reset, koneksi modul I2S, transaksi baca-tulis AXI4-Lite, serta pemeriksaan otomatis terhadap data yang dibaca kembali dan sinyal keluaran I2S. Dengan demikian, hasil verifikasi pada bagian ini dapat direproduksi dari kode sumber yang dicantumkan.
 
-Vektor uji menggunakan sampel kiri dan kanan 24-bit yang berbeda. Setelah bit \path{ENABLE} diaktifkan pada register \path{CONTROL}, simulator memantau pembangkitan BCLK, perubahan WS, serta keluaran \path{i2s\_data} pada setiap tepi naik BCLK sebagaimana dilakukan oleh penerima I2S. Pemeriksaan meliputi kondisi reset, kondisi \path{ENABLE=0}, pembangkitan clock menggunakan \textit{phase accumulator}, sinkronisasi frame stereo, urutan pengiriman bit MSB--LSB, \textit{one-bit delay} sesuai spesifikasi Philips I2S, padding nol pada slot 32-bit, serta fungsi \path{MUTE}. Simulasi dinyatakan berhasil apabila seluruh pemeriksaan tersebut terpenuhi.
+Vektor uji menggunakan sampel kiri dan kanan 24-bit yang berbeda. Setelah bit \path{ENABLE} diaktifkan pada register \path{CONTROL}, simulator memantau pembangkitan BCLK, perubahan WS, serta keluaran \path{i2s_data} pada setiap tepi naik BCLK sebagaimana dilakukan oleh penerima I2S. Pemeriksaan meliputi kondisi reset, kondisi \path{ENABLE=0}, pembangkitan clock menggunakan \textit{phase accumulator}, sinkronisasi frame stereo, urutan pengiriman bit MSB--LSB, \textit{one-bit delay} sesuai spesifikasi Philips I2S, padding nol pada slot 32-bit, serta fungsi \path{MUTE}. Simulasi dinyatakan berhasil apabila seluruh pemeriksaan tersebut terpenuhi.
 
 Hasil simulasi menjadi dasar sebelum proses sintesis dan implementasi. Setelah seluruh \textit{timing constraints} terpenuhi, bitstream dan \textit{hardware platform} diekspor ke Vitis untuk pengujian firmware. Selanjutnya dilakukan validasi pada perangkat keras menggunakan osiloskop dan pengujian audio pada DAC PCM5102A untuk memastikan perilaku yang telah diverifikasi melalui simulasi tetap konsisten pada implementasi fisik.
 
 \section{Pengujian Timing dan Pembangkitan Clock I2S}
 
-Verifikasi timing dilakukan dengan mengamati sinyal internal hasil simulasi RTL. Selain keluaran \path{i2s\_bclk}, \path{i2s\_ws}, dan \path{i2s\_data}, diamati pula sinyal internal \path{bclk\_phase\_acc\_q}, \path{bclk\_phase\_wrap}, \path{bit\_count\_q}, \path{ws\_q}, dan \path{data\_q}. Pengamatan terhadap sinyal-sinyal tersebut bertujuan untuk memverifikasi mekanisme pembangkitan clock menggunakan \textit{phase accumulator}, sinkronisasi frame stereo, serta proses serialisasi data sesuai protokol Philips I2S.
+Verifikasi timing dilakukan dengan mengamati sinyal internal hasil simulasi RTL. Selain keluaran \path{i2s_bclk}, \path{i2s_ws}, dan \path{i2s_data}, diamati pula sinyal internal \path{bclk_phase_acc_q}, \path{bclk_phase_wrap}, \path{bit_count_q}, \path{ws_q}, dan \path{data_q}. Pengamatan terhadap sinyal-sinyal tersebut bertujuan untuk memverifikasi mekanisme pembangkitan clock menggunakan \textit{phase accumulator}, sinkronisasi frame stereo, serta proses serialisasi data sesuai protokol Philips I2S.
 
 \begin{landscape}
 	\begin{figure}[htbp]
@@ -59,11 +59,11 @@ Verifikasi timing dilakukan dengan mengamati sinyal internal hasil simulasi RTL.
 	\end{figure}
 \end{landscape}
 
-Subgambar~\ref{fig:ch5-nco-waveform} memperlihatkan mekanisme pembangkitan BCLK menggunakan \textit{phase accumulator}. Pada setiap tepi naik clock sistem 100~MHz, RTL menjumlahkan \path{bclk\_toggle\_rate\_hz} dengan nilai accumulator sebelumnya. Jika hasil penjumlahan mencapai atau melampaui modulus 100.000.000, sinyal \path{bclk\_phase\_wrap} aktif selama satu siklus, accumulator menyimpan nilai sisa setelah dikurangi modulus, dan BCLK melakukan satu toggle. Contoh urutan penjumlahan tersebut ditunjukkan pada Tabel~\ref{tab:nco-accumulator-example}.
+Subgambar~\ref{fig:ch5-nco-waveform} memperlihatkan mekanisme pembangkitan BCLK menggunakan \textit{phase accumulator}. Pada setiap tepi naik clock sistem 100~MHz, RTL menjumlahkan \path{bclk_toggle_rate_hz} dengan nilai accumulator sebelumnya. Jika hasil penjumlahan mencapai atau melampaui modulus 100.000.000, sinyal \path{bclk_phase_wrap} aktif selama satu siklus, accumulator menyimpan nilai sisa setelah dikurangi modulus, dan BCLK melakukan satu toggle. Contoh urutan penjumlahan tersebut ditunjukkan pada Tabel~\ref{tab:nco-accumulator-example}.
 
-Pada waveform, empat sinyal perlu dibedakan. Clock sistem menjadi sumbu waktu diskrit. Accumulator membentuk deret nilai yang meningkat lalu turun ke nilai sisa ketika terjadi wrap. Pulsa \path{bclk\_phase\_wrap} menandai peristiwa toggle, bukan satu periode penuh BCLK. Dua peristiwa toggle membentuk satu periode BCLK, dan 64 periode BCLK membentuk satu frame stereo sehingga WS kembali ke kanal berikutnya. Akumulator MCLK bekerja secara terpisah menggunakan \path{mclk\_toggle\_rate\_hz}; karena itu, waveform tidak perlu menunjukkan MCLK dan BCLK berubah pada tepi yang sama.
+Pada waveform, empat sinyal perlu dibedakan. Clock sistem menjadi sumbu waktu diskrit. Accumulator membentuk deret nilai yang meningkat lalu turun ke nilai sisa ketika terjadi wrap. Pulsa \path{bclk_phase_wrap} menandai peristiwa toggle, bukan satu periode penuh BCLK. Dua peristiwa toggle membentuk satu periode BCLK, dan 64 periode BCLK membentuk satu frame stereo sehingga WS kembali ke kanal berikutnya. Akumulator MCLK bekerja secara terpisah menggunakan \path{mclk_toggle_rate_hz}; karena itu, waveform tidak perlu menunjukkan MCLK dan BCLK berubah pada tepi yang sama.
 
-Untuk menghubungkan bentuk waveform dengan perhitungan numerik, Tabel~\ref{tab:nco-accumulator-example} memberikan contoh $F_s=96$~kHz. Pada konfigurasi ini, inkremen akumulator BCLK adalah $I_{\mathrm{BCLK}}=128\times96.000=12.288.000$. Kolom nilai penjumlahan menampilkan hasil sebelum operasi modulo. Ketika hasil mencapai atau melewati $M=100.000.000$, RTL menghasilkan satu pulsa \path{bclk\_phase\_wrap}, melakukan satu toggle pada BCLK, lalu menyimpan sisa setelah dikurangi $M$.
+Untuk menghubungkan bentuk waveform dengan perhitungan numerik, Tabel~\ref{tab:nco-accumulator-example} memberikan contoh $F_s=96$~kHz. Pada konfigurasi ini, inkremen akumulator BCLK adalah $I_{\mathrm{BCLK}}=128\times96.000=12.288.000$. Kolom nilai penjumlahan menampilkan hasil sebelum operasi modulo. Ketika hasil mencapai atau melewati $M=100.000.000$, RTL menghasilkan satu pulsa \path{bclk_phase_wrap}, melakukan satu toggle pada BCLK, lalu menyimpan sisa setelah dikurangi $M$.
 
 \begin{table}[H]
 \centering
@@ -108,7 +108,7 @@ Sementara itu, Subgambar~\ref{fig:ch5-waveform-frame} dan Subgambar~\ref{fig:ch5
 % ============================================================
 \section{Analisis Frekuensi Sampling}
 
-Frekuensi sampling diprogram melalui field \path{SAMPLE\_RATE\_HZ} pada register \path{CONTROL}. Pada clock sistem 100~MHz, DDS menambahkan nilai $128 \times F_s$ ke akumulator BCLK pada setiap siklus. Saat jumlahnya mencapai 100.000.000, akumulator melakukan \textit{wrap-around} dan BCLK berubah keadaan. Karena satu frame stereo memiliki 64 pulsa BCLK dan BCLK berubah keadaan dua kali dalam satu periode, sinyal WS memiliki frekuensi target $F_s$.
+Frekuensi sampling diprogram melalui field \path{SAMPLE_RATE_HZ} pada register \path{CONTROL}. Pada clock sistem 100~MHz, DDS menambahkan nilai $128 \times F_s$ ke akumulator BCLK pada setiap siklus. Saat jumlahnya mencapai 100.000.000, akumulator melakukan \textit{wrap-around} dan BCLK berubah keadaan. Karena satu frame stereo memiliki 64 pulsa BCLK dan BCLK berubah keadaan dua kali dalam satu periode, sinyal WS memiliki frekuensi target $F_s$.
 
 Validasi numerik dilakukan pada \textit{testbench}, bukan dengan menginterpretasikan gambar osiloskop. Setelah testbench menulis nilai target melalui AXI4-Lite, ia mencatat waktu 16 periode WS penuh, menghitung $f_\mathrm{WS}=16/\Delta t$, lalu membandingkannya dengan nilai yang diprogram. Konfigurasi yang diperiksa meliputi 44,1~kHz, 48~kHz, 88,2~kHz, 96~kHz, serta nilai non-standar 10~kHz dan 12,345~kHz. Simulasi gagal apabila galat relatif melebihi 0,1\%.
 
@@ -118,7 +118,7 @@ Pendekatan ini menghasilkan bukti yang dapat diulang dari keluaran simulator dan
 \section{Validasi Audio pada Berbagai Frekuensi Sampling}
 % ============================================================
 
-Pengujian fungsional dilakukan dengan memutar nada sinus menggunakan firmware berbasis DDS perangkat lunak (\textit{software DDS}) pada empat mode $F_s$ standar secara bergantian. Peralihan $F_s$ dilakukan melalui field \path{SAMPLE\_RATE\_HZ} pada register \path{CONTROL} tanpa reset hardware.
+Pengujian fungsional dilakukan dengan memutar nada sinus menggunakan firmware berbasis DDS perangkat lunak (\textit{software DDS}) pada empat mode $F_s$ standar secara bergantian. Peralihan $F_s$ dilakukan melalui field \path{SAMPLE_RATE_HZ} pada register \path{CONTROL} tanpa reset hardware.
 
 Pada konfigurasi yang diuji, DAC PCM5102A menerima keluaran I2S setelah perubahan $F_s$ dan tidak terdengar distorsi \textit{pitch} maupun \textit{audio pop} pada headset. Pengamatan ini bersifat kualitatif; tesis tidak mengklaim pengukuran waktu \textit{lock} atau pembuktian bahwa setiap perubahan \path{ENABLE} selalu terjadi pada batas frame.
 
@@ -167,11 +167,11 @@ Pada rancangan ini, \textit{status polling} berarti firmware membaca bit 0 pada 
 Fungsionalitas utama firmware dikendalikan melalui beberapa komponen berikut:
 
 \begin{itemize}
-	\item \path{g\_phase} — akumulator fase 32-bit untuk DDS perangkat lunak; bertambah sebesar \textit{phase step} setiap sampel.
-	\item \path{g\_sample\_rate\_hz} — menyimpan nilai $F_s$ aktif; digunakan untuk menghitung \textit{phase step} agar akurasi frekuensi nada tidak bergantung pada mode $F_s$ yang dipilih.
-	\item \path{frame\_status\_bit()} — membaca bit[0] register \path{STATUS} yang berubah setiap kali hardware melakukan latch sampel stereo; digunakan sebagai sinyal sinkronisasi.
-	\item \path{pack\_sample()} — melakukan penskalaan dan pengeseran sampel sesuai lebar bit yang aktif tanpa memotong bit tanda.
-	\item \path{apply\_control()} — mengemas seluruh bit konfigurasi ke dalam satu nilai 32-bit dan menulis ke register \path{CONTROL} dalam satu transaksi AXI4-Lite.
+	\item \path{g_phase} — akumulator fase 32-bit untuk DDS perangkat lunak; bertambah sebesar \textit{phase step} setiap sampel.
+	\item \path{g_sample_rate_hz} — menyimpan nilai $F_s$ aktif; digunakan untuk menghitung \textit{phase step} agar akurasi frekuensi nada tidak bergantung pada mode $F_s$ yang dipilih.
+	\item \path{frame_status_bit()} — membaca bit[0] register \path{STATUS} yang berubah setiap kali hardware melakukan latch sampel stereo; digunakan sebagai sinyal sinkronisasi.
+	\item \path{pack_sample()} — melakukan penskalaan dan pengeseran sampel sesuai lebar bit yang aktif tanpa memotong bit tanda.
+	\item \path{apply_control()} — mengemas seluruh bit konfigurasi ke dalam satu nilai 32-bit dan menulis ke register \path{CONTROL} dalam satu transaksi AXI4-Lite.
 \end{itemize}
 
 % ============================================================
@@ -331,8 +331,8 @@ Integrasi IP I2S dengan satu blok filter IIR pada Block Design Vivado diperlihat
 	\begin{figure}[p]
 		\centering
 		\includegraphics[
-		width=\textwidth,
-		height=\textheight,
+		width=\linewidth,
+		height=0.85\textheight,
 		keepaspectratio
 		]{contents/figures/filter_i2s_bd_fullsizeview.jpg}
 		\caption{Integrasi IP I2S dengan blok filter IIR pada Vivado Block Design.}
