@@ -1,0 +1,182 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{geometry}
+\geometry{top=2cm, bottom=2.5cm, left=2.2cm, right=2.2cm}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\footnotesize \textit{Matriks Penyelesaian Revisi Skripsi --- Muhammad Muqtada Alhaddad}}
+\rhead{\footnotesize \textit{Departemen TETI FT UGM}}
+\cfoot{\thepage}
+
+\definecolor{ugmblue}{RGB}{0, 51, 102}
+\definecolor{boxgray}{RGB}{245, 247, 250}
+\definecolor{bordergray}{RGB}{210, 215, 225}
+\definecolor{statusgreen}{RGB}{0, 128, 0}
+
+\newcommand{\snapitem}[5]{
+    \noindent\begin{minipage}{\linewidth}
+        \vspace{0.6em}
+        \noindent\textbf{\color{ugmblue}No. #1 --- #2} \\
+        \footnotesize \textbf{Status:} {\color{statusgreen}#3} \quad\textbar\quad \textbf{Lokasi:} #4 \\
+        \vspace{0.3em}
+        \centering
+        \fbox{\includegraphics[width=0.96\linewidth]{#5}}
+        \vspace{0.8em}
+    \end{minipage}
+}
+
+\begin{document}
+
+\begin{center}
+    {\large \textbf{DEPARTEMEN TEKNIK ELEKTRO DAN TEKNOLOGI INFORMASI}}\\[0.2em]
+    {\large \textbf{FAKULTAS TEKNIK, UNIVERSITAS GADJAH MADA}}\\[0.8em]
+    {\Large \textbf{\color{ugmblue}MATRIKS PENYELESAIAN REVISI NASKAH SKRIPSI}}\\[0.3em]
+    {\large \textbf{DENGAN BUKTI VISUAL PERUBAHAN PADA NASKAH UTAMA}}\\[1em]
+\end{center}
+
+\noindent\begin{tabular}{@{}ll@{}}
+    \textbf{Judul Skripsi} & : Perancangan IP I2S Transmitter AXI4-Lite pada SoC MicroBlaze V menggunakan Verilog \\
+    \textbf{Penyusun}      & : Muhammad Muqtada Alhaddad (22/500341/TK/54841) \\
+    \textbf{Pembimbing 1}  & : Ir. Agus Bejo, S.T., M.Eng., D.Eng., IPM. \\
+    \textbf{Pembimbing 2}  & : Ir. Wahyu Dewanto, M.T. \\
+    \textbf{Status Git}    & : Branch \texttt{naskah} (Commit sinkron dengan remote GitHub) \\
+    \textbf{Naskah Acuan}  & : \texttt{main.pdf} (Total 114 halaman, bebas kesalahan kompilasi)
+\end{tabular}
+
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+\section*{Bagian 1: Tabel Matriks Penyelesaian 32 Butir Revisi}
+
+\small
+\begin{longtable}{@{}p{0.6cm} p{4.4cm} p{1.5cm} p{7.2cm} p{2.3cm}@{}}
+\toprule
+\textbf{No} & \textbf{Permintaan Revisi} & \textbf{Status} & \textbf{Hasil Pemeriksaan Terbaru} & \textbf{Lokasi} \\
+\midrule
+\endhead
+1 & Tujuan membuat IP komunikasi sendiri tanpa bergantung lisensi & Selesai & Tujuan dan kontribusi menegaskan IP I$^2$S mandiri tanpa IP berlisensi vendor pihak ketiga. & Hal. 3--4 (p21--22) \\
+2 & Masalah utama jelas bagi pembaca awam & Selesai & Paragraf pembuka dimulai dari sistem elektronik dan integrasi transmisi audio PCM. & Hal. 1 (p19) \\
+3 & Pengantar dibuat umum sebelum teknis & Selesai & Alur terstruktur bertahap dari konsep audio digital ke SoC MicroBlaze V dan RTL. & Hal. 1--2 (p19--20) \\
+4 & Bahasa lebih umum & Selesai & Terminologi dijelaskan bertahap; istilah teknis esensial (RTL, AXI, serializer) proporsional. & Hal. 1--2 (p19--20) \\
+5 & Kata asing dicetak miring & Selesai & Istilah asing (\textit{soft-core}, \textit{bare-metal}, \textit{handshake}, \textit{data tearing}) memakai \texttt{\textbackslash textit\{\}}. & Merata \\
+6 & Bahasa asing daftar singkatan miring & Selesai & Seluruh kepanjangan asing di \texttt{nomenclature.tex} dicetak miring dan rapi. & Hal. xvi (p16) \\
+7 & Abstrak bahasa Inggris miring & Selesai & Seluruh isi \texttt{abstract.tex} dibungkus dalam lingkungan \texttt{\textbackslash textit\{\}}. & Hal. xviii (p18) \\
+8 & Abstrak Indonesia diperbaiki & Selesai & Intisari memuat IP mandiri, AXI4-Lite, NCO, hasil utilitas, dan daya. & Hal. xvii (p17) \\
+9 & Rumusan masalah berisi masalah & Selesai & 3 butir masalah substantif: lisensi vendor, modul komunitas non-SoC, validasi fisik. & Hal. 3 (p21) \\
+10 & Masalah fundamental keterbukaan IP & Selesai & Butir 1 rumusan masalah menyorot keterbatasan modifikasi pada IP vendor tertutup. & Hal. 3 (p21) \\
+11 & Alasan memilih I2S & Selesai & Paragraf 3 menjelaskan I$^2$S dirancang spesifik untuk PCM, jalur ringkas, dan luas didukung. & Hal. 1 (p19) \\
+12 & Alternatif I2S & Selesai & Alternatif \textit{left-justified}, \textit{right-justified}, dan TDM dijelaskan sebagai pembanding. & Hal. 1 (p19) \\
+13 & Menjelaskan apakah I2S hanya PCM & Selesai & Batasan penelitian butir 1 membatasi transmisi pada data Linear PCM stereo terkuantisasi. & Hal. 4 (p22) \\
+14 & Batasan format I2S & Selesai & Dibatasi pada Philips I$^2$S standar, mode TX-only, stereo, dan slot 32 bit per kanal. & Hal. 4 (p22) \\
+15 & Alasan I2S penting sbg periferal & Selesai & I$^2$S diposisikan sebagai jembatan komunikasi antara komputasi SoC dan DAC eksternal. & Hal. 1--2 (p19--20) \\
+16 & Varian RISC-V ditambahkan & Selesai & Subbab 2.1.2 merinci varian dasar RV32I, RV64I, ekstensi M/A/F/D/C, RV32IM, RV32IMAC. & Hal. 11 (p29) \\
+17 & Alasan memilih MicroBlaze V & Selesai & Dibandingkan terhadap Zynq-7000 (tanpa hard-ARM), Classic (RISC-V terbuka), dan bare-FPGA. & Hal. 2 (p20) \\
+18 & Perbaikan sitasi Subbab 2.1.1 & Selesai & Kalimat pembuka sitasi memuat nama penulis (Ginosar, Sang, Kaviani) sebelum \texttt{\textbackslash citep\{\}}. & Hal. 7 (p25) \\
+19 & Sitasi Gambar 2.1/NXP & Selesai & Judul dan keterangan Gambar 2.1 mencantumkan atribusi Philips/NXP Semiconductors. & Hal. 13 (p31) \\
+20 & Mengubah penomoran Kode 4.1 & Selesai & Format penomoran listing telah diset berbasis bab (Kode 4.1 s.d. 4.13 dan Kode 5.1--5.2). & Hal. 28 (p46) \\
+21 & Label kode menggunakan ``Kode'' & Selesai & Didefinisikan \texttt{\textbackslash lstlistingname} sebagai Kode pada kelas tesis. & Hal. xi (p11) \\
+22 & Menghapus ILA & Selesai & Naskah aktif bersih dari ILA; seluruh pengujian fisik menggunakan osiloskop. & Bab I--VI \\
+23 & Memperbaiki BibTeX & Selesai & Entri Crockett divalidasi sebagai \texttt{@book}, metadata AMD/datasheet dirapikan. & Hal. 72 (p90) \\
+24 & Subjek tidak diganti angka sitasi & Selesai & Konstruksi kalimat menempatkan nama penulis/subjek sebelum sitasi angka. & Seluruh Bab \\
+25 & Kepanjangan singkatan pertama kali & Selesai & Istilah kunci (DDS, NCO, MMIO, CDC) diperkenalkan lengkap pada awal kemunculan. & Hal. 2 (p21) \\
+26 & Menghilangkan nama proyek lokal & Selesai & Tautan kode sumber merujuk repositori publik GitHub tanpa path direktori lokal. & Hal. 3 (p21) \\
+27 & Penyelarasan implementasi akhir & Selesai & Arsitektur satu domain clock 100 MHz, NCO phase accumulator, dan shadow register. & Hal. 33 (p51) \\
+28 & Menghapus klaim tidak digunakan & Selesai & Pernyataan port \texttt{audio\_clk} tidak digunakan pada core; multi-PLL audio dihapus. & Hal. 33 (p51) \\
+29 & Lampiran testbench tetap aman & Selesai & Proteksi \texttt{\textbackslash IfFileExists} disertakan bersama petunjuk repositori GitHub. & Hal. L-21 (p113) \\
+30 & Kompilasi naskah berhasil & Selesai & \texttt{main.pdf} berhasil dikompilasi utuh (114 hal.), 0 error, 0 undefined citation. & Root \texttt{main.pdf} \\
+31 & Revisi terisolasi naskah utama & Selesai & Berkas presentasi tidak terpengaruh; perubahan hanya pada direktori tesis. & Git tree \\
+32 & Push ke branch naskah & Selesai & Seluruh commit revisi telah dipush ke remote GitHub branch \texttt{naskah}. & GitHub remote \\
+\bottomrule
+\end{longtable}
+
+\newpage
+\section*{Bagian 2: Bukti Snapshot Visual Perubahan pada Naskah Skripsi}
+\normalsize
+Berikut adalah bukti cuplikan visual langsung dari berkas naskah \texttt{main.pdf} yang memvalidasi penyelesaian setiap butir revisi (No. 1 s.d. 32):
+
+\snapitem{1}{Tujuan Membuat IP Komunikasi Sendiri Tanpa Lisensi Pihak Ketiga}{Selesai}{Bab I (Hal. Cetak 4 / PDF Hal. 22)}{snapshots_revisi/snap_01.png}
+
+\snapitem{2}{Masalah Utama Dibuat Jelas Bagi Pembaca Awam}{Selesai}{Bab I (Hal. Cetak 1 / PDF Hal. 19)}{snapshots_revisi/snap_02.png}
+
+\snapitem{3}{Pengantar Dibuat Bertahap dari Sistem Elektronik Umum ke Teknis Audio}{Selesai}{Bab I (Hal. Cetak 1 / PDF Hal. 19)}{snapshots_revisi/snap_03.png}
+
+\newpage
+\snapitem{4}{Penyajian Bahasa Konseptual Terbuka dan Tidak Terlalu Teknis}{Selesai}{Bab I (Hal. Cetak 1 / PDF Hal. 19)}{snapshots_revisi/snap_04.png}
+
+\snapitem{5}{Kata-kata Asing Dicetak Miring Secara Konsisten}{Selesai}{Bab I (Hal. Cetak 2 / PDF Hal. 20)}{snapshots_revisi/snap_05.png}
+
+\snapitem{6}{Bahasa Asing pada Daftar Singkatan Dicetak Miring}{Selesai}{Awal Naskah (Hal. Cetak xvi / PDF Hal. 16)}{snapshots_revisi/snap_06.png}
+
+\newpage
+\snapitem{7}{Abstrak Bahasa Inggris Dicetak Miring Seluruhnya}{Selesai}{Awal Naskah (Hal. Cetak xviii / PDF Hal. 18)}{snapshots_revisi/snap_07.png}
+
+\snapitem{8}{Abstrak Bahasa Indonesia Memuat Solusi IP Mandiri dan Hasil Pengujian}{Selesai}{Awal Naskah (Hal. Cetak xvii / PDF Hal. 17)}{snapshots_revisi/snap_08.png}
+
+\snapitem{9}{Rumusan Masalah Disusun Berisi Masalah Substantif, Bukan Metode}{Selesai}{Bab I (Hal. Cetak 3 / PDF Hal. 21)}{snapshots_revisi/snap_09.png}
+
+\newpage
+\snapitem{10}{Masalah Fundamental Keterbukaan IP dan Dependensi Vendor Tertutup}{Selesai}{Bab I (Hal. Cetak 3 / PDF Hal. 21)}{snapshots_revisi/snap_10.png}
+
+\snapitem{11}{Penjelasan Alasan Pemilihan Protokol I2S untuk Audio PCM}{Selesai}{Bab I (Hal. Cetak 1 / PDF Hal. 19)}{snapshots_revisi/snap_11.png}
+
+\snapitem{12}{Penyebutan Antarmuka Alternatif I2S (Left-Justified, Right-Justified, TDM)}{Selesai}{Bab I (Hal. Cetak 1 / PDF Hal. 19)}{snapshots_revisi/snap_12.png}
+
+\newpage
+\snapitem{13}{Penjelasan Batasan Data I2S Berupa Linear PCM Terkuantisasi Stereo}{Selesai}{Bab I (Hal. Cetak 4 / PDF Hal. 22--23)}{snapshots_revisi/snap_13.png}
+
+\snapitem{14}{Batasan Format Transmisi (Philips I2S, TX-Only, Slot 32-Bit)}{Selesai}{Bab I (Hal. Cetak 4 / PDF Hal. 22--23)}{snapshots_revisi/snap_14.png}
+
+\snapitem{15}{Penjelasan Peran I2S Sebagai Jembatan Periferal Antara SoC dan DAC}{Selesai}{Bab I (Hal. Cetak 1 / PDF Hal. 19)}{snapshots_revisi/snap_15.png}
+
+\newpage
+\snapitem{16}{Penambahan Rincian Varian Arsitektur RISC-V (RV32I, M, A, F, D, C)}{Selesai}{Bab II (Hal. Cetak 11 / PDF Hal. 29)}{snapshots_revisi/snap_16.png}
+
+\snapitem{17}{Penjelasan Alasan Pemilihan Prosesor Soft-Core MicroBlaze V}{Selesai}{Bab I (Hal. Cetak 2 / PDF Hal. 20)}{snapshots_revisi/snap_17.png}
+
+\snapitem{18}{Perbaikan Konstruksi Kalimat Sitasi Subbab 2.1.1 (Ginosar, Sang, Kaviani)}{Selesai}{Bab II (Hal. Cetak 7 / PDF Hal. 25)}{snapshots_revisi/snap_18.png}
+
+\newpage
+\snapitem{19}{Pencantuman Atribusi NXP Semiconductors / Philips pada Gambar 2.1}{Selesai}{Bab II (Hal. Cetak 13 / PDF Hal. 31)}{snapshots_revisi/snap_19.png}
+
+\snapitem{20}{Format Penomoran Kode Menjadi Format Bab (Kode 4.1 s.d. Kode 4.13)}{Selesai}{Bab IV (Hal. Cetak 28 / PDF Hal. 46)}{snapshots_revisi/snap_20.png}
+
+\snapitem{21}{Penggunaan Label ``Kode'' dan ``DAFTAR KODE'' pada Naskah}{Selesai}{Daftar Kode (Hal. Cetak xi / PDF Hal. 11)}{snapshots_revisi/snap_21.png}
+
+\newpage
+\snapitem{22}{Penghapusan ILA dan Penegasan Pengujian Fisik dengan Osiloskop}{Selesai}{Bab V (Hal. Cetak 51 / PDF Hal. 69)}{snapshots_revisi/snap_22.png}
+
+\snapitem{23}{Perbaikan Referensi BibTeX Entri Crockett Sebagai Tipe @book}{Selesai}{Daftar Pustaka (Hal. Cetak 72 / PDF Hal. 90)}{snapshots_revisi/snap_23.png}
+
+\snapitem{24}{Konstruksi Kalimat Sitasi Menempatkan Nama Penulis Sebagai Subjek}{Selesai}{Bab II (Hal. Cetak 7 / PDF Hal. 25)}{snapshots_revisi/snap_24.png}
+
+\newpage
+\snapitem{25}{Kepanjangan Singkatan DDS dan NCO Muncul pada Penggunaan Pertama}{Selesai}{Bab I (Hal. Cetak 3 / PDF Hal. 21)}{snapshots_revisi/snap_25.png}
+
+\snapitem{26}{Penggunaan Tautan Publik Repositori GitHub Tanpa Path Lokal}{Selesai}{Bab I (Hal. Cetak 3 / PDF Hal. 21)}{snapshots_revisi/snap_26.png}
+
+\snapitem{27}{Penyelarasan Desain Akhir: Single-Clock Domain 100 MHz AXI}{Selesai}{Bab IV (Hal. Cetak 33 / PDF Hal. 51)}{snapshots_revisi/snap_27.png}
+
+\newpage
+\snapitem{28}{Penghapusan Klaim Port Legacy audio\_clk pada Core RTL}{Selesai}{Bab IV (Hal. Cetak 33 / PDF Hal. 51)}{snapshots_revisi/snap_28.png}
+
+\snapitem{29}{Proteksi Keberadaan File Testbench Lampiran dengan IfFileExists}{Selesai}{Lampiran C (Hal. Cetak L-21 / PDF Hal. 113)}{snapshots_revisi/snap_29.png}
+
+\snapitem{30}{Verifikasi Eksekusi Kompilasi Naskah Utama (0 Error, 114 Halaman)}{Selesai}{Terminal Build Verification}{snapshots_revisi/snap_30.png}
+
+\newpage
+\snapitem{31}{Verifikasi Ruang Lingkup Revisi Terisolasi pada Naskah Utama}{Selesai}{Git Status Verification}{snapshots_revisi/snap_31.png}
+
+\snapitem{32}{Verifikasi Status Push Branch Naskah ke Remote GitHub}{Selesai}{Git Remote Verification}{snapshots_revisi/snap_32.png}
+
+\end{document}
